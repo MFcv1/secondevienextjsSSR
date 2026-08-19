@@ -159,7 +159,11 @@ Plan temporaire de reprise explicitement demande:
   La reprise suivante n'est pas ouverte par ce checkpoint. Les prochains lots restent coherents: deploiements Functions allowlistes
   individuellement, puis un build, un cutover, un rollback et une observation
   groupes par lot. Les tests sont lances une fois par lot et seulement pour les
-  flux touches. A la reprise, ne relire que le checkpoint et les sections
+  flux touches. Les sections G6 a G13 portent desormais chacune une carte
+  d'execution et un budget quota fermes; la chaine de prompts de la section 15
+  ouvre un seul lot a la fois et les variables Meta/legacy/maintenance sont
+  recalculees depuis chaque manifeste, jamais depuis un total historique. A la
+  reprise, ne relire que le checkpoint et les sections
   code/documentation directement touchees; ne pas recharger le journal complet.
   Un etat cloud frais par transition suffit; reutiliser les sessions de poll et
   ne pas relancer un test vert sans changement du code concerne. Les

@@ -74,7 +74,7 @@ sont conservees dans les manifestes `functions-gen2-*`.
 | cutover client | App Hosting sert `build-2026-08-19-002`; rollback exact `build-2026-08-19-001`, prouve par drill reel |
 | observation G4 | G4-A1 a G4-A5 fermees en validation acceleree; Gen1 et rollbacks preserves |
 | retrait Gen1 | aucun avant G12-A |
-| prochain lot | G6 prepare avec budget quota ferme ci-dessous, mais non ouvert; un prompt explicite reste obligatoire |
+| prochain lot | G6 prepare avec budget quota ferme ci-dessous, mais non ouvert; G7-G13 disposent aussi de cartes quota fermees et aucun lot ne s'ouvre implicitement |
 
 Le correctif Monitoring du 2026-08-17 est applique et idempotent: cinq
 metriques, huit policies severisees et deux canaux conformes; la boucle
@@ -2493,61 +2493,180 @@ committer localement, puis s'arreter sans ouvrir G7.
 
 ### G7 - Meta et reconciliation Instagram
 
-Migrer les neuf Functions Meta cloud uniquement apres leurs gates de domaine.
-Pour les cinq Instagram locaux, appliquer la decision G0: conserver en local,
-retirer avec preuve, ou convertir sous nouveau nom Gen2. Aucun deploiement tant
-que `HOLD_META_RECONCILIATION` n'est pas formellement leve.
+G7 reste ferme tant que `HOLD_META_RECONCILIATION` n'est pas leve par une
+decision explicite. Son premier passage est uniquement une reconciliation
+read-only bornee; il ne suffit pas a autoriser un deploiement.
 
-Gates: anti-rejeu OAuth, chiffrement, projection sans secret, URI callback,
-secrets/IAM, rollback console et aucune publication distante non autorisee.
+Perimetre cloud fixe: neuf Gen1 Meta, soit `disconnectMetaConnectionAdmin`,
+`getMetaConnectionStatusAdmin`, `getSocialPublicationStatusAdmin`,
+`metaOAuthCallback`, `prepareSocialPublicationAdmin`,
+`runSocialPublicationAdmin`, `selectMetaAssetAdmin`, `startMetaOAuthAdmin` et
+`verifyMetaConnectionAdmin`. Perimetre local conditionnel: les cinq exports
+Instagram de la section 6.7, sans upload tant que leur decision
+`KEEP_LOCAL`, `RETIRE_LOCAL` ou `MIGRATE_GEN2` n'est pas signee.
+
+**G7-R, reconciliation sans consommation de deploiement:** un seul controle
+frais des neuf services, des redirects/URI Meta, versions de secrets et
+appelants; une seule lecture des passages Meta canoniques et des deux modules
+Meta/Instagram. Produire un manifeste de decision unique et fermer R sans
+build, upload, publication, OAuth interactif ou modification console. Si le
+HOLD n'est pas leve, s'arreter ici sans considerer G7 ferme.
+
+**G7-D, seulement apres levee formelle du HOLD:** mutualiser une extraction de
+handlers, une archive Functions immutable et un upload. Deployer
+individuellement les neuf cibles cloud et uniquement les cibles Instagram
+classees `MIGRATE_GEN2`, chacune avec une allowlist d'un nom. Ordre: lectures,
+connexion/verification, selections/preparations, execution de publication,
+puis `metaOAuthCallbackGen2` en dernier.
+
+Budget local: une commande `test:functions-g7` agregeant le contrat Meta,
+anti-rejeu OAuth, chiffrement/projection sans secret et registre client; au
+plus un `lint:functions`; aucun navigateur ni ceremonie OAuth si le harnais
+couvre les preuves. Une seule publication distante sandbox est permise
+uniquement si elle est indispensable a la gate et explicitement autorisee;
+sinon utiliser une fixture/provider stub sans effet externe.
+
+Cutover: un seul build App Hosting pour les callables, puis une transition de
+l'URI callback en console Meta, rollback console immediat vers l'ancienne URI,
+reactivation Gen2 et une quiet-window unique. Ne jamais laisser deux callbacks
+proprietaires du meme code/state. Fermer avec zero secret projete, zero rejeu,
+zero publication accidentelle et une formule d'inventaire explicite:
+baseline G6 + 9 Gen2 cloud + `m`, ou `m` est le nombre d'Instagram approuvees.
+Budget dur G7-D: un upload Functions, `9 + m` deploys allowlistes, une commande
+de tests, au plus un lint, un build App Hosting, une bascule/rollback console,
+une reactivation et une quiet-window. S'arreter avant G8.
 
 ### G8 - Commerce non financier, lectures et hygiene P1
 
-Ordre: lecteurs, livraison, produit, fulfillment, retours, documents,
-promotions, puis decision legacy non Stripe. Apres le drill G1, executer si
-approuve le backfill `inventoryVersion: 0` avec precondition `lastUpdateTime`,
-et classifier les commandes sans inventer d'historique v2. Segmenter les KPI
-`all/v2/legacy`; le classificateur exige un redesign read-only ou une fenetre
-checkout-off explicite lorsque `v2_all` est actif.
+Perimetre fixe: 35 Gen1 de la section 6.6, soit cinq lecteurs commandes, deux
+livraison, sept produit, sept fulfillment, une annulation, un document prive,
+deux demandes de retour, six commandes de retour et quatre promotions.
+Perimetre conditionnel: les cinq callables legacy de la section 6.5; chacune
+recoit une decision `MIGRATE_GEN2` ou `RETIRE_G12_A`, sans retrait en G8.
 
-Gates: unit/property/faults/UI/rules, stock/prix/mouvements/snapshot inchanges,
-versions/command IDs, listes paginees, cohortes KPI, rollback et aucun incident.
+Preparation mutualisee: une lecture bornee des modules commerce non financier,
+de leurs appelants et des passages P1; une extraction de handlers; une archive
+Functions immutable uploadee une fois. Creer `test:functions-g8`, qui agrege
+une seule fois unit/property/faults/rules et les contrats UI/API directement
+touches. Au plus un lint Functions et aucun navigateur/E2E/paiement.
+
+Ordre cloud: lecteurs, livraison, produit, fulfillment/annulation, document,
+retours, promotions, puis les `l` legacy approuvees. Chaque Function est
+deployee individuellement avec la meme archive et une allowlist d'un nom. Une
+fixture commerce reversible unique couvre versions, command IDs, stock, prix,
+mouvements, snapshot, pagination et cohortes KPI; ne jamais creer de paiement,
+refund ou commande durable supplementaire. `restockReturnLinesAdmin` et
+`writeOffReturnLinesAdmin` peuvent chacun etre prouves une fois sur cette meme
+fixture jetable, avec restauration exacte et sans toucher une commande payee.
+
+Le backfill `inventoryVersion: 0` n'est pas implicite: un dry-run unique donne
+le nombre exact et les preconditions `lastUpdateTime`; une execution unique
+n'est autorisee que par un prompt qui nomme le comptage et le rollback. Le
+classificateur reste read-only lorsque `v2_all` est actif; aucune fenetre
+checkout-off n'est ouverte sans autorisation distincte.
+
+Cutover: basculer tous les callables G8 retenus dans un seul registre client,
+faire un build App Hosting, rollback exact vers le build d'entree G8,
+reactivation et quiet-window unique. Budget dur: un upload Functions,
+`35 + l` deploys allowlistes, une commande de tests, au plus un lint, zero E2E,
+un dry-run P1, au plus une ecriture de backfill autorisee, un build App Hosting,
+un cutover/rollback/reactivation et une quiet-window. Inventaire final exprime
+depuis le manifeste d'entree, jamais avec un total suppose. S'arreter avant G9.
 
 ### G9 - Checkout, Connect, refunds, schedulers et workers
 
-Migrer une seule cible finance ou scheduler a la fois. L'ancien rail webhook
-reste autoritaire jusqu'a G10. Avant coexistence, chaque scheduler obtient son
-propre owner/kill-switch/lease/fence; `expireAdminPaymentLinks` n'en possede pas
-encore. Tester double invocation, timeout, saturation et reprise.
+Perimetre fixe: 24 Gen1, soit cinq Stripe Connect, `requestRefundAdmin`, deux
+checkout, cinq operations, `commerceReservationExpiryDispatcher` et les dix
+liens de paiement admin. Les quatre schedulers sont
+`commerceOperationsReconciler`, `commerceOutboxDispatcher`,
+`commerceReservationExpiryDispatcher` et `expireAdminPaymentLinks`.
 
-`e2e:hosted-stripe` et `e2e:refund-stripe` restent `DO_NOT_RUN`. Utiliser
-uniquement `commerce:e2e:gate7b` fail-closed ou un runner equivalemment borne,
-apres approbation de la gate et avec `runId`/`orderId` explicites.
+Preparation unique: verifier une fois owners/jobs/kill-switches/leases/fences;
+`expireAdminPaymentLinks` doit obtenir ces protections avant toute coexistence.
+Extraire les handlers, produire une archive Functions immutable et l'uploader
+une seule fois pour les 24 deploys individuels. Une commande
+`test:functions-g9` agrege commerce unit/property/faults/rules, scheduler
+double-run/timeout/reprise et contrats Connect/payment-link; au plus un lint.
 
-Gates: commerce local, probe hebergee sans paiement puis Stripe test borne,
-acceptation/refus/3DS/reprise/annulation, refund sans restock, expiration,
-inbox/outbox/faits/projections, alertes et sante coherente. Aucun Stripe live.
+Ordre cloud: lecteurs/statuts, operations manuelles, Connect sans mutation,
+liens de paiement, checkout/reprise, refund, puis schedulers un par un. Chaque
+scheduler prouve ancien owner desactive, nouveau owner actif, double invocation
+bornee et rollback inverse avant de passer au suivant. L'ancien rail webhook
+reste seul autoritaire jusqu'a G10.
+
+Preuves externes: une probe hebergee sans paiement, puis au plus une execution
+`commerce:e2e:gate7b` fail-closed avec `runId` et `orderId` explicites. Cette
+execution mutualise acceptation/refus/3DS/reprise/annulation et un refund test
+sans restock si le runner le permet; aucun second paiement pour completer une
+preuve manquante sans correction de cause. `e2e:hosted-stripe` et
+`e2e:refund-stripe` restent `DO_NOT_RUN`.
+
+Cutover: un registre client et un build App Hosting seulement apres les 24
+revisions; rollback exact vers le build d'entree G9, reactivation, puis une
+quiet-window couvrant callables et quatre jobs. Budget dur: un upload
+Functions, 24 deploys allowlistes, une commande de tests, au plus un lint, une
+probe sans paiement, au plus un run Stripe test gate7b, un build App Hosting,
+un cutover/rollback/reactivation et une quiet-window. S'arreter avant G10.
 
 ### G10 - Webhooks Stripe v2
 
-1. deployer une seule cible Gen2 sans endpoint Stripe;
-2. verifier requete non signee refusee et vrai `rawBody`;
-3. creer endpoint et secret Stripe test distincts plateforme/Connect;
-4. activer uniquement les evenements requis;
-5. prouver la deduplication pendant double acheminement;
-6. exercer paiement/refund test borne;
-7. desactiver l'ancien endpoint, observer, puis conserver son secret pendant
-   toute la fenetre de rollback;
-8. repeter separement pour Connect.
+Perimetre fixe: `stripeWebhookV2` et `stripeConnectWebhookV2`. Perimetre
+conditionnel: `stripeWebhook` et `stripeConnectWebhook`, chacune classee
+`MIGRATE_GEN2` ou `RETIRE_G12_A` d'apres les endpoints Stripe test et le trafic,
+jamais d'apres son nom. Plateforme et Connect restent deux transitions
+sequentielles independantes, mais partagent la preparation.
 
-Gate: aucun double fait/document/e-mail/mouvement/refund, zero inbox bloquee,
-signatures invalides refusees, plateforme/Connect separes et aucune cle live.
+Preparation: une lecture console/API Stripe test des quatre endpoints au plus,
+une commande `test:functions-g10` pour raw body, signatures, inbox et dedup,
+une archive Functions immutable et un upload. Deployer les deux v2, puis les
+`w` legacy conservees, individuellement et sans endpoint fournisseur. Au plus
+un lint; aucun App Hosting build par defaut car les consommateurs sont Stripe.
+
+Pour plateforme, puis Connect: refus non signe, secret test distinct, endpoint
+limite aux evenements requis, un evenement test rejoue pour dedup, activation
+du nouveau, observation, desactivation de l'ancien, rollback reel vers
+l'ancien endpoint, puis reactivation Gen2. Conserver anciennes URL et versions
+de secrets pendant G12. Un paiement/refund Stripe test supplementaire est
+interdit si la preuve G9 couvre deja les evenements requis; sinon un seul run
+borne pour tout G10.
+
+Budget dur: une archive et un upload Functions, `2 + w` deploys allowlistes,
+une commande de tests, au plus un lint, deux transitions fournisseur avec
+chacune un rollback/reactivation, au plus un run Stripe test pour tout le lot,
+zero build App Hosting sauf drift client prouve, puis une quiet-window commune.
+Gate: aucun double fait/document/e-mail/mouvement/refund, zero inbox bloquee et
+separation plateforme/Connect. S'arreter avant G11.
 
 ### G11 - Maintenance destructrice
 
-Chaque Function conservee exige admin fort/AAL2, App Check, confirmation,
-dry-run, `concurrency: 1`, `maxInstances: 1`, batches bornes, audit, sauvegarde,
-rollback et test negatif sandbox. Retirer plutot que migrer sans besoin prouve.
+Perimetre exact: dix cibles, soit `getUploadUrl`, `purgeAllProducts`,
+`purgeAnonymousUsers`, `resetAllOrders`, `resetAllStats`, `resetAllUsers`,
+`runGarbageCollector`, `clearAllAffiliateClicks`, `clearAllSessions` et
+`deleteSession`. G11-R commence par une classification read-only unique
+`MIGRATE_GEN2` ou `RETIRE_G12_A`; absence d'usage et doublon fonctionnel
+favorisent le retrait. Cette classification ne leve pas seule
+`HOLD_G11_DESTRUCTIVE_PRECONDITIONS`.
+
+G11-D exige un prompt levant explicitement le HOLD apres preuve backup,
+preconditions et rollback. Pour les `d` cibles conservees, implementer une fois
+le socle admin fort/AAL2,
+App Check, confirmation structuree, dry-run par defaut, batch/reprise/audit et
+rollback. Epingle `concurrency: 1`, `maxInstances: 1` et un compte runtime au
+moindre privilege par classe. Une commande `test:functions-g11` agrege refus
+Auth/App Check, confirmation invalide, dry-run, bornes de batch et reprise.
+
+Une archive Functions immutable est uploadee une seule fois; les `d` cibles
+sont deployees individuellement avec allowlist stricte. La preuve cloud reste
+negative ou dry-run: aucune purge/reset/GC destructive sur les donnees
+sandbox courantes. Une fixture jetable n'est creee et supprimee que si le
+dry-run ne suffit pas, une seule pour tout le lot et hors collections metier.
+
+Un build App Hosting n'est permis que si `getUploadUrl` est conserve et son
+registre client change; sinon zero build. Budget dur: un controle read-only,
+une commande de tests, au plus un lint, zero ou une archive/upload,
+`d` deploys allowlistes, zero operation destructive reelle, au plus un build
+App Hosting avec rollback/reactivation et une quiet-window. Les cibles retirees
+restent intactes jusqu'a G12-A. S'arreter avant G12.
 
 ### G12 - Retrait Gen1 cible, reversible puis nettoye
 
@@ -2575,29 +2694,84 @@ et versions de secrets devenus inutiles avec destruction differee. Adapter ou
 archiver les alertes sans perdre les preuves forensiques. Chaque cible conserve
 son manifeste Git et son historique de logs/decisions.
 
-Ne jamais supprimer les trois triggers Auth. L'ordre reste: lecture, analytics,
-Auth callables, contenu/admin, commerce non financier, schedulers/workers,
-webhooks/finance, maintenance.
+Ne jamais supprimer les trois triggers Auth. L'ordre reste: diagnostics et
+publication historique deja classes G3, lecture, analytics, Auth callables,
+contenu/admin, commerce non financier, schedulers/workers, webhooks/finance,
+maintenance.
+
+**Budget et cohortes G12-A:** un prompt destructif doit nommer exactement une
+cohorte; aucune autorisation globale implicite. Pour cette cohorte, faire un
+seul controle d'appelants/trafic, une quiet-window partagee, un manifeste de
+rollback et une archive redeployable par digest. Supprimer ensuite chaque nom
+Gen1 individuellement, sans commande Functions globale, et verifier une fois
+l'inventaire/alertes en fermeture. Aucun build App Hosting si les consommateurs
+avaient deja ete bascules dans G4-G11. Au premier ecart, redeployer uniquement
+la cible depuis l'archive preservee.
+
+Les cohortes sont fermees separement: six retraits Gen1 G3; lectures;
+analytics actives G4; Auth callables; G6; G7 Meta si leve; G8; quatre
+schedulers G9; callables finance G9; webhooks G10; maintenance/destructives
+G11. La cohorte G3 requalifie
+dans le meme controle les trois Gen2 devenues sans producteur
+`processProductPublicationImage`, `cleanupProductPublicationSessions` et
+`reconcileProductPublicationSessions`; leur conservation ou leur retrait est
+explicite et toute suppression reste nommee, reversible et distincte des six
+Gen1. Les cibles `RETIRE_G12_A` legacy sont ajoutees a leur cohorte de domaine.
+Budget par cohorte: zero upload si l'archive existante est encore disponible,
+sinon un seul upload de rollback; une lecture trafic, une quiet-window, `n`
+suppressions nommees, un inventaire final et zero build applicatif.
+
+**Budget G12-B:** exige un prompt distinct apres expiration datee de toutes les
+fenetres de rollback concernees. Une seule recherche de references bornee par
+cohorte, un seul patch code/docs, une seule suite contractuelle ciblee et un
+seul commit; IAM puis secrets sont retires nom par nom d'apres un manifeste de
+dependances vide. Aucun nettoyage en masse, aucune destruction immediate de
+version de secret et aucune perte de preuve forensique. Fermer completement
+G12-A puis G12-B avant G13.
 
 ### G13 - Durcissement post-cutover et horizon cinq ans
 
-- regenerer le manifeste et confirmer trois Gen1 justifiees seulement;
-- mesurer charge, cold starts, p95/p99, 429/OOM, Firestore contention et cout;
-- optimiser ensuite CPU/concurrence/min/max sans perdre la parite;
-- creer les comptes runtime par domaine au moindre privilege;
-- decider par ADR si le codebase `main` doit etre scinde par domaine ou
-  dependance lourde; ne pas cumuler ce chantier avec le cutover;
-- paginer/reprendre le reconciler au-dela de 5 000 faits et 500 commandes,
-  refuser toute publication partielle et separer heartbeat du rebuild lourd;
-- planifier le runtime successeur avant depreciation Node 22 le 30 avril 2027
-  et retrait le 31 octobre 2027;
-- verifier Artifact Registry, budgets/quota, SLO, App Hosting et la strategie
-  de production separee;
-- avant tout futur Stripe live, rendre l'attente `livemode` dependante de
-  l'environnement: le controle sandbox considere correctement `livemode=true`
-  comme une derive, mais ce hardcode bloquerait une vraie production;
-- fusionner les decisions dans `_DOCS`/`map.md`, puis retirer ce plan temporaire
-  selon la gouvernance.
+G13 ne commence qu'apres G12 ferme. Il ne redeploie pas toutes les Functions
+pour uniformiser des options sans mesure.
+
+**G13-A, inventaire et observation:** regenerer une fois le manifeste et
+confirmer seulement les trois Gen1 Auth. Exporter une seule fenetre de sept
+jours pour invocations, cold starts, p95/p99, 429/OOM, contention, backlog et
+cout; polling quotidien ou requetes repetees interdits. Verifier en une passe
+Artifact Registry, budgets/quota, SLO, App Hosting, IAM runtime et alertes.
+
+**G13-B, charge et tuning:** une campagne sandbox unique contient scale-to-zero,
+charge representative et burst approuve, sans Stripe live. Etablir d'abord la
+liste des seules familles hors seuil. Si aucun seuil n'est depasse, zero deploy.
+Sinon produire une archive immutable unique pour la cohorte de tuning, modifier
+CPU/concurrence/min/max au plus une fois par famille, deployer uniquement les
+cibles touchees et executer une seule contre-mesure. Aucun build App Hosting
+pour une modification runtime. Le reconciler n'est pagine/repris au-dela de
+5 000 faits et 500 commandes que si la fixture synthetique prouve le besoin;
+une publication partielle reste fail-closed et heartbeat separe du rebuild.
+
+**G13-C, horizon et fusion:** une ADR unique tranche le maintien ou la scission
+future du codebase `main`, sans realiser la scission dans cette migration.
+Documenter le successeur Node 22 avant le 30 avril 2027 et son retrait avant le
+31 octobre 2027. Rendre l'attente `livemode` dependante de l'environnement par
+test local uniquement, sans rail live. Fusionner une fois les decisions dans
+les chapitres canoniques et `map.md`, verifier les references, puis supprimer
+le plan temporaire dans un commit documentaire distinct conforme a la
+gouvernance.
+
+Budget dur G13: un inventaire, un export de metriques sept jours, un audit
+quota/cout, une campagne de charge, zero ou un upload Functions de tuning, une
+seule contre-mesure, zero build App Hosting par defaut, une ADR et une fusion
+documentaire. Aucun test ou mesure vert n'est rejoue.
+
+**Ledger de couverture cloud:** les cohortes representent exactement les 139
+Gen1 de l'inventaire initial, sans double comptage: trois Auth conservees;
+19 deja dupliquees par G4/G5; 24 G6; six retraits G3; neuf G7; 40 G8 au
+maximum (`35 + 5` legacy); 24 G9, dont cinq Connect; quatre G10 au maximum
+(`2 + 2` legacy); dix G11. Les cinq Instagram locales sont hors de ces 139 et
+restent exprimees par `m`. Chaque fermeture recalcule depuis le manifeste
+precedent; ce ledger sert seulement de preuve d'exhaustivite, jamais de source
+d'etat cloud.
 
 Gate finale sandbox: statut `SANDBOX_GEN2_MIGRATED_AND_HARDENED`. Ce statut
 n'autorise ni rail production, ni Stripe live, ni domaine/DNS, Resend, App Check
@@ -2767,3 +2941,60 @@ nettoyage IAM/secrets/code, triggers Auth limites, cibles Meta/G11 sous HOLD,
 ou scripts Stripe DO_NOT_RUN. Au premier drift reel, rollback du build touche
 et diagnostic borne; ne recommence pas toute la migration.
 ```
+
+### 15.1 Chaine de prompts apres G6
+
+Chaque nouveau chat ouvre exactement une entree et s'arrete a sa fermeture:
+
+1. `G6`;
+2. `G7-R`, puis `G7-D` uniquement si le HOLD Meta est formellement leve;
+3. `G8`;
+4. `G9`;
+5. `G10`;
+6. `G11-R`, puis `G11-D` uniquement si
+   `HOLD_G11_DESTRUCTIVE_PRECONDITIONS` est formellement leve;
+7. une entree `G12-A:<cohorte>` par cohorte nommee;
+8. une entree `G12-B:<cohorte>` seulement apres expiration approuvee de sa
+   fenetre de rollback;
+9. `G13`, qui execute A, B et C sans redeploiement si les mesures sont saines.
+
+Le prompt de chaque entree doit fournir le HEAD exact issu du chat precedent,
+le build App Hosting actif, son rollback prouve, l'inventaire du manifeste de
+fermeture et l'autorisation explicite du lot. Il ordonne de lire seulement
+`AGENTS.md`, les sections 2.1, celle du lot et 15, puis les passages directs de
+`map.md` et des chapitres canoniques touches. Aucun prompt ne transmet une
+autorisation de lot au suivant. A la fermeture, chaque chat rend aussi un
+prompt de reprise deja rempli avec son HEAD/build/rollback/inventaire reels;
+ce texte prepare le lot suivant mais ne l'execute pas dans le chat courant. Si
+un HOLD ou une fenetre datee manque, le prompt nomme cette precondition sans la
+considerer approuvee.
+
+Forme minimale a reutiliser, en remplacant tous les champs entre chevrons:
+
+```text
+Reprends la migration Functions Gen2 sur
+codex/functions-gen2-migration au HEAD <HEAD_FERME_PRECEDENT>, projet sandbox
+exclusif secondevienextjsssr. Le worktree attendu est propre. App Hosting sert
+<BUILD_ACTIF> et le rollback <BUILD_ROLLBACK> est prouve. Inventaire d'entree:
+<INVENTAIRE_MANIFESTE>.
+
+Ce prompt ouvre explicitement uniquement <LOT>. Execute sa carte complete dans
+la section <SECTION>, avec son budget dur, ses allowlists, ses gates et ses
+HOLD. Ne relis pas le journal, ne rejoue aucune preuve fermee, ne lance aucun
+sous-agent, scan large, navigateur couvert par le harnais, test generaliste,
+upload/build/poll en double ou retry sans cause corrigee. Secrets octet pour
+octet et fixtures validees avant appel externe. Production, Stripe live,
+deploy global, suppression/nettoyage hors G12 explicitement nomme, trois
+triggers Auth, scripts DO_NOT_RUN et lot suivant restent interdits.
+
+Continue sans pause jusqu'a fermeture documentee de <LOT>, commit local
+coherent et worktree propre. Aucun push/merge. Compte rendu bref: resultat,
+tests, deploys, build actif, rollback, inventaire, Git et dette du lot. Arrete
+avant <LOT_SUIVANT>. Termine par un prompt de reprise pret a copier pour
+<LOT_SUIVANT>, rempli avec l'etat reel obtenu, sans l'executer ni lever ses
+HOLD/preconditions.
+```
+
+Si un lot conditionnel produit moins de cibles que son maximum, son manifeste
+donne les variables `m`, `l`, `w`, `d` et recalcule l'inventaire depuis l'etat
+d'entree. Ne jamais remplacer ce calcul par les totaux historiques G0.
