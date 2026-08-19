@@ -66,15 +66,15 @@ sont conservees dans les manifestes `functions-gen2-*`.
 | --- | --- |
 | branche | `codex/functions-gen2-migration` |
 | baseline avant le checkpoint Monitoring | `25daf810309dc3329cfeb0fb19be0f1790fe608a` |
-| worktree attendu a la reprise | propre apres le commit local de fermeture G7; verifier le statut sans rejouer |
-| phases fermees | G0, G1, G2-A, G2-B 13/13, G3, G4, G5, G6, G7-R et G7-D |
-| phase active | aucune; G8 n'est pas ouvert par cette fermeture |
-| inventaire courant | 214 exports locaux, 209 cloud, 139 Gen1, 70 Gen2 |
-| cibles paralleles actives | les 14 Gen2 G7 sont ACTIVE sous Node 22; `m = 5`; toutes les Gen1 restent intactes |
-| cutover client | App Hosting sert `build-2026-08-19-004`; rollback exact `build-2026-08-19-003`, puis reactivation `004`, prouves |
+| worktree attendu a la reprise | propre apres le commit local de fermeture G8; verifier le statut sans rejouer |
+| phases fermees | G0, G1, G2-A, G2-B 13/13, G3, G4, G5, G6, G7-R, G7-D et G8 |
+| phase active | aucune; G9 n'est pas ouvert par cette fermeture |
+| inventaire courant | 251 exports locaux, 246 cloud, 139 Gen1, 107 Gen2 |
+| cibles paralleles actives | les 37 Gen2 G8 sont ACTIVE sous Node 22; `l = 2`; toutes les Gen1 restent intactes |
+| cutover client | App Hosting sert `build-2026-08-19-005`; rollback exact `build-2026-08-19-004`, puis reactivation `005`, prouves |
 | observation G4 | G4-A1 a G4-A5 fermees en validation acceleree; Gen1 et rollbacks preserves |
 | retrait Gen1 | aucun avant G12-A |
-| prochain lot | aucun ouvert; G8 exige une autorisation explicite distincte |
+| prochain lot | aucun ouvert; G9 exige une autorisation explicite distincte |
 
 Le correctif Monitoring du 2026-08-17 est applique et idempotent: cinq
 metriques, huit policies severisees et deux canaux conformes; la boucle
@@ -2624,6 +2624,24 @@ un dry-run P1, au plus une ecriture de backfill autorisee, un build App Hosting,
 un cutover/rollback/reactivation et une quiet-window. Inventaire final exprime
 depuis le manifeste d'entree, jamais avec un total suppose. S'arreter avant G9.
 
+G8 est ferme le 2026-08-19 par
+`apphostingaudit/manifests/functions-gen2-g8.json`, avec `l = 2`:
+`createOrder` et `getOrderStatusClient` sont migres en parallele;
+`cancelOrderClient`, `refundOrderAdmin` et `syncRefundStatusAdmin` restent
+Gen1 et sont classes `RETIRE_G12_A`, sans retrait. Les 37 nouvelles cibles
+sont `ACTIVE` sous Node 22 apres un upload immutable et 37 deploiements
+individuels allowlistes. Le dry-run P1 a scanne 37 meubles et classe 10
+candidats prets, sans ecriture faute d'autorisation nommant ce comptage et son
+rollback. La fixture unique a prouve lecteurs, versions, commandes,
+fulfillment, retour, restock, write-off et restauration exacte, sans paiement
+ni refund. App Hosting sert `build-2026-08-19-005`
+(`sv-mt0kzj5j-8614a4a11531`) apres rollback reel vers
+`build-2026-08-19-004` (`sv-mt0f1byn-676d1141d43e`) et reactivation. La
+quiet-window `2026-08-19T21:19:20Z`--`21:24:31Z` compte zero erreur Gen2 et
+zero entree Gen1 correspondante. Inventaire final: 251 exports locaux, 246
+cloud, 139 Gen1 et 107 Gen2. Toutes les Gen1, donnees, IAM, secrets, endpoints
+et possibilites de rollback restent intacts. G9 n'est pas ouvert.
+
 ### G9 - Checkout, Connect, refunds, schedulers et workers
 
 Perimetre fixe: 24 Gen1, soit cinq Stripe Connect, `requestRefundAdmin`, deux
@@ -2940,31 +2958,30 @@ La migration est terminee uniquement si:
 
 ## 15. Reprise optimisee
 
-G7 est ferme. Le prochain agent ne relit pas le journal historique et ne
-rejoue aucune preuve fermee sans drift concret. G8 reste ferme jusqu'a une
+G8 est ferme. Le prochain agent ne relit pas le journal historique et ne
+rejoue aucune preuve fermee sans drift concret. G9 reste ferme jusqu'a une
 autorisation explicite distincte.
 
 ```text
 Branche: codex/functions-gen2-migration.
-Baseline avant le commit documentaire de fermeture G7:
-`de827bc67d440bb3af16972a28be64c736833197`.
+Baseline avant le commit documentaire final de fermeture G8:
+`447533519ef30ddf905c77bf62b0dfb978b47cb1`.
 Projet cloud obligatoire: secondevienextjsssr.
-Etat: G0-G7 fermes; inventaire
-`214 local / 209 cloud / 139 Gen1 / 70 Gen2`.
-Les 14 Gen2 G7 sont ACTIVE, `m = 5`, les callbacks console finaux ciblent Gen2
-apres rollback Gen1 prouve et toutes les Gen1 restent intactes. App Hosting
-sert `build-2026-08-19-004` apres rollback reel vers
-`build-2026-08-19-003` et reactivation.
+Etat: G0-G8 fermes; inventaire
+`251 local / 246 cloud / 139 Gen1 / 107 Gen2`.
+Les 37 Gen2 G8 sont ACTIVE, `l = 2`, et toutes les Gen1 restent intactes. App
+Hosting sert `build-2026-08-19-005` apres rollback reel vers
+`build-2026-08-19-004` et reactivation.
 
-Action immediate: n'ouvre G8 que sur autorisation explicite distincte. Ne
-redeploie aucune cible fermee et ne rejoue aucune preuve G7 sans drift concret.
+Action immediate: n'ouvre G9 que sur autorisation explicite distincte. Ne
+redeploie aucune cible fermee et ne rejoue aucune preuve G8 sans drift concret.
 
 Garde-fous quota: applique strictement la liste de la section 2.1. Recherches
 bornees avec exclusions, sorties de commandes plafonnees, aucun navigateur si
 le harnais suffit, fixtures validees avant appel externe et secrets utilises
 sans transformation, aucun doublon d upload/build/poll, aucun sous-agent ou
 scan large. Un retry n est autorise qu apres identification et correction de sa
-cause. Sans prompt ouvrant explicitement G8, arrete-toi sans l'anticiper.
+cause. Sans prompt ouvrant explicitement G9, arrete-toi sans l'anticiper.
 
 Autonomie: les operations sandbox non destructives, Custom Tokens et jetons
 App Check ephemeres sont autorises sans confirmation. Ils restent en memoire,

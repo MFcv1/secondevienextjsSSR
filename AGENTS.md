@@ -150,15 +150,14 @@ Git conserve l'audit et la roadmap retires.
 Plan temporaire de reprise explicitement demande:
 
 - [AUDIT_MIGRATION_FUNCTIONS_GEN2.md](apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md):
-  plan ferme G0 a G13. G0-G7 sont fermes; G8 n'est pas ouvert par ce
-  checkpoint. App Hosting sert `build-2026-08-19-004` apres rollback reel vers
-  `build-2026-08-19-003` et reactivation. Le lot G7 compte 14 Gen2 ACTIVE sous
-  Node 22, `m = 5`, avec callbacks Meta et Instagram reactives sur Gen2 apres
-  rollback console prouve; toutes les Gen1 restent intactes. Dernier inventaire
-  prouve: 214 exports locaux, 209 cloud, 139 Gen1 et 70 Gen2. Reprendre
+  plan ferme G0 a G13. G0-G8 sont fermes; G9 n'est pas ouvert par ce
+  checkpoint. App Hosting sert `build-2026-08-19-005` apres rollback reel vers
+  `build-2026-08-19-004` et reactivation. Le lot G8 compte 37 Gen2 ACTIVE sous
+  Node 22, `l = 2`; toutes les Gen1 restent intactes. Dernier inventaire
+  prouve: 251 exports locaux, 246 cloud, 139 Gen1 et 107 Gen2. Reprendre
   directement au checkpoint court des sections
   2.1 et 15 du plan, sans rejouer les preuves fermees ni un preflight global.
-  La reprise suivante n'est pas ouverte par ce checkpoint. Les prochains lots restent coherents: deploiements Functions allowlistes
+  La reprise G9 n'est pas ouverte par ce checkpoint. Les prochains lots restent coherents: deploiements Functions allowlistes
   individuellement, puis un build, un cutover, un rollback et une observation
   groupes par lot. G7 est ferme par
   `apphostingaudit/manifests/functions-gen2-g7.json`; le hold Meta a ete leve

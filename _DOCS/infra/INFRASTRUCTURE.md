@@ -123,21 +123,21 @@ App Hosting (`apphosting.yaml`):
 | --- | --- | --- |
 | `main` | `functions/` | Auth, admin, commerce, email, analytics, maintenance et catalogue materialise |
 
-La fermeture G7 du 2026-08-19 recense 209 Functions cloud: 139 Gen1 et
-70 Gen2. Les cinq exports Instagram directs sont maintenant dupliques en
-Gen2 avec les neuf Meta/Facebook/saga; les 14 nouvelles cibles sont `ACTIVE`
-en `europe-west1`, Node 22. Le
+La fermeture G8 du 2026-08-19 recense 246 Functions cloud: 139 Gen1 et
+107 Gen2. Les 37 exports commerce non financiers G8 sont dupliques en Gen2
+et `ACTIVE` en `europe-west1`, Node 22. Le
 manifeste G0 conserve la baseline regionale initiale, dont les six cibles US
 `grantAdminOnAuth`, `e2eCheckoutProof`, `e2eStripeHardeningProof`,
 `stripeWebhook`, `stripeConnectWebhook` et le trigger Gen2
 `processProductPublicationImage`, qui reste proche du bucket produit
-`secondevienextjsssr.firebasestorage.app`. Les 214 exports locaux et les
-209 cibles cloud donnent `m = 5`; toutes les Gen1 restent intactes. Le detail
-machine final est dans `apphostingaudit/manifests/functions-gen2-g7.json`.
+`secondevienextjsssr.firebasestorage.app`. Les 251 exports locaux et les
+246 cibles cloud donnent `l = 2` pour les legacy G8 conservees; toutes les
+Gen1 restent intactes. Le detail machine final est dans
+`apphostingaudit/manifests/functions-gen2-g8.json`.
 
-Etat courant du chantier Gen2 au 2026-08-19: G0-G7 sont fermes; App Hosting
-sert `build-2026-08-19-004` apres rollback reel vers `003` et reactivation.
-G8 reste ferme sans autorisation distincte. Les paragraphes suivants conservent les
+Etat courant du chantier Gen2 au 2026-08-19: G0-G8 sont fermes; App Hosting
+sert `build-2026-08-19-005` apres rollback reel vers `004` et reactivation.
+G9 reste ferme sans autorisation distincte. Les paragraphes suivants conservent les
 details durables des lots G4 et G5.
 G5-A1 ajoute
 `getUserStatsGen2`, ACTIVE en revision `getuserstatsgen2-00001-niv`, avec

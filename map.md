@@ -875,13 +875,13 @@ functions/
 
 ## 9. Exports Cloud Functions
 
-Etat apres fermeture G7 du 2026-08-19: `functions/index.js` contient 214
-exports uniques; 209 sont `ACTIVE` dans le sandbox (139 Gen1, 70 Gen2). Les
-neuf Meta/Facebook/saga et les cinq Instagram directes ont leurs paralleles
-Gen2 `ACTIVE` en `europe-west1`, Node 22, soit `m = 5`; toutes les Gen1 sont
-preservees. Les callbacks Meta et Instagram ciblent finalement Gen2 apres
-rollback Gen1 prouve. Le manifeste final est
-`apphostingaudit/manifests/functions-gen2-g7.json`.
+Etat apres fermeture G8 du 2026-08-19: `functions/index.js` contient 251
+exports uniques; 246 sont `ACTIVE` dans le sandbox (139 Gen1, 107 Gen2). Les
+37 paralleles commerce non financiers G8 sont `ACTIVE` en `europe-west1`,
+Node 22, avec `l = 2`; toutes les Gen1 sont preservees. Le registre client
+bascule les 35 cibles fixes ainsi que `createOrder` et
+`getOrderStatusClient` vers Gen2. Le manifeste final est
+`apphostingaudit/manifests/functions-gen2-g8.json`.
 Les decisions par nom, appelants, acces donnees, IAM, secrets et rollback sont dans
 `apphostingaudit/manifests/functions-g0.json`; la reconciliation des 13 Gen2,
 Schedulers, queues et Eventarc est dans
@@ -1150,10 +1150,10 @@ Le checkpoint executable et le prompt de reprise courant sont les sections
 2.1 et 15 de `apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md`; l'ancien
 prompt G0 est obsolete et ne doit plus etre utilise.
 
-Inventaire apres G7: 214 exports locaux, 209 cloud, 139 Gen1 et 70 Gen2. Les
-14 cibles Meta/Instagram G7 sont ACTIVE et toutes les Gen1 restent intactes.
-App Hosting sert `build-2026-08-19-004` apres rollback reel vers `003` et
-reactivation. G8 reste non ouvert.
+Inventaire apres G8: 251 exports locaux, 246 cloud, 139 Gen1 et 107 Gen2. Les
+37 cibles commerce non financieres G8 sont ACTIVE et toutes les Gen1 restent
+intactes. App Hosting sert `build-2026-08-19-005` apres rollback reel vers
+`004` et reactivation. G9 reste non ouvert.
 
 | Domaine | Exports |
 | --- | --- |
