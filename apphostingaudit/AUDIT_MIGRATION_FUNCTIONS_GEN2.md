@@ -74,7 +74,7 @@ sont conservees dans les manifestes `functions-gen2-*`.
 | cutover client | App Hosting sert `build-2026-08-19-002`; rollback exact `build-2026-08-19-001`, prouve par drill reel |
 | observation G4 | G4-A1 a G4-A5 fermees en validation acceleree; Gen1 et rollbacks preserves |
 | retrait Gen1 | aucun avant G12-A |
-| prochain lot | non ouvert; ne pas anticiper G6 depuis ce checkpoint |
+| prochain lot | G6 prepare avec budget quota ferme ci-dessous, mais non ouvert; un prompt explicite reste obligatoire |
 
 Le correctif Monitoring du 2026-08-17 est applique et idempotent: cinq
 metriques, huit policies severisees et deux canaux conformes; la boucle
@@ -2383,12 +2383,113 @@ Rollback exact `build-2026-08-18-003`; prochaine cible unique:
 
 ### G6 - Contenu, catalogue admin, devis, newsletter, e-mail et factures
 
-Lecteurs avant writers. Le claim/outbox de `onQuoteRequestSubmitted` doit etre
-actif dans la Gen1 avant double trigger.
+Perimetre borne: 24 exports repartis dans exactement six modules, soit 23
+callables et le trigger Firestore `onQuoteRequestSubmitted`. G6 ne reprend
+aucune cible G3, G5, G7, Meta, commerce ou maintenance destructrice:
 
-Gates: suites de domaine, catalogue/queue/CAS, devis/newsletter/e-mail/PDF,
-upload prive, aucune publication ou double envoi, rollback exact et
-observation fournisseur.
+- catalogue: `getCatalogPublicationStatus`, `rebuildCatalogSnapshot`,
+  `rollbackCatalogSnapshot`;
+- e-mail manuel: `sendRefundStatusEmailAdmin`, `sendTestEmail`;
+- onboarding facturation: `completeBillingGuideAdmin`,
+  `getBillingGuideOperatorStatus`, `getBillingGuideStatus`,
+  `resetBillingGuideTest`, `saveBillingGuideProgress`;
+- factures manuelles: `getManualInvoiceWorkspaceAdmin`,
+  `prepareManualInvoicePdfAdmin`, `saveManualInvoiceDraftAdmin`,
+  `sendManualInvoiceAdmin`;
+- devis: `createQuoteRequest`, `finalizeQuoteRequest`,
+  `getQuoteRequestAdmin`, `listQuoteRequestsAdmin`,
+  `updateQuoteRequestAdmin`, `uploadQuoteRequestPhoto`, puis le trigger
+  `onQuoteRequestSubmitted` en dernier;
+- newsletter: `claimNewsletterReward`, `drawNewsletterReward`,
+  `listMyNewsletterRewards`.
+
+**Preparation mutualisee obligatoire:**
+
+1. faire un seul controle frais de HEAD/worktree, build App Hosting actif
+   `build-2026-08-19-002`, etat des 24 Gen1 et absence des 24 noms paralleles;
+   ne pas refaire l'inventaire global G0-G5;
+2. ne lire que les six modules ci-dessus, leurs appelants directs dans le
+   registre client, `map.md` et les passages canoniques catalogue, e-mail,
+   onboarding, factures, devis et newsletter directement utiles;
+3. extraire une seule fois les handlers partages Gen1/Gen2, les exports,
+   cibles de deploiement, registre client, manifestes et contrats G6; ne pas
+   refactorer le comportement metier pendant la migration;
+4. creer ou reutiliser les identites runtime par classe de privilege exacte;
+   maximum six familles, aucune fusion si elle ajoute Auth admin, Storage,
+   secret e-mail ou droit catalogue a un handler qui n'en a pas besoin;
+5. produire une archive Functions immutable unique, validee localement et
+   identifiee par SHA-256, URI Storage et generation. L'uploader une seule fois;
+   les 24 deploiements individuels referencent exactement cette archive. Tout
+   retour a `--source=functions` par cible ou second upload identique est bloque.
+
+**Budget local ferme:**
+
+- creer une suite `test:functions-g6` qui agrege uniquement
+  `tests/functions-gen2-g6.test.mjs`, le contrat onboarding facturation, les
+  tests factures manuelles, devis, newsletter, la resilience catalogue et le
+  consommateur e-mail refund directement touche;
+- executer `test:functions-g6` une seule fois apres la preparation complete;
+- executer `lint:functions` une seule fois seulement si les six modules ou
+  leurs exports ont change;
+- executer un seul build local App Hosting, apres toutes les preuves cloud et
+  le registre client final;
+- ne lancer ni `test:catalog:security`, emulateurs, `test:auth`, suite commerce,
+  test generaliste, navigateur, Playwright ou E2E sans drift precis du code
+  qu'ils couvrent. Un test vert n'est rejoue qu'apres modification pertinente.
+
+**Ordre cloud obligatoire:**
+
+1. lecteurs sans effet externe: `getCatalogPublicationStatus`,
+   `getBillingGuideOperatorStatus`, `getBillingGuideStatus`,
+   `getManualInvoiceWorkspaceAdmin`, `getQuoteRequestAdmin`,
+   `listQuoteRequestsAdmin`, `listMyNewsletterRewards`;
+2. mutations internes: onboarding, brouillon/PDF facture, callables devis et
+   `drawNewsletterReward`; les deux mutations catalogue restent une gate CAS
+   reversible distincte dans ce meme lot;
+3. mutations a effet fournisseur: `sendTestEmail`,
+   `sendRefundStatusEmailAdmin`, `sendManualInvoiceAdmin`,
+   `claimNewsletterReward`;
+4. `onQuoteRequestSubmittedGen2` en dernier, uniquement apres preuve que le
+   claim/outbox Gen1 est actif et empeche un double envoi pendant la coexistence.
+
+Chaque Function est deployee individuellement avec une allowlist d'une cible,
+mais avec la meme archive immutable. Le wrapper prouve l'absence avant create,
+la revision ACTIVE apres create et reutilise une seule session de poll. Un
+echec laisse les 23 callables clients sur Gen1; diagnostiquer uniquement la
+cible fautive, sans rejouer les deploiements ou preuves deja verts.
+
+**Preuves sandbox bornees:**
+
+- mutualiser les refus Auth/App Check par classe de runtime, pas par Function;
+- une seule fixture reversible par domaine: un drill CAS catalogue restaure,
+  un onboarding, une facture brouillon/PDF/envoi, un devis
+  create/upload/finalize/update avec un seul outbox, et un parcours newsletter
+  draw/list/claim;
+- au plus un e-mail reel par handler a effet fournisseur, donc cinq au maximum
+  pour tout G6, seulement si le harnais local ne couvre pas la gate; verifier le
+  destinataire avant appel et ne jamais lire OTP ou boite mail par exploration;
+- secrets et fixtures valides avant le premier appel, octets exacts sans trim
+  ni normalisation; aucun ID token, Custom Token, App Check token, secret,
+  adresse ou PDF sensible affiche, persiste ou ajoute aux manifestes;
+- aucune publication catalogue durable, aucun second rebuild/rollback, aucun
+  double envoi et aucune suppression de donnee hors restauration de la fixture.
+
+**Cutover mutualise une seule fois:** apres les 24 revisions et leurs preuves,
+basculer ensemble les 23 callables dans le registre client, lancer un seul
+build App Hosting, verifier routes/bundle/deploymentId, effectuer un rollback
+reel exact vers `build-2026-08-19-002`, reactiver le nouveau build, puis ouvrir
+une seule quiet-window de cinq minutes. Controle final unique: zero erreur
+Gen2, zero nouvel appel des 23 noms Gen1, zero double outbox/e-mail, trigger
+Gen1 preserve, inventaire attendu `200 local / 195 cloud / 139 Gen1 / 56 Gen2`
+si les 24 cibles sont toutes fermees. Les controles cloud frais sont limites au
+debut, au handoff du trigger, aux transitions App Hosting et a la fermeture.
+
+Budget dur du lot: un upload source Functions, 24 deploiements allowlistes,
+une commande de tests G6, au plus un lint Functions, un build local, un upload
+et build App Hosting, un cutover, un rollback, une reactivation, une
+quiet-window et un inventaire final. Aucun retry avant cause identifiee,
+corrigee et absence de commande/build actif confirmee. Fermer G6, documenter,
+committer localement, puis s'arreter sans ouvrir G7.
 
 ### G7 - Meta et reconciliation Instagram
 
@@ -2643,16 +2744,18 @@ Les deploys Functions A12-A14, les tests locaux, le build App Hosting, le
 cutover, le rollback et la quiet-window ont ete mutualises et fermes. Ne les
 rejoue pas sans drift concret.
 
-Budget d execution: aucune action G6 n est autorisee par ce checkpoint. Lors
-d une reprise explicitement ouverte, relis seulement son flux, lance les suites
-ciblees une fois et reutilise uploads et sessions de poll.
+Budget d execution: aucune action G6 n est autorisee par ce checkpoint seul.
+Lorsqu'un prompt ouvre explicitement G6, appliquer le budget dur et l'ordre de
+la section G6: une archive Functions, une commande de tests, un build App
+Hosting et une seule sequence cutover/rollback/reactivation/quiet-window.
 
 Garde-fous quota: applique strictement la liste de la section 2.1. Recherches
 bornees avec exclusions, sorties de commandes plafonnees, aucun navigateur si
 le harnais suffit, fixtures validees avant appel externe et secrets utilises
 sans transformation, aucun doublon d upload/build/poll, aucun sous-agent ou
 scan large. Un retry n est autorise qu apres identification et correction de sa
-cause. A12-A14 sont fermes: arrete-toi sans anticiper G6.
+cause. A12-A14 sont fermes: sans prompt ouvrant explicitement G6, arrete-toi
+sans l'anticiper.
 
 Autonomie: les operations sandbox non destructives, Custom Tokens et jetons
 App Check ephemeres sont autorises sans confirmation. Ils restent en memoire,
