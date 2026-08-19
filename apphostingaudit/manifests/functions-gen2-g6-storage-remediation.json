@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "environment": "sandbox",
+    "codebase": "main",
+    "baselineCommit": "f5886ba3f36610a2e990b342bec6ff97c9d3d228",
+    "gate": "G6_STORAGE_REMEDIATION"
+  },
+  "gates": {
+    "deploymentAllowed": false,
+    "remediationDeploymentAllowed": true
+  },
+  "deploymentPolicy": {
+    "forbiddenTargets": []
+  },
+  "functions": [
+    { "name": "sendManualInvoiceAdminGen2", "cloud": { "present": true }, "decision": { "classification": "MIGRATION_PARALLEL", "deploymentMaxBatchSize": 1 } },
+    { "name": "getQuoteRequestAdminGen2", "cloud": { "present": true }, "decision": { "classification": "MIGRATION_PARALLEL", "deploymentMaxBatchSize": 1 } },
+    { "name": "uploadQuoteRequestPhotoGen2", "cloud": { "present": true }, "decision": { "classification": "MIGRATION_PARALLEL", "deploymentMaxBatchSize": 1 } }
+  ]
+}
