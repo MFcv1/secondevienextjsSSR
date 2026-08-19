@@ -12,7 +12,7 @@ const SERVICE_ACCOUNT_JSON = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
 const PHASE = process.argv.find((value) => value.startsWith('--phase='))?.split('=')[1];
 const fail = (code) => { throw new Error(code); };
 
-if (!['callables', 'callables-resume', 'callables-after-invoice-failure', 'trigger'].includes(PHASE)) fail('G6_PROOF_PHASE_INVALID');
+if (!['callables', 'callables-resume', 'callables-after-invoice-failure', 'trigger', 'trigger-noop'].includes(PHASE)) fail('G6_PROOF_PHASE_INVALID');
 if ((process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID) !== PROJECT) fail('G6_PROOF_PROJECT_MISMATCH');
 if (!APP_ID || !API_KEY || !SERVICE_ACCOUNT_JSON) fail('G6_PROOF_FIXTURE_MISSING');
 const serviceAccount = JSON.parse(SERVICE_ACCOUNT_JSON);
@@ -318,6 +318,30 @@ async function proveQuoteTrigger() {
   }
 }
 
+async function proveQuoteTriggerNoop() {
+  const quoteId = `quote_g6_noop_${crypto.randomUUID().replaceAll('-', '')}`;
+  const ref = db.doc(`quote_requests/${quoteId}`);
+  const marker = `g6-noop-${crypto.randomUUID()}`;
+  try {
+    await ref.create({
+      schemaVersion: 1,
+      intakeStatus: 'submitted',
+      status: 'new',
+      confirmationEmail: { status: 'sent', eventId: marker, provider: 'g6-noop', providerMessageId: marker },
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+    await ref.update({ updatedAt: admin.firestore.FieldValue.serverTimestamp(), g6NoopProbe: true });
+    await sleep(35_000);
+    const current = (await ref.get()).data()?.confirmationEmail;
+    if (current?.status !== 'sent' || current?.eventId !== marker || current?.providerMessageId !== marker) {
+      fail('G6_PROOF_QUOTE_NOOP_CLAIM_CHANGED');
+    }
+  } finally {
+    await ref.delete();
+  }
+}
+
 if (PHASE === 'callables') {
   await proveRuntimeRefusals();
   const catalog = await proveCatalog();
@@ -338,7 +362,10 @@ if (PHASE === 'callables') {
   await proveManualEmail();
   await proveNewsletter();
   process.stdout.write(`${JSON.stringify({ project: PROJECT, phase: PHASE, priorProofsReused: true, fixturesRestored: true, realEmailCount: 4, tokensPersisted: false }, null, 2)}\n`);
-} else {
+} else if (PHASE === 'trigger') {
   await proveQuoteTrigger();
   process.stdout.write(`${JSON.stringify({ project: PROJECT, phase: PHASE, quoteFixtureRestored: true, coexistenceEmailCount: 1, tokensPersisted: false }, null, 2)}\n`);
+} else {
+  await proveQuoteTriggerNoop();
+  process.stdout.write(`${JSON.stringify({ project: PROJECT, phase: PHASE, quoteFixtureRestored: true, coexistenceNoop: true, additionalEmailCount: 0, tokensPersisted: false }, null, 2)}\n`);
 }
