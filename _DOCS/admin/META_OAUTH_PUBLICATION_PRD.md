@@ -1,7 +1,7 @@
 # PRD temporaire - Connexion Meta et publication sans friction
 
 Derniere mise a jour: 2026-08-19
-Statut: `G7_R_CLOSED - PREUVES_M4_M5_HISTORIQUES - HOLD_META_RECONCILIATION`
+Statut: `G7_CLOSED - PREUVES_M4_M5_HISTORIQUES - SANDBOX_GEN2_ACTIVE`
 Proprietaire fonctionnel: Seconde Vie
 Reference prouvee: `jardindechawi`
 Echeance de revue: 2026-10-31
@@ -35,6 +35,17 @@ inspection interactive de la console Meta. Le hold reste actif et G7-D n'est
 pas autorisee. Avant toute ouverture G7-D, l'extracteur d'inventaire local
 obsolete releve dans `functions-gen2-g7r.json` doit aussi etre corrige et
 requalifie.
+
+Addendum G7-D du 2026-08-19: le hold a ete leve explicitement pour ce lot. Les
+neuf Meta/Facebook/saga et les cinq Instagram directes ont ete migrees en 14
+Gen2 `ACTIVE`, Node 22, avec `m = 5`; toutes les Gen1 sont preservees. Les
+callbacks Meta et Instagram ont chacun prouve la bascule Gen2, le rollback
+Gen1 et la reactivation Gen2 dans l'application Meta parente. Aucune connexion
+OAuth interactive ni publication n'a ete executee. App Hosting sert
+`build-2026-08-19-004` apres rollback reel vers `003`; la quiet-window finale
+est sans erreur Gen2 ni entree Gen1. Inventaire final: 214 exports locaux,
+209 cloud, 139 Gen1 et 70 Gen2. Cette fermeture n'autorise ni publication
+Meta, ni production, ni lot G8.
 
 Decision ajoutee le 2026-08-04: Instagram Login devient le parcours principal.
 Il autorise directement un compte Instagram professionnel sans Page Facebook.

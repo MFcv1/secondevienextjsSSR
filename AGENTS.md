@@ -150,22 +150,20 @@ Git conserve l'audit et la roadmap retires.
 Plan temporaire de reprise explicitement demande:
 
 - [AUDIT_MIGRATION_FUNCTIONS_GEN2.md](apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md):
-  plan ferme G0 a G13. G0-G6 et la reconciliation read-only G7-R sont fermes;
-  G7-D reste interdite sous `HOLD_META_RECONCILIATION`. App Hosting sert
-  `build-2026-08-19-003`. Le lot G6 compte 24 Gen2 ACTIVE, 23 callables
-  basculees et le trigger Gen1 preserve, avec rollback reel vers `002`; toutes
-  les Gen1 restent intactes. Dernier inventaire prouve: 200 exports locaux,
-  195 cloud, 139 Gen1 et 56 Gen2. Reprendre
+  plan ferme G0 a G13. G0-G7 sont fermes; G8 n'est pas ouvert par ce
+  checkpoint. App Hosting sert `build-2026-08-19-004` apres rollback reel vers
+  `build-2026-08-19-003` et reactivation. Le lot G7 compte 14 Gen2 ACTIVE sous
+  Node 22, `m = 5`, avec callbacks Meta et Instagram reactives sur Gen2 apres
+  rollback console prouve; toutes les Gen1 restent intactes. Dernier inventaire
+  prouve: 214 exports locaux, 209 cloud, 139 Gen1 et 70 Gen2. Reprendre
   directement au checkpoint court des sections
   2.1 et 15 du plan, sans rejouer les preuves fermees ni un preflight global.
   La reprise suivante n'est pas ouverte par ce checkpoint. Les prochains lots restent coherents: deploiements Functions allowlistes
   individuellement, puis un build, un cutover, un rollback et une observation
-  groupes par lot. G7-R classe les neuf Gen1 Meta `MIGRATE_GEN2` et les cinq
-  exports Instagram directs `MIGRATE_GEN2`, soit `m = 5`, sans deploy ni levee
-  du hold; son manifeste est
-  `apphostingaudit/manifests/functions-gen2-g7r.json`. Il releve aussi un
-  extracteur d'inventaire local obsolete, a corriger et requalifier avant toute
-  ouverture G7-D. Les tests sont lances une fois par lot et seulement pour les
+  groupes par lot. G7 est ferme par
+  `apphostingaudit/manifests/functions-gen2-g7.json`; le hold Meta a ete leve
+  explicitement pour ce lot seulement, l'extracteur a ete corrige et la
+  quiet-window finale est saine. Les tests sont lances une fois par lot et seulement pour les
   flux touches. Les sections G7 a G13 portent chacune une carte
   d'execution et un budget quota fermes; la chaine de prompts de la section 15
   ouvre un seul lot a la fois et les variables Meta/legacy/maintenance sont

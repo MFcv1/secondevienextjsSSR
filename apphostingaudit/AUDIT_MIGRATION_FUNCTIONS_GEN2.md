@@ -66,15 +66,15 @@ sont conservees dans les manifestes `functions-gen2-*`.
 | --- | --- |
 | branche | `codex/functions-gen2-migration` |
 | baseline avant le checkpoint Monitoring | `25daf810309dc3329cfeb0fb19be0f1790fe608a` |
-| worktree attendu a la reprise | fermeture A12-A14 portee par les commits locaux `4681f5a`, `6a6a925` et le commit de fermeture courant; verifier le statut sans rejouer |
-| phases fermees | G0, G1, G2-A, G2-B 13/13, G3, G4, G5, G6 et G7-R read-only |
-| phase active | aucune; G7-D reste interdite sous `HOLD_META_RECONCILIATION` |
-| inventaire courant | 200 exports locaux, 195 cloud, 139 Gen1, 56 Gen2 |
-| cibles paralleles actives | les 24 Gen2 G6 sont ACTIVE; les 23 callables clientes ciblent Gen2 et toutes les Gen1 restent intactes |
-| cutover client | App Hosting sert `build-2026-08-19-003`; rollback exact `build-2026-08-19-002`, prouve par drill reel |
+| worktree attendu a la reprise | propre apres le commit local de fermeture G7; verifier le statut sans rejouer |
+| phases fermees | G0, G1, G2-A, G2-B 13/13, G3, G4, G5, G6, G7-R et G7-D |
+| phase active | aucune; G8 n'est pas ouvert par cette fermeture |
+| inventaire courant | 214 exports locaux, 209 cloud, 139 Gen1, 70 Gen2 |
+| cibles paralleles actives | les 14 Gen2 G7 sont ACTIVE sous Node 22; `m = 5`; toutes les Gen1 restent intactes |
+| cutover client | App Hosting sert `build-2026-08-19-004`; rollback exact `build-2026-08-19-003`, puis reactivation `004`, prouves |
 | observation G4 | G4-A1 a G4-A5 fermees en validation acceleree; Gen1 et rollbacks preserves |
 | retrait Gen1 | aucun avant G12-A |
-| prochain lot | aucun ouvert; G7-D reste sous HOLD Meta et ne doit pas etre anticipe |
+| prochain lot | aucun ouvert; G8 exige une autorisation explicite distincte |
 
 Le correctif Monitoring du 2026-08-17 est applique et idempotent: cinq
 metriques, huit policies severisees et deux canaux conformes; la boucle
@@ -103,10 +103,10 @@ Ordre de reprise optimise et obligatoire:
 2. G5-A6 a G6 sont fermes. Ne pas redeployer leurs Functions, reconstruire
    leurs builds, renvoyer d'OTP ou rejouer les ceremonies passkey sans drift
    concret;
-3. G7-R est fermee par le manifeste `functions-gen2-g7r.json`: neuf Gen1 Meta
-   et cinq Instagram directs sont classes `MIGRATE_GEN2`, soit `m = 5`, sans
-   mutation. Ne pas ouvrir G7-D sans levee formelle du hold et correction de
-   l'extracteur d'inventaire local obsolete releve par R;
+3. G7 est ferme par `functions-gen2-g7.json`: les neuf Meta et cinq Instagram
+   approuvees donnent `m = 5`; 14 Gen2 sont ACTIVE, les callbacks console sont
+   reactives sur Gen2 apres rollback reel et toutes les Gen1 sont preservees.
+   Ne pas ouvrir G8 sans autorisation distincte;
 4. au premier ecart reel, restaurer le build precedent sans retirer Function,
    endpoint, IAM, code ou donnee. Ne jamais recommencer la migration complete.
 
@@ -2511,9 +2511,8 @@ endpoints, sources et donnees restent intacts. G7 n'est pas ouvert.
 
 ### G7 - Meta et reconciliation Instagram
 
-G7 reste ferme tant que `HOLD_META_RECONCILIATION` n'est pas leve par une
-decision explicite. Son premier passage est uniquement une reconciliation
-read-only bornee; il ne suffit pas a autoriser un deploiement.
+`HOLD_META_RECONCILIATION` a ete formellement leve par l'utilisateur avant
+G7-D. Cette levee ne vaut que pour G7 et n'autorise aucun lot ulterieur.
 
 Perimetre cloud fixe: neuf Gen1 Meta, soit `disconnectMetaConnectionAdmin`,
 `getMetaConnectionStatusAdmin`, `getSocialPublicationStatusAdmin`,
@@ -2540,11 +2539,9 @@ correspondent aux endpoints Gen1 attendus, mais le callback Instagram reste
 absent du cloud et aucune console Meta n'a ete ouverte. Aucun deploy, build,
 publication, OAuth, mutation, IAM ou secret n'a ete modifie.
 
-`HOLD_META_RECONCILIATION` reste actif. G7-D exige en plus la correction et la
-requalification ciblee de `scripts/functions-gen2-inventory.mjs`: son
-extracteur compte bien 200 exports uniques, puis les rejette car son ensemble
-d'exports paralleles est reste obsolete apres G6. Ce drift n'a pas ete corrige
-en G7-R.
+Le hold a ensuite ete leve explicitement. L'extracteur
+`scripts/functions-gen2-inventory.mjs` a ete corrige et requalifie avant tout
+deploiement G7-D.
 
 **G7-D, seulement apres levee formelle du HOLD:** mutualiser une extraction de
 handlers, une archive Functions immutable et un upload. Deployer
@@ -2569,6 +2566,26 @@ baseline G6 + 9 Gen2 cloud + `m`, ou `m` est le nombre d'Instagram approuvees.
 Budget dur G7-D: un upload Functions, `9 + m` deploys allowlistes, une commande
 de tests, au plus un lint, un build App Hosting, une bascule/rollback console,
 une reactivation et une quiet-window. S'arreter avant G8.
+
+G7-D est fermee le 2026-08-19 par
+`apphostingaudit/manifests/functions-gen2-g7.json`, avec `m = 5`. Une archive
+Functions immutable a ete uploadee une fois; les 14 cibles ont ete deployees
+individuellement et sont `ACTIVE` en `europe-west1`, Node 22. Quatre mises a
+jour correctives explicitement autorisees ont reutilise la meme archive apres
+creation des versions `META_OAUTH_REDIRECT_URI:2` et
+`INSTAGRAM_OAUTH_REDIRECT_URI:2`; aucune valeur secrete n'est documentee.
+
+La gate G7 a ete jouee une fois, puis rejouee une seule fois apres correction:
+16/16 tests verts. Le lint Functions a ete joue une fois. App Hosting sert
+`build-2026-08-19-004` (`sv-mt0f1byn-676d1141d43e`) apres cutover, rollback
+reel vers `build-2026-08-19-003` (`sv-mt097i46-64afc824e9c6`) et reactivation
+par `g7-reactivate-20260819-001`. Les callbacks Meta et Instagram ont chacun
+ete bascules vers Gen2, remis sur Gen1, puis reactives sur Gen2 dans la console
+de l'application `1580711783405294`, sans OAuth interactif ni publication.
+La quiet-window `2026-08-19T19:15:23.713Z`--`19:20:49Z` compte zero erreur
+Gen2 et zero entree sur les 14 Gen1 correspondantes. Inventaire final:
+214 exports locaux, 209 cloud, 139 Gen1 et 70 Gen2. Toutes les Gen1, IAM,
+endpoints et donnees sont preserves. G8 n'est pas ouvert.
 
 ### G8 - Commerce non financier, lectures et hygiene P1
 
@@ -2923,34 +2940,31 @@ La migration est terminee uniquement si:
 
 ## 15. Reprise optimisee
 
-G7-R est fermee. Le prochain agent ne relit pas le journal historique, ne
-rejoue aucune preuve fermee sans drift concret et n'ouvre pas G7-D tant que
-`HOLD_META_RECONCILIATION` n'est pas formellement leve.
+G7 est ferme. Le prochain agent ne relit pas le journal historique et ne
+rejoue aucune preuve fermee sans drift concret. G8 reste ferme jusqu'a une
+autorisation explicite distincte.
 
 ```text
 Branche: codex/functions-gen2-migration.
-Baseline d'ouverture G6: `f5886ba3f36610a2e990b342bec6ff97c9d3d228`.
+Baseline avant le commit documentaire de fermeture G7:
+`de827bc67d440bb3af16972a28be64c736833197`.
 Projet cloud obligatoire: secondevienextjsssr.
-Operateur obligatoire: matthis.fradin2@gmail.com.
-Etat: G0-G6 et G7-R fermes; inventaire
-`200 local / 195 cloud / 139 Gen1 / 56 Gen2`.
-Les 24 Gen2 G6 sont ACTIVE, les 23 callables clientes ciblent Gen2 et le
-trigger Gen1 reste intact. App Hosting sert `build-2026-08-19-003` apres
-rollback reel vers `build-2026-08-19-002` et reactivation. La remediation
-CloudEvent finale du trigger devis reutilise l'archive G6 et passe sans erreur
-ni nouvel e-mail.
+Etat: G0-G7 fermes; inventaire
+`214 local / 209 cloud / 139 Gen1 / 70 Gen2`.
+Les 14 Gen2 G7 sont ACTIVE, `m = 5`, les callbacks console finaux ciblent Gen2
+apres rollback Gen1 prouve et toutes les Gen1 restent intactes. App Hosting
+sert `build-2026-08-19-004` apres rollback reel vers
+`build-2026-08-19-003` et reactivation.
 
-Action immediate: arrete-toi a la fermeture G7-R. Ne redeploie aucune cible
-fermee et n'ouvre pas G7-D sans levee formelle du hold, autorisation distincte
-et correction ciblee du drift de l'extracteur d'inventaire.
+Action immediate: n'ouvre G8 que sur autorisation explicite distincte. Ne
+redeploie aucune cible fermee et ne rejoue aucune preuve G7 sans drift concret.
 
 Garde-fous quota: applique strictement la liste de la section 2.1. Recherches
 bornees avec exclusions, sorties de commandes plafonnees, aucun navigateur si
 le harnais suffit, fixtures validees avant appel externe et secrets utilises
 sans transformation, aucun doublon d upload/build/poll, aucun sous-agent ou
 scan large. Un retry n est autorise qu apres identification et correction de sa
-cause. G7-R est fermee: sans prompt ouvrant explicitement G7-D apres levee du
-hold, arrete-toi sans l'anticiper.
+cause. Sans prompt ouvrant explicitement G8, arrete-toi sans l'anticiper.
 
 Autonomie: les operations sandbox non destructives, Custom Tokens et jetons
 App Check ephemeres sont autorises sans confirmation. Ils restent en memoire,

@@ -11,6 +11,9 @@
     "cloudCountBefore": 195,
     "gen1Before": 139,
     "gen2Before": 56,
+    "cloudCountAfter": 209,
+    "gen1After": 139,
+    "gen2After": 70,
     "m": 5
   },
   "gates": {
@@ -23,6 +26,44 @@
     "metaPublicationAllowed": false,
     "oauthInteractiveAllowed": false
   },
+  "closeout": {
+    "closedAt": "2026-08-19T19:20:49Z",
+    "sourceArchive": "gs://gcf-v2-sources-231220287936-europe-west1/g7/180403395bcc5b99f6cf41afdecee79112f5f5e9bae0447df4476bf571ee8dde/function-source.zip",
+    "sourceArchiveSha256": "180403395bcc5b99f6cf41afdecee79112f5f5e9bae0447df4476bf571ee8dde",
+    "sourceArchiveGeneration": "1787161622751523",
+    "sourceArchiveSize": 381823,
+    "functionsUploadCount": 1,
+    "initialDeployCount": 14,
+    "correctiveUpdateCount": 4,
+    "activeFunctionCount": 14,
+    "runtime": "nodejs22",
+    "secretVersionsCreated": [
+      "META_OAUTH_REDIRECT_URI:2",
+      "INSTAGRAM_OAUTH_REDIRECT_URI:2"
+    ],
+    "appHosting": {
+      "activeBuild": "build-2026-08-19-004",
+      "deploymentId": "sv-mt0f1byn-676d1141d43e",
+      "rollbackBuild": "build-2026-08-19-003",
+      "rollbackDeploymentId": "sv-mt097i46-64afc824e9c6",
+      "reactivationRollout": "g7-reactivate-20260819-001",
+      "reactivatedAt": "2026-08-19T18:32:37.262564Z"
+    },
+    "metaConsole": {
+      "applicationId": "1580711783405294",
+      "instagramApplicationId": "1728940675104024",
+      "metaCallback": "GEN2_REACTIVATED_AFTER_GEN1_ROLLBACK",
+      "instagramCallback": "GEN2_REACTIVATED_AFTER_GEN1_ROLLBACK",
+      "publicationPerformed": false,
+      "oauthFlowPerformed": false
+    },
+    "quietWindow": {
+      "start": "2026-08-19T19:15:23.713Z",
+      "end": "2026-08-19T19:20:49Z",
+      "gen2Errors": 0,
+      "gen1Entries": 0
+    }
+  },
   "deploymentPolicy": {
     "transport": "gcloud-gen2-create",
     "immutableArchiveWave": "g7",
@@ -31,11 +72,11 @@
     "forbiddenTargets": []
   },
   "functions": [
-    { "name": "getMetaConnectionStatusAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
-    { "name": "getInstagramConnectionStatusAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    { "name": "getMetaConnectionStatusAdminGen2", "cloud": { "present": true, "revision": "getmetaconnectionstatusadmingen2-00001-von" }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    { "name": "getInstagramConnectionStatusAdminGen2", "cloud": { "present": true, "revision": "getinstagramconnectionstatusadmingen2-00001-feh" }, "decision": { "classification": "MIGRATION_PARALLEL" } },
     {
       "name": "startMetaOAuthAdminGen2",
-      "cloud": { "present": true, "revision": "startmetaoauthadmingen2-00001-liz" },
+      "cloud": { "present": true, "revision": "startmetaoauthadmingen2-00002-pef" },
       "identities": {
         "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
         "runtimeServiceAccount": "meta-runtime@secondevienextjsssr.iam.gserviceaccount.com"
@@ -44,24 +85,24 @@
     },
     {
       "name": "startInstagramOAuthAdminGen2",
-      "cloud": { "present": true, "revision": "startinstagramoauthadmingen2-00001-yez" },
+      "cloud": { "present": true, "revision": "startinstagramoauthadmingen2-00002-suw" },
       "identities": {
         "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
         "runtimeServiceAccount": "meta-runtime@secondevienextjsssr.iam.gserviceaccount.com"
       },
       "decision": { "classification": "MIGRATION_PARALLEL" }
     },
-    { "name": "verifyMetaConnectionAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
-    { "name": "verifyInstagramConnectionAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
-    { "name": "disconnectMetaConnectionAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
-    { "name": "disconnectInstagramConnectionAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
-    { "name": "selectMetaAssetAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
-    { "name": "getSocialPublicationStatusAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
-    { "name": "prepareSocialPublicationAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
-    { "name": "runSocialPublicationAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    { "name": "verifyMetaConnectionAdminGen2", "cloud": { "present": true, "revision": "verifymetaconnectionadmingen2-00001-pic" }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    { "name": "verifyInstagramConnectionAdminGen2", "cloud": { "present": true, "revision": "verifyinstagramconnectionadmingen2-00001-liv" }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    { "name": "disconnectMetaConnectionAdminGen2", "cloud": { "present": true, "revision": "disconnectmetaconnectionadmingen2-00001-qen" }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    { "name": "disconnectInstagramConnectionAdminGen2", "cloud": { "present": true, "revision": "disconnectinstagramconnectionadmingen2-00001-jix" }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    { "name": "selectMetaAssetAdminGen2", "cloud": { "present": true, "revision": "selectmetaassetadmingen2-00001-mey" }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    { "name": "getSocialPublicationStatusAdminGen2", "cloud": { "present": true, "revision": "getsocialpublicationstatusadmingen2-00001-poh" }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    { "name": "prepareSocialPublicationAdminGen2", "cloud": { "present": true, "revision": "preparesocialpublicationadmingen2-00001-zah" }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    { "name": "runSocialPublicationAdminGen2", "cloud": { "present": true, "revision": "runsocialpublicationadmingen2-00001-mod" }, "decision": { "classification": "MIGRATION_PARALLEL" } },
     {
       "name": "instagramOAuthCallbackGen2",
-      "cloud": { "present": true, "revision": "instagramoauthcallbackgen2-00001-naw" },
+      "cloud": { "present": true, "revision": "instagramoauthcallbackgen2-00002-til" },
       "identities": {
         "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
         "runtimeServiceAccount": "meta-runtime@secondevienextjsssr.iam.gserviceaccount.com"
@@ -70,7 +111,7 @@
     },
     {
       "name": "metaOAuthCallbackGen2",
-      "cloud": { "present": true, "revision": "metaoauthcallbackgen2-00001-fih" },
+      "cloud": { "present": true, "revision": "metaoauthcallbackgen2-00002-noj" },
       "identities": {
         "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
         "runtimeServiceAccount": "meta-runtime@secondevienextjsssr.iam.gserviceaccount.com"

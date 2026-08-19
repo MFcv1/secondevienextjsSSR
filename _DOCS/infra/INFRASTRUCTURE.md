@@ -123,22 +123,21 @@ App Hosting (`apphosting.yaml`):
 | --- | --- | --- |
 | `main` | `functions/` | Auth, admin, commerce, email, analytics, maintenance et catalogue materialise |
 
-Le controle G7-R du 2026-08-19 recense 195 Functions cloud: 139 Gen1 et
-56 Gen2. Les cinq exports Instagram directs restent uniquement locaux. Le
+La fermeture G7 du 2026-08-19 recense 209 Functions cloud: 139 Gen1 et
+70 Gen2. Les cinq exports Instagram directs sont maintenant dupliques en
+Gen2 avec les neuf Meta/Facebook/saga; les 14 nouvelles cibles sont `ACTIVE`
+en `europe-west1`, Node 22. Le
 manifeste G0 conserve la baseline regionale initiale, dont les six cibles US
 `grantAdminOnAuth`, `e2eCheckoutProof`, `e2eStripeHardeningProof`,
 `stripeWebhook`, `stripeConnectWebhook` et le trigger Gen2
 `processProductPublicationImage`, qui reste proche du bucket produit
-`secondevienextjsssr.firebasestorage.app`. Les 200 exports locaux incluent les
-cinq cibles Instagram direct absentes du cloud et placees sous
-`HOLD_META_RECONCILIATION`. G7-R les classe toutes `MIGRATE_GEN2`, soit
-`m = 5`, et confirme les neuf Gen1 Meta/Facebook/saga `ACTIVE`; aucune de ces
-classifications n'autorise un deploiement tant que le hold n'est pas leve. Le
-detail machine G7-R est dans
-`apphostingaudit/manifests/functions-gen2-g7r.json`.
+`secondevienextjsssr.firebasestorage.app`. Les 214 exports locaux et les
+209 cibles cloud donnent `m = 5`; toutes les Gen1 restent intactes. Le detail
+machine final est dans `apphostingaudit/manifests/functions-gen2-g7.json`.
 
-Etat courant du chantier Gen2 au 2026-08-19: G0-G6 et G7-R sont fermes;
-G7-D reste interdite sous le hold Meta. Les paragraphes suivants conservent les
+Etat courant du chantier Gen2 au 2026-08-19: G0-G7 sont fermes; App Hosting
+sert `build-2026-08-19-004` apres rollback reel vers `003` et reactivation.
+G8 reste ferme sans autorisation distincte. Les paragraphes suivants conservent les
 details durables des lots G4 et G5.
 G5-A1 ajoute
 `getUserStatsGen2`, ACTIVE en revision `getuserstatsgen2-00001-niv`, avec
@@ -340,8 +339,9 @@ Audit et durcissement securite sandbox du 2026-08-11:
 - cinq Functions OAuth Instagram ont ete supprimees du cloud apres
   autorisation explicite pendant la stabilisation. Le merge source ulterieur
   `6be360e` a reintroduit leurs exports et appelants UI sans les redeployer;
-  elles sont donc sous `HOLD_META_RECONCILIATION` depuis G0, tandis que les
-  neuf Functions Meta/Facebook/saga restent deployees;
+  ce drift, place sous `HOLD_META_RECONCILIATION` en G0, est resolu par G7:
+  cinq paralleles Instagram Gen2 et neuf Meta/Facebook/saga Gen2 sont ACTIVE,
+  tandis que toutes les Gen1 sont preservees;
 - Auth, Firestore et Storage sont `ENFORCED` App Check sur le sandbox apres
   lecture des metriques valides sur sept jours;
 - aucun binding IAM public ni aucun `roles/editor` ne subsiste. Les comptes de

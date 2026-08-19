@@ -1,7 +1,7 @@
 # OAuth Instagram et Facebook - Runbook Seconde Vie
 
 Derniere verification: 2026-08-19
-Statut: `REFERENCE_ACTIVE - G7_R_CLOSED - HOLD_META_RECONCILIATION`
+Statut: `REFERENCE_ACTIVE - G7_CLOSED - SANDBOX_GEN2_ACTIVE`
 Proprietaire: back-office / integrations sociales
 Perimetre: connexion professionnelle Instagram directe, Facebook optionnel,
 publication sociale depuis `/admin`
@@ -41,20 +41,28 @@ Cette decision ne leve pas le hold, n'autorise pas G7-D et ne retablit pas le
 callback Instagram. Le manifeste de preuve est
 `apphostingaudit/manifests/functions-gen2-g7r.json`.
 
+Fermeture G7-D du 2026-08-19: apres levee formelle du hold pour ce lot, les
+neuf cibles Meta/Facebook/saga et les cinq Instagram directes sont dupliquees
+en 14 Gen2 `ACTIVE`, Node 22, soit `m = 5`. Les callbacks de l'application Meta
+parente et de l'application Instagram integree ont chacun prouve bascule Gen2,
+rollback Gen1 et reactivation Gen2. Aucun OAuth interactif ni publication n'a
+ete execute. App Hosting sert `build-2026-08-19-004` apres rollback reel vers
+`003`; la quiet-window finale est saine. Toutes les Gen1 restent intactes.
+
 | Element | Valeur sandbox |
 | --- | --- |
 | projet Firebase | `secondevienextjsssr` |
 | App Hosting | `secondevie-next-sandbox`, `europe-west4` |
 | URL admin | `https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app/admin` |
-| Functions OAuth | neuf cibles Meta/Facebook cloud en `europe-west1`; cinq Instagram direct locales sous hold |
+| Functions OAuth | 14 Gen2 G7 `ACTIVE` en `europe-west1`, Node 22; toutes les Gen1 preservees |
 | application Meta parente | `Seconde Vie Publications`, ID `1580711783405294` |
 | application Instagram | `Seconde Vie Publications-IG`, ID `1728940675104024` |
 | compte Instagram de recette | `@xori_on`, professionnel et public |
 | Page Facebook optionnelle | `jardin perma` |
-| callback Instagram | URL historique; cible cloud absente en G0, ne pas configurer ni appeler |
-| callback Facebook | valeur du secret `META_OAUTH_REDIRECT_URI` |
+| callback Instagram | callback Gen2 actif apres rollback Gen1 prouve |
+| callback Facebook | callback Gen2 actif apres rollback Gen1 prouve |
 | dernier correctif qualifie | commit `83b3a69` |
-| Function Instagram qualifiee | preuve historique `instagramOAuthCallback` version 3; aucune version cloud actuelle |
+| Function Instagram qualifiee | `instagramOAuthCallbackGen2` ACTIVE; Gen1 preservee |
 
 La connexion Instagram directe a ete validee historiquement dans le navigateur
 avec le compte testeur autorise. Cette preuve ne leve pas le hold courant.

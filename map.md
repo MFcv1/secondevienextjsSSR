@@ -875,17 +875,13 @@ functions/
 
 ## 9. Exports Cloud Functions
 
-Etat G7-R du 2026-08-19: `functions/index.js` contient 200 exports uniques;
-195 sont `ACTIVE` dans le sandbox (139 Gen1, 56 Gen2). Les cinq exports
-Instagram direct `startInstagramOAuthAdmin`, `instagramOAuthCallback`,
-`getInstagramConnectionStatusAdmin`, `verifyInstagramConnectionAdmin` et
-`disconnectInstagramConnectionAdmin` existent dans le source et leurs
-appelants UI, mais pas dans le cloud. G7-R les classe tous `MIGRATE_GEN2`, soit
-`m = 5`, et classe aussi les neuf Gen1 Meta/Facebook/saga `MIGRATE_GEN2`.
-Ils restent sous `HOLD_META_RECONCILIATION` et sont exclus du deploiement tant
-que le hold n'est pas formellement leve. Le manifeste read-only est
-`apphostingaudit/manifests/functions-gen2-g7r.json`; il consigne aussi le drift
-de l'extracteur `scripts/functions-gen2-inventory.mjs`, a corriger avant G7-D.
+Etat apres fermeture G7 du 2026-08-19: `functions/index.js` contient 214
+exports uniques; 209 sont `ACTIVE` dans le sandbox (139 Gen1, 70 Gen2). Les
+neuf Meta/Facebook/saga et les cinq Instagram directes ont leurs paralleles
+Gen2 `ACTIVE` en `europe-west1`, Node 22, soit `m = 5`; toutes les Gen1 sont
+preservees. Les callbacks Meta et Instagram ciblent finalement Gen2 apres
+rollback Gen1 prouve. Le manifeste final est
+`apphostingaudit/manifests/functions-gen2-g7.json`.
 Les decisions par nom, appelants, acces donnees, IAM, secrets et rollback sont dans
 `apphostingaudit/manifests/functions-g0.json`; la reconciliation des 13 Gen2,
 Schedulers, queues et Eventarc est dans
@@ -1154,13 +1150,10 @@ Le checkpoint executable et le prompt de reprise courant sont les sections
 2.1 et 15 de `apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md`; l'ancien
 prompt G0 est obsolete et ne doit plus etre utilise.
 
-Inventaire apres G6: 200 exports locaux, 195 cloud, 139 Gen1 et 56 Gen2. Les
-24 cibles catalogue/e-mail manuel/onboarding facturation/factures
-manuelles/devis/newsletter sont ACTIVE; les 23 callables du registre client
-ciblent Gen2. `onQuoteRequestSubmittedGen2` est en coexistence CloudEvent avec
-le trigger Gen1 preserve et son claim `confirmationEmail` empeche le double
-envoi. App Hosting sert `build-2026-08-19-003` apres rollback reel vers `002`.
-G7 reste non ouvert.
+Inventaire apres G7: 214 exports locaux, 209 cloud, 139 Gen1 et 70 Gen2. Les
+14 cibles Meta/Instagram G7 sont ACTIVE et toutes les Gen1 restent intactes.
+App Hosting sert `build-2026-08-19-004` apres rollback reel vers `003` et
+reactivation. G8 reste non ouvert.
 
 | Domaine | Exports |
 | --- | --- |
