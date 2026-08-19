@@ -1,0 +1,256 @@
+{
+  "schemaVersion": 1,
+  "gate": "G7-R",
+  "status": "CLOSED_READ_ONLY",
+  "generatedAt": "2026-08-19T16:23:34Z",
+  "projectId": "secondevienextjsssr",
+  "branch": "codex/functions-gen2-migration",
+  "headAtRead": "9cec2919e8c11ea733c859c3540cef236eb635e6",
+  "appHosting": {
+    "activeBuild": "build-2026-08-19-003",
+    "provedRollbackBuild": "build-2026-08-19-002",
+    "changedByG7R": false
+  },
+  "inventory": {
+    "localExports": 200,
+    "cloudFunctions": 195,
+    "gen1": 139,
+    "gen2": 56,
+    "formulaAfterG7R": "200 local / 195 cloud / 139 Gen1 / 56 Gen2",
+    "changedByG7R": false
+  },
+  "constraints": {
+    "holdMetaReconciliation": "ACTIVE_NOT_LIFTED",
+    "g7dAuthorized": false,
+    "cloudMutation": false,
+    "oauthInteractive": false,
+    "metaPublication": false,
+    "functionDeploy": false,
+    "appHostingBuild": false
+  },
+  "cloudFunctions": [
+    {
+      "name": "disconnectMetaConnectionAdmin",
+      "classification": "MIGRATE_GEN2",
+      "target": "disconnectMetaConnectionAdminGen2",
+      "state": "ACTIVE",
+      "generation": "GEN_1",
+      "region": "europe-west1",
+      "runtime": "nodejs22",
+      "trigger": "callable_https",
+      "memoryMiB": 256,
+      "timeoutSeconds": 60,
+      "ingress": "ALLOW_ALL",
+      "runtimeServiceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "allUsersInvoker": true,
+      "secrets": ["META_TOKEN_ENCRYPTION_KEY@1"]
+    },
+    {
+      "name": "getMetaConnectionStatusAdmin",
+      "classification": "MIGRATE_GEN2",
+      "target": "getMetaConnectionStatusAdminGen2",
+      "state": "ACTIVE",
+      "generation": "GEN_1",
+      "region": "europe-west1",
+      "runtime": "nodejs22",
+      "trigger": "callable_https",
+      "memoryMiB": 256,
+      "timeoutSeconds": 60,
+      "ingress": "ALLOW_ALL",
+      "runtimeServiceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "allUsersInvoker": true,
+      "secrets": ["META_TOKEN_ENCRYPTION_KEY@1"]
+    },
+    {
+      "name": "getSocialPublicationStatusAdmin",
+      "classification": "MIGRATE_GEN2",
+      "target": "getSocialPublicationStatusAdminGen2",
+      "state": "ACTIVE",
+      "generation": "GEN_1",
+      "region": "europe-west1",
+      "runtime": "nodejs22",
+      "trigger": "callable_https",
+      "memoryMiB": 256,
+      "timeoutSeconds": 60,
+      "ingress": "ALLOW_ALL",
+      "runtimeServiceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "allUsersInvoker": true,
+      "secrets": []
+    },
+    {
+      "name": "metaOAuthCallback",
+      "classification": "MIGRATE_GEN2",
+      "target": "metaOAuthCallbackGen2",
+      "state": "ACTIVE",
+      "generation": "GEN_1",
+      "region": "europe-west1",
+      "runtime": "nodejs22",
+      "trigger": "http",
+      "memoryMiB": 256,
+      "timeoutSeconds": 60,
+      "ingress": "ALLOW_ALL",
+      "runtimeServiceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "allUsersInvoker": true,
+      "secrets": [
+        "META_APP_ID@1",
+        "META_APP_SECRET@1",
+        "META_OAUTH_REDIRECT_URI@1",
+        "META_TOKEN_ENCRYPTION_KEY@1"
+      ]
+    },
+    {
+      "name": "prepareSocialPublicationAdmin",
+      "classification": "MIGRATE_GEN2",
+      "target": "prepareSocialPublicationAdminGen2",
+      "state": "ACTIVE",
+      "generation": "GEN_1",
+      "region": "europe-west1",
+      "runtime": "nodejs22",
+      "trigger": "callable_https",
+      "memoryMiB": 512,
+      "timeoutSeconds": 300,
+      "ingress": "ALLOW_ALL",
+      "runtimeServiceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "allUsersInvoker": true,
+      "secrets": ["META_TOKEN_ENCRYPTION_KEY@1"]
+    },
+    {
+      "name": "runSocialPublicationAdmin",
+      "classification": "MIGRATE_GEN2",
+      "target": "runSocialPublicationAdminGen2",
+      "state": "ACTIVE",
+      "generation": "GEN_1",
+      "region": "europe-west1",
+      "runtime": "nodejs22",
+      "trigger": "callable_https",
+      "memoryMiB": 512,
+      "timeoutSeconds": 300,
+      "ingress": "ALLOW_ALL",
+      "runtimeServiceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "allUsersInvoker": true,
+      "secrets": ["META_TOKEN_ENCRYPTION_KEY@1"]
+    },
+    {
+      "name": "selectMetaAssetAdmin",
+      "classification": "MIGRATE_GEN2",
+      "target": "selectMetaAssetAdminGen2",
+      "state": "ACTIVE",
+      "generation": "GEN_1",
+      "region": "europe-west1",
+      "runtime": "nodejs22",
+      "trigger": "callable_https",
+      "memoryMiB": 256,
+      "timeoutSeconds": 60,
+      "ingress": "ALLOW_ALL",
+      "runtimeServiceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "allUsersInvoker": true,
+      "secrets": ["META_TOKEN_ENCRYPTION_KEY@1"]
+    },
+    {
+      "name": "startMetaOAuthAdmin",
+      "classification": "MIGRATE_GEN2",
+      "target": "startMetaOAuthAdminGen2",
+      "state": "ACTIVE",
+      "generation": "GEN_1",
+      "region": "europe-west1",
+      "runtime": "nodejs22",
+      "trigger": "callable_https",
+      "memoryMiB": 256,
+      "timeoutSeconds": 60,
+      "ingress": "ALLOW_ALL",
+      "runtimeServiceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "allUsersInvoker": true,
+      "secrets": [
+        "META_APP_ID@1",
+        "META_APP_SECRET@1",
+        "META_OAUTH_REDIRECT_URI@1",
+        "META_TOKEN_ENCRYPTION_KEY@1"
+      ]
+    },
+    {
+      "name": "verifyMetaConnectionAdmin",
+      "classification": "MIGRATE_GEN2",
+      "target": "verifyMetaConnectionAdminGen2",
+      "state": "ACTIVE",
+      "generation": "GEN_1",
+      "region": "europe-west1",
+      "runtime": "nodejs22",
+      "trigger": "callable_https",
+      "memoryMiB": 256,
+      "timeoutSeconds": 60,
+      "ingress": "ALLOW_ALL",
+      "runtimeServiceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "allUsersInvoker": true,
+      "secrets": ["META_TOKEN_ENCRYPTION_KEY@1"]
+    }
+  ],
+  "secretVersions": {
+    "META_APP_ID": "1_ENABLED",
+    "META_APP_SECRET": "1_ENABLED",
+    "META_OAUTH_REDIRECT_URI": "1_ENABLED",
+    "INSTAGRAM_APP_ID": "1_ENABLED",
+    "INSTAGRAM_APP_SECRET": "1_ENABLED",
+    "INSTAGRAM_OAUTH_REDIRECT_URI": "1_ENABLED",
+    "META_TOKEN_ENCRYPTION_KEY": "1_ENABLED"
+  },
+  "redirects": {
+    "metaSecretMatchesCurrentGen1Endpoint": true,
+    "instagramSecretMatchesHistoricalGen1Endpoint": true,
+    "instagramEndpointPresentInCloud": false,
+    "metaConsoleInteractiveCheckPerformed": false
+  },
+  "directCallers": {
+    "connectionAndStatus": [
+      "src/kit/admin/components/useMetaConnection.js",
+      "src/kit/admin/metaPublicationClient.js"
+    ],
+    "publicationSaga": [
+      "src/kit/admin/AdminForm.jsx",
+      "src/kit/admin/metaPublicationClient.js"
+    ],
+    "targetRegistry": "src/kit/config/functionTargets.js"
+  },
+  "instagramLocalDecisions": [
+    {
+      "name": "startInstagramOAuthAdmin",
+      "classification": "MIGRATE_GEN2",
+      "reason": "rail Instagram direct prioritaire et appelant UI actif"
+    },
+    {
+      "name": "instagramOAuthCallback",
+      "classification": "MIGRATE_GEN2",
+      "reason": "callback HTTP distinct requis par le rail Instagram direct"
+    },
+    {
+      "name": "getInstagramConnectionStatusAdmin",
+      "classification": "MIGRATE_GEN2",
+      "reason": "statut serveur lu au chargement par le controle admin"
+    },
+    {
+      "name": "verifyInstagramConnectionAdmin",
+      "classification": "MIGRATE_GEN2",
+      "reason": "verification explicite appelee par le controle admin"
+    },
+    {
+      "name": "disconnectInstagramConnectionAdmin",
+      "classification": "MIGRATE_GEN2",
+      "reason": "deconnexion super-admin distincte appelee par le controle admin"
+    }
+  ],
+  "m": 5,
+  "drift": [
+    {
+      "target": "scripts/functions-gen2-inventory.mjs",
+      "proof": "extractLocalExports() compte 200 exports uniques mais rejette ce total car EXPECTED_SOURCE_COUNT + PARALLEL_MIGRATION_EXPORTS.size est reste obsolete",
+      "impact": "la commande functions:inventory:g0 et les suites qui reutilisent cet extracteur ne peuvent pas servir de gate G7-D en l'etat",
+      "g7dPrecondition": "reconcilier explicitement l'ensemble des exports paralleles avec le manifeste ferme G6, puis obtenir une gate d'inventaire ciblee verte sans changer les classifications G7-R"
+    }
+  ],
+  "g7dPreconditions": [
+    "levee formelle et explicite de HOLD_META_RECONCILIATION par un prompt distinct",
+    "autorisation explicite de G7-D et de son budget dur",
+    "correction et validation ciblee du drift scripts/functions-gen2-inventory.mjs",
+    "confirmation read-only de l'URI callback courante dans la console Meta avant toute bascule",
+    "archive Functions immutable et allowlists unitaires preparees sans modifier les Gen1"
+  ]
+}

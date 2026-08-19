@@ -189,8 +189,10 @@ et persiste chaque etape dans `sys_social_publications`. Instagram accepte une
 photo ou un carrousel de dix images maximum; Facebook accepte une photo ou un
 post multi-images. Une destination deja `published` n'est jamais relancee par
 la reprise ciblee. Le code et les Rules sont presents localement; la
-configuration des secrets, le deploiement et la recette Meta reelle restent
-les Gates M4 et M5 du PRD temporaire.
+reconciliation G7-R confirme les neuf Gen1 Meta/Facebook/saga et classe les
+cinq Instagram directs `MIGRATE_GEN2` (`m = 5`). Le callback Instagram reste
+absent du cloud et `HOLD_META_RECONCILIATION` interdit encore G7-D; les preuves
+M4/M5 historiques ne valent pas preuve d'etat courant.
 
 `AdminItemList`
 affiche les annonces. `GlobalInventoryView` pilote les classements editoriaux.

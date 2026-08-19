@@ -875,14 +875,18 @@ functions/
 
 ## 9. Exports Cloud Functions
 
-Baseline G0 du 2026-08-15: `functions/index.js` contient 157 exports uniques;
-152 sont `ACTIVE` dans le sandbox (139 Gen1, 13 Gen2). Les cinq exports
+Etat G7-R du 2026-08-19: `functions/index.js` contient 200 exports uniques;
+195 sont `ACTIVE` dans le sandbox (139 Gen1, 56 Gen2). Les cinq exports
 Instagram direct `startInstagramOAuthAdmin`, `instagramOAuthCallback`,
 `getInstagramConnectionStatusAdmin`, `verifyInstagramConnectionAdmin` et
 `disconnectInstagramConnectionAdmin` existent dans le source et leurs
-appelants UI, mais pas dans le cloud. Ils restent sous
-`HOLD_META_RECONCILIATION` et sont exclus du wrapper de deploiement. Les
-decisions par nom, appelants, acces donnees, IAM, secrets et rollback sont dans
+appelants UI, mais pas dans le cloud. G7-R les classe tous `MIGRATE_GEN2`, soit
+`m = 5`, et classe aussi les neuf Gen1 Meta/Facebook/saga `MIGRATE_GEN2`.
+Ils restent sous `HOLD_META_RECONCILIATION` et sont exclus du deploiement tant
+que le hold n'est pas formellement leve. Le manifeste read-only est
+`apphostingaudit/manifests/functions-gen2-g7r.json`; il consigne aussi le drift
+de l'extracteur `scripts/functions-gen2-inventory.mjs`, a corriger avant G7-D.
+Les decisions par nom, appelants, acces donnees, IAM, secrets et rollback sont dans
 `apphostingaudit/manifests/functions-g0.json`; la reconciliation des 13 Gen2,
 Schedulers, queues et Eventarc est dans
 `apphostingaudit/manifests/functions-platform-g0.json`.

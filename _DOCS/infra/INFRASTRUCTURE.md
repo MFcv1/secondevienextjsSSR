@@ -123,18 +123,23 @@ App Hosting (`apphosting.yaml`):
 | --- | --- | --- |
 | `main` | `functions/` | Auth, admin, commerce, email, analytics, maintenance et catalogue materialise |
 
-Le manifeste G0 du 2026-08-15 recense 152 Functions cloud `ACTIVE`: 139 Gen1,
-13 Gen2, 146 en `europe-west1` et 6 en `us-central1`. Les six cibles US sont
+Le controle G7-R du 2026-08-19 recense 195 Functions cloud: 139 Gen1 et
+56 Gen2. Les cinq exports Instagram directs restent uniquement locaux. Le
+manifeste G0 conserve la baseline regionale initiale, dont les six cibles US
 `grantAdminOnAuth`, `e2eCheckoutProof`, `e2eStripeHardeningProof`,
 `stripeWebhook`, `stripeConnectWebhook` et le trigger Gen2
 `processProductPublicationImage`, qui reste proche du bucket produit
-`secondevienextjsssr.firebasestorage.app`. Les 157 exports locaux ajoutent cinq
-cibles Instagram direct absentes du cloud et placees sous
-`HOLD_META_RECONCILIATION`; elles ne doivent etre ni deployees ni retirees par
-un deploiement global. Le detail machine est dans
-`apphostingaudit/manifests/functions-g0.json`.
+`secondevienextjsssr.firebasestorage.app`. Les 200 exports locaux incluent les
+cinq cibles Instagram direct absentes du cloud et placees sous
+`HOLD_META_RECONCILIATION`. G7-R les classe toutes `MIGRATE_GEN2`, soit
+`m = 5`, et confirme les neuf Gen1 Meta/Facebook/saga `ACTIVE`; aucune de ces
+classifications n'autorise un deploiement tant que le hold n'est pas leve. Le
+detail machine G7-R est dans
+`apphostingaudit/manifests/functions-gen2-g7r.json`.
 
-Etat courant du chantier Gen2 au 2026-08-18: G4 analytics et G5-A1 a G5-A5 sont fermees.
+Etat courant du chantier Gen2 au 2026-08-19: G0-G6 et G7-R sont fermes;
+G7-D reste interdite sous le hold Meta. Les paragraphes suivants conservent les
+details durables des lots G4 et G5.
 G5-A1 ajoute
 `getUserStatsGen2`, ACTIVE en revision `getuserstatsgen2-00001-niv`, avec
 runtime `auth-reader-runtime`, CPU 167m, 512 MiB, 300 s, concurrence/max 1 et

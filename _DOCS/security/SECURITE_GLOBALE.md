@@ -278,9 +278,10 @@ sandbox ont etabli:
   contre 27 avis initiaux sur l'ensemble production + outillage;
 - cinq Functions OAuth Instagram ont ete supprimees de facon ciblee apres
   autorisation explicite. Le merge source posterieur `6be360e` a reintroduit
-  leurs exports et appelants sans redeploiement; G0 les place sous
-  `HOLD_META_RECONCILIATION`. Les neuf Functions Meta/Facebook/saga restent
-  deployees;
+  leurs exports et appelants sans redeploiement; G7-R les classe toutes
+  `MIGRATE_GEN2`, soit `m = 5`, sans lever `HOLD_META_RECONCILIATION`. Les neuf
+  Functions Meta/Facebook/saga sont `ACTIVE` et egalement classees
+  `MIGRATE_GEN2`; aucun endpoint, IAM ou secret n'a ete modifie par R;
 - la cle Web du site heberge est desormais distincte de la cle de developpement,
   limitee aux API Firebase requises et a l'origine exacte du sandbox;
 - les metriques App Check sur sept jours ont confirme des jetons valides pour

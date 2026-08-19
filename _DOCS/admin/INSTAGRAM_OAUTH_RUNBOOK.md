@@ -1,7 +1,7 @@
 # OAuth Instagram et Facebook - Runbook Seconde Vie
 
-Derniere verification: 2026-08-12
-Statut: `REFERENCE_ACTIVE - HOLD_META_RECONCILIATION`
+Derniere verification: 2026-08-19
+Statut: `REFERENCE_ACTIVE - G7_R_CLOSED - HOLD_META_RECONCILIATION`
 Proprietaire: back-office / integrations sociales
 Perimetre: connexion professionnelle Instagram directe, Facebook optionnel,
 publication sociale depuis `/admin`
@@ -33,6 +33,13 @@ Le rail Meta/Facebook et la saga conservent neuf cibles cloud. Jusqu'a G7, les
 cinq Instagram direct restent sous `HOLD_META_RECONCILIATION`: aucun deploy,
 aucune suppression de code et aucune utilisation du callback historique comme
 preuve d'etat courant.
+
+Reconciliation G7-R du 2026-08-19: les neuf cibles Meta/Facebook/saga sont
+Gen1 `ACTIVE` conformes et classees `MIGRATE_GEN2`. Les cinq Instagram directs
+ont des appelants actifs et sont toutes classees `MIGRATE_GEN2`, soit `m = 5`.
+Cette decision ne leve pas le hold, n'autorise pas G7-D et ne retablit pas le
+callback Instagram. Le manifeste de preuve est
+`apphostingaudit/manifests/functions-gen2-g7r.json`.
 
 | Element | Valeur sandbox |
 | --- | --- |

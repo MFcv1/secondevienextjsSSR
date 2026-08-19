@@ -1,7 +1,7 @@
 # PRD temporaire - Connexion Meta et publication sans friction
 
-Derniere mise a jour: 2026-08-04
-Statut: `PREUVES_M4_M5_HISTORIQUES - HOLD_META_RECONCILIATION`
+Derniere mise a jour: 2026-08-19
+Statut: `G7_R_CLOSED - PREUVES_M4_M5_HISTORIQUES - HOLD_META_RECONCILIATION`
 Proprietaire fonctionnel: Seconde Vie
 Reference prouvee: `jardindechawi`
 Echeance de revue: 2026-10-31
@@ -25,6 +25,16 @@ reintroduit ces exports et leurs appelants UI sans les redeployer. G0 decide
 `HOLD_META_RECONCILIATION`: ni redeploiement, ni retrait du source, ni nouvelle
 preuve M4/M5 avant G7 et la requalification du redirect, des secrets, d'App
 Check, de l'IAM et du rollback.
+
+Addendum G7-R du 2026-08-19: le controle read-only confirme les neuf Gen1
+Meta/Facebook/saga `ACTIVE`, leurs triggers, IAM, secrets `@1` et appelants;
+elles sont classees `MIGRATE_GEN2`. Les cinq Instagram directs sont elles aussi
+classees `MIGRATE_GEN2` d'apres leurs contrats et appelants actifs, soit
+`m = 5`. Les secrets redirect correspondent aux endpoints Gen1 attendus, sans
+inspection interactive de la console Meta. Le hold reste actif et G7-D n'est
+pas autorisee. Avant toute ouverture G7-D, l'extracteur d'inventaire local
+obsolete releve dans `functions-gen2-g7r.json` doit aussi etre corrige et
+requalifie.
 
 Decision ajoutee le 2026-08-04: Instagram Login devient le parcours principal.
 Il autorise directement un compte Instagram professionnel sans Page Facebook.
