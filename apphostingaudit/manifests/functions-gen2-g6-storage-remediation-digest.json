@@ -2,6 +2,6 @@
   "schemaVersion": 1,
   "algorithm": "sha256",
   "files": {
-    "apphostingaudit/manifests/functions-gen2-g6-storage-remediation.json": "a1e7fe30dbbee8757b1294e167d29df144fc99604a69123481e47a24900826c3"
+    "apphostingaudit/manifests/functions-gen2-g6-storage-remediation.json": "4dedbacd034e7f3d5e326796516a7a7f5201f75e052a44b788b9ed63b6c712df"
   }
 }
