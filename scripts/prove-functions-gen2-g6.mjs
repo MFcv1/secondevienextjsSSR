@@ -300,7 +300,7 @@ async function proveQuoteTrigger() {
     const listed = await result('listQuoteRequestsAdminGen2', {});
     if (!listed.quotes?.some((quote) => quote.quoteId === quoteId)) fail('G6_PROOF_QUOTE_LIST_INVALID');
     const detail = await result('getQuoteRequestAdminGen2', { quoteId });
-    await result('updateQuoteRequestAdminGen2', { quoteId, version: detail.quote.version, status: 'qualifying', internalNotes: 'Fixture G6' });
+    await result('updateQuoteRequestAdminGen2', { quoteId, expectedVersion: detail.quote.version, status: 'qualifying', internalNotes: 'Fixture G6' });
     await result('finalizeQuoteRequestGen2', { quoteId, uploadToken });
     const sent = await waitFor(
       async () => (await db.doc(`quote_requests/${quoteId}`).get()).data()?.confirmationEmail,
