@@ -81,6 +81,57 @@ const GCLOUD_GEN1_TARGETS = Object.freeze({
   })
 });
 export const GCLOUD_GEN2_TARGETS = Object.freeze({
+  removeAdminUserGen2: Object.freeze({
+    create: true,
+    triggerType: 'http-callable',
+    region: 'europe-west1',
+    runtime: 'nodejs22',
+    entryPoint: 'removeAdminUserGen2',
+    runtimeServiceAccount: 'auth-admin-runtime@secondevienextjsssr.iam.gserviceaccount.com',
+    buildServiceAccount: 'projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    memory: '256Mi',
+    cpu: '167m',
+    timeout: '60s',
+    concurrency: '1',
+    minInstances: '0',
+    maxInstances: '1',
+    ingressSettings: 'all',
+    secrets: ['SUPER_ADMIN_EMAIL=SUPER_ADMIN_EMAIL:3']
+  }),
+  addAdminUserGen2: Object.freeze({
+    create: true,
+    triggerType: 'http-callable',
+    region: 'europe-west1',
+    runtime: 'nodejs22',
+    entryPoint: 'addAdminUserGen2',
+    runtimeServiceAccount: 'auth-admin-runtime@secondevienextjsssr.iam.gserviceaccount.com',
+    buildServiceAccount: 'projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    memory: '256Mi',
+    cpu: '167m',
+    timeout: '60s',
+    concurrency: '1',
+    minInstances: '0',
+    maxInstances: '1',
+    ingressSettings: 'all',
+    secrets: ['SUPER_ADMIN_EMAIL=SUPER_ADMIN_EMAIL:3']
+  }),
+  syncSuperAdminClaimGen2: Object.freeze({
+    create: true,
+    triggerType: 'http-callable',
+    region: 'europe-west1',
+    runtime: 'nodejs22',
+    entryPoint: 'syncSuperAdminClaimGen2',
+    runtimeServiceAccount: 'auth-admin-runtime@secondevienextjsssr.iam.gserviceaccount.com',
+    buildServiceAccount: 'projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    memory: '256Mi',
+    cpu: '167m',
+    timeout: '60s',
+    concurrency: '1',
+    minInstances: '0',
+    maxInstances: '1',
+    ingressSettings: 'all',
+    secrets: ['SUPER_ADMIN_EMAIL=SUPER_ADMIN_EMAIL:3']
+  }),
   verifyPasskeyRegistrationGen2: Object.freeze({
     create: true,
     triggerType: 'http-callable',

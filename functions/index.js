@@ -227,7 +227,7 @@ exports.verifyMetaConnectionAdmin = verifyMetaConnectionAdmin;
 // ── AUTH ──────────────────────────────────────────────────
 const { grantAdminOnAuth } = require('./src/auth/grantAdmin');
 const { onRegisteredUserCreated, onRegisteredUserDeleted } = require('./src/auth/userStats');
-const { addAdminUser, removeAdminUser, logUserConnection, logUserConnectionGen2, getUserStats, getUserStatsGen2, syncSuperAdminClaim, ensureAdminAccessRegistry, ensureAdminAccessRegistryGen2 } = require('./src/auth/adminManagement');
+const { addAdminUser, addAdminUserGen2, removeAdminUser, removeAdminUserGen2, logUserConnection, logUserConnectionGen2, getUserStats, getUserStatsGen2, syncSuperAdminClaim, syncSuperAdminClaimGen2, ensureAdminAccessRegistry, ensureAdminAccessRegistryGen2 } = require('./src/auth/adminManagement');
 const {
   sendGuestCheckoutOtp,
   sendGuestCheckoutOtpGen2,
@@ -250,12 +250,15 @@ exports.grantAdminOnAuth = grantAdminOnAuth;
 exports.onRegisteredUserCreated = onRegisteredUserCreated;
 exports.onRegisteredUserDeleted = onRegisteredUserDeleted;
 exports.addAdminUser = addAdminUser;
+exports.addAdminUserGen2 = addAdminUserGen2;
 exports.removeAdminUser = removeAdminUser;
+exports.removeAdminUserGen2 = removeAdminUserGen2;
 exports.logUserConnection = logUserConnection;
 exports.logUserConnectionGen2 = logUserConnectionGen2;
 exports.getUserStats = getUserStats;
 exports.getUserStatsGen2 = getUserStatsGen2;
 exports.syncSuperAdminClaim = syncSuperAdminClaim;
+exports.syncSuperAdminClaimGen2 = syncSuperAdminClaimGen2;
 exports.ensureAdminAccessRegistry = ensureAdminAccessRegistry;
 exports.ensureAdminAccessRegistryGen2 = ensureAdminAccessRegistryGen2;
 exports.sendGuestCheckoutOtp = sendGuestCheckoutOtp;

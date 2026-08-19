@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "codebase": "main",
+    "environment": "sandbox",
+    "baselineCommit": "30353e67e6d316cc204ace33844674097bb206ff",
+    "generatedAt": "2026-08-19T11:06:28Z",
+    "operator": "matthis.fradin2@gmail.com",
+    "wave": "G5_A12_A14_AUTH_ADMIN_PREPARED"
+  },
+  "deploymentPolicy": {
+    "exactProject": "secondevienextjsssr",
+    "exactCodebase": "main",
+    "maxBatchSize": 1,
+    "forbiddenGlobalSelector": "functions",
+    "forbiddenTargets": []
+  },
+  "gates": {
+    "targetAbsentBeforeCreate": true,
+    "runtimeIamRequired": "auth-admin-runtime@secondevienextjsssr.iam.gserviceaccount.com",
+    "deploymentAllowed": true,
+    "remediationDeploymentAllowed": false,
+    "sharedPreparationTestsPassed": true,
+    "clientCutoverAllowed": false
+  },
+  "functions": [
+    {
+      "name": "syncSuperAdminClaimGen2",
+      "source": {
+        "export": "syncSuperAdminClaimGen2",
+        "file": "functions/src/auth/adminManagement.js",
+        "sharedHandler": "syncSuperAdminClaimHandler"
+      },
+      "cloud": {
+        "present": false,
+        "project": "secondevienextjsssr",
+        "generation": 2,
+        "region": "europe-west1"
+      },
+      "identities": {
+        "runtimeServiceAccount": "auth-admin-runtime@secondevienextjsssr.iam.gserviceaccount.com",
+        "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com"
+      },
+      "decision": {
+        "classification": "MIGRATION_PARALLEL",
+        "target": "syncSuperAdminClaimGen2",
+        "wave": "G5-A12",
+        "deploymentMaxBatchSize": 1,
+        "rollback": "Preserve syncSuperAdminClaim Gen1 and restore App Hosting build 001."
+      }
+    },
+    {
+      "name": "addAdminUserGen2",
+      "source": {
+        "export": "addAdminUserGen2",
+        "file": "functions/src/auth/adminManagement.js",
+        "sharedHandler": "addAdminUserHandler"
+      },
+      "cloud": {
+        "present": false,
+        "project": "secondevienextjsssr",
+        "generation": 2,
+        "region": "europe-west1"
+      },
+      "identities": {
+        "runtimeServiceAccount": "auth-admin-runtime@secondevienextjsssr.iam.gserviceaccount.com",
+        "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com"
+      },
+      "decision": {
+        "classification": "MIGRATION_PARALLEL",
+        "target": "addAdminUserGen2",
+        "wave": "G5-A13",
+        "deploymentMaxBatchSize": 1,
+        "rollback": "Preserve addAdminUser Gen1 and restore App Hosting build 001."
+      }
+    },
+    {
+      "name": "removeAdminUserGen2",
+      "source": {
+        "export": "removeAdminUserGen2",
+        "file": "functions/src/auth/adminManagement.js",
+        "sharedHandler": "removeAdminUserHandler"
+      },
+      "cloud": {
+        "present": false,
+        "project": "secondevienextjsssr",
+        "generation": 2,
+        "region": "europe-west1"
+      },
+      "identities": {
+        "runtimeServiceAccount": "auth-admin-runtime@secondevienextjsssr.iam.gserviceaccount.com",
+        "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com"
+      },
+      "decision": {
+        "classification": "MIGRATION_PARALLEL",
+        "target": "removeAdminUserGen2",
+        "wave": "G5-A14",
+        "deploymentMaxBatchSize": 1,
+        "rollback": "Preserve removeAdminUser Gen1 and restore App Hosting build 001."
+      }
+    }
+  ]
+}

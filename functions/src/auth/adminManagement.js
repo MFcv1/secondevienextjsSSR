@@ -55,6 +55,18 @@ const AUTH_REGISTRY_GEN2_RUNTIME = Object.freeze({
     enforceAppCheck: true,
     secrets: [SUPER_ADMIN_EMAIL_SECRET]
 });
+const AUTH_ADMIN_GEN2_RUNTIME = Object.freeze({
+    region: 'europe-west1',
+    cpu: 'gcf_gen1',
+    concurrency: 1,
+    minInstances: 0,
+    maxInstances: 1,
+    memory: '256MiB',
+    timeoutSeconds: 60,
+    serviceAccount: 'auth-admin-runtime@secondevienextjsssr.iam.gserviceaccount.com',
+    enforceAppCheck: true,
+    secrets: [SUPER_ADMIN_EMAIL_SECRET]
+});
 
 function hashAdminEmail(email) {
     return crypto.createHash('sha256').update(normalizeEmail(email)).digest('hex');
@@ -164,7 +176,7 @@ exports.ensureAdminAccessRegistryGen2 = onCall(
     async (request) => ensureAdminAccessRegistryHandler(request.data, request)
 );
 
-exports.syncSuperAdminClaim = regionalFunctions().runWith({ enforceAppCheck: true, secrets: [SUPER_ADMIN_EMAIL_SECRET] }).https.onCall(async (data, context) => {
+const syncSuperAdminClaimHandler = async (data, context) => {
     checkConfiguredSuperAdminBootstrap(context);
     const configuredSuperAdminEmail = getSuperAdminEmail();
     const callerEmail = normalizeEmail(context.auth?.token?.email);
@@ -231,10 +243,16 @@ exports.syncSuperAdminClaim = regionalFunctions().runWith({ enforceAppCheck: tru
         console.error("Erreur Sync Super Admin:", error);
         throw new functions.https.HttpsError('internal', 'Synchronisation super-administrateur impossible.');
     }
-});
+};
+
+exports.syncSuperAdminClaim = regionalFunctions().runWith({ enforceAppCheck: true, secrets: [SUPER_ADMIN_EMAIL_SECRET] }).https.onCall(syncSuperAdminClaimHandler);
+exports.syncSuperAdminClaimGen2 = onCall(
+    AUTH_ADMIN_GEN2_RUNTIME,
+    async (request) => syncSuperAdminClaimHandler(request.data, request)
+);
 
 // --- AJOUTER UN ADMIN ---
-exports.addAdminUser = regionalFunctions().runWith({ enforceAppCheck: true, secrets: [SUPER_ADMIN_EMAIL_SECRET] }).https.onCall(async (data, context) => {
+const addAdminUserHandler = async (data, context) => {
     await checkActiveStrongSuperAdmin(context);
     assertConfirmText(data, 'AJOUTER ADMIN', 'ajout admin');
     const normalizedEmail = normalizeEmail(data?.email);
@@ -318,10 +336,16 @@ exports.addAdminUser = regionalFunctions().runWith({ enforceAppCheck: true, secr
         console.error("Erreur Add Admin:", error);
         throw new functions.https.HttpsError('internal', 'Ajout administrateur impossible.');
     }
-});
+};
+
+exports.addAdminUser = regionalFunctions().runWith({ enforceAppCheck: true, secrets: [SUPER_ADMIN_EMAIL_SECRET] }).https.onCall(addAdminUserHandler);
+exports.addAdminUserGen2 = onCall(
+    AUTH_ADMIN_GEN2_RUNTIME,
+    async (request) => addAdminUserHandler(request.data, request)
+);
 
 // --- RÉVOQUER UN ADMIN ---
-exports.removeAdminUser = regionalFunctions().runWith({ enforceAppCheck: true, secrets: [SUPER_ADMIN_EMAIL_SECRET] }).https.onCall(async (data, context) => {
+const removeAdminUserHandler = async (data, context) => {
     await checkActiveStrongSuperAdmin(context);
     assertConfirmText(data, 'RETIRER ADMIN', 'retrait admin');
     const { uid } = data;
@@ -435,7 +459,13 @@ exports.removeAdminUser = regionalFunctions().runWith({ enforceAppCheck: true, s
         console.error("Erreur Remove Admin:", error);
         throw new functions.https.HttpsError('internal', 'Retrait administrateur impossible.');
     }
-});
+};
+
+exports.removeAdminUser = regionalFunctions().runWith({ enforceAppCheck: true, secrets: [SUPER_ADMIN_EMAIL_SECRET] }).https.onCall(removeAdminUserHandler);
+exports.removeAdminUserGen2 = onCall(
+    AUTH_ADMIN_GEN2_RUNTIME,
+    async (request) => removeAdminUserHandler(request.data, request)
+);
 
 // --- LOG CONNEXION (IP + Device) ---
 const logUserConnectionHandler = async (data, context) => {

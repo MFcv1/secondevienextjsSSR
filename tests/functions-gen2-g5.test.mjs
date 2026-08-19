@@ -502,6 +502,71 @@ test('G5-A2 prouve le deploy et autorise uniquement le cutover client', () => {
   assert.equal(iam.secretAccessor, false);
 });
 
+test('G5-A12-A14 prepare les trois mutations admin Gen2 avec handlers partages', () => {
+  const source = read('functions/src/auth/adminManagement.js');
+  const exports = extractLocalExports(ROOT);
+  const registry = read('src/kit/config/functionTargets.js');
+  for (const [legacyName, gen2Name, handlerName] of [
+    ['syncSuperAdminClaim', 'syncSuperAdminClaimGen2', 'syncSuperAdminClaimHandler'],
+    ['addAdminUser', 'addAdminUserGen2', 'addAdminUserHandler'],
+    ['removeAdminUser', 'removeAdminUserGen2', 'removeAdminUserHandler'],
+  ]) {
+    assert.ok(exports.some(({ name }) => name === legacyName));
+    assert.ok(exports.some(({ name }) => name === gen2Name));
+    assert.equal(classificationFor(gen2Name), 'MIGRATION_PARALLEL');
+    assert.match(source, new RegExp(`const ${handlerName} = async \\(data, context\\) =>`));
+    assert.match(source, new RegExp(`exports\\.${legacyName} = regionalFunctions\\(\\)[\\s\\S]*?onCall\\(${handlerName}\\)`));
+    assert.match(source, new RegExp(`exports\\.${gen2Name} = onCall\\([\\s\\S]*?${handlerName}\\(request\\.data, request\\)`));
+    assert.match(registry, new RegExp(`${legacyName}: '${gen2Name}'`));
+    const target = GCLOUD_GEN2_TARGETS[gen2Name];
+    assert.equal(target.runtimeServiceAccount, 'auth-admin-runtime@secondevienextjsssr.iam.gserviceaccount.com');
+    assert.equal(target.cpu, '167m');
+    assert.equal(target.concurrency, '1');
+    assert.equal(target.maxInstances, '1');
+    assert.deepEqual(target.secrets, ['SUPER_ADMIN_EMAIL=SUPER_ADMIN_EMAIL:3']);
+  }
+  assert.match(source, /AUTH_ADMIN_GEN2_RUNTIME[\s\S]*?enforceAppCheck:\s*true[\s\S]*?secrets:\s*\[SUPER_ADMIN_EMAIL_SECRET\]/);
+});
+
+test('G5-A12-A14 borne IAM au runtime admin Auth et au secret proprietaire', () => {
+  const iam = read('scripts/configure-functions-gen2-g5-auth-admin-iam.mjs');
+  for (const expected of [
+    /G5_CREATE_AUTH_ADMIN_RUNTIME/,
+    /SERVICE_ACCOUNT_ID = 'auth-admin-runtime'/,
+    /SECRET = 'SUPER_ADMIN_EMAIL'/,
+    /roles\/datastore\.user/,
+    /roles\/firebaseauth\.admin/,
+    /roles\/logging\.logWriter/,
+    /roles\/serviceusage\.serviceUsageConsumer/,
+    /roles\/secretmanager\.secretAccessor/,
+    /userManagedKeys\.length === 0/,
+    /G5_AUTH_ADMIN_IAM_EFFECTIVE_PROJECT_MISMATCH/,
+    /G5_AUTH_ADMIN_IAM_COMMIT_MISMATCH/,
+  ]) assert.match(iam, expected);
+  assert.doesNotMatch(iam, /roles\/(?:editor|owner)/i);
+  assert.match(read('package.json'), /configure-functions-gen2-g5-auth-admin-iam\.mjs --project secondevienextjsssr --env sandbox/);
+});
+
+test('G5-A12-A14 borne la preuve admin a un compte jetable restaure', () => {
+  const proof = read('scripts/prove-functions-gen2-g5-auth-admin.mjs');
+  for (const expected of [
+    /syncSuperAdminClaimGen2/,
+    /addAdminUserGen2/,
+    /removeAdminUserGen2/,
+    /OWNER_SECRET_BYTES_MISMATCH/,
+    /SYNC_WOULD_MIGRATE_LEGACY_ADMIN/,
+    /confirmText: 'AJOUTER ADMIN'/,
+    /confirmText: 'RETIRER ADMIN'/,
+    /revocationState !== 'completed'/,
+    /tokensValidAfterTime === tokensValidBefore/,
+    /restoreSnapshot\(ownerAccessRef, ownerAccessBefore\)/,
+    /auth\.deleteUser\(temporaryUser\.uid\)/,
+    /fixturesRestored: true/,
+  ]) assert.match(proof, expected);
+  assert.doesNotMatch(proof, /console\.(?:log|info)\([^\n]*(?:Token|temporaryEmail|OWNER_EMAIL)/);
+  assert.match(read('package.json'), /functions:prove-auth-admin:g5/);
+});
+
 test('G5 garde les trois triggers Auth exclusivement en Gen1', () => {
   const index = read('functions/index.js');
   for (const name of ['grantAdminOnAuth', 'onRegisteredUserCreated', 'onRegisteredUserDeleted']) {

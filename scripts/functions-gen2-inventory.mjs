@@ -27,7 +27,10 @@ export const PARALLEL_MIGRATION_EXPORTS = new Set([
   'generatePasskeyRegistrationOptionsGen2',
   'verifyPasskeyRegistrationGen2',
   'generatePasskeyAuthenticationOptionsGen2',
-  'verifyPasskeyAuthenticationGen2'
+  'verifyPasskeyAuthenticationGen2',
+  'syncSuperAdminClaimGen2',
+  'addAdminUserGen2',
+  'removeAdminUserGen2'
 ]);
 
 export const KEEP_GEN2 = new Set([

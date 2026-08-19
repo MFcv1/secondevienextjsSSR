@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "codebase": "main",
+  "baselineCommit": "30353e67e6d316cc204ace33844674097bb206ff",
+  "files": {
+    "apphostingaudit/manifests/functions-gen2-g5-auth-admin-batch.json": "cd43d8652f4c227e2d089432382002929df17c9aaf356a64cfc2f68f9cab103e"
+  }
+}
