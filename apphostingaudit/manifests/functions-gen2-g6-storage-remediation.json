@@ -15,8 +15,8 @@
     "forbiddenTargets": []
   },
   "functions": [
-    { "name": "sendManualInvoiceAdminGen2", "cloud": { "present": true }, "decision": { "classification": "MIGRATION_PARALLEL", "deploymentMaxBatchSize": 1 } },
-    { "name": "getQuoteRequestAdminGen2", "cloud": { "present": true }, "decision": { "classification": "MIGRATION_PARALLEL", "deploymentMaxBatchSize": 1 } },
-    { "name": "uploadQuoteRequestPhotoGen2", "cloud": { "present": true }, "decision": { "classification": "MIGRATION_PARALLEL", "deploymentMaxBatchSize": 1 } }
+    { "name": "sendManualInvoiceAdminGen2", "cloud": { "present": true, "revision": "sendmanualinvoiceadmingen2-00001-hut" }, "identities": { "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com", "runtimeServiceAccount": "manual-invoice-runtime@secondevienextjsssr.iam.gserviceaccount.com" }, "decision": { "classification": "MIGRATION_PARALLEL", "deploymentMaxBatchSize": 1 } },
+    { "name": "getQuoteRequestAdminGen2", "cloud": { "present": true, "revision": "getquoterequestadmingen2-00001-jax" }, "identities": { "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com", "runtimeServiceAccount": "quote-request-runtime@secondevienextjsssr.iam.gserviceaccount.com" }, "decision": { "classification": "MIGRATION_PARALLEL", "deploymentMaxBatchSize": 1 } },
+    { "name": "uploadQuoteRequestPhotoGen2", "cloud": { "present": true, "revision": "uploadquoterequestphotogen2-00001-kiy" }, "identities": { "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com", "runtimeServiceAccount": "quote-request-runtime@secondevienextjsssr.iam.gserviceaccount.com" }, "decision": { "classification": "MIGRATION_PARALLEL", "deploymentMaxBatchSize": 1 } }
   ]
 }
