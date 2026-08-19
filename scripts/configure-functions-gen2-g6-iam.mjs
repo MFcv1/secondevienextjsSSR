@@ -63,15 +63,19 @@ function accountExists(family) {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.project !== PROJECT || args.env !== ENVIRONMENT) fail('G6_IAM_TARGET_INVALID');
+  const requestedIds = String(args.families || FAMILIES.map((family) => family.id).join(','))
+    .split(',').filter(Boolean);
+  const selectedFamilies = FAMILIES.filter((family) => requestedIds.includes(family.id));
+  if (!selectedFamilies.length || selectedFamilies.length !== requestedIds.length) fail('G6_IAM_FAMILIES_INVALID');
   const head = run('git', ['rev-parse', 'HEAD']).stdout.trim();
   if (args.commit !== head) fail('G6_IAM_COMMIT_MISMATCH');
   if (args.execute && args.approval !== APPROVAL) fail('G6_IAM_APPROVAL_INVALID');
   const actualProject = run('gcloud', ['config', 'get-value', 'project']).stdout.trim();
   if (actualProject !== PROJECT) fail('G6_IAM_EFFECTIVE_PROJECT_MISMATCH');
 
-  const existedBefore = Object.fromEntries(FAMILIES.map((family) => [family.id, accountExists(family)]));
+  const existedBefore = Object.fromEntries(selectedFamilies.map((family) => [family.id, accountExists(family)]));
   if (args.execute) {
-    for (const family of FAMILIES) {
+    for (const family of selectedFamilies) {
       if (!existedBefore[family.id]) {
         run('gcloud', [
           'iam', 'service-accounts', 'create', family.id, `--project=${PROJECT}`,
@@ -102,10 +106,10 @@ async function main() {
 
   const projectPolicy = json('gcloud', ['projects', 'get-iam-policy', PROJECT, `--project=${PROJECT}`]);
   const bucketPolicy = json('gcloud', ['storage', 'buckets', 'get-iam-policy', DEFAULT_BUCKET, `--project=${PROJECT}`]);
-  const secretPolicies = Object.fromEntries([...new Set(FAMILIES.flatMap((family) => family.secrets))].map(
+  const secretPolicies = Object.fromEntries([...new Set(selectedFamilies.flatMap((family) => family.secrets))].map(
     (secret) => [secret, json('gcloud', ['secrets', 'get-iam-policy', secret, `--project=${PROJECT}`])]
   ));
-  const families = FAMILIES.map((family) => {
+  const families = selectedFamilies.map((family) => {
     const member = memberFor(family);
     const account = `${family.id}@${PROJECT}.iam.gserviceaccount.com`;
     const keys = accountExists(family)
