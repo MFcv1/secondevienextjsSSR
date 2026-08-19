@@ -1150,6 +1150,14 @@ Le checkpoint executable et le prompt de reprise courant sont les sections
 2.1 et 15 de `apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md`; l'ancien
 prompt G0 est obsolete et ne doit plus etre utilise.
 
+Inventaire apres G6: 200 exports locaux, 195 cloud, 139 Gen1 et 56 Gen2. Les
+24 cibles catalogue/e-mail manuel/onboarding facturation/factures
+manuelles/devis/newsletter sont ACTIVE; les 23 callables du registre client
+ciblent Gen2. `onQuoteRequestSubmittedGen2` est en coexistence CloudEvent avec
+le trigger Gen1 preserve et son claim `confirmationEmail` empeche le double
+envoi. App Hosting sert `build-2026-08-19-003` apres rollback reel vers `002`.
+G7 reste non ouvert.
+
 | Domaine | Exports |
 | --- | --- |
 | commerce | `createOrder`, `stripeWebhook`, `stripeConnectWebhook`, `cancelOrderClient`, `getOrderStatusClient` |

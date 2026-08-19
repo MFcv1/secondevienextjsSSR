@@ -68,13 +68,13 @@ sont conservees dans les manifestes `functions-gen2-*`.
 | baseline avant le checkpoint Monitoring | `25daf810309dc3329cfeb0fb19be0f1790fe608a` |
 | worktree attendu a la reprise | fermeture A12-A14 portee par les commits locaux `4681f5a`, `6a6a925` et le commit de fermeture courant; verifier le statut sans rejouer |
 | phases fermees | G0, G1, G2-A, G2-B 13/13, G3 et G4 |
-| phase active | aucune dans ce checkpoint; G5-A1-A14 sont fermes et l'arret avant G6 est obligatoire |
-| inventaire courant | 176 exports locaux, 171 cloud, 139 Gen1, 32 Gen2, 8 schedulers, 2 queues, 7 Eventarc |
-| cibles paralleles actives | cinq analytics G4 et quatorze Auth G5 basculees; toutes les Gen1 restent intactes |
-| cutover client | App Hosting sert `build-2026-08-19-002`; rollback exact `build-2026-08-19-001`, prouve par drill reel |
+| phase active | aucune; G0-G6 sont fermes et G7 reste non ouvert |
+| inventaire courant | 200 exports locaux, 195 cloud, 139 Gen1, 56 Gen2 |
+| cibles paralleles actives | les 24 Gen2 G6 sont ACTIVE; les 23 callables clientes ciblent Gen2 et toutes les Gen1 restent intactes |
+| cutover client | App Hosting sert `build-2026-08-19-003`; rollback exact `build-2026-08-19-002`, prouve par drill reel |
 | observation G4 | G4-A1 a G4-A5 fermees en validation acceleree; Gen1 et rollbacks preserves |
 | retrait Gen1 | aucun avant G12-A |
-| prochain lot | G6 prepare avec budget quota ferme ci-dessous, mais non ouvert; G7-G13 disposent aussi de cartes quota fermees et aucun lot ne s'ouvre implicitement |
+| prochain lot | aucun ouvert; G7 reste sous HOLD Meta et ne doit pas etre anticipe |
 
 Le correctif Monitoring du 2026-08-17 est applique et idempotent: cinq
 metriques, huit policies severisees et deux canaux conformes; la boucle
@@ -100,10 +100,10 @@ Ordre de reprise optimise et obligatoire:
 1. verifier uniquement HEAD, worktree, projet explicite et etat final des
    ressources touchees depuis le dernier checkpoint; ne pas refaire les
    inventaires, IAM, logs ou preuves historiques sans drift concret;
-2. G5-A6 a G5-A14 sont fermes. Ne pas redeployer leurs Functions, reconstruire
+2. G5-A6 a G6 sont fermes. Ne pas redeployer leurs Functions, reconstruire
    leurs builds, renvoyer d'OTP ou rejouer les ceremonies passkey sans drift
    concret;
-3. ne pas ouvrir G6 depuis ce checkpoint. Une reprise ulterieure doit annoncer
+3. ne pas ouvrir G7 depuis ce checkpoint. Une reprise ulterieure doit annoncer
    explicitement son lot, ses cibles et ses gates avant toute action cloud;
 4. au premier ecart reel, restaurer le build precedent sans retirer Function,
    endpoint, IAM, code ou donnee. Ne jamais recommencer la migration complete.
@@ -2491,6 +2491,22 @@ quiet-window et un inventaire final. Aucun retry avant cause identifiee,
 corrigee et absence de commande/build actif confirmee. Fermer G6, documenter,
 committer localement, puis s'arreter sans ouvrir G7.
 
+**Cloture G6 au 2026-08-19:** les 24 Gen2 sont ACTIVE et les 23 callables ont
+ete basculees ensemble. L'archive unique
+`dacf4c1eb1257fdd18c94a03889822dfa042642d0835b0dd68b3be8f9b8f46da`
+a ete uploadee une fois puis reutilisee par cible. La suite G6 passe 63/63, le
+lint Functions et le build local passent, et les fixtures ont ete restaurees
+avec cinq tentatives d'e-mail au maximum et aucun doublon. App Hosting sert
+`build-2026-08-19-003` apres rollback reel vers `build-2026-08-19-002` puis
+reactivation. La quiet-window unique a confirme zero appel des 23 Gen1; elle a
+revele une signature HTTP implicite sur le trigger devis. La remediation
+ciblee, sans nouvel upload source ni nouvelle livraison e-mail, fixe
+`FUNCTION_SIGNATURE_TYPE=cloudevent`; la revision
+`onquoterequestsubmittedgen2-00002-nix` traite ensuite deux evenements en 204,
+sans erreur ni envoi, et la fixture est restauree. Inventaire ferme:
+`200 local / 195 cloud / 139 Gen1 / 56 Gen2`. Le trigger Gen1, IAM, secrets,
+endpoints, sources et donnees restent intacts. G7 n'est pas ouvert.
+
 ### G7 - Meta et reconciliation Instagram
 
 G7 reste ferme tant que `HOLD_META_RECONCILIATION` n'est pas leve par une
@@ -2889,46 +2905,31 @@ La migration est terminee uniquement si:
 
 ## 15. Reprise optimisee
 
-G5-A12-A14 sont fermes. Le prochain agent ne relit pas le journal historique,
-ne rejoue aucune preuve fermee sans drift concret et n'anticipe pas G6 depuis
-ce checkpoint.
+G6 est ferme. Le prochain agent ne relit pas le journal historique, ne rejoue
+aucune preuve fermee sans drift concret et n'anticipe pas G7 depuis ce
+checkpoint.
 
 ```text
 Branche: codex/functions-gen2-migration.
-Derniere baseline runtime prouvee: `6a6a925`; la fermeture A12-A14 est portee
-par le commit courant de ce checkpoint.
+Baseline d'ouverture G6: `f5886ba3f36610a2e990b342bec6ff97c9d3d228`.
 Projet cloud obligatoire: secondevienextjsssr.
 Operateur obligatoire: matthis.fradin2@gmail.com.
-Etat: build `build-2026-08-19-002` actif; G5-A1 a A14 fermes. A12-A14 sont
-ACTIVE en revisions syncsuperadminclaimgen2-00001-kej,
-addadminusergen2-00001-vok et removeadminusergen2-00001-qef sous
-`auth-admin-runtime`. Le refus App Check 401, le refus non-owner 403, le sync
-owner, la promotion/revocation jetable, les refresh tokens revoques et la
-restauration des fixtures sont prouves sans navigateur. Le rollback reel
-`build-2026-08-19-001`, la reactivation `002`, le bundle cible et la
-quiet-window de 313 secondes a zero erreur / zero appel Gen1 sont fermes.
-A10-A11 et A7-A9 restent ACTIVE sans nouvelle preuve rejouee. Inventaire
-attendu: 176 local, 171 cloud, 139 Gen1, 32 Gen2.
+Etat: G0-G6 fermes; inventaire `200 local / 195 cloud / 139 Gen1 / 56 Gen2`.
+Les 24 Gen2 G6 sont ACTIVE, les 23 callables clientes ciblent Gen2 et le
+trigger Gen1 reste intact. App Hosting sert `build-2026-08-19-003` apres
+rollback reel vers `build-2026-08-19-002` et reactivation. La remediation
+CloudEvent finale du trigger devis reutilise l'archive G6 et passe sans erreur
+ni nouvel e-mail.
 
-Action immediate: arrete-toi a la fermeture A12-A14. Ne redeploie pas A6-A14,
-ne reconstruis pas les builds fermes et ne rejoue ni OTP ni passkey sans drift.
-La prochaine reprise doit etre explicitement ouverte avant toute action G6.
-
-Les deploys Functions A12-A14, les tests locaux, le build App Hosting, le
-cutover, le rollback et la quiet-window ont ete mutualises et fermes. Ne les
-rejoue pas sans drift concret.
-
-Budget d execution: aucune action G6 n est autorisee par ce checkpoint seul.
-Lorsqu'un prompt ouvre explicitement G6, appliquer le budget dur et l'ordre de
-la section G6: une archive Functions, une commande de tests, un build App
-Hosting et une seule sequence cutover/rollback/reactivation/quiet-window.
+Action immediate: arrete-toi a la fermeture G6. Ne redeploie aucune cible G6,
+ne reconstruis aucun build ferme et n'ouvre pas G7 sans prompt explicite.
 
 Garde-fous quota: applique strictement la liste de la section 2.1. Recherches
 bornees avec exclusions, sorties de commandes plafonnees, aucun navigateur si
 le harnais suffit, fixtures validees avant appel externe et secrets utilises
 sans transformation, aucun doublon d upload/build/poll, aucun sous-agent ou
 scan large. Un retry n est autorise qu apres identification et correction de sa
-cause. A12-A14 sont fermes: sans prompt ouvrant explicitement G6, arrete-toi
+cause. G6 est ferme: sans prompt ouvrant explicitement G7, arrete-toi
 sans l'anticiper.
 
 Autonomie: les operations sandbox non destructives, Custom Tokens et jetons
