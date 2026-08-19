@@ -281,60 +281,98 @@ exports.verifyPasskeyAuthenticationGen2 = verifyPasskeyAuthenticationGen2;
 // â”€â”€ ONBOARDING FACTURATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const {
     getBillingGuideStatus,
+    getBillingGuideStatusGen2,
     saveBillingGuideProgress,
+    saveBillingGuideProgressGen2,
     getBillingGuideOperatorStatus,
+    getBillingGuideOperatorStatusGen2,
     completeBillingGuideAdmin,
-    resetBillingGuideTest
+    completeBillingGuideAdminGen2,
+    resetBillingGuideTest,
+    resetBillingGuideTestGen2
 } = require('./src/onboarding/billingGuide');
 
 exports.getBillingGuideStatus = getBillingGuideStatus;
+exports.getBillingGuideStatusGen2 = getBillingGuideStatusGen2;
 exports.saveBillingGuideProgress = saveBillingGuideProgress;
+exports.saveBillingGuideProgressGen2 = saveBillingGuideProgressGen2;
 exports.getBillingGuideOperatorStatus = getBillingGuideOperatorStatus;
+exports.getBillingGuideOperatorStatusGen2 = getBillingGuideOperatorStatusGen2;
 exports.completeBillingGuideAdmin = completeBillingGuideAdmin;
+exports.completeBillingGuideAdminGen2 = completeBillingGuideAdminGen2;
 exports.resetBillingGuideTest = resetBillingGuideTest;
+exports.resetBillingGuideTestGen2 = resetBillingGuideTestGen2;
 
 // ── FACTURES MANUELLES ADMIN ─────────────────────────────
 const {
     getManualInvoiceWorkspaceAdmin,
+    getManualInvoiceWorkspaceAdminGen2,
     prepareManualInvoicePdfAdmin,
+    prepareManualInvoicePdfAdminGen2,
     saveManualInvoiceDraftAdmin,
-    sendManualInvoiceAdmin
+    saveManualInvoiceDraftAdminGen2,
+    sendManualInvoiceAdmin,
+    sendManualInvoiceAdminGen2
 } = require('./src/invoicing/manualInvoices');
 
 exports.getManualInvoiceWorkspaceAdmin = getManualInvoiceWorkspaceAdmin;
+exports.getManualInvoiceWorkspaceAdminGen2 = getManualInvoiceWorkspaceAdminGen2;
 exports.prepareManualInvoicePdfAdmin = prepareManualInvoicePdfAdmin;
+exports.prepareManualInvoicePdfAdminGen2 = prepareManualInvoicePdfAdminGen2;
 exports.saveManualInvoiceDraftAdmin = saveManualInvoiceDraftAdmin;
+exports.saveManualInvoiceDraftAdminGen2 = saveManualInvoiceDraftAdminGen2;
 exports.sendManualInvoiceAdmin = sendManualInvoiceAdmin;
+exports.sendManualInvoiceAdminGen2 = sendManualInvoiceAdminGen2;
 
 // ── DEMANDES DE DEVIS ───────────────────────────────────
 const {
     createQuoteRequest,
+    createQuoteRequestGen2,
     uploadQuoteRequestPhoto,
+    uploadQuoteRequestPhotoGen2,
     finalizeQuoteRequest,
+    finalizeQuoteRequestGen2,
     listQuoteRequestsAdmin,
+    listQuoteRequestsAdminGen2,
     getQuoteRequestAdmin,
+    getQuoteRequestAdminGen2,
     updateQuoteRequestAdmin,
-    onQuoteRequestSubmitted
+    updateQuoteRequestAdminGen2,
+    onQuoteRequestSubmitted,
+    onQuoteRequestSubmittedGen2
 } = require('./src/quotes/quoteRequests');
 
 exports.createQuoteRequest = createQuoteRequest;
+exports.createQuoteRequestGen2 = createQuoteRequestGen2;
 exports.uploadQuoteRequestPhoto = uploadQuoteRequestPhoto;
+exports.uploadQuoteRequestPhotoGen2 = uploadQuoteRequestPhotoGen2;
 exports.finalizeQuoteRequest = finalizeQuoteRequest;
+exports.finalizeQuoteRequestGen2 = finalizeQuoteRequestGen2;
 exports.listQuoteRequestsAdmin = listQuoteRequestsAdmin;
+exports.listQuoteRequestsAdminGen2 = listQuoteRequestsAdminGen2;
 exports.getQuoteRequestAdmin = getQuoteRequestAdmin;
+exports.getQuoteRequestAdminGen2 = getQuoteRequestAdminGen2;
 exports.updateQuoteRequestAdmin = updateQuoteRequestAdmin;
+exports.updateQuoteRequestAdminGen2 = updateQuoteRequestAdminGen2;
 exports.onQuoteRequestSubmitted = onQuoteRequestSubmitted;
+exports.onQuoteRequestSubmittedGen2 = onQuoteRequestSubmittedGen2;
 
 // ── NEWSLETTER ET AVANTAGES CLIENT ─────────────────────
 const {
     claimNewsletterReward,
+    claimNewsletterRewardGen2,
     drawNewsletterReward,
-    listMyNewsletterRewards
+    drawNewsletterRewardGen2,
+    listMyNewsletterRewards,
+    listMyNewsletterRewardsGen2
 } = require('./src/newsletter/newsletterRewards');
 
 exports.claimNewsletterReward = claimNewsletterReward;
+exports.claimNewsletterRewardGen2 = claimNewsletterRewardGen2;
 exports.drawNewsletterReward = drawNewsletterReward;
+exports.drawNewsletterRewardGen2 = drawNewsletterRewardGen2;
 exports.listMyNewsletterRewards = listMyNewsletterRewards;
+exports.listMyNewsletterRewardsGen2 = listMyNewsletterRewardsGen2;
 
 // ── CODES PROMOTIONNELS SERVEUR ─────────────────────────
 const {
@@ -350,12 +388,21 @@ exports.previewPromotionCodeV2 = previewPromotionCodeV2;
 exports.setPromotionCodeStatusAdmin = setPromotionCodeStatusAdmin;
 
 // ── EMAIL (Triggers) ─────────────────────────────────────
-const { onOrderCreated, onOrderUpdated, sendTestEmail, sendRefundStatusEmailAdmin } = require('./src/email/orderEmails');
+const {
+    onOrderCreated,
+    onOrderUpdated,
+    sendTestEmail,
+    sendTestEmailGen2,
+    sendRefundStatusEmailAdmin,
+    sendRefundStatusEmailAdminGen2
+} = require('./src/email/orderEmails');
 
 exports.onOrderCreated = onOrderCreated;
 exports.onOrderUpdated = onOrderUpdated;
 exports.sendTestEmail = sendTestEmail;
+exports.sendTestEmailGen2 = sendTestEmailGen2;
 exports.sendRefundStatusEmailAdmin = sendRefundStatusEmailAdmin;
+exports.sendRefundStatusEmailAdminGen2 = sendRefundStatusEmailAdminGen2;
 
 // ── ANALYTICS ────────────────────────────────────────────
 const {
@@ -414,8 +461,11 @@ const { catalogReconciler } = require('./src/catalog/catalogReconciler');
 const { catalogMediaGarbageCollector } = require('./src/catalog/mediaGarbageCollection');
 const {
     getCatalogPublicationStatus,
+    getCatalogPublicationStatusGen2,
     rebuildCatalogSnapshot,
-    rollbackCatalogSnapshot
+    rebuildCatalogSnapshotGen2,
+    rollbackCatalogSnapshot,
+    rollbackCatalogSnapshotGen2
 } = require('./src/catalog/catalogMaintenance');
 
 exports.onCatalogSourceWrite = onCatalogSourceWrite;
@@ -424,5 +474,8 @@ exports.dispatchCatalogRevalidation = dispatchCatalogRevalidation;
 exports.catalogReconciler = catalogReconciler;
 exports.catalogMediaGarbageCollector = catalogMediaGarbageCollector;
 exports.getCatalogPublicationStatus = getCatalogPublicationStatus;
+exports.getCatalogPublicationStatusGen2 = getCatalogPublicationStatusGen2;
 exports.rebuildCatalogSnapshot = rebuildCatalogSnapshot;
+exports.rebuildCatalogSnapshotGen2 = rebuildCatalogSnapshotGen2;
 exports.rollbackCatalogSnapshot = rollbackCatalogSnapshot;
+exports.rollbackCatalogSnapshotGen2 = rollbackCatalogSnapshotGen2;

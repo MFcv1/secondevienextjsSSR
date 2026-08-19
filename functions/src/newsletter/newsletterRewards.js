@@ -3,6 +3,7 @@
 const crypto = require('node:crypto');
 const admin = require('firebase-admin');
 const functions = require('firebase-functions/v1');
+const { onCall } = require('firebase-functions/v2/https');
 const { getRateLimitClientIp } = require('../../helpers/clientIp');
 const { regionalFunctions } = require('../../helpers/runtime');
 const { getSiteUrl } = require('../../helpers/config');
@@ -40,6 +41,17 @@ const EMAIL_LEASE_MS = 2 * 60 * 1000;
 const PUBLIC_RUNTIME = { enforceAppCheck: true, timeoutSeconds: 60, memory: '256MB' };
 const ACCOUNT_RUNTIME = { enforceAppCheck: true, timeoutSeconds: 30, memory: '256MB' };
 const EMAIL_SECRETS = [GMAIL_EMAIL, GMAIL_PASSWORD, RESEND_API_KEY];
+const NEWSLETTER_GEN2_RUNTIME = Object.freeze({
+    region: 'europe-west1',
+    cpu: 'gcf_gen1',
+    concurrency: 1,
+    minInstances: 0,
+    maxInstances: 1,
+    memory: '256MiB',
+    timeoutSeconds: 60,
+    serviceAccount: 'newsletter-runtime@secondevienextjsssr.iam.gserviceaccount.com',
+    enforceAppCheck: true
+});
 
 function callableError(error, fallback = 'Le jeu newsletter n’a pas pu être traité.') {
     if (error instanceof functions.https.HttpsError) return error;
@@ -293,9 +305,18 @@ const listMyNewsletterRewards = regionalFunctions().runWith(ACCOUNT_RUNTIME).htt
 
 module.exports = {
     claimNewsletterReward,
+    claimNewsletterRewardGen2: onCall(
+        { ...NEWSLETTER_GEN2_RUNTIME, secrets: EMAIL_SECRETS },
+        async (request) => claimNewsletterRewardHandler(request.data, request)
+    ),
     claimNewsletterRewardHandler,
     drawNewsletterReward,
+    drawNewsletterRewardGen2: onCall(NEWSLETTER_GEN2_RUNTIME, async (request) => drawNewsletterRewardHandler(request.data, request)),
     drawNewsletterRewardHandler,
     listMyNewsletterRewards,
+    listMyNewsletterRewardsGen2: onCall(
+        { ...NEWSLETTER_GEN2_RUNTIME, timeoutSeconds: 30 },
+        async (request) => listMyNewsletterRewardsHandler(request.data, request)
+    ),
     listMyNewsletterRewardsHandler
 };

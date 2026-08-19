@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const admin = require('firebase-admin');
 const { getFunctions } = require('firebase-admin/functions');
 const functions = require('firebase-functions/v1');
+const { onCall } = require('firebase-functions/v2/https');
 const { regionalFunctions } = require('../../helpers/runtime');
 const {
     assertConfirmText,
@@ -34,6 +35,17 @@ const {
 const REGION = 'europe-west1';
 const BUILD_TASK = `locations/${REGION}/functions/dispatchCatalogBuild`;
 const REVALIDATION_TASK = `locations/${REGION}/functions/dispatchCatalogRevalidation`;
+const CATALOG_MAINTENANCE_GEN2_RUNTIME = Object.freeze({
+    region: REGION,
+    cpu: 'gcf_gen1',
+    concurrency: 1,
+    minInstances: 0,
+    maxInstances: 1,
+    memory: '512MiB',
+    timeoutSeconds: 120,
+    serviceAccount: CATALOG_BUILDER_SERVICE_ACCOUNT,
+    enforceAppCheck: true
+});
 
 const bucket = () => admin.storage().bucket(CATALOG_SNAPSHOT_BUCKET);
 
@@ -447,6 +459,18 @@ const rebuildCatalogSnapshot = regionalFunctions()
 module.exports = {
     checkedPublicPointer,
     getCatalogPublicationStatus,
+    getCatalogPublicationStatusGen2: onCall(
+        { ...CATALOG_MAINTENANCE_GEN2_RUNTIME, timeoutSeconds: 60 },
+        async (request) => getCatalogPublicationStatus.run(request.data, request)
+    ),
     rebuildCatalogSnapshot,
-    rollbackCatalogSnapshot
+    rebuildCatalogSnapshotGen2: onCall(
+        { ...CATALOG_MAINTENANCE_GEN2_RUNTIME, timeoutSeconds: 60 },
+        async (request) => rebuildCatalogSnapshot.run(request.data, request)
+    ),
+    rollbackCatalogSnapshot,
+    rollbackCatalogSnapshotGen2: onCall(
+        CATALOG_MAINTENANCE_GEN2_RUNTIME,
+        async (request) => rollbackCatalogSnapshot.run(request.data, request)
+    )
 };

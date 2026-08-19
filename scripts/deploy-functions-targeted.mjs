@@ -11,6 +11,75 @@ export const EXPECTED_PROJECT = 'secondevienextjsssr';
 export const EXPECTED_CODEBASE = 'main';
 export const MAX_BATCH_SIZE = 10;
 const FIREBASE_DNS_NODE_OPTION = '--dns-result-order=ipv4first';
+const G6_BUILD_SERVICE_ACCOUNT = 'projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com';
+const G6_EMAIL_SECRETS = Object.freeze([
+  'GMAIL_EMAIL=GMAIL_EMAIL:2',
+  'GMAIL_PASSWORD=GMAIL_PASSWORD:5',
+  'RESEND_API_KEY=RESEND_API_KEY:1'
+]);
+const g6Callable = ({ name, serviceAccount, memory = '256Mi', timeout = '60s', secrets = [], environmentVariableNames = [] }) => Object.freeze({
+  create: true,
+  g6: true,
+  triggerType: 'http-callable',
+  region: 'europe-west1',
+  runtime: 'nodejs22',
+  entryPoint: name,
+  runtimeServiceAccount: `${serviceAccount}@secondevienextjsssr.iam.gserviceaccount.com`,
+  buildServiceAccount: G6_BUILD_SERVICE_ACCOUNT,
+  memory,
+  cpu: '167m',
+  timeout,
+  concurrency: '1',
+  minInstances: '0',
+  maxInstances: '1',
+  ingressSettings: 'all',
+  secrets,
+  environmentVariableNames
+});
+const G6_GEN2_TARGETS = Object.freeze({
+  getCatalogPublicationStatusGen2: g6Callable({ name: 'getCatalogPublicationStatusGen2', serviceAccount: 'catalog-builder', memory: '512Mi' }),
+  rebuildCatalogSnapshotGen2: g6Callable({ name: 'rebuildCatalogSnapshotGen2', serviceAccount: 'catalog-builder', memory: '512Mi' }),
+  rollbackCatalogSnapshotGen2: g6Callable({ name: 'rollbackCatalogSnapshotGen2', serviceAccount: 'catalog-builder', memory: '512Mi', timeout: '120s' }),
+  sendRefundStatusEmailAdminGen2: g6Callable({ name: 'sendRefundStatusEmailAdminGen2', serviceAccount: 'email-manual-runtime', secrets: G6_EMAIL_SECRETS, environmentVariableNames: ['TRANSACTIONAL_EMAIL_PROVIDER'] }),
+  sendTestEmailGen2: g6Callable({ name: 'sendTestEmailGen2', serviceAccount: 'email-manual-runtime', secrets: G6_EMAIL_SECRETS, environmentVariableNames: ['TRANSACTIONAL_EMAIL_PROVIDER'] }),
+  completeBillingGuideAdminGen2: g6Callable({ name: 'completeBillingGuideAdminGen2', serviceAccount: 'billing-guide-runtime', secrets: ['SUPER_ADMIN_EMAIL=SUPER_ADMIN_EMAIL:3'], environmentVariableNames: ['BILLING_GUIDE_MODE', 'BILLING_GUIDE_TEST_UID', 'BILLING_GUIDE_LIVE_UID', 'BILLING_GUIDE_TECHNICAL_EMAIL'] }),
+  getBillingGuideOperatorStatusGen2: g6Callable({ name: 'getBillingGuideOperatorStatusGen2', serviceAccount: 'billing-guide-runtime', secrets: ['SUPER_ADMIN_EMAIL=SUPER_ADMIN_EMAIL:3'], environmentVariableNames: ['BILLING_GUIDE_MODE', 'BILLING_GUIDE_TEST_UID', 'BILLING_GUIDE_LIVE_UID', 'BILLING_GUIDE_TECHNICAL_EMAIL'] }),
+  getBillingGuideStatusGen2: g6Callable({ name: 'getBillingGuideStatusGen2', serviceAccount: 'billing-guide-runtime', secrets: ['SUPER_ADMIN_EMAIL=SUPER_ADMIN_EMAIL:3'], environmentVariableNames: ['BILLING_GUIDE_MODE', 'BILLING_GUIDE_TEST_UID', 'BILLING_GUIDE_LIVE_UID', 'BILLING_GUIDE_TECHNICAL_EMAIL'] }),
+  resetBillingGuideTestGen2: g6Callable({ name: 'resetBillingGuideTestGen2', serviceAccount: 'billing-guide-runtime', secrets: ['SUPER_ADMIN_EMAIL=SUPER_ADMIN_EMAIL:3'], environmentVariableNames: ['BILLING_GUIDE_MODE', 'BILLING_GUIDE_TEST_UID', 'BILLING_GUIDE_LIVE_UID', 'BILLING_GUIDE_TECHNICAL_EMAIL'] }),
+  saveBillingGuideProgressGen2: g6Callable({ name: 'saveBillingGuideProgressGen2', serviceAccount: 'billing-guide-runtime', secrets: ['SUPER_ADMIN_EMAIL=SUPER_ADMIN_EMAIL:3'], environmentVariableNames: ['BILLING_GUIDE_MODE', 'BILLING_GUIDE_TEST_UID', 'BILLING_GUIDE_LIVE_UID', 'BILLING_GUIDE_TECHNICAL_EMAIL'] }),
+  getManualInvoiceWorkspaceAdminGen2: g6Callable({ name: 'getManualInvoiceWorkspaceAdminGen2', serviceAccount: 'manual-invoice-runtime', memory: '512Mi', timeout: '30s' }),
+  prepareManualInvoicePdfAdminGen2: g6Callable({ name: 'prepareManualInvoicePdfAdminGen2', serviceAccount: 'manual-invoice-runtime', memory: '512Mi' }),
+  saveManualInvoiceDraftAdminGen2: g6Callable({ name: 'saveManualInvoiceDraftAdminGen2', serviceAccount: 'manual-invoice-runtime', memory: '512Mi', timeout: '30s' }),
+  sendManualInvoiceAdminGen2: g6Callable({ name: 'sendManualInvoiceAdminGen2', serviceAccount: 'manual-invoice-runtime', memory: '512Mi', secrets: G6_EMAIL_SECRETS, environmentVariableNames: ['TRANSACTIONAL_EMAIL_PROVIDER'] }),
+  createQuoteRequestGen2: g6Callable({ name: 'createQuoteRequestGen2', serviceAccount: 'quote-request-runtime', memory: '512Mi' }),
+  finalizeQuoteRequestGen2: g6Callable({ name: 'finalizeQuoteRequestGen2', serviceAccount: 'quote-request-runtime', memory: '512Mi' }),
+  getQuoteRequestAdminGen2: g6Callable({ name: 'getQuoteRequestAdminGen2', serviceAccount: 'quote-request-runtime', memory: '512Mi', timeout: '30s' }),
+  listQuoteRequestsAdminGen2: g6Callable({ name: 'listQuoteRequestsAdminGen2', serviceAccount: 'quote-request-runtime', memory: '512Mi', timeout: '30s' }),
+  updateQuoteRequestAdminGen2: g6Callable({ name: 'updateQuoteRequestAdminGen2', serviceAccount: 'quote-request-runtime', memory: '512Mi', timeout: '30s' }),
+  uploadQuoteRequestPhotoGen2: g6Callable({ name: 'uploadQuoteRequestPhotoGen2', serviceAccount: 'quote-request-runtime', memory: '512Mi' }),
+  onQuoteRequestSubmittedGen2: Object.freeze({
+    create: true,
+    g6: true,
+    triggerType: 'event',
+    region: 'europe-west1',
+    runtime: 'nodejs22',
+    entryPoint: 'onQuoteRequestSubmittedGen2',
+    eventType: 'google.cloud.firestore.document.v1.updated',
+    eventFilters: 'type=google.cloud.firestore.document.v1.updated,database=(default),namespace=(default)',
+    documentPathPattern: 'quote_requests/{quoteId}',
+    eventPathPattern: 'document=quote_requests/{quoteId}',
+    triggerLocation: 'eur3',
+    triggerServiceAccount: 'functions-eventarc-invoker@secondevienextjsssr.iam.gserviceaccount.com',
+    runtimeServiceAccount: 'quote-request-runtime@secondevienextjsssr.iam.gserviceaccount.com',
+    buildServiceAccount: G6_BUILD_SERVICE_ACCOUNT,
+    memory: '512Mi', cpu: '167m', timeout: '60s', concurrency: '1', minInstances: '0', maxInstances: '1', ingressSettings: 'all',
+    secrets: G6_EMAIL_SECRETS,
+    environmentVariableNames: ['TRANSACTIONAL_EMAIL_PROVIDER']
+  }),
+  claimNewsletterRewardGen2: g6Callable({ name: 'claimNewsletterRewardGen2', serviceAccount: 'newsletter-runtime', secrets: G6_EMAIL_SECRETS, environmentVariableNames: ['TRANSACTIONAL_EMAIL_PROVIDER'] }),
+  drawNewsletterRewardGen2: g6Callable({ name: 'drawNewsletterRewardGen2', serviceAccount: 'newsletter-runtime' }),
+  listMyNewsletterRewardsGen2: g6Callable({ name: 'listMyNewsletterRewardsGen2', serviceAccount: 'newsletter-runtime', timeout: '30s' })
+});
 const GCLOUD_GEN1_TARGETS = Object.freeze({
   commerceOperationsReconciler: Object.freeze({
     region: 'europe-west1',
@@ -81,6 +150,7 @@ const GCLOUD_GEN1_TARGETS = Object.freeze({
   })
 });
 export const GCLOUD_GEN2_TARGETS = Object.freeze({
+  ...G6_GEN2_TARGETS,
   removeAdminUserGen2: Object.freeze({
     create: true,
     triggerType: 'http-callable',
@@ -1052,6 +1122,15 @@ export function validateDeploymentRequest({
     if (entries[0].cloud?.present !== false || entries[0].decision?.classification !== 'MIGRATION_PARALLEL') {
       fail('Creation gcloud Gen2 exige une cible parallele absente du cloud');
     }
+    if (target.g6) {
+      const sourceUri = required(args, 'source-uri');
+      const sourceSha256 = required(args, 'source-sha256');
+      if (!/^gs:\/\/gcf-v2-sources-231220287936-europe-west1\/g6\/[0-9a-f]{64}\/function-source\.zip#[0-9]+$/.test(sourceUri)) {
+        fail('Archive source G6 immutable invalide');
+      }
+      if (!/^[0-9a-f]{64}$/.test(sourceSha256)) fail('SHA-256 source G6 invalide');
+      if (!sourceUri.includes(`/g6/${sourceSha256}/`)) fail('URI et SHA-256 source G6 divergents');
+    }
   }
   if (transport === 'gcloud-gen2-update') {
     const target = allowlist.length === 1 ? GCLOUD_GEN2_TARGETS[allowlist[0]] : null;
@@ -1073,7 +1152,17 @@ export function validateDeploymentRequest({
       fail('Digest source rollback G2-B invalide');
     }
   }
-  return { project, codebase, commit, allowlist, selectors, entries, transport };
+  return {
+    project,
+    codebase,
+    commit,
+    allowlist,
+    selectors,
+    entries,
+    transport,
+    sourceUri: args['source-uri'] || null,
+    sourceSha256: args['source-sha256'] || null
+  };
 }
 
 export function buildFirebaseDeployArgs(validation) {
@@ -1134,7 +1223,7 @@ export function buildGcloudGen2DeployArgs(validation) {
     `--region=${target.region}`,
     '--gen2',
     `--runtime=${target.runtime}`,
-    '--source=functions',
+    `--source=${target.g6 ? validation.sourceUri : 'functions'}`,
     `--entry-point=${target.entryPoint}`,
     ...triggerArgs,
     `--run-service-account=${target.runtimeServiceAccount}`,
@@ -1152,7 +1241,11 @@ export function buildGcloudGen2DeployArgs(validation) {
     '--quiet'
   ];
   if (target.secrets?.length) args.push(`--set-secrets=${target.secrets.join(',')}`);
-  if (target.environmentVariables?.length) args.push(`--set-env-vars=${target.environmentVariables.join(',')}`);
+  const environmentVariables = [
+    ...(target.environmentVariables || []),
+    ...(target.environmentVariableNames || []).map((name) => `${name}=${process.env[name] || ''}`)
+  ];
+  if (environmentVariables.length) args.push(`--set-env-vars=${environmentVariables.join(',')}`);
   return args;
 }
 

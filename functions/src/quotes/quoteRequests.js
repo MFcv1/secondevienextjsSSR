@@ -3,6 +3,8 @@
 const crypto = require('node:crypto');
 const admin = require('firebase-admin');
 const functions = require('firebase-functions/v1');
+const { onCall } = require('firebase-functions/v2/https');
+const { onDocumentUpdated } = require('firebase-functions/v2/firestore');
 const sharp = require('sharp');
 const { getRateLimitClientIp } = require('../../helpers/clientIp');
 const { checkActiveStrongAdmin, normalizeFirestoreId } = require('../../helpers/security');
@@ -35,9 +37,22 @@ const QUOTES_COLLECTION = 'quote_requests';
 const QUOTE_AUDIT_COLLECTION = 'sys_audit_quotes';
 const QUOTE_STORAGE_ROOT = 'quote-requests/v1';
 const MAX_ADMIN_QUOTES = 100;
+const EMAIL_CLAIM_LEASE_MS = 2 * 60 * 1000;
+const GEN1_QUOTE_EMAIL_HANDOFF_MS = 20 * 1000;
 const EMAIL_SECRETS = [GMAIL_EMAIL, GMAIL_PASSWORD, RESEND_API_KEY];
 const PUBLIC_RUNTIME = { enforceAppCheck: true, timeoutSeconds: 60, memory: '512MB' };
 const ADMIN_RUNTIME = { enforceAppCheck: true, timeoutSeconds: 30, memory: '512MB' };
+const QUOTE_GEN2_RUNTIME = Object.freeze({
+    region: 'europe-west1',
+    cpu: 'gcf_gen1',
+    concurrency: 1,
+    minInstances: 0,
+    maxInstances: 1,
+    memory: '512MiB',
+    timeoutSeconds: 60,
+    serviceAccount: 'quote-request-runtime@secondevienextjsssr.iam.gserviceaccount.com',
+    enforceAppCheck: true
+});
 
 function callableError(error, fallback = 'La demande de devis n’a pas pu être traitée.') {
     if (error instanceof functions.https.HttpsError) return error;
@@ -481,13 +496,27 @@ async function sendQuoteReceiptEmail(change, context) {
     if (before.intakeStatus === 'submitted' || quote.intakeStatus !== 'submitted') return null;
     const ref = change.after.ref;
     const startedAt = admin.firestore.Timestamp.now();
-    await ref.set({
-        confirmationEmail: {
-            status: 'sending',
-            startedAt,
-            eventId: context.eventId || null
+    const eventId = String(context.eventId || `quote-received/${change.after.id}`);
+    const claimed = await db.runTransaction(async (transaction) => {
+        const snapshot = await transaction.get(ref);
+        if (!snapshot.exists || snapshot.data()?.intakeStatus !== 'submitted') return false;
+        const delivery = snapshot.data()?.confirmationEmail || {};
+        if (delivery.status === 'sent') return false;
+        const leaseStartedAt = delivery.startedAt?.toMillis?.() || 0;
+        if (delivery.status === 'sending' && leaseStartedAt > startedAt.toMillis() - EMAIL_CLAIM_LEASE_MS) {
+            return false;
         }
-    }, { merge: true });
+        transaction.set(ref, {
+            confirmationEmail: {
+                status: 'sending',
+                startedAt,
+                eventId,
+                attemptCount: Number(delivery.attemptCount || 0) + 1
+            }
+        }, { merge: true });
+        return true;
+    });
+    if (!claimed) return null;
     try {
         const runtime = createTransactionalEmailRuntime({
             provider: TRANSACTIONAL_EMAIL_PROVIDER.value(),
@@ -500,27 +529,37 @@ async function sendQuoteReceiptEmail(change, context) {
             quoteReceiptEmail(quote, runtime.fromAddress),
             { idempotencyKey: `quote-received/${change.after.id}` }
         );
-        await ref.set({
-            confirmationEmail: {
-                status: 'sent',
-                provider: result.provider,
-                providerMessageId: result.id || null,
-                completedAt: admin.firestore.FieldValue.serverTimestamp()
-            }
-        }, { merge: true });
+        await db.runTransaction(async (transaction) => {
+            const snapshot = await transaction.get(ref);
+            if (snapshot.data()?.confirmationEmail?.eventId !== eventId) return;
+            transaction.set(ref, {
+                confirmationEmail: {
+                    status: 'sent',
+                    eventId,
+                    provider: result.provider,
+                    providerMessageId: result.id || null,
+                    completedAt: admin.firestore.FieldValue.serverTimestamp()
+                }
+            }, { merge: true });
+        });
         return result;
     } catch (error) {
         console.error('Quote receipt email failed', {
             quoteId: change.after.id,
             code: String(error?.code || error?.message || 'unknown').slice(0, 120)
         });
-        await ref.set({
-            confirmationEmail: {
-                status: 'failed',
-                errorCode: String(error?.code || 'SEND_FAILED').slice(0, 120),
-                completedAt: admin.firestore.FieldValue.serverTimestamp()
-            }
-        }, { merge: true });
+        await db.runTransaction(async (transaction) => {
+            const snapshot = await transaction.get(ref);
+            if (snapshot.data()?.confirmationEmail?.eventId !== eventId) return;
+            transaction.set(ref, {
+                confirmationEmail: {
+                    status: 'failed',
+                    eventId,
+                    errorCode: String(error?.code || 'SEND_FAILED').slice(0, 120),
+                    completedAt: admin.firestore.FieldValue.serverTimestamp()
+                }
+            }, { merge: true });
+        });
         return null;
     }
 }
@@ -535,21 +574,50 @@ const onQuoteRequestSubmitted = regionalFunctions()
     .runWith({ secrets: EMAIL_SECRETS, timeoutSeconds: 60, memory: '512MB' })
     .firestore.document(`${QUOTES_COLLECTION}/{quoteId}`)
     .onUpdate(sendQuoteReceiptEmail);
+const onQuoteRequestSubmittedGen2 = onDocumentUpdated(
+    {
+        document: `${QUOTES_COLLECTION}/{quoteId}`,
+        region: 'europe-west1',
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+        minInstances: 0,
+        maxInstances: 1,
+        memory: '512MiB',
+        timeoutSeconds: 60,
+        serviceAccount: QUOTE_GEN2_RUNTIME.serviceAccount,
+        secrets: EMAIL_SECRETS,
+        retry: true
+    },
+    async (event) => {
+        // Pendant la coexistence, la Gen1 conserve la priorité sur son claim
+        // `confirmationEmail`. La Gen2 relit ensuite le document et ne livre
+        // que si aucun worker Gen1 n'a acquis le lease.
+        await new Promise((resolve) => setTimeout(resolve, GEN1_QUOTE_EMAIL_HANDOFF_MS));
+        return sendQuoteReceiptEmail(event.data, { eventId: event.id, params: event.params });
+    }
+);
 
 module.exports = {
     createQuoteRequest,
+    createQuoteRequestGen2: onCall(QUOTE_GEN2_RUNTIME, async (request) => createQuoteRequestHandler(request.data, request)),
     createQuoteRequestHandler,
     finalizeQuoteRequest,
+    finalizeQuoteRequestGen2: onCall(QUOTE_GEN2_RUNTIME, async (request) => finalizeQuoteRequestHandler(request.data, request)),
     finalizeQuoteRequestHandler,
     getQuoteRequestAdmin,
+    getQuoteRequestAdminGen2: onCall({ ...QUOTE_GEN2_RUNTIME, timeoutSeconds: 30 }, async (request) => getQuoteRequestAdminHandler(request.data, request)),
     getQuoteRequestAdminHandler,
     listQuoteRequestsAdmin,
+    listQuoteRequestsAdminGen2: onCall({ ...QUOTE_GEN2_RUNTIME, timeoutSeconds: 30 }, async (request) => listQuoteRequestsAdminHandler(request.data, request)),
     listQuoteRequestsAdminHandler,
     onQuoteRequestSubmitted,
+    onQuoteRequestSubmittedGen2,
     sendQuoteReceiptEmail,
     serializeQuote,
     updateQuoteRequestAdmin,
+    updateQuoteRequestAdminGen2: onCall({ ...QUOTE_GEN2_RUNTIME, timeoutSeconds: 30 }, async (request) => updateQuoteRequestAdminHandler(request.data, request)),
     updateQuoteRequestAdminHandler,
     uploadQuoteRequestPhoto,
+    uploadQuoteRequestPhotoGen2: onCall(QUOTE_GEN2_RUNTIME, async (request) => uploadQuoteRequestPhotoHandler(request.data, request)),
     uploadQuoteRequestPhotoHandler
 };

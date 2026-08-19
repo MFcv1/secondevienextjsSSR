@@ -2,6 +2,7 @@
 
 const admin = require('firebase-admin');
 const { defineString } = require('firebase-functions/params');
+const { onCall } = require('firebase-functions/v2/https');
 const {
     assertConfirmText,
     checkActiveStrongAdmin,
@@ -32,6 +33,18 @@ const COMPLETE_CONFIRMATION = 'VALIDER LA FACTURATION';
 const RESET_CONFIRMATION = 'REINITIALISER LE TEST';
 
 const db = admin.firestore();
+const BILLING_GUIDE_GEN2_RUNTIME = Object.freeze({
+    region: 'europe-west1',
+    cpu: 'gcf_gen1',
+    concurrency: 1,
+    minInstances: 0,
+    maxInstances: 1,
+    memory: '256MiB',
+    timeoutSeconds: 60,
+    serviceAccount: 'billing-guide-runtime@secondevienextjsssr.iam.gserviceaccount.com',
+    enforceAppCheck: true,
+    secrets: [SUPER_ADMIN_EMAIL]
+});
 
 function getParamValue(param, envName) {
     return String(process.env[envName] || param.value() || '').trim();
@@ -347,3 +360,24 @@ exports.resetBillingGuideTest = regionalFunctions().runWith({
     });
     return { success: true, targetUid };
 });
+
+exports.getBillingGuideStatusGen2 = onCall(
+    BILLING_GUIDE_GEN2_RUNTIME,
+    async (request) => exports.getBillingGuideStatus.run(request.data, request)
+);
+exports.saveBillingGuideProgressGen2 = onCall(
+    BILLING_GUIDE_GEN2_RUNTIME,
+    async (request) => exports.saveBillingGuideProgress.run(request.data, request)
+);
+exports.getBillingGuideOperatorStatusGen2 = onCall(
+    BILLING_GUIDE_GEN2_RUNTIME,
+    async (request) => exports.getBillingGuideOperatorStatus.run(request.data, request)
+);
+exports.completeBillingGuideAdminGen2 = onCall(
+    BILLING_GUIDE_GEN2_RUNTIME,
+    async (request) => exports.completeBillingGuideAdmin.run(request.data, request)
+);
+exports.resetBillingGuideTestGen2 = onCall(
+    BILLING_GUIDE_GEN2_RUNTIME,
+    async (request) => exports.resetBillingGuideTest.run(request.data, request)
+);

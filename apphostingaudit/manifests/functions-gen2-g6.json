@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "environment": "sandbox",
+    "codebase": "main",
+    "baselineCommit": "f5886ba3f36610a2e990b342bec6ff97c9d3d228",
+    "gate": "G6"
+  },
+  "gates": {
+    "deploymentAllowed": true
+  },
+  "deploymentPolicy": {
+    "forbiddenTargets": []
+  },
+  "functions": [
+    { "name": "getCatalogPublicationStatusGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    { "name": "rebuildCatalogSnapshotGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    { "name": "rollbackCatalogSnapshotGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    { "name": "sendRefundStatusEmailAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    { "name": "sendTestEmailGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    { "name": "completeBillingGuideAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    { "name": "getBillingGuideOperatorStatusGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    { "name": "getBillingGuideStatusGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    { "name": "resetBillingGuideTestGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    { "name": "saveBillingGuideProgressGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    { "name": "getManualInvoiceWorkspaceAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    { "name": "prepareManualInvoicePdfAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    { "name": "saveManualInvoiceDraftAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    { "name": "sendManualInvoiceAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    { "name": "createQuoteRequestGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    { "name": "finalizeQuoteRequestGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    { "name": "getQuoteRequestAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    { "name": "listQuoteRequestsAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    { "name": "updateQuoteRequestAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    { "name": "uploadQuoteRequestPhotoGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    { "name": "claimNewsletterRewardGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    { "name": "drawNewsletterRewardGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    { "name": "listMyNewsletterRewardsGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    { "name": "onQuoteRequestSubmittedGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL", "deploymentMaxBatchSize": 1 } }
+  ]
+}

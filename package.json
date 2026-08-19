@@ -90,6 +90,7 @@
     "test:functions-g3": "node --test tests/functions-gen2-g3.test.mjs",
     "test:functions-g4": "node --test tests/functions-gen2-g4.test.mjs",
     "test:functions-g5": "node --test tests/functions-gen2-g5.test.mjs",
+    "test:functions-g6": "node --test tests/functions-gen2-g6.test.mjs tests/billing-onboarding-contract.test.cjs tests/invoicing/manual-invoices.test.cjs tests/quote-requests.test.cjs tests/newsletter-rewards.test.cjs tests/catalog/resilience.test.cjs tests/commerce/domain/gate5-consumers.test.cjs",
     "test:billing-onboarding": "node --test tests/billing-onboarding-contract.test.cjs",
     "test:invoices": "node --test tests/invoicing/manual-invoices.test.cjs",
     "test:quotes": "node --test tests/quote-requests.test.cjs",

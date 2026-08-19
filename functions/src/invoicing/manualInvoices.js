@@ -3,6 +3,7 @@
 const crypto = require('node:crypto');
 const admin = require('firebase-admin');
 const functions = require('firebase-functions/v1');
+const { onCall } = require('firebase-functions/v2/https');
 const {
     checkActiveStrongAdmin,
     normalizeFirestoreId
@@ -41,6 +42,17 @@ const INVOICE_STORAGE_ROOT = 'admin-invoices/v1';
 const MAX_RECENT_INVOICES = 60;
 const MAX_PRODUCTS = 300;
 const EMAIL_SECRETS = [GMAIL_EMAIL, GMAIL_PASSWORD, RESEND_API_KEY];
+const MANUAL_INVOICE_GEN2_RUNTIME = Object.freeze({
+    region: 'europe-west1',
+    cpu: 'gcf_gen1',
+    concurrency: 1,
+    minInstances: 0,
+    maxInstances: 1,
+    memory: '512MiB',
+    timeoutSeconds: 60,
+    serviceAccount: 'manual-invoice-runtime@secondevienextjsssr.iam.gserviceaccount.com',
+    enforceAppCheck: true
+});
 
 function callableError(error) {
     if (error instanceof functions.https.HttpsError) return error;
@@ -528,12 +540,28 @@ const sendManualInvoiceAdmin = regionalFunctions()
 
 module.exports = {
     getManualInvoiceWorkspaceAdmin,
+    getManualInvoiceWorkspaceAdminGen2: onCall(
+        { ...MANUAL_INVOICE_GEN2_RUNTIME, timeoutSeconds: 30 },
+        async (request) => getManualInvoiceWorkspaceHandler(request.data, request)
+    ),
     getManualInvoiceWorkspaceHandler,
     prepareManualInvoicePdfAdmin,
+    prepareManualInvoicePdfAdminGen2: onCall(
+        MANUAL_INVOICE_GEN2_RUNTIME,
+        async (request) => prepareManualInvoicePdfHandler(request.data, request)
+    ),
     prepareManualInvoicePdfHandler,
     saveManualInvoiceDraftAdmin,
+    saveManualInvoiceDraftAdminGen2: onCall(
+        { ...MANUAL_INVOICE_GEN2_RUNTIME, timeoutSeconds: 30 },
+        async (request) => saveManualInvoiceDraftHandler(request.data, request)
+    ),
     saveManualInvoiceDraftHandler,
     sendManualInvoiceAdmin,
+    sendManualInvoiceAdminGen2: onCall(
+        { ...MANUAL_INVOICE_GEN2_RUNTIME, secrets: EMAIL_SECRETS },
+        async (request) => sendManualInvoiceHandler(request.data, request)
+    ),
     sendManualInvoiceHandler,
     serializeProduct
 };

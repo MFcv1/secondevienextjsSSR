@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "algorithm": "sha256",
+  "files": {
+    "apphostingaudit/manifests/functions-gen2-g6.json": "5b5830657d739af3c1d4d67396af5e2dfaa4b3ac2b8d8d30ac2a24375d96d44a"
+  }
+}

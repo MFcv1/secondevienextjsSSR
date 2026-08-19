@@ -6,6 +6,7 @@
  */
 const admin = require('firebase-admin');
 const functions = require('firebase-functions/v1');
+const { onCall } = require('firebase-functions/v2/https');
 const { onDocumentCreated, onDocumentUpdated } = require('firebase-functions/v2/firestore');
 const { getSiteUrl } = require('../../helpers/config');
 const { checkActiveStrongAdmin, normalizeFirestoreId } = require('../../helpers/security');
@@ -22,6 +23,18 @@ const REFUND_EMAIL_STATUSES = new Set(['refund_pending', 'refunded', 'refund_fai
 const V2_EMAIL_OUTBOX_REQUIRED = 2;
 const LEGACY_ORDER_EMAIL_RUNTIME_SERVICE_ACCOUNT =
     'legacy-order-email-worker@secondevienextjsssr.iam.gserviceaccount.com';
+const MANUAL_EMAIL_GEN2_RUNTIME = Object.freeze({
+    region: 'europe-west1',
+    cpu: 'gcf_gen1',
+    concurrency: 1,
+    minInstances: 0,
+    maxInstances: 1,
+    memory: '256MiB',
+    timeoutSeconds: 60,
+    serviceAccount: 'email-manual-runtime@secondevienextjsssr.iam.gserviceaccount.com',
+    enforceAppCheck: true,
+    secrets: TRANSACTIONAL_EMAIL_SECRETS
+});
 let cachedLegacyEmailDelivery = null;
 
 function getLegacyEmailDelivery() {
@@ -347,6 +360,15 @@ exports.sendRefundStatusEmailAdmin = regionalFunctions().runWith({ enforceAppChe
 
     return { success: true, to: clientEmail, status: order.status || null, provider: emailRuntime.provider };
 });
+
+exports.sendTestEmailGen2 = onCall(
+    MANUAL_EMAIL_GEN2_RUNTIME,
+    async (request) => exports.sendTestEmail.run(request.data, request)
+);
+exports.sendRefundStatusEmailAdminGen2 = onCall(
+    MANUAL_EMAIL_GEN2_RUNTIME,
+    async (request) => exports.sendRefundStatusEmailAdmin.run(request.data, request)
+);
 
 // --- TRIGGER: Nouvelle Commande ---
 exports.onOrderCreated = onDocumentCreated(
