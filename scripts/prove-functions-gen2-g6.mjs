@@ -125,13 +125,16 @@ async function proveCatalog() {
 }
 
 async function proveCatalogReadOnly() {
-  const status = await result('getCatalogPublicationStatusGen2', {});
+  const [status, control] = await Promise.all([
+    result('getCatalogPublicationStatusGen2', {}),
+    db.doc('sys_catalog_publication/secondevie').get()
+  ]);
   if (!status.current?.healthy || status.mode !== 'active') fail('G6_PROOF_CATALOG_READ_ONLY_INVALID');
   const response = await fetch('https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app/api/catalog/version');
   const served = await response.json().catch(() => null);
   if (!response.ok
     || Number(served?.revision) !== Number(status.current.revision)
-    || String(served?.aggregateSha256 || '') !== String(status.current.aggregateSha256 || '')) {
+    || String(served?.aggregateSha256 || '') !== String(control.data()?.currentAggregateSha256 || '')) {
     fail('G6_PROOF_CATALOG_READ_ONLY_STALE');
   }
   return { revision: Number(served.revision), aggregateSha256: served.aggregateSha256 };
