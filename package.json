@@ -44,6 +44,7 @@
     "functions:configure-auth-passkey-iam:g5": "node scripts/configure-functions-gen2-g5-auth-passkey-iam.mjs --project secondevienextjsssr --env sandbox",
     "functions:configure-auth-admin-iam:g5": "node scripts/configure-functions-gen2-g5-auth-admin-iam.mjs --project secondevienextjsssr --env sandbox",
     "functions:prove-auth-admin:g5": "node scripts/with-env.mjs .env.sandbox node scripts/prove-functions-gen2-g5-auth-admin.mjs",
+    "functions:prove-commerce:g8": "node scripts/with-env.mjs .env.sandbox node scripts/prove-functions-gen2-g8.mjs",
     "functions:monitoring:g1": "node scripts/with-env.mjs .env.sandbox node scripts/configure-functions-gen2-g1-monitoring.mjs --project=secondevienextjsssr --env=sandbox",
     "commerce:incident:triage:g1": "node scripts/with-env.mjs .env.sandbox node scripts/triage-commerce-incident-g1.mjs --project=secondevienextjsssr --env=sandbox",
     "commerce:incident:resolve:g1": "node scripts/with-env.mjs .env.sandbox node scripts/resolve-commerce-incident-g1.mjs --project=secondevienextjsssr --env=sandbox",
