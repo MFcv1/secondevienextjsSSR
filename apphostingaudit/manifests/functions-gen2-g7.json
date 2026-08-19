@@ -18,6 +18,7 @@
     "holdMetaReconciliationFormallyLifted": true,
     "inventoryDriftReconciled": true,
     "deploymentAllowed": true,
+    "remediationDeploymentAllowed": true,
     "productionAllowed": false,
     "metaPublicationAllowed": false,
     "oauthInteractiveAllowed": false
@@ -32,8 +33,8 @@
   "functions": [
     { "name": "getMetaConnectionStatusAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
     { "name": "getInstagramConnectionStatusAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
-    { "name": "startMetaOAuthAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
-    { "name": "startInstagramOAuthAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    { "name": "startMetaOAuthAdminGen2", "cloud": { "present": true }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    { "name": "startInstagramOAuthAdminGen2", "cloud": { "present": true }, "decision": { "classification": "MIGRATION_PARALLEL" } },
     { "name": "verifyMetaConnectionAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
     { "name": "verifyInstagramConnectionAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
     { "name": "disconnectMetaConnectionAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
@@ -42,7 +43,7 @@
     { "name": "getSocialPublicationStatusAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
     { "name": "prepareSocialPublicationAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
     { "name": "runSocialPublicationAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
-    { "name": "instagramOAuthCallbackGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
-    { "name": "metaOAuthCallbackGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } }
+    { "name": "instagramOAuthCallbackGen2", "cloud": { "present": true }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    { "name": "metaOAuthCallbackGen2", "cloud": { "present": true }, "decision": { "classification": "MIGRATION_PARALLEL" } }
   ]
 }
