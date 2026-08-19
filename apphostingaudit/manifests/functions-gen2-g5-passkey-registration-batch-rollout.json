@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "environment": "sandbox",
+    "operator": "matthis.fradin2@gmail.com",
+    "closedAt": "2026-08-19T00:31:30Z",
+    "wave": "G5_A10_A11_CLOSED"
+  },
+  "functions": [
+    {
+      "name": "generatePasskeyRegistrationOptionsGen2",
+      "legacyOwnerPreserved": "generatePasskeyRegistrationOptions",
+      "revision": "generatepasskeyregistrationoptionsgen2-00001-ron",
+      "state": "ACTIVE"
+    },
+    {
+      "name": "verifyPasskeyRegistrationGen2",
+      "legacyOwnerPreserved": "verifyPasskeyRegistration",
+      "revision": "verifypasskeyregistrationgen2-00001-guw",
+      "state": "ACTIVE"
+    }
+  ],
+  "runtime": {
+    "serviceAccount": "auth-passkey-runtime@secondevienextjsssr.iam.gserviceaccount.com",
+    "roles": [
+      "roles/datastore.user",
+      "roles/logging.logWriter",
+      "roles/serviceusage.serviceUsageConsumer"
+    ],
+    "forbiddenRoles": [],
+    "userManagedKeyCount": 0,
+    "secretAccessor": false
+  },
+  "proof": {
+    "browserUsed": false,
+    "missingAppCheckHttpStatus": 401,
+    "positiveOptionsHttpStatus": 200,
+    "userVerification": "required",
+    "invalidRegistrationHttpStatus": 403,
+    "invalidRegistrationStatus": "PERMISSION_DENIED",
+    "fixtureRestored": true,
+    "tokensPersisted": false
+  },
+  "appHosting": {
+    "previousBuild": "build-2026-08-18-006",
+    "activeBuild": "build-2026-08-19-001",
+    "initialRollout": "build-2026-08-19-001",
+    "rollbackDrill": "g5a10a11-rb-20260819-001",
+    "rollbackState": "SUCCEEDED",
+    "finalActivation": "g5a10a11-on-20260819-001",
+    "finalActivationState": "SUCCEEDED",
+    "servedDeploymentId": "sv-mszcb45j-c40c4afc912e",
+    "rootHttpStatus": 200,
+    "adminHttpStatus": 200,
+    "servedRegistryVerified": true
+  },
+  "quietWindow": {
+    "startedAt": "2026-08-19T00:28:09Z",
+    "gen2Errors": 0,
+    "newGen1LogEntries": 0
+  },
+  "inventory": {
+    "localExports": 173,
+    "cloudFunctions": 168,
+    "cloudGen1": 139,
+    "cloudGen2": 29,
+    "schedulers": 8,
+    "queues": 2,
+    "eventarc": 7
+  },
+  "gates": {
+    "a10Closed": true,
+    "a11Closed": true,
+    "gen1RemovalAllowed": false,
+    "a12Opened": false
+  }
+}

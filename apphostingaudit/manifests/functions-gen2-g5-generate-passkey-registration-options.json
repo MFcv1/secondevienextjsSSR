@@ -5,9 +5,9 @@
     "codebase": "main",
     "environment": "sandbox",
     "baselineCommit": "30353e67e6d316cc204ace33844674097bb206ff",
-    "generatedAt": "2026-08-18T23:27:49Z",
+    "generatedAt": "2026-08-19T00:31:30Z",
     "operator": "matthis.fradin2@gmail.com",
-    "wave": "G5_A10_PASSKEY_REGISTRATION_OPTIONS_PREDEPLOY"
+    "wave": "G5_A10_PASSKEY_REGISTRATION_OPTIONS_CLOSED"
   },
   "deploymentPolicy": {
     "exactProject": "secondevienextjsssr",
@@ -19,9 +19,12 @@
   "gates": {
     "targetAbsentBeforeCreate": true,
     "runtimeIamRequired": "auth-passkey-runtime@secondevienextjsssr.iam.gserviceaccount.com",
-    "deploymentAllowed": true,
+    "deploymentAllowed": false,
     "remediationDeploymentAllowed": false,
-    "clientCutoverAllowed": false
+    "negativeWithoutAppCheckHttpStatus": 401,
+    "positiveOptionsHttpStatus": 200,
+    "clientCutoverAllowed": true,
+    "clientCutoverCompleted": true
   },
   "functions": [
     {
@@ -32,10 +35,13 @@
         "sharedHandler": "generatePasskeyRegistrationOptionsHandler"
       },
       "cloud": {
-        "present": false,
+        "present": true,
         "project": "secondevienextjsssr",
         "generation": 2,
-        "region": "europe-west1"
+        "region": "europe-west1",
+        "runtime": "nodejs22",
+        "state": "ACTIVE",
+        "revision": "generatepasskeyregistrationoptionsgen2-00001-ron"
       },
       "trigger": {
         "type": "callable",

@@ -57,7 +57,7 @@ seule modification effectuee pendant cette passe est documentaire.
 
 ## 2. Verdict executif
 
-### 2.1 Checkpoint de reprise au 2026-08-18
+### 2.1 Checkpoint de reprise au 2026-08-19
 
 Ne pas reprendre G0, G1, G2 ou G3: ces phases sont fermees et leurs preuves
 sont conservees dans les manifestes `functions-gen2-*`.
@@ -66,15 +66,15 @@ sont conservees dans les manifestes `functions-gen2-*`.
 | --- | --- |
 | branche | `codex/functions-gen2-migration` |
 | baseline avant le checkpoint Monitoring | `25daf810309dc3329cfeb0fb19be0f1790fe608a` |
-| worktree attendu a la reprise | baseline prouvee `fbf5e9e`; fermeture A7-A9 portee par le checkpoint courant; verifier le statut sans rejouer |
+| worktree attendu a la reprise | fermeture A10-A11 portee par les commits locaux `cc0d7f8`, `42c7155` et le commit de fermeture courant; verifier le statut sans rejouer |
 | phases fermees | G0, G1, G2-A, G2-B 13/13, G3 et G4 |
-| phase active | G5-A10-A11: options et verification d'inscription passkey |
-| inventaire courant | 171 exports locaux, 166 cloud, 139 Gen1, 27 Gen2, 8 schedulers, 2 queues, 7 Eventarc |
-| cibles paralleles actives | cinq analytics G4 et neuf Auth G5 basculees; toutes les Gen1 restent intactes |
-| cutover client | App Hosting sert `build-2026-08-18-006`; rollback exact `build-2026-08-18-005`, prouve par drill reel |
+| phase active | aucune dans ce checkpoint; G5-A10-A11 sont fermes et l'arret avant A12 est obligatoire |
+| inventaire courant | 173 exports locaux, 168 cloud, 139 Gen1, 29 Gen2, 8 schedulers, 2 queues, 7 Eventarc |
+| cibles paralleles actives | cinq analytics G4 et onze Auth G5 basculees; toutes les Gen1 restent intactes |
+| cutover client | App Hosting sert `build-2026-08-19-001`; rollback exact `build-2026-08-18-006`, prouve par drill reel |
 | observation G4 | G4-A1 a G4-A5 fermees en validation acceleree; Gen1 et rollbacks preserves |
 | retrait Gen1 | aucun avant G12-A |
-| prochain lot | preparer ensemble `generatePasskeyRegistrationOptionsGen2` et `verifyPasskeyRegistrationGen2`; deploys individuels, cycle App Hosting groupe |
+| prochain lot | non ouvert; ne pas anticiper A12 depuis ce checkpoint |
 
 Le correctif Monitoring du 2026-08-17 est applique et idempotent: cinq
 metriques, huit policies severisees et deux canaux conformes; la boucle
@@ -100,21 +100,13 @@ Ordre de reprise optimise et obligatoire:
 1. verifier uniquement HEAD, worktree, projet explicite et etat final des
    ressources touchees depuis le dernier checkpoint; ne pas refaire les
    inventaires, IAM, logs ou preuves historiques sans drift concret;
-2. G5-A6 et le lot G5-A7-A9 sont fermes. Ne pas redeployer leurs Functions,
-   reconstruire `005`/`006`, renvoyer d'OTP ou rejouer les ceremonies passkey
-   sans drift concret;
-3. preparer ensemble G5-A10-A11: options et verification d'inscription
-   passkey, sous nouveaux noms et handlers partages;
-4. chaque Function conserve un nouveau nom, un handler partage, sa propre
-   allowlist de deploy et son manifeste. En revanche compiler/tests locaux,
-   build App Hosting, ancien onglet, cutover, rollback et quiet-window sont
-   groupes une seule fois pour le lot;
-5. une preuve positive et une preuve negative restent exigees par famille de
-   risque, pas par repetition mecanique du meme harnais. Aucun e-mail, OTP ou
-   mutation n'est repete si une preuve equivalente et fraiche existe;
-6. au premier ecart, restaurer le build precedent sans retirer Function,
-   endpoint, IAM, code ou donnee. Continuer automatiquement tant que les gates
-   du lot restent vertes.
+2. G5-A6 a G5-A11 sont fermes. Ne pas redeployer leurs Functions, reconstruire
+   leurs builds, renvoyer d'OTP ou rejouer les ceremonies passkey sans drift
+   concret;
+3. ne pas ouvrir A12 depuis ce checkpoint. Une reprise ulterieure doit annoncer
+   explicitement son lot, ses cibles et ses gates avant toute action cloud;
+4. au premier ecart reel, restaurer le build precedent sans retirer Function,
+   endpoint, IAM, code ou donnee. Ne jamais recommencer la migration complete.
 
 Garde-fous de consommation obligatoires pour toutes les reprises suivantes:
 
@@ -2622,50 +2614,48 @@ La migration est terminee uniquement si:
 
 ## 15. Reprise optimisee
 
-Le prochain agent reprend directement G5-A10-A11. Il ne relit pas le journal
-historique et ne rejoue aucune preuve fermee sans drift concret.
+G5-A10-A11 sont fermes. Le prochain agent ne relit pas le journal historique,
+ne rejoue aucune preuve fermee sans drift concret et n'anticipe pas A12 depuis
+ce checkpoint.
 
 ```text
 Branche: codex/functions-gen2-migration.
-Derniere baseline runtime prouvee: fbf5e9e; la fermeture A7-A9 est portee par
-le commit courant de ce checkpoint.
+Derniere baseline runtime prouvee: `42c7155`; la fermeture A10-A11 est portee
+par le commit courant de ce checkpoint.
 Projet cloud obligatoire: secondevienextjsssr.
 Operateur obligatoire: matthis.fradin2@gmail.com.
-Etat: build 006 actif; G5-A1 a A9 fermes. A7-A9 sont ACTIVE en revisions
+Etat: build `build-2026-08-19-001` actif; G5-A1 a A11 fermes. A10-A11 sont
+ACTIVE en revisions generatepasskeyregistrationoptionsgen2-00001-ron et
+verifypasskeyregistrationgen2-00001-guw sous `auth-passkey-runtime`. Le
+rollback reel `build-2026-08-18-006`, la reactivation, les routes 200, le
+bundle cible, la preuve HTTP sans navigateur et la quiet-window zero erreur /
+zero appel Gen1 sont fermes. A7-A9 restent ACTIVE en revisions
 verifycustomerloginotpgen2-00001-kew,
 generatepasskeyauthenticationoptionsgen2-00001-mam et
 verifypasskeyauthenticationgen2-00001-geb. Le runtime auth-login-runtime,
 les refus App Check 401, la verification OTP sans e-mail, les options passkey,
 le refus d assertion invalide, l ancien onglet 005, le rollback 005 et la
-quiet-window sont deja prouves. Inventaire attendu: 171 local, 166 cloud,
-139 Gen1, 27 Gen2.
+quiet-window sont deja prouves. Inventaire attendu: 173 local, 168 cloud,
+139 Gen1, 29 Gen2.
 
-Action immediate: ne redeploie pas A6-A9, ne reconstruis pas build 005/006 et
-ne rejoue ni OTP ni passkey sans drift. Verifie uniquement HEAD, worktree,
-projet et etat final build 006 / trois revisions A7-A9. Puis prepare ensemble
-G5-A10-A11: generatePasskeyRegistrationOptionsGen2 et
-verifyPasskeyRegistrationGen2.
+Action immediate: arrete-toi a la fermeture A10-A11. Ne redeploie pas A6-A11,
+ne reconstruis pas les builds fermes et ne rejoue ni OTP ni passkey sans drift.
+La prochaine reprise doit etre explicitement ouverte avant toute action A12.
 
-Les deploys Functions A10-A11 restent individuels et allowlistes; mutualise
-tests locaux, build App Hosting, ancien onglet, cutover, rollback et
-quiet-window une seule fois pour le lot. Une preuve positive/negative par
-famille de risque suffit et la ceremony humaine ne doit pas etre repetee si
-la parite de handler et une preuve equivalente fraiche couvrent le risque.
+Les deploys Functions A10-A11, les tests locaux, le build App Hosting, le
+cutover, le rollback et la quiet-window ont ete mutualises et fermes. Ne les
+rejoue pas sans drift concret.
 
-Budget d execution: lis une seule fois les sections utiles de map.md et du
-chapitre Auth, prepare tout le code du lot avant de lancer les tests, puis lance
-les suites ciblees une fois. Ne les relance qu apres un correctif pertinent.
-Pour le cloud, fais un controle frais au debut et un a chaque transition reelle;
-reutilise les uploads et sessions de poll existants. N emets pas de checkpoints
-repetitifs: communique uniquement une progression concrete, un drift ou la
-fermeture du lot.
+Budget d execution: aucune action A12 n est autorisee par ce checkpoint. Lors
+d une reprise explicitement ouverte, relis seulement son flux, lance les suites
+ciblees une fois et reutilise uploads et sessions de poll.
 
 Garde-fous quota: applique strictement la liste de la section 2.1. Recherches
 bornees avec exclusions, sorties de commandes plafonnees, aucun navigateur si
 le harnais suffit, fixtures validees avant appel externe et secrets utilises
 sans transformation, aucun doublon d upload/build/poll, aucun sous-agent ou
 scan large. Un retry n est autorise qu apres identification et correction de sa
-cause. Ferme A10-A11 completement, puis arrete-toi sans anticiper A12.
+cause. A10-A11 sont fermes: arrete-toi sans anticiper A12.
 
 Autonomie: les operations sandbox non destructives, Custom Tokens et jetons
 App Check ephemeres sont autorises sans confirmation. Ils restent en memoire,

@@ -150,13 +150,13 @@ Git conserve l'audit et la roadmap retires.
 Plan temporaire de reprise explicitement demande:
 
 - [AUDIT_MIGRATION_FUNCTIONS_GEN2.md](apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md):
-  plan ferme G0 a G13. G0-G4 et G5-A1 a G5-A9 sont fermes; App Hosting sert
-  `build-2026-08-18-006`. Le lot Auth A7-A9 est ACTIVE, prouve et bascule avec
-  rollback reel `005`; toutes les Gen1 restent intactes. Dernier inventaire
-  prouve: 171 exports locaux, 166 cloud, 139 Gen1 et 27 Gen2. Reprendre
+  plan ferme G0 a G13. G0-G4 et G5-A1 a G5-A11 sont fermes; App Hosting sert
+  `build-2026-08-19-001`. Le lot Auth A10-A11 est ACTIVE, prouve et bascule avec
+  rollback reel `006`; toutes les Gen1 restent intactes. Dernier inventaire
+  prouve: 173 exports locaux, 168 cloud, 139 Gen1 et 29 Gen2. Reprendre
   directement au checkpoint court des sections
   2.1 et 15 du plan, sans rejouer les preuves fermees ni un preflight global.
-  La suite reprend a G5-A10-A11 par lots Auth coherents: deploiements Functions allowlistes
+  La reprise suivante n'est pas ouverte par ce checkpoint. Les prochains lots Auth restent coherents: deploiements Functions allowlistes
   individuellement, puis un build, un cutover, un rollback et une observation
   groupes par lot. Les tests sont lances une fois par lot et seulement pour les
   flux touches. A la reprise, ne relire que le checkpoint et les sections

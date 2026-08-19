@@ -290,6 +290,19 @@ et la quiet-window compte zero erreur Gen2 et zero appel Gen1. La preuve OTP
 n'a envoye aucun e-mail et a restaure sa fixture; la preuve passkey a confirme
 `userVerification=required` puis le refus d'une assertion invalide.
 
+G5-A10 et A11 ferment l'inscription passkey sous
+`generatePasskeyRegistrationOptionsGen2` et `verifyPasskeyRegistrationGen2`,
+avec les handlers Gen1 partages et les endpoints historiques preserves. Le
+runtime `auth-passkey-runtime` ne porte que Firestore, logs et service usage,
+sans secret, cle utilisateur ni role Firebase Auth. Les revisions
+`generatepasskeyregistrationoptionsgen2-00001-ron` et
+`verifypasskeyregistrationgen2-00001-guw` sont ACTIVE. La preuve HTTP sans
+navigateur couvre le refus App Check 401, les options 200 avec
+`userVerification=required`, le refus 403 d'une inscription invalide et la
+restauration exacte de la fixture. App Hosting sert `build-2026-08-19-001`
+apres rollback reel `006`, reactivation et quiet-window a zero erreur Gen2 et
+zero nouvel appel Gen1.
+
 - registre administrateur par UID;
 - entree active obligatoire pour les callables critiques;
 - retrait des claims lors d'une revocation;
