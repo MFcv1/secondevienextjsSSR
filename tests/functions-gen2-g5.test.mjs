@@ -570,6 +570,37 @@ test('G5-A12-A14 borne la preuve admin a un compte jetable restaure', () => {
   assert.match(read('package.json'), /functions:prove-auth-admin:g5/);
 });
 
+test('G5-A12-A14 ferme deploys, cutover, rollback et quiet-window groupes', () => {
+  const manifest = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g5-auth-admin-batch.json'));
+  const rollout = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g5-auth-admin-batch-rollout.json'));
+  const iam = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g5-auth-admin-iam.json'));
+  assert.equal(manifest.gates.deploymentAllowed, false);
+  assert.equal(manifest.gates.clientCutoverCompleted, true);
+  assert.equal(manifest.appHosting.activeBuild, 'build-2026-08-19-002');
+  assert.equal(manifest.appHosting.previousBuild, 'build-2026-08-19-001');
+  assert.equal(manifest.appHosting.quietWindowGen2Errors, 0);
+  assert.equal(manifest.appHosting.quietWindowGen1Calls, 0);
+  assert.deepEqual(manifest.postDeploymentInventory, {
+    sourceExports: 176,
+    cloudFunctions: 171,
+    cloudGen1: 139,
+    cloudGen2: 32,
+  });
+  assert.deepEqual(manifest.functions.map((entry) => entry.cloud.revision), [
+    'syncsuperadminclaimgen2-00001-kej',
+    'addadminusergen2-00001-vok',
+    'removeadminusergen2-00001-qef',
+  ]);
+  assert.equal(rollout.appHosting.rollback.state, 'SUCCEEDED');
+  assert.equal(rollout.appHosting.reactivation.state, 'SUCCEEDED');
+  assert.equal(rollout.quietWindow.seconds, 313);
+  assert.equal(rollout.gates.g6Opened, false);
+  assert.equal(iam.ready, true);
+  assert.deepEqual(iam.observedRoles, iam.requiredRoles);
+  assert.deepEqual(iam.forbiddenRoles, []);
+  assert.equal(iam.userManagedKeyCount, 0);
+});
+
 test('G5 garde les trois triggers Auth exclusivement en Gen1', () => {
   const index = read('functions/index.js');
   for (const name of ['grantAdminOnAuth', 'onRegisteredUserCreated', 'onRegisteredUserDeleted']) {

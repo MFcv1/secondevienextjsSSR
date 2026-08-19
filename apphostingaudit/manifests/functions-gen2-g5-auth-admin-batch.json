@@ -7,7 +7,7 @@
     "baselineCommit": "30353e67e6d316cc204ace33844674097bb206ff",
     "generatedAt": "2026-08-19T11:06:28Z",
     "operator": "matthis.fradin2@gmail.com",
-    "wave": "G5_A12_A14_AUTH_ADMIN_PREPARED"
+    "wave": "G5_A12_A14_AUTH_ADMIN_CLOSED"
   },
   "deploymentPolicy": {
     "exactProject": "secondevienextjsssr",
@@ -19,10 +19,42 @@
   "gates": {
     "targetAbsentBeforeCreate": true,
     "runtimeIamRequired": "auth-admin-runtime@secondevienextjsssr.iam.gserviceaccount.com",
-    "deploymentAllowed": true,
+    "deploymentAllowed": false,
     "remediationDeploymentAllowed": false,
     "sharedPreparationTestsPassed": true,
-    "clientCutoverAllowed": false
+    "clientCutoverAllowed": true,
+    "clientCutoverCompleted": true,
+    "rollbackCompleted": true,
+    "reactivationCompleted": true,
+    "quietWindowCompleted": true
+  },
+  "runtimeEvidence": {
+    "missingAppCheckHttpStatus": 401,
+    "nonOwnerHttpStatus": 403,
+    "syncHttpStatus": 200,
+    "addHttpStatus": 200,
+    "removeHttpStatus": 200,
+    "refreshTokensRevoked": true,
+    "fixturesRestored": true,
+    "tokensPersisted": false
+  },
+  "appHosting": {
+    "previousBuild": "build-2026-08-19-001",
+    "activeBuild": "build-2026-08-19-002",
+    "deploymentId": "sv-mt014eme-efa6f84812b0",
+    "rollbackRollout": "g5-admin-rb-001",
+    "rollbackState": "SUCCEEDED",
+    "reactivationRollout": "g5-admin-reapply-002",
+    "reactivationState": "SUCCEEDED",
+    "quietWindowSeconds": 313,
+    "quietWindowGen2Errors": 0,
+    "quietWindowGen1Calls": 0
+  },
+  "postDeploymentInventory": {
+    "sourceExports": 176,
+    "cloudFunctions": 171,
+    "cloudGen1": 139,
+    "cloudGen2": 32
   },
   "functions": [
     {
@@ -33,10 +65,13 @@
         "sharedHandler": "syncSuperAdminClaimHandler"
       },
       "cloud": {
-        "present": false,
+        "present": true,
         "project": "secondevienextjsssr",
         "generation": 2,
-        "region": "europe-west1"
+        "region": "europe-west1",
+        "runtime": "nodejs22",
+        "state": "ACTIVE",
+        "revision": "syncsuperadminclaimgen2-00001-kej"
       },
       "identities": {
         "runtimeServiceAccount": "auth-admin-runtime@secondevienextjsssr.iam.gserviceaccount.com",
@@ -58,10 +93,13 @@
         "sharedHandler": "addAdminUserHandler"
       },
       "cloud": {
-        "present": false,
+        "present": true,
         "project": "secondevienextjsssr",
         "generation": 2,
-        "region": "europe-west1"
+        "region": "europe-west1",
+        "runtime": "nodejs22",
+        "state": "ACTIVE",
+        "revision": "addadminusergen2-00001-vok"
       },
       "identities": {
         "runtimeServiceAccount": "auth-admin-runtime@secondevienextjsssr.iam.gserviceaccount.com",
@@ -83,10 +121,13 @@
         "sharedHandler": "removeAdminUserHandler"
       },
       "cloud": {
-        "present": false,
+        "present": true,
         "project": "secondevienextjsssr",
         "generation": 2,
-        "region": "europe-west1"
+        "region": "europe-west1",
+        "runtime": "nodejs22",
+        "state": "ACTIVE",
+        "revision": "removeadminusergen2-00001-qef"
       },
       "identities": {
         "runtimeServiceAccount": "auth-admin-runtime@secondevienextjsssr.iam.gserviceaccount.com",

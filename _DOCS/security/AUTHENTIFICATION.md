@@ -303,6 +303,20 @@ restauration exacte de la fixture. App Hosting sert `build-2026-08-19-001`
 apres rollback reel `006`, reactivation et quiet-window a zero erreur Gen2 et
 zero nouvel appel Gen1.
 
+G5-A12 a A14 ferment les trois mutations administrateur restantes sous
+`syncSuperAdminClaimGen2`, `addAdminUserGen2` et `removeAdminUserGen2`, avec les
+handlers Gen1 partages et les endpoints historiques preserves. Le runtime
+`auth-admin-runtime` porte uniquement Firestore, Firebase Auth admin, logs,
+service usage et `SUPER_ADMIN_EMAIL:3`; il n'a aucune cle utilisateur ni role
+parasite. Les revisions `syncsuperadminclaimgen2-00001-kej`,
+`addadminusergen2-00001-vok` et `removeadminusergen2-00001-qef` sont ACTIVE.
+Le harnais HTTP sans navigateur a prouve le refus App Check 401, le refus
+non-owner 403, le bootstrap owner, l'ajout puis le retrait d'un compte jetable,
+la suppression des claims, la revocation des refresh tokens et la restauration
+des fixtures. App Hosting sert `build-2026-08-19-002` apres rollback reel
+`001`, reactivation et quiet-window de 313 secondes a zero erreur Gen2 et zero
+appel Gen1.
+
 - registre administrateur par UID;
 - entree active obligatoire pour les callables critiques;
 - retrait des claims lors d'une revocation;

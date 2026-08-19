@@ -1125,7 +1125,7 @@ G5-A6 `sendCustomerLoginOtpGen2` est fermee en revision
 `build-2026-08-18-005` apres cutover, rollback reel `004` et reactivation;
 une session admin ouverte sous `004` est restee authentifiee apres le retour
 sur `005`, sans nouvel appel Gen1 ni mutation de la donnee OTP.
-Inventaire apres G5-A10-A11: 173 local, 168 cloud, 139 Gen1, 29 Gen2,
+Inventaire apres G5-A12-A14: 176 local, 171 cloud, 139 Gen1, 32 Gen2,
 8 schedulers, 2 queues et
 7 Eventarc. G5-A7-A9 ferment `verifyCustomerLoginOtpGen2`,
 `generatePasskeyAuthenticationOptionsGen2` et
@@ -1137,6 +1137,15 @@ quiet-window ont ete mutualises une seule fois. G5-A10-A11 ferment ensuite
 avec le runtime minimal `auth-passkey-runtime`. Les deux deploys sont
 allowlistes individuellement; App Hosting sert `build-2026-08-19-001` apres
 rollback reel `006`, reactivation et quiet-window sans erreur ni appel Gen1.
+G5-A12-A14 ferment enfin `syncSuperAdminClaimGen2`, `addAdminUserGen2` et
+`removeAdminUserGen2` sous le runtime minimal `auth-admin-runtime`: Firestore,
+Firebase Auth admin, logs, service usage et le seul secret
+`SUPER_ADMIN_EMAIL:3`. Les trois deploys ont ete allowlistes individuellement;
+le harnais sans navigateur a prouve refus App Check 401, refus non-owner 403,
+sync owner, promotion puis revocation avec refresh tokens revoques et fixture
+jetable restauree. App Hosting sert `build-2026-08-19-002` apres rollback reel
+`001`, reactivation et quiet-window de 313 secondes a zero erreur Gen2 et zero
+appel Gen1. Les trois Gen1 et les trois triggers Auth limites restent intacts.
 Le checkpoint executable et le prompt de reprise courant sont les sections
 2.1 et 15 de `apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md`; l'ancien
 prompt G0 est obsolete et ne doit plus etre utilise.

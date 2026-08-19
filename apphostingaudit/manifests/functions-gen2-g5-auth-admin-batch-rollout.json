@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "wave": "G5-A12-A14",
+  "functions": [
+    {
+      "name": "syncSuperAdminClaimGen2",
+      "revision": "syncsuperadminclaimgen2-00001-kej",
+      "legacyOwnerPreserved": "syncSuperAdminClaim"
+    },
+    {
+      "name": "addAdminUserGen2",
+      "revision": "addadminusergen2-00001-vok",
+      "legacyOwnerPreserved": "addAdminUser"
+    },
+    {
+      "name": "removeAdminUserGen2",
+      "revision": "removeadminusergen2-00001-qef",
+      "legacyOwnerPreserved": "removeAdminUser"
+    }
+  ],
+  "appHosting": {
+    "previousBuild": "build-2026-08-19-001",
+    "activeBuild": "build-2026-08-19-002",
+    "deploymentId": "sv-mt014eme-efa6f84812b0",
+    "rollback": {
+      "id": "g5-admin-rb-001",
+      "build": "build-2026-08-19-001",
+      "state": "SUCCEEDED",
+      "gen2TargetsAbsentFromServedBundle": true
+    },
+    "reactivation": {
+      "id": "g5-admin-reapply-002",
+      "build": "build-2026-08-19-002",
+      "state": "SUCCEEDED",
+      "gen2TargetsPresentInServedBundle": true
+    }
+  },
+  "proof": {
+    "browserUsed": false,
+    "missingAppCheckHttpStatus": 401,
+    "nonOwnerHttpStatus": 403,
+    "syncHttpStatus": 200,
+    "addHttpStatus": 200,
+    "removeHttpStatus": 200,
+    "refreshTokensRevoked": true,
+    "fixturesRestored": true,
+    "tokensPersisted": false
+  },
+  "quietWindow": {
+    "start": "2026-08-19T12:08:49Z",
+    "end": "2026-08-19T12:14:02Z",
+    "seconds": 313,
+    "gen2Errors": 0,
+    "gen1Calls": 0
+  },
+  "inventory": {
+    "sourceExports": 176,
+    "cloudFunctions": 171,
+    "cloudGen1": 139,
+    "cloudGen2": 32
+  },
+  "gates": {
+    "g5A12Closed": true,
+    "g5A13Closed": true,
+    "g5A14Closed": true,
+    "g6Opened": false
+  }
+}
