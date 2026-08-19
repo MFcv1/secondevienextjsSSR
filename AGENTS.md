@@ -183,6 +183,10 @@ Plan temporaire de reprise explicitement demande:
   nettoyage IAM/secrets/code avant G12-B, aucune production/Stripe live. Les
   trois triggers Auth limites par Firebase restent Gen1; les holds Meta et G11
   restent inchanges. Revue et fusion canonique au plus tard le 2026-10-31.
+  Les correctifs locaux post-audit du 2026-08-19 (neutralisation outbox fixture,
+  cleanup verifie, archive strictement liee, inventaire 251/246 recalculable et
+  preconditions `inventoryVersion` digestées) ne sont pas deployes; ne pas
+  rejouer la fixture distante avant autorisation et deploiement du dispatcher.
 - [STABILISATION_SECURITE_SANDBOX.md](_DOCS/security/STABILISATION_SECURITE_SANDBOX.md):
   campagne finale bornee S0 a S4 fermee sur le socle `05f4830`, statut
   `SANDBOX_SECURITY_STABILIZED`; production, domaine, Resend, Stripe live et

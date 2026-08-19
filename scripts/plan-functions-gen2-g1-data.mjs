@@ -51,6 +51,7 @@ async function main() {
   const environment = args.get('env') || ENVIRONMENT;
   if (project !== PROJECT_ID || environment !== ENVIRONMENT) fail('G1_DATA_TARGET_INVALID');
   if (args.has('commit') || args.has('apply') || args.has('write')) fail('G1_DATA_READ_ONLY');
+  const inventoryOnly = args.has('inventory-only');
 
   const credential = process.env.FIREBASE_SERVICE_ACCOUNT_JSON
     ? cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON))
@@ -65,7 +66,9 @@ async function main() {
     db.collection(FURNITURE_COLLECTION)
       .select('inventoryVersion', 'stock', 'status', 'sold')
       .get(),
-    ...ANALYTICS_COLLECTIONS.map(([collection]) => db.collection(collection).get())
+    ...(inventoryOnly
+      ? []
+      : ANALYTICS_COLLECTIONS.map(([collection]) => db.collection(collection).get()))
   ]);
 
   const inventoryCandidates = furnitureSnapshot.docs
@@ -112,6 +115,11 @@ async function main() {
       purgeState: 'FORBIDDEN_BEFORE_POST_CUTOVER_APPROVAL'
     };
   });
+  const inventoryPreconditions = inventoryCandidates.map((candidate) => ({
+    id: candidate.id,
+    lastUpdateTime: candidate.writePrecondition.lastUpdateTime,
+    evidenceHash: candidate.evidenceHash
+  }));
 
   const manifest = {
     schemaVersion: 1,
@@ -127,6 +135,9 @@ async function main() {
       refusedCount: inventoryCandidates.filter((candidate) => candidate.proposedInventoryVersion === null).length,
       proposedValue: 0,
       executionState: 'NOT_EXECUTED',
+      lastUpdateTimeDigestAlgorithm: 'sha256(JSON.stringify([{id,lastUpdateTime,evidenceHash}] sorted by id))',
+      lastUpdateTimeDigest: digest(inventoryPreconditions),
+      preconditions: inventoryPreconditions,
       requiredBeforeWrite: [
         'BACKUP_READY',
         'RESTORE_DRILL_PASSED',
@@ -137,6 +148,7 @@ async function main() {
       candidates: inventoryCandidates
     },
     analytics: {
+      inventoryOnly,
       documentPayloadExported: false,
       rationale: 'G1 classifies and hashes identities only; no purge is planned and document payload may contain personal data.',
       requiredBeforeAnyPurge: [

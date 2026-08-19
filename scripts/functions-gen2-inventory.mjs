@@ -108,6 +108,9 @@ export const PARALLEL_MIGRATION_EXPORTS = new Set([
   'writeOffReturnLinesAdminGen2'
 ]);
 
+export const EXPECTED_CURRENT_SOURCE_COUNT = EXPECTED_SOURCE_COUNT + PARALLEL_MIGRATION_EXPORTS.size;
+export const EXPECTED_CURRENT_CLOUD_COUNT = EXPECTED_CLOUD_COUNT + PARALLEL_MIGRATION_EXPORTS.size;
+
 export const KEEP_GEN2 = new Set([
   'catalogMediaGarbageCollector',
   'catalogReconciler',
@@ -189,9 +192,9 @@ const WAVE_GROUPS = [
   ])],
   ['G8', new Set([
     'adjustInventoryAdmin', 'archiveOrderAdmin', 'cancelReturnAdmin',
-    'createProductAdmin', 'createPromotionCodeAdmin', 'createPublishedProductAdmin',
+    'createOrder', 'createProductAdmin', 'createPromotionCodeAdmin', 'createPublishedProductAdmin',
     'decideCustomerReturnRequestAdmin', 'deleteProductAdmin', 'getDeliveryPolicyAdmin',
-    'getOrderTimelineAdminV2', 'listCustomerReturnRequestsAdminV2', 'listMyOrdersV2',
+    'getOrderStatusClient', 'getOrderTimelineAdminV2', 'listCustomerReturnRequestsAdminV2', 'listMyOrdersV2',
     'listOrdersAdminV2', 'listPromotionCodesAdmin', 'listReturnsAdminV2',
     'markOrderDeliveredAdmin', 'markOrderPickedUpAdmin', 'markOrderPreparingAdmin',
     'markOrderReadyForPickupAdmin', 'markOrderShippedAdmin', 'markReturnReceivedAdmin',
@@ -225,7 +228,8 @@ const FINANCE_TARGETS = new Set([
   'getOrderStatusClient', 'getStripeConnectStatus', 'listAdminPaymentLinks',
   'prepareAdminPaymentLinkPayment', 'rebuildCommerceOperationsAdmin',
   'recreateAdminPaymentLink', 'refundOrderAdmin', 'regenerateAdminPaymentLink',
-  'requestRefundAdmin', 'requestStripeConnectReconnect', 'resumeAdminPaymentLinkPayment',
+  'requestRefundAdmin', 'requestOrderCancellation', 'decideCustomerReturnRequestAdmin',
+  'requestStripeConnectReconnect', 'resumeAdminPaymentLinkPayment',
   'resumeCheckoutV2', 'startStripeConnectOnboarding', 'stripeConnectWebhook',
   'stripeConnectWebhookV2', 'stripeWebhook', 'stripeWebhookV2',
   'syncRefundStatusAdmin', 'syncStripeConnectAccount'
@@ -321,8 +325,7 @@ export function extractLocalExports(rootDir) {
       sourceFile: imports.get(match[2]) ? path.posix.join('functions', imports.get(match[2]).replace(/^\.\//, '')) : null
     }));
   const names = new Set(exports.map(({ name }) => name));
-  const expectedCurrentSourceCount = EXPECTED_SOURCE_COUNT + PARALLEL_MIGRATION_EXPORTS.size;
-  if (exports.length !== expectedCurrentSourceCount || names.size !== expectedCurrentSourceCount) {
+  if (exports.length !== EXPECTED_CURRENT_SOURCE_COUNT || names.size !== EXPECTED_CURRENT_SOURCE_COUNT) {
     throw new Error(`Inventaire source inattendu: ${exports.length} exports, ${names.size} uniques`);
   }
   if (exports.some(({ sourceFile }) => !sourceFile)) {
@@ -341,7 +344,11 @@ export function classificationFor(name) {
 }
 
 export function waveFor(name, classification) {
-  if (classification === 'MIGRATION_PARALLEL') return 'G4';
+  if (classification === 'MIGRATION_PARALLEL') {
+    const logicalName = name.endsWith('Gen2') ? name.slice(0, -4) : name;
+    for (const [wave, names] of WAVE_GROUPS) if (names.has(logicalName)) return wave;
+    throw new Error(`Vague parallele introuvable: ${name}`);
+  }
   if (classification === 'KEEP_GEN1_AUTH') return 'EXCEPTION_AUTH_GEN1';
   if (classification === 'MIGRATE_OR_RETIRE' && name.includes('ProductPublication')) return 'G3';
   if (classification === 'MIGRATE_OR_RETIRE' && ['e2eCheckoutProof', 'e2eStripeHardeningProof'].includes(name)) return 'G3';
@@ -547,7 +554,9 @@ export function buildInventory({ rootDir, firebaseRows, gcloudRows, iamPolicies,
   const localNames = new Set(localExports.map(({ name }) => name));
   const cloudByName = new Map(firebaseRows.map((row) => [row.id, row]));
   const gcloudByName = new Map(gcloudRows.map((row) => [row.name.split('/').at(-1), row]));
-  if (cloudByName.size !== EXPECTED_CLOUD_COUNT) throw new Error(`Inventaire cloud inattendu: ${cloudByName.size}`);
+  if (cloudByName.size !== EXPECTED_CURRENT_CLOUD_COUNT) {
+    throw new Error(`Inventaire cloud inattendu: ${cloudByName.size}/${EXPECTED_CURRENT_CLOUD_COUNT}`);
+  }
   const cloudOnly = [...cloudByName.keys()].filter((name) => !localNames.has(name));
   const localOnly = [...localNames].filter((name) => !cloudByName.has(name)).sort();
   if (cloudOnly.length) throw new Error(`Cibles cloud sans source: ${cloudOnly.join(', ')}`);
@@ -690,7 +699,9 @@ export async function main(argv = process.argv.slice(2)) {
   const gcloudRows = readJson(required(args, 'gcloud'));
   const iamDir = required(args, 'iam-dir');
   const iamPolicies = loadIamPolicies(iamDir);
-  if (iamPolicies.size !== EXPECTED_CLOUD_COUNT) throw new Error(`IAM incomplet: ${iamPolicies.size}/${EXPECTED_CLOUD_COUNT}`);
+  if (iamPolicies.size !== EXPECTED_CURRENT_CLOUD_COUNT) {
+    throw new Error(`IAM incomplet: ${iamPolicies.size}/${EXPECTED_CURRENT_CLOUD_COUNT}`);
+  }
   const schedulers = sanitizeSchedulers(asArray(args.scheduler).flatMap((file) => readJson(file)));
   const queues = sanitizeQueues(asArray(args.queue).flatMap((file) => readJson(file)));
   const eventarc = sanitizeEventarc(asArray(args.eventarc).flatMap((file) => readJson(file)));

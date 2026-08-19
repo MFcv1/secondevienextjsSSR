@@ -254,7 +254,7 @@ test('le wrapper Firebase borne le contournement DNS au processus CLI', () => {
   );
 });
 
-test('le fallback gcloud Gen1 reste limite au reconciler et explicite toute sa configuration', () => {
+test('le fallback gcloud Gen1 reste allowliste et explicite toute sa configuration', () => {
   const request = validate({
     ...validationArgs({
       allowlist: 'commerceOperationsReconciler',

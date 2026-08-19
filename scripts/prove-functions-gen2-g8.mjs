@@ -71,6 +71,88 @@ const command = (label) => {
     return value;
 };
 const clock = { now: () => new Date().toISOString() };
+
+async function assertOwnedAndDelete(ref, predicate, { recursive = false } = {}) {
+    const snapshot = await ref.get();
+    if (!snapshot.exists) return;
+    if (!predicate(snapshot.data() || {})) fail(`G8_PROOF_CLEANUP_OWNERSHIP:${ref.path}`);
+    if (recursive) await db.recursiveDelete(ref);
+    else await ref.delete();
+}
+
+async function collectFixtureDocuments() {
+    const [movementSnapshot, outboxSnapshot] = await Promise.all([
+        db.collection('inventory_movements').where('orderId', '==', orderId).get(),
+        db.collection('commerce_outbox').where('aggregateId', '==', orderId).get()
+    ]);
+    return {
+        movements: movementSnapshot.docs,
+        outboxes: outboxSnapshot.docs
+    };
+}
+
+async function cleanupFixture() {
+    const failures = [];
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+        try {
+            const documents = await collectFixtureDocuments();
+            const operations = [
+                ...documents.movements.map((document) => assertOwnedAndDelete(
+                    document.ref,
+                    (data) => data.orderId === orderId
+                )),
+                ...documents.outboxes.map((document) => assertOwnedAndDelete(
+                    document.ref,
+                    (data) => data.aggregateId === orderId && data.testContext?.runId === runId
+                )),
+                ...commandIds.map((id) => assertOwnedAndDelete(
+                    db.doc(`commerce_command_results/${id}`),
+                    (data) => data.orderId === orderId
+                )),
+                assertOwnedAndDelete(
+                    reservationRef,
+                    (data) => data.orderId === orderId && data.fixtureScopeVersion === runId
+                ),
+                assertOwnedAndDelete(
+                    allocationRef,
+                    (data) => data.orderId === orderId && data.lineId === lineId
+                ),
+                assertOwnedAndDelete(
+                    orderRef,
+                    (data) => data.testContext?.runId === runId &&
+                        String(data.payment?.paymentIntentId || data.stripePaymentIntentId || '').startsWith('pi_fixture_'),
+                    { recursive: true }
+                ),
+                assertOwnedAndDelete(
+                    productRef,
+                    (data) => data.e2eOnly === true && data.testContext?.runId === runId
+                ),
+                db.recursiveDelete(productAuditRef)
+            ];
+            const settled = await Promise.allSettled(operations);
+            failures.push(...settled
+                .filter((result) => result.status === 'rejected')
+                .map((result) => String(result.reason?.message || result.reason)));
+
+            const [roots, remaining] = await Promise.all([
+                Promise.all([
+                    orderRef.get(), productRef.get(), reservationRef.get(), allocationRef.get(),
+                    ...commandIds.map((id) => db.doc(`commerce_command_results/${id}`).get())
+                ]),
+                collectFixtureDocuments()
+            ]);
+            if (
+                roots.every((snapshot) => !snapshot.exists) &&
+                remaining.movements.length === 0 &&
+                remaining.outboxes.length === 0
+            ) return;
+        } catch (error) {
+            failures.push(String(error?.message || error));
+        }
+    }
+    fail(`G8_PROOF_CLEANUP_INCOMPLETE:${failures.slice(0, 3).join('|') || 'RESIDUE'}`);
+}
+
 const baseOrder = createOrderV2({
     userId: owner.uid,
     clientOrderId: `client_${runSuffix}`,
@@ -104,6 +186,8 @@ let order = reduceOrder(baseOrder, {
 order.testContext = { fixtureScopeVersion: runId, runId };
 
 let returnId = null;
+let proof = null;
+let proofError = null;
 try {
     await productRef.create({
         name: 'Fixture réversible G8',
@@ -208,7 +292,7 @@ try {
     if (finalOrder.inventorySummary?.restockedQty !== 1 || finalOrder.inventorySummary?.writtenOffQty !== 1) fail('G8_PROOF_DISPOSITION_INVALID');
     if (finalProduct.stock !== 1 || finalProduct.inventoryVersion !== 1) fail('G8_PROOF_STOCK_INVALID');
 
-    process.stdout.write(`${JSON.stringify({
+    proof = {
         project: PROJECT,
         fixture: 'G8_REVERSIBLE_SINGLE',
         paymentCreated: false,
@@ -219,22 +303,16 @@ try {
         writeOffQuantity: 1,
         paginationPageSize: 1,
         readersProved: 4,
-        fixtureRestored: true,
         tokensPersisted: false
-    })}\n`);
-} finally {
-    const [movementSnapshot, outboxSnapshot] = await Promise.all([
-        db.collection('inventory_movements').where('orderId', '==', orderId).get(),
-        db.collection('commerce_outbox').where('aggregateId', '==', orderId).get()
-    ]);
-    await Promise.all(movementSnapshot.docs.map((document) => document.ref.delete()));
-    await Promise.all(outboxSnapshot.docs.map((document) => document.ref.delete()));
-    await Promise.all(commandIds.map((id) => db.doc(`commerce_command_results/${id}`).delete()));
-    await Promise.all([
-        db.recursiveDelete(orderRef),
-        db.recursiveDelete(productAuditRef),
-        reservationRef.delete(),
-        allocationRef.delete(),
-        productRef.delete()
-    ]);
+    };
+} catch (error) {
+    proofError = error;
 }
+
+await cleanupFixture();
+if (proofError) throw proofError;
+process.stdout.write(`${JSON.stringify({
+    ...proof,
+    orderDurableAfterCleanup: false,
+    fixtureRestored: true
+})}\n`);

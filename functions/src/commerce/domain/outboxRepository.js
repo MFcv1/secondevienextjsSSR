@@ -90,6 +90,34 @@ function createOutboxRepository({ db, refs }) {
             });
         },
 
+        async markSuppressed(outboxId, {
+            leaseToken,
+            nowMillis,
+            suppressedAt,
+            purgeAt
+        }) {
+            const ref = refs.outbox(outboxId);
+            return db.runTransaction(async (transaction) => {
+                const snapshot = await transaction.get(ref);
+                if (!snapshotExists(snapshot)) throw outboxError('COMMERCE_OUTBOX_MISSING');
+                const entry = snapshot.data();
+                assertFence(entry, leaseToken, nowMillis);
+                const next = {
+                    ...entry,
+                    status: 'suppressed_test',
+                    leaseToken: null,
+                    processingUntil: null,
+                    nextAttemptAt: null,
+                    providerMessageId: null,
+                    lastError: null,
+                    suppressedAt,
+                    purgeAt
+                };
+                transaction.set(ref, next);
+                return next;
+            });
+        },
+
         async markFailed(outboxId, {
             leaseToken,
             nowMillis,

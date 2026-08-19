@@ -4,6 +4,6 @@
   "codebase": "main",
   "baselineCommit": "270d0810501cfd1c6beeeb7b983d5137bf5e3f3b",
   "files": {
-    "apphostingaudit/manifests/functions-gen2-g8.json": "19a0749107fd6b3088a81a18f31eade8fedebf3dec3dace4696d9d397f64dab9"
+    "apphostingaudit/manifests/functions-gen2-g8.json": "190db5c879e98d0b745e4517e5ff089cbe9b3f230b50d252372efc252ccaa57f"
   }
 }

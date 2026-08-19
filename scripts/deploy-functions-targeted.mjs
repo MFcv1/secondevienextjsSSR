@@ -232,8 +232,8 @@ const GCLOUD_GEN1_TARGETS = Object.freeze({
     timeout: '300s',
     maxInstances: '1',
     ingressSettings: 'all',
-    expectedVersion: '10',
-    expectedServiceAccount: 'secondevienextjsssr@appspot.gserviceaccount.com',
+    expectedVersion: '11',
+    expectedServiceAccount: 'commerce-outbox-dispatcher@secondevienextjsssr.iam.gserviceaccount.com',
     secrets: [
       'GMAIL_EMAIL=GMAIL_EMAIL:2',
       'GMAIL_PASSWORD=GMAIL_PASSWORD:5',
@@ -1238,6 +1238,7 @@ export function validateDeploymentRequest({
       const sourceUri = required(args, 'source-uri');
       const sourceSha256 = required(args, 'source-sha256');
       const sourceGeneration = required(args, 'source-generation');
+      const sourceSize = String(manifest.deploymentPolicy?.archiveSize || '');
       const wave = target.g8 ? 'g8' : (target.g7 ? 'g7' : 'g6');
       if (!new RegExp(`^gs://gcf-v2-sources-231220287936-europe-west1/${wave}/[0-9a-f]{64}/function-source\\.zip$`).test(sourceUri)) {
         fail(`Archive source ${wave.toUpperCase()} immutable invalide`);
@@ -1245,6 +1246,12 @@ export function validateDeploymentRequest({
       if (!/^[0-9a-f]{64}$/.test(sourceSha256)) fail(`SHA-256 source ${wave.toUpperCase()} invalide`);
       if (!/^[1-9][0-9]+$/.test(sourceGeneration)) fail(`Generation source ${wave.toUpperCase()} invalide`);
       if (!sourceUri.includes(`/${wave}/${sourceSha256}/`)) fail(`URI et SHA-256 source ${wave.toUpperCase()} divergents`);
+      if (
+        manifest.deploymentPolicy?.archiveUri !== sourceUri ||
+        manifest.deploymentPolicy?.archiveSha256 !== sourceSha256 ||
+        String(manifest.deploymentPolicy?.archiveGeneration || '') !== sourceGeneration ||
+        !/^[1-9][0-9]*$/.test(sourceSize)
+      ) fail(`Archive source ${wave.toUpperCase()} differente du manifeste approuve`);
     }
   }
   if (transport === 'gcloud-gen2-update') {
@@ -1277,7 +1284,8 @@ export function validateDeploymentRequest({
     transport,
     sourceUri: args['source-uri'] || null,
     sourceSha256: args['source-sha256'] || null,
-    sourceGeneration: args['source-generation'] || null
+    sourceGeneration: args['source-generation'] || null,
+    sourceSize: manifest.deploymentPolicy?.archiveSize || null
   };
 }
 
@@ -1618,6 +1626,21 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
     if (before.status === 0 || !/NOT_FOUND|not found/i.test(`${before.stderr || ''}${before.stdout || ''}`)) {
       fail('Creation Gen2 refusee: la cible existe deja ou son absence ne peut pas etre prouvee');
     }
+    const sourceObject = JSON.parse(run('gcloud', [
+      'storage', 'objects', 'describe', validation.sourceUri,
+      `--project=${validation.project}`, '--format=json'
+    ], { cwd: rootDir }));
+    if (
+      String(sourceObject.generation || '') !== validation.sourceGeneration ||
+      Number(sourceObject.size) !== Number(validation.sourceSize)
+    ) fail('Objet source Gen2 different du manifeste approuve');
+    const sourceBytes = spawnSync('gcloud', [
+      'storage', 'cat', validation.sourceUri,
+      `--project=${validation.project}`
+    ], { cwd: rootDir, env: process.env, encoding: null, maxBuffer: 25 * 1024 * 1024 });
+    if (sourceBytes.error || sourceBytes.status !== 0) fail('Lecture archive source Gen2 impossible');
+    const actualSourceSha256 = crypto.createHash('sha256').update(sourceBytes.stdout || Buffer.alloc(0)).digest('hex');
+    if (actualSourceSha256 !== validation.sourceSha256) fail('SHA-256 archive source Gen2 different du manifeste approuve');
     process.stdout.write(`Projet: ${validation.project}\nCible: functions:main:${name}\nCommit: ${validation.commit}\nTransport: gcloud-gen2-create\n`);
     const result = spawnSync('gcloud', buildGcloudGen2DeployArgs(validation), {
       cwd: rootDir,

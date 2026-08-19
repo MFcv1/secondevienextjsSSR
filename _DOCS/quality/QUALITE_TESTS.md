@@ -89,12 +89,16 @@ revision cloud attendue et la preservation de la Gen1. Apres rollback d'une
 gate Auth, elle exige aussi le registre client Gen1 et la preuve du build exact.
 La suite locale ne contacte pas le cloud.
 
-G8 est ferme par `npm run test:functions-g8`: 89 tests Node et les cinq
-controles Firestore rules couvrent les 37 wrappers commerce non financiers,
+G8 est ferme par `npm run test:functions-g8`: les tests Node et les cinq
+controles Firestore rules couvrent les 37 wrappers commerce,
 le registre client et les contrats unit/property/fault directement touches.
 `npm run functions:prove-commerce:g8` utilise une fixture sandbox unique,
 ephemere et reversible pour les lecteurs, versions, fulfillment, retours,
-restock et write-off; elle interdit paiement/refund et prouve le cleanup. Le
+restock et write-off; toute outbox marquee par son `testContext` est neutralisee
+avant le provider. Le succes du harnais n'est emis qu'apres cleanup exhaustif,
+retries bornes et verification d'absence des racines, mouvements et outboxes.
+La gate verifie aussi le recalcul des 251 exports locaux/246 cibles cloud et la
+liaison exacte archive URI/SHA-256/generation/taille au manifeste approuve. Le
 lint Functions a ete execute une fois. La quiet-window finale compte zero
 erreur Gen2 et zero entree Gen1 correspondante.
 

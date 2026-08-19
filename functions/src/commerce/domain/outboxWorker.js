@@ -36,6 +36,18 @@ function createOutboxWorker({
             nowMillis: clock.nowMillis(),
             leaseMs
         });
+        if (entry.testContext?.runId || entry.testContext?.fixtureScopeVersion) {
+            if (typeof repository.markSuppressed !== 'function') {
+                throw workerError('COMMERCE_OUTBOX_FIXTURE_SUPPRESSION_UNAVAILABLE');
+            }
+            const nowMillis = clock.nowMillis();
+            return repository.markSuppressed(outboxId, {
+                leaseToken,
+                nowMillis,
+                suppressedAt: clock.now(),
+                purgeAt: new Date(nowMillis + retentionMs).toISOString()
+            });
+        }
         try {
             const response = await send({
                 idempotencyKey: entry.outboxId,

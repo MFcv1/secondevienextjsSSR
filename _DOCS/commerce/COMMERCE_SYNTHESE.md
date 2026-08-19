@@ -58,13 +58,15 @@ webhooks et outboxes v2. Depuis le 2026-08-02, le sandbox est active en
 Stripe reste exclusivement en mode test.
 
 La migration Functions G8 du 2026-08-19 duplique en Gen2 les 35 callables
-commerce non financiers et deux legacy encore appelees (`createOrder` et
+commerce hors checkout/webhooks/workers et deux legacy encore appelees (`createOrder` et
 `getOrderStatusClient`). Les 37 cibles sont `ACTIVE` sous Node 22 et le
 registre client les selectionne; leurs Gen1 restent intactes. Une fixture
 jetable unique a prouve les lectures, transitions, retour, restock et
 write-off avec restauration exacte, sans creer de paiement ni refund. Le
 dry-run P1 a trouve 10 candidats `inventoryVersion: 0` prets sur 37 meubles,
-mais aucune ecriture n'etait autorisee par le prompt G8.
+mais aucune ecriture n'etait autorisee par le prompt G8. Le plan read-only
+porte maintenant, pour chacun, `lastUpdateTime`, un hash de preuve et un digest
+deterministe des dix preconditions afin qu'un futur backfill refuse tout drift.
 
 ## 3. Ce qui a ete realise par Gate
 

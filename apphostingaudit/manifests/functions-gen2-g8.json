@@ -40,11 +40,25 @@
   ],
   "p1DryRun": {
     "mode": "READ_ONLY",
+    "generatedAt": "2026-08-19T22:16:15.916Z",
     "scanned": 37,
     "candidates": 10,
     "ready": 10,
     "refused": 0,
-    "lastUpdateTimeDigest": "388849cb63b29e40500d6c1401df5f0272c457ca3ac44f73e9f070bd26d8d35a",
+    "lastUpdateTimeDigestAlgorithm": "sha256(JSON.stringify([{id,lastUpdateTime,evidenceHash}] sorted by id))",
+    "lastUpdateTimeDigest": "9282de8a4a1200a48ef89ba79aa68009b6fc23591a99d63863459dff93ffb72b",
+    "preconditions": [
+      { "id": "5GmqLGF7LU55QOlFnMk5", "lastUpdateTime": "2026-07-06T13:56:15.455Z", "evidenceHash": "9af9235a4b1686e1af20f5800af5e03ca08a38c01a223ad8eb676a75c0936724" },
+      { "id": "ffuObA2m3U3SWizSOBXa", "lastUpdateTime": "2026-07-06T14:01:04.393Z", "evidenceHash": "1ce07f5664068dbe31c198738280e2155030d4ab45d1ef5fddaf037edd3e8e8c" },
+      { "id": "fwHUhYOoziewuZuVBha6", "lastUpdateTime": "2026-07-06T14:01:18.830Z", "evidenceHash": "f74ae24a77b8ccfa15dba1cec2c357757cea9f974d7408c03f350dd5393df39c" },
+      { "id": "IGWLqh7q4rnYliO6xlFz", "lastUpdateTime": "2026-07-19T13:08:40.217Z", "evidenceHash": "306518605616020d551be2b01e834798b67a0cc808e9d4e444921127e7579944" },
+      { "id": "LKmnaBTYNSVJGvofyFRJ", "lastUpdateTime": "2026-07-06T13:58:19.408Z", "evidenceHash": "a6a9272a1bb1f95e0c2b376d35d1b91857d2392665832145a77ed0bcd2f7e7fa" },
+      { "id": "Ph7pDL7TGeJzM7JP42An", "lastUpdateTime": "2026-07-06T13:58:51.703Z", "evidenceHash": "cd8ff0402f587012ca12c4c70a7943068633a77a0b21d71b1e3f9a04974f0145" },
+      { "id": "PqFuUrEJ56fSk1ZgqKA9", "lastUpdateTime": "2026-07-06T13:59:13.112Z", "evidenceHash": "448285dbbc2683e170c92acacc59720c5177e5a3211f6d759588527813448415" },
+      { "id": "qVOxtAX7QDZxUjpVE8a5", "lastUpdateTime": "2026-07-06T14:03:08.380Z", "evidenceHash": "9470fea6164533d4f9f69f31f8e219c9e806ee3c2031bec1c45c9018986393fc" },
+      { "id": "RbBBCOXDcLfZ4TJGn6vA", "lastUpdateTime": "2026-07-06T13:59:25.862Z", "evidenceHash": "d796ae28f1274e12b0bddca100161a8760c367e8631bf1b4b1305457638c794a" },
+      { "id": "TjNQTefgt7bxXcQlVVXJ", "lastUpdateTime": "2026-07-06T13:59:55.844Z", "evidenceHash": "e6cf2dc35a8bb4ec7f9c8a81f5444eff83705d9d7393024b81ec2bf39308581e" }
+    ],
     "writePerformed": false,
     "reasonNoBackfill": "G8 prompt did not name the resulting count and rollback after this dry-run."
   },
@@ -65,6 +79,13 @@
     "testCommand": "npm run test:functions-g8",
     "testResult": "89 tests plus 5 Firestore rules checks passed after bounded extractor corrections",
     "functionsLint": "passed once",
+    "postAuditLocalValidation": {
+      "date": "2026-08-19",
+      "testResult": "115 tests plus 5 Firestore rules checks passed",
+      "functionsLint": "passed",
+      "cloudMutation": false,
+      "deployment": false
+    },
     "fixtureCommand": "npm run functions:prove-commerce:g8",
     "fixture": {
       "kind": "G8_REVERSIBLE_SINGLE",

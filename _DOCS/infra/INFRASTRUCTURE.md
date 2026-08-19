@@ -124,7 +124,7 @@ App Hosting (`apphosting.yaml`):
 | `main` | `functions/` | Auth, admin, commerce, email, analytics, maintenance et catalogue materialise |
 
 La fermeture G8 du 2026-08-19 recense 246 Functions cloud: 139 Gen1 et
-107 Gen2. Les 37 exports commerce non financiers G8 sont dupliques en Gen2
+107 Gen2. Les 37 exports commerce G8 sont dupliques en Gen2
 et `ACTIVE` en `europe-west1`, Node 22. Le
 manifeste G0 conserve la baseline regionale initiale, dont les six cibles US
 `grantAdminOnAuth`, `e2eCheckoutProof`, `e2eStripeHardeningProof`,
@@ -134,6 +134,11 @@ manifeste G0 conserve la baseline regionale initiale, dont les six cibles US
 246 cibles cloud donnent `l = 2` pour les legacy G8 conservees; toutes les
 Gen1 restent intactes. Le detail machine final est dans
 `apphostingaudit/manifests/functions-gen2-g8.json`.
+L'extracteur courant recalcule ces 246 cibles depuis les 251 exports et refuse
+toute vague parallele inconnue. Pour les creations G6-G8, le wrapper refuse
+desormais toute archive dont l'URI, le SHA-256, la generation ou la taille ne
+correspond pas exactement au manifeste signe; il relit et rehache aussi les
+octets Storage avant le lancement de `gcloud functions deploy`.
 
 Etat courant du chantier Gen2 au 2026-08-19: G0-G8 sont fermes; App Hosting
 sert `build-2026-08-19-005` apres rollback reel vers `004` et reactivation.

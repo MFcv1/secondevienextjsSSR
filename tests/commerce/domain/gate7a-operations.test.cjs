@@ -388,6 +388,10 @@ function outboxRepository(entry) {
             state.calls.push({ type: 'sent', input });
             return input;
         },
+        async markSuppressed(_id, input) {
+            state.calls.push({ type: 'suppressed_test', input });
+            return input;
+        },
         async markFailed(_id, input) {
             state.calls.push({ type: 'failed', input });
             return input;
@@ -458,6 +462,30 @@ test('Gate 7A: accuse provider marque sent avec idempotency key outbox', async (
     await worker.process(outboxEntry().outboxId);
     assert.equal(idempotencyKey, outboxEntry().outboxId);
     assert.equal(repository.state.calls[0].type, 'sent');
+});
+
+test('Gate 7A: une outbox de fixture est neutralisee sans appel fournisseur', async () => {
+    const entry = {
+        ...outboxEntry(),
+        testContext: {
+            runId: 'g8_fixture_gate7a_0001',
+            fixtureScopeVersion: 'g8_fixture_gate7a_0001'
+        }
+    };
+    const repository = outboxRepository(entry);
+    let providerCalled = false;
+    const worker = createOutboxWorker({
+        repository,
+        send: async () => {
+            providerCalled = true;
+            return { providerMessageId: 'forbidden' };
+        },
+        ids: { leaseToken: () => 'lease-gate7a-fixture' },
+        clock: workerClock()
+    });
+    await worker.process(entry.outboxId);
+    assert.equal(providerCalled, false);
+    assert.equal(repository.state.calls[0].type, 'suppressed_test');
 });
 
 test('Gate 7A: seuils exploitation produisent un stop explicite', () => {

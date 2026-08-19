@@ -2642,6 +2642,18 @@ zero entree Gen1 correspondante. Inventaire final: 251 exports locaux, 246
 cloud, 139 Gen1 et 107 Gen2. Toutes les Gen1, donnees, IAM, secrets, endpoints
 et possibilites de rollback restent intacts. G9 n'est pas ouvert.
 
+Correctifs locaux post-audit du 2026-08-19, sans mutation cloud: le worker
+outbox neutralise tout document portant le `testContext` de la fixture avant
+l'appel provider; le harnais retente son cleanup, controle la propriete de ses
+documents et ne publie son succes qu'apres absence verifiee des residus. Le
+wrapper de creation compare au manifeste URI, SHA-256, generation et taille,
+puis rehache les octets Storage avant deploy. L'inventaire recalcule les 251
+exports/246 cibles et refuse une vague parallele inconnue. Enfin, le dry-run P1
+porte les dix `lastUpdateTime`, hashes de preuve et leur digest deterministe;
+aucune ecriture `inventoryVersion` n'a ete faite. Ces protections de runtime
+ne sont effectives dans le sandbox qu'apres un deploiement explicitement
+autorise; ne pas rejouer la fixture distante avant celui du dispatcher.
+
 ### G9 - Checkout, Connect, refunds, schedulers et workers
 
 Perimetre fixe: 24 Gen1, soit cinq Stripe Connect, `requestRefundAdmin`, deux

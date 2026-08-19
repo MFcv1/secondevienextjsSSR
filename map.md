@@ -877,11 +877,16 @@ functions/
 
 Etat apres fermeture G8 du 2026-08-19: `functions/index.js` contient 251
 exports uniques; 246 sont `ACTIVE` dans le sandbox (139 Gen1, 107 Gen2). Les
-37 paralleles commerce non financiers G8 sont `ACTIVE` en `europe-west1`,
+37 paralleles commerce G8 sont `ACTIVE` en `europe-west1`,
 Node 22, avec `l = 2`; toutes les Gen1 sont preservees. Le registre client
 bascule les 35 cibles fixes ainsi que `createOrder` et
 `getOrderStatusClient` vers Gen2. Le manifeste final est
 `apphostingaudit/manifests/functions-gen2-g8.json`.
+Les garde-fous locaux post-audit recalculent strictement 251/246, refusent une
+vague parallele inconnue, lient l'archive a URI/SHA-256/generation/taille et
+neutralisent les outboxes `testContext` avant le provider. Le harnais G8 ne
+declare le succes qu'apres verification de son cleanup; ces correctifs restent
+non deployes tant qu'aucun deploiement explicite n'est autorise.
 Les decisions par nom, appelants, acces donnees, IAM, secrets et rollback sont dans
 `apphostingaudit/manifests/functions-g0.json`; la reconciliation des 13 Gen2,
 Schedulers, queues et Eventarc est dans

@@ -56,7 +56,15 @@ function planFixtureCleanup({ runId, documents, dryRun = true }) {
             });
             continue;
         }
-        const terminal = ['dead_letter', 'delivery_unknown', 'failed', 'released', 'sent', 'used']
+        const terminal = [
+            'dead_letter',
+            'delivery_unknown',
+            'failed',
+            'released',
+            'sent',
+            'suppressed_test',
+            'used'
+        ]
             .includes(entry.status);
         actions.push({
             collection: entry.collection,

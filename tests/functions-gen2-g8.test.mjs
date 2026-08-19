@@ -1,12 +1,25 @@
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
-import { GCLOUD_GEN2_TARGETS, buildGcloudGen2DeployArgs } from '../scripts/deploy-functions-targeted.mjs';
-import { PARALLEL_MIGRATION_EXPORTS, extractLocalExports } from '../scripts/functions-gen2-inventory.mjs';
+import {
+  GCLOUD_GEN2_TARGETS,
+  buildGcloudGen2DeployArgs,
+  validateDeploymentRequest
+} from '../scripts/deploy-functions-targeted.mjs';
+import {
+  EXPECTED_CURRENT_CLOUD_COUNT,
+  EXPECTED_CURRENT_SOURCE_COUNT,
+  HOLD_META_RECONCILIATION,
+  PARALLEL_MIGRATION_EXPORTS,
+  buildInventory,
+  extractLocalExports,
+  waveFor
+} from '../scripts/functions-gen2-inventory.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
@@ -45,8 +58,41 @@ test('G8 exposes 35 fixed plus l=2 parallel Gen2 callables and preserves Gen1', 
 test('G8 inventory extractor recognizes every parallel export', () => {
   const exports = extractLocalExports(ROOT);
   assert.equal(exports.length, 251);
+  assert.equal(EXPECTED_CURRENT_SOURCE_COUNT, 251);
+  assert.equal(EXPECTED_CURRENT_CLOUD_COUNT, 246);
   assert.equal(PARALLEL_MIGRATION_EXPORTS.size, 94);
   assert.deepEqual(exports.filter(({ name }) => name.endsWith('Gen2') && !PARALLEL_MIGRATION_EXPORTS.has(name)), []);
+});
+
+test('G8 inventory rebuild accepts 246 cloud targets and assigns the real wave', () => {
+  const exports = extractLocalExports(ROOT);
+  const cloudNames = exports
+    .map(({ name }) => name)
+    .filter((name) => !HOLD_META_RECONCILIATION.has(name));
+  const firebaseRows = cloudNames.map((id, index) => ({
+    id,
+    state: 'ACTIVE',
+    project: 'secondevienextjsssr',
+    codebase: 'main',
+    platform: index < 139 ? 'gcfv1' : 'gcfv2',
+    region: 'europe-west1',
+    runtime: 'nodejs22',
+    callableTrigger: {}
+  }));
+  const inventory = buildInventory({
+    rootDir: ROOT,
+    firebaseRows,
+    gcloudRows: [],
+    iamPolicies: new Map(),
+    projectIam: { bindings: [] },
+    commit: 'c'.repeat(40),
+    operator: 'test'
+  });
+  assert.equal(inventory.metadata.sourceCount, 251);
+  assert.equal(inventory.metadata.cloudCount, 246);
+  assert.equal(inventory.metadata.cloudGen1Count, 139);
+  assert.equal(inventory.metadata.cloudGen2Count, 107);
+  for (const name of TARGETS) assert.equal(waveFor(name, 'MIGRATION_PARALLEL'), 'G8');
 });
 
 test('G8 wrappers reuse Gen1 run handlers with App Check and bounded runtime', () => {
@@ -78,6 +124,84 @@ test('G8 deploy definitions use one immutable archive and exact secrets', () => 
     'STRIPE_SECRET_KEY=STRIPE_SECRET_KEY:4'
   ]);
   assert.deepEqual(GCLOUD_GEN2_TARGETS.requestOrderCancellationGen2.secrets, ['STRIPE_SECRET_KEY=STRIPE_SECRET_KEY:4']);
+});
+
+test('G8 deploy validation binds URI, digest, generation and size to the manifest', () => {
+  const manifest = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g8.json'));
+  const target = manifest.functions[0].name;
+  manifest.functions[0].cloud = { present: false };
+  const common = {
+    args: {
+      project: 'secondevienextjsssr',
+      codebase: 'main',
+      commit: 'c'.repeat(40),
+      allowlist: target,
+      transport: 'gcloud-gen2-create',
+      'source-uri': manifest.deploymentPolicy.archiveUri,
+      'source-sha256': manifest.deploymentPolicy.archiveSha256,
+      'source-generation': manifest.deploymentPolicy.archiveGeneration
+    },
+    manifest,
+    rootDir: ROOT,
+    manifestPath: path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g8.json'),
+    digestPath: path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g8-digest.json'),
+    currentCommit: 'c'.repeat(40),
+    activeFirebaseProject: 'secondevienextjsssr',
+    baselineIsAncestor: true
+  };
+  const valid = validateDeploymentRequest(common);
+  assert.equal(valid.sourceGeneration, manifest.deploymentPolicy.archiveGeneration);
+  assert.equal(valid.sourceSize, manifest.deploymentPolicy.archiveSize);
+  assert.throws(() => validateDeploymentRequest({
+    ...common,
+    args: {
+      ...common.args,
+      'source-generation': String(Number(manifest.deploymentPolicy.archiveGeneration) + 1)
+    }
+  }), /differente du manifeste approuve/);
+  assert.throws(() => validateDeploymentRequest({
+    ...common,
+    args: {
+      ...common.args,
+      'source-sha256': 'f'.repeat(64)
+    }
+  }), /URI et SHA-256 source G8 divergents|differente du manifeste approuve/);
+});
+
+test('G8 fixture suppresses provider delivery and proves cleanup before success', () => {
+  const worker = read('functions/src/commerce/domain/outboxWorker.js');
+  const fixture = read('scripts/prove-functions-gen2-g8.mjs');
+  assert.match(worker, /entry\.testContext\?\.runId \|\| entry\.testContext\?\.fixtureScopeVersion/);
+  assert.match(worker, /return repository\.markSuppressed/);
+  assert.match(fixture, /Promise\.allSettled\(operations\)/);
+  assert.match(fixture, /G8_PROOF_CLEANUP_OWNERSHIP/);
+  assert.ok(
+    fixture.indexOf('await cleanupFixture();') < fixture.indexOf('process.stdout.write'),
+    'le succes ne doit etre imprime qu apres verification du cleanup'
+  );
+});
+
+test('G8 inventoryVersion proof is deterministic and remains read-only', () => {
+  const manifest = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g8.json'));
+  const p1 = manifest.p1DryRun;
+  assert.equal(p1.scanned, 37);
+  assert.equal(p1.candidates, 10);
+  assert.equal(p1.ready, 10);
+  assert.equal(p1.refused, 0);
+  assert.equal(p1.writePerformed, false);
+  assert.equal(p1.preconditions.length, 10);
+  assert.deepEqual(
+    p1.preconditions.map(({ id }) => id),
+    p1.preconditions.map(({ id }) => id).toSorted((left, right) => left.localeCompare(right))
+  );
+  const digest = crypto.createHash('sha256')
+    .update(JSON.stringify(p1.preconditions))
+    .digest('hex');
+  assert.equal(digest, p1.lastUpdateTimeDigest);
+  const planner = read('scripts/plan-functions-gen2-g1-data.mjs');
+  assert.match(planner, /args\.has\('commit'\) \|\| args\.has\('apply'\) \|\| args\.has\('write'\)/);
+  assert.match(planner, /LAST_UPDATE_TIME_PRECONDITION/);
+  assert.match(planner, /executionState:\s*'NOT_EXECUTED'/);
 });
 
 test('G8 client registry cuts over exactly the 37 retained callables', () => {
