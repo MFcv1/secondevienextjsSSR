@@ -33,8 +33,24 @@
   "functions": [
     { "name": "getMetaConnectionStatusAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
     { "name": "getInstagramConnectionStatusAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
-    { "name": "startMetaOAuthAdminGen2", "cloud": { "present": true }, "decision": { "classification": "MIGRATION_PARALLEL" } },
-    { "name": "startInstagramOAuthAdminGen2", "cloud": { "present": true }, "decision": { "classification": "MIGRATION_PARALLEL" } },
+    {
+      "name": "startMetaOAuthAdminGen2",
+      "cloud": { "present": true, "revision": "startmetaoauthadmingen2-00001-liz" },
+      "identities": {
+        "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+        "runtimeServiceAccount": "meta-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+      },
+      "decision": { "classification": "MIGRATION_PARALLEL" }
+    },
+    {
+      "name": "startInstagramOAuthAdminGen2",
+      "cloud": { "present": true, "revision": "startinstagramoauthadmingen2-00001-yez" },
+      "identities": {
+        "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+        "runtimeServiceAccount": "meta-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+      },
+      "decision": { "classification": "MIGRATION_PARALLEL" }
+    },
     { "name": "verifyMetaConnectionAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
     { "name": "verifyInstagramConnectionAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
     { "name": "disconnectMetaConnectionAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
@@ -43,7 +59,23 @@
     { "name": "getSocialPublicationStatusAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
     { "name": "prepareSocialPublicationAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
     { "name": "runSocialPublicationAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL" } },
-    { "name": "instagramOAuthCallbackGen2", "cloud": { "present": true }, "decision": { "classification": "MIGRATION_PARALLEL" } },
-    { "name": "metaOAuthCallbackGen2", "cloud": { "present": true }, "decision": { "classification": "MIGRATION_PARALLEL" } }
+    {
+      "name": "instagramOAuthCallbackGen2",
+      "cloud": { "present": true, "revision": "instagramoauthcallbackgen2-00001-naw" },
+      "identities": {
+        "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+        "runtimeServiceAccount": "meta-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+      },
+      "decision": { "classification": "MIGRATION_PARALLEL" }
+    },
+    {
+      "name": "metaOAuthCallbackGen2",
+      "cloud": { "present": true, "revision": "metaoauthcallbackgen2-00001-fih" },
+      "identities": {
+        "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+        "runtimeServiceAccount": "meta-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+      },
+      "decision": { "classification": "MIGRATION_PARALLEL" }
+    }
   ]
 }
