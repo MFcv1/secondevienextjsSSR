@@ -76,7 +76,13 @@ const G6_GEN2_TARGETS = Object.freeze({
     buildServiceAccount: G6_BUILD_SERVICE_ACCOUNT,
     memory: '512Mi', cpu: '167m', timeout: '60s', concurrency: '1', minInstances: '0', maxInstances: '1', ingressSettings: 'all',
     secrets: G6_EMAIL_SECRETS,
-    environmentVariables: [G6_FIREBASE_CONFIG],
+    environmentVariables: [
+      G6_FIREBASE_CONFIG,
+      'FUNCTION_SIGNATURE_TYPE=cloudevent',
+      'FUNCTION_TARGET=onQuoteRequestSubmittedGen2',
+      'GCLOUD_PROJECT=secondevienextjsssr',
+      'EVENTARC_CLOUD_EVENT_SOURCE=projects/secondevienextjsssr/locations/europe-west1/services/onQuoteRequestSubmittedGen2'
+    ],
     environmentVariableNames: ['TRANSACTIONAL_EMAIL_PROVIDER']
   }),
   claimNewsletterRewardGen2: g6Callable({ name: 'claimNewsletterRewardGen2', serviceAccount: 'newsletter-runtime', secrets: G6_EMAIL_SECRETS, environmentVariableNames: ['TRANSACTIONAL_EMAIL_PROVIDER'] }),
