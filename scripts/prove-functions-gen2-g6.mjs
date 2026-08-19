@@ -141,11 +141,11 @@ async function proveCatalogReadOnly() {
 }
 
 async function proveBilling() {
-  if (process.env.BILLING_GUIDE_MODE === 'disabled') {
-    const [status, operator] = await Promise.all([
-      result('getBillingGuideStatusGen2', {}),
-      result('getBillingGuideOperatorStatusGen2', {})
-    ]);
+  const [status, operator] = await Promise.all([
+    result('getBillingGuideStatusGen2', {}),
+    result('getBillingGuideOperatorStatusGen2', {})
+  ]);
+  if (status.mode === 'disabled') {
     if (status.mode !== 'disabled' || status.required !== false || operator.mode !== 'disabled' || operator.journey !== null) {
       fail('G6_PROOF_BILLING_DISABLED_READ_INVALID');
     }
@@ -159,7 +159,7 @@ async function proveBilling() {
     }
     return;
   }
-  if (process.env.BILLING_GUIDE_MODE !== 'test' || !process.env.BILLING_GUIDE_TEST_UID) fail('G6_PROOF_BILLING_MODE_INVALID');
+  if (status.mode !== 'test' || process.env.BILLING_GUIDE_MODE !== 'test' || !process.env.BILLING_GUIDE_TEST_UID) fail('G6_PROOF_BILLING_MODE_INVALID');
   const targetUid = process.env.BILLING_GUIDE_TEST_UID;
   const targetUser = await auth.getUser(targetUid);
   const targetAccess = await db.doc(`sys_admin_access/${targetUid}`).get();
