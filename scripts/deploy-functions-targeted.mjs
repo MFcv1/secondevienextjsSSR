@@ -17,7 +17,8 @@ const G6_EMAIL_SECRETS = Object.freeze([
   'GMAIL_PASSWORD=GMAIL_PASSWORD:5',
   'RESEND_API_KEY=RESEND_API_KEY:1'
 ]);
-const g6Callable = ({ name, serviceAccount, memory = '256Mi', timeout = '60s', secrets = [], environmentVariableNames = [] }) => Object.freeze({
+const G6_FIREBASE_CONFIG = 'FIREBASE_CONFIG={"storageBucket":"secondevienextjsssr.firebasestorage.app"}';
+const g6Callable = ({ name, serviceAccount, memory = '256Mi', timeout = '60s', secrets = [], environmentVariables = [], environmentVariableNames = [] }) => Object.freeze({
   create: true,
   g6: true,
   triggerType: 'http-callable',
@@ -34,6 +35,7 @@ const g6Callable = ({ name, serviceAccount, memory = '256Mi', timeout = '60s', s
   maxInstances: '1',
   ingressSettings: 'all',
   secrets,
+  environmentVariables,
   environmentVariableNames
 });
 const G6_GEN2_TARGETS = Object.freeze({
@@ -50,13 +52,13 @@ const G6_GEN2_TARGETS = Object.freeze({
   getManualInvoiceWorkspaceAdminGen2: g6Callable({ name: 'getManualInvoiceWorkspaceAdminGen2', serviceAccount: 'manual-invoice-runtime', memory: '512Mi', timeout: '30s' }),
   prepareManualInvoicePdfAdminGen2: g6Callable({ name: 'prepareManualInvoicePdfAdminGen2', serviceAccount: 'manual-invoice-runtime', memory: '512Mi' }),
   saveManualInvoiceDraftAdminGen2: g6Callable({ name: 'saveManualInvoiceDraftAdminGen2', serviceAccount: 'manual-invoice-runtime', memory: '512Mi', timeout: '30s' }),
-  sendManualInvoiceAdminGen2: g6Callable({ name: 'sendManualInvoiceAdminGen2', serviceAccount: 'manual-invoice-runtime', memory: '512Mi', secrets: G6_EMAIL_SECRETS, environmentVariableNames: ['TRANSACTIONAL_EMAIL_PROVIDER'] }),
+  sendManualInvoiceAdminGen2: g6Callable({ name: 'sendManualInvoiceAdminGen2', serviceAccount: 'manual-invoice-runtime', memory: '512Mi', secrets: G6_EMAIL_SECRETS, environmentVariables: [G6_FIREBASE_CONFIG], environmentVariableNames: ['TRANSACTIONAL_EMAIL_PROVIDER'] }),
   createQuoteRequestGen2: g6Callable({ name: 'createQuoteRequestGen2', serviceAccount: 'quote-request-runtime', memory: '512Mi' }),
   finalizeQuoteRequestGen2: g6Callable({ name: 'finalizeQuoteRequestGen2', serviceAccount: 'quote-request-runtime', memory: '512Mi' }),
-  getQuoteRequestAdminGen2: g6Callable({ name: 'getQuoteRequestAdminGen2', serviceAccount: 'quote-request-runtime', memory: '512Mi', timeout: '30s' }),
+  getQuoteRequestAdminGen2: g6Callable({ name: 'getQuoteRequestAdminGen2', serviceAccount: 'quote-request-runtime', memory: '512Mi', timeout: '30s', environmentVariables: [G6_FIREBASE_CONFIG] }),
   listQuoteRequestsAdminGen2: g6Callable({ name: 'listQuoteRequestsAdminGen2', serviceAccount: 'quote-request-runtime', memory: '512Mi', timeout: '30s' }),
   updateQuoteRequestAdminGen2: g6Callable({ name: 'updateQuoteRequestAdminGen2', serviceAccount: 'quote-request-runtime', memory: '512Mi', timeout: '30s' }),
-  uploadQuoteRequestPhotoGen2: g6Callable({ name: 'uploadQuoteRequestPhotoGen2', serviceAccount: 'quote-request-runtime', memory: '512Mi' }),
+  uploadQuoteRequestPhotoGen2: g6Callable({ name: 'uploadQuoteRequestPhotoGen2', serviceAccount: 'quote-request-runtime', memory: '512Mi', environmentVariables: [G6_FIREBASE_CONFIG] }),
   onQuoteRequestSubmittedGen2: Object.freeze({
     create: true,
     g6: true,
@@ -74,6 +76,7 @@ const G6_GEN2_TARGETS = Object.freeze({
     buildServiceAccount: G6_BUILD_SERVICE_ACCOUNT,
     memory: '512Mi', cpu: '167m', timeout: '60s', concurrency: '1', minInstances: '0', maxInstances: '1', ingressSettings: 'all',
     secrets: G6_EMAIL_SECRETS,
+    environmentVariables: [G6_FIREBASE_CONFIG],
     environmentVariableNames: ['TRANSACTIONAL_EMAIL_PROVIDER']
   }),
   claimNewsletterRewardGen2: g6Callable({ name: 'claimNewsletterRewardGen2', serviceAccount: 'newsletter-runtime', secrets: G6_EMAIL_SECRETS, environmentVariableNames: ['TRANSACTIONAL_EMAIL_PROVIDER'] }),
