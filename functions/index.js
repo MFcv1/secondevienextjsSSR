@@ -250,6 +250,58 @@ exports.updateOrderTrackingAdminGen2 = updateOrderTrackingAdminGen2;
 exports.updateProductOfferAdminGen2 = updateProductOfferAdminGen2;
 exports.writeOffReturnLinesAdminGen2 = writeOffReturnLinesAdminGen2;
 
+// ── COMMERCE G9 — FINANCE, CHECKOUT ET SCHEDULERS GEN2 ─
+const {
+    cancelAdminPaymentLinkGen2,
+    cleanupFixtureRunAdminGen2,
+    commerceOperationsReconcilerGen2,
+    commerceOutboxDispatcherGen2,
+    commerceReservationExpiryDispatcherGen2,
+    confirmStripeConnectReconnectGen2,
+    createAdminPaymentLinkGen2,
+    createCheckoutV2Gen2,
+    expireAdminPaymentLinksGen2,
+    extendAdminPaymentLinkGen2,
+    getAdminPaymentLinkPublicGen2,
+    getCommerceOperationsStatusAdminGen2,
+    getStripeConnectStatusGen2,
+    listAdminPaymentLinksGen2,
+    prepareAdminPaymentLinkPaymentGen2,
+    rebuildCommerceOperationsAdminGen2,
+    recreateAdminPaymentLinkGen2,
+    regenerateAdminPaymentLinkGen2,
+    requestRefundAdminGen2,
+    requestStripeConnectReconnectGen2,
+    resumeAdminPaymentLinkPaymentGen2,
+    resumeCheckoutV2Gen2,
+    startStripeConnectOnboardingGen2,
+    syncStripeConnectAccountGen2
+} = require('./src/commerce/gen2G9');
+exports.cancelAdminPaymentLinkGen2 = cancelAdminPaymentLinkGen2;
+exports.cleanupFixtureRunAdminGen2 = cleanupFixtureRunAdminGen2;
+exports.commerceOperationsReconcilerGen2 = commerceOperationsReconcilerGen2;
+exports.commerceOutboxDispatcherGen2 = commerceOutboxDispatcherGen2;
+exports.commerceReservationExpiryDispatcherGen2 = commerceReservationExpiryDispatcherGen2;
+exports.confirmStripeConnectReconnectGen2 = confirmStripeConnectReconnectGen2;
+exports.createAdminPaymentLinkGen2 = createAdminPaymentLinkGen2;
+exports.createCheckoutV2Gen2 = createCheckoutV2Gen2;
+exports.expireAdminPaymentLinksGen2 = expireAdminPaymentLinksGen2;
+exports.extendAdminPaymentLinkGen2 = extendAdminPaymentLinkGen2;
+exports.getAdminPaymentLinkPublicGen2 = getAdminPaymentLinkPublicGen2;
+exports.getCommerceOperationsStatusAdminGen2 = getCommerceOperationsStatusAdminGen2;
+exports.getStripeConnectStatusGen2 = getStripeConnectStatusGen2;
+exports.listAdminPaymentLinksGen2 = listAdminPaymentLinksGen2;
+exports.prepareAdminPaymentLinkPaymentGen2 = prepareAdminPaymentLinkPaymentGen2;
+exports.rebuildCommerceOperationsAdminGen2 = rebuildCommerceOperationsAdminGen2;
+exports.recreateAdminPaymentLinkGen2 = recreateAdminPaymentLinkGen2;
+exports.regenerateAdminPaymentLinkGen2 = regenerateAdminPaymentLinkGen2;
+exports.requestRefundAdminGen2 = requestRefundAdminGen2;
+exports.requestStripeConnectReconnectGen2 = requestStripeConnectReconnectGen2;
+exports.resumeAdminPaymentLinkPaymentGen2 = resumeAdminPaymentLinkPaymentGen2;
+exports.resumeCheckoutV2Gen2 = resumeCheckoutV2Gen2;
+exports.startStripeConnectOnboardingGen2 = startStripeConnectOnboardingGen2;
+exports.syncStripeConnectAccountGen2 = syncStripeConnectAccountGen2;
+
 // ── PUBLICATION PRODUIT DURABLE ──────────────────────────
 const {
     cleanupProductPublicationSessions,

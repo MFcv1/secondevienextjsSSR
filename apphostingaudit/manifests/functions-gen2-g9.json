@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "codebase": "main",
+    "environment": "sandbox",
+    "wave": "G9",
+    "baselineCommit": "a743e3172013ebee451849927e581a1ae5c9665a",
+    "sourceCountBefore": 251,
+    "sourceCountAfter": 275,
+    "cloudCountBefore": 246,
+    "gen1Before": 139,
+    "gen2Before": 107,
+    "expectedCloudCountAfter": 270,
+    "expectedGen1After": 139,
+    "expectedGen2After": 131,
+    "openedAt": "2026-08-22T10:00:00Z"
+  },
+  "gates": {
+    "g8Closed": true,
+    "g9Opened": true,
+    "g9Closed": false,
+    "schedulerOwnershipPrepared": true,
+    "deploymentAllowed": false,
+    "productionAllowed": false,
+    "stripeLiveAllowed": false,
+    "gen1RemovalAllowed": false,
+    "inventoryVersionWriteAllowed": false
+  },
+  "deploymentPolicy": {
+    "transport": "gcloud-gen2-create",
+    "immutableArchiveWave": "g9",
+    "maxTargetsPerDeploy": 1,
+    "expectedDeployCount": 24,
+    "forbiddenTargets": [],
+    "archiveUri": null,
+    "archiveSha256": null,
+    "archiveGeneration": null,
+    "archiveSize": null,
+    "uploadCount": 0,
+    "deployCount": 0
+  },
+  "schedulerPolicy": {
+    "oldJobLocation": "us-central1",
+    "newJobLocation": "europe-west1",
+    "ownerTransition": "pause Gen1, activate Gen2, bounded double invocation, pause Gen2, resume Gen1, then restore Gen2 owner",
+    "fencePath": "sys_commerce_operations/current/scheduler_leases/{schedulerName}",
+    "oldOwnersPreserved": true
+  },
+  "validation": {
+    "testCommand": "npm run test:functions-g9",
+    "testResult": "100 Node tests and 5 Firestore rules checks passed after one bounded export-extractor correction",
+    "functionsLint": "passed once",
+    "hostedProbe": null,
+    "stripeGate7b": null,
+    "boundedCorrections": [
+      {
+        "target": "G9 export extraction",
+        "proof": "The first local aggregate saw 251 exports because the 24 valid G9 exports used an intermediate object.",
+        "impact": "Local only; no archive upload or cloud mutation had started.",
+        "minimalCorrection": "Destructure and export the same 24 handlers explicitly; the corrected aggregate passed 100 tests plus 5 rules checks."
+      }
+    ]
+  },
+  "appHosting": {
+    "entryBuild": "build-2026-08-19-005",
+    "entryRollbackBuild": "build-2026-08-19-004",
+    "build": null,
+    "rollbackRollout": null,
+    "reactivationRollout": null
+  },
+  "quietWindow": null,
+  "functions": [
+    { "name": "getCommerceOperationsStatusAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL", "deploymentMaxBatchSize": 1 } },
+    { "name": "rebuildCommerceOperationsAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL", "deploymentMaxBatchSize": 1 } },
+    { "name": "cleanupFixtureRunAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL", "deploymentMaxBatchSize": 1 } },
+    { "name": "getStripeConnectStatusGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL", "deploymentMaxBatchSize": 1 } },
+    { "name": "startStripeConnectOnboardingGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL", "deploymentMaxBatchSize": 1 } },
+    { "name": "syncStripeConnectAccountGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL", "deploymentMaxBatchSize": 1 } },
+    { "name": "requestStripeConnectReconnectGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL", "deploymentMaxBatchSize": 1 } },
+    { "name": "confirmStripeConnectReconnectGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL", "deploymentMaxBatchSize": 1 } },
+    { "name": "createAdminPaymentLinkGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL", "deploymentMaxBatchSize": 1 } },
+    { "name": "listAdminPaymentLinksGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL", "deploymentMaxBatchSize": 1 } },
+    { "name": "extendAdminPaymentLinkGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL", "deploymentMaxBatchSize": 1 } },
+    { "name": "regenerateAdminPaymentLinkGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL", "deploymentMaxBatchSize": 1 } },
+    { "name": "recreateAdminPaymentLinkGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL", "deploymentMaxBatchSize": 1 } },
+    { "name": "cancelAdminPaymentLinkGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL", "deploymentMaxBatchSize": 1 } },
+    { "name": "getAdminPaymentLinkPublicGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL", "deploymentMaxBatchSize": 1 } },
+    { "name": "prepareAdminPaymentLinkPaymentGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL", "deploymentMaxBatchSize": 1 } },
+    { "name": "resumeAdminPaymentLinkPaymentGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL", "deploymentMaxBatchSize": 1 } },
+    { "name": "createCheckoutV2Gen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL", "deploymentMaxBatchSize": 1 } },
+    { "name": "resumeCheckoutV2Gen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL", "deploymentMaxBatchSize": 1 } },
+    { "name": "requestRefundAdminGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL", "deploymentMaxBatchSize": 1 } },
+    { "name": "commerceOperationsReconcilerGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL", "deploymentMaxBatchSize": 1 } },
+    { "name": "commerceOutboxDispatcherGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL", "deploymentMaxBatchSize": 1 } },
+    { "name": "commerceReservationExpiryDispatcherGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL", "deploymentMaxBatchSize": 1 } },
+    { "name": "expireAdminPaymentLinksGen2", "cloud": { "present": false }, "decision": { "classification": "MIGRATION_PARALLEL", "deploymentMaxBatchSize": 1 } }
+  ]
+}

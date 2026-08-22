@@ -105,7 +105,31 @@ export const PARALLEL_MIGRATION_EXPORTS = new Set([
   'setPromotionCodeStatusAdminGen2',
   'updateOrderTrackingAdminGen2',
   'updateProductOfferAdminGen2',
-  'writeOffReturnLinesAdminGen2'
+  'writeOffReturnLinesAdminGen2',
+  'cancelAdminPaymentLinkGen2',
+  'cleanupFixtureRunAdminGen2',
+  'commerceOperationsReconcilerGen2',
+  'commerceOutboxDispatcherGen2',
+  'commerceReservationExpiryDispatcherGen2',
+  'confirmStripeConnectReconnectGen2',
+  'createAdminPaymentLinkGen2',
+  'createCheckoutV2Gen2',
+  'expireAdminPaymentLinksGen2',
+  'extendAdminPaymentLinkGen2',
+  'getAdminPaymentLinkPublicGen2',
+  'getCommerceOperationsStatusAdminGen2',
+  'getStripeConnectStatusGen2',
+  'listAdminPaymentLinksGen2',
+  'prepareAdminPaymentLinkPaymentGen2',
+  'rebuildCommerceOperationsAdminGen2',
+  'recreateAdminPaymentLinkGen2',
+  'regenerateAdminPaymentLinkGen2',
+  'requestRefundAdminGen2',
+  'requestStripeConnectReconnectGen2',
+  'resumeAdminPaymentLinkPaymentGen2',
+  'resumeCheckoutV2Gen2',
+  'startStripeConnectOnboardingGen2',
+  'syncStripeConnectAccountGen2'
 ]);
 
 export const EXPECTED_CURRENT_SOURCE_COUNT = EXPECTED_SOURCE_COUNT + PARALLEL_MIGRATION_EXPORTS.size;

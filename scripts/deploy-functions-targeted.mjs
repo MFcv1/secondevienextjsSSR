@@ -85,6 +85,95 @@ const G8_GEN2_TARGETS = Object.freeze(Object.fromEntries(G8_LOGICAL_NAMES.map((n
     secrets
   })];
 })));
+const G9_PAYMENT_LINK_SECRETS = Object.freeze([
+  'STRIPE_SECRET_KEY=STRIPE_SECRET_KEY:4',
+  'PAYMENT_LINK_HMAC_SECRET=PAYMENT_LINK_HMAC_SECRET:1'
+]);
+const G9_CONNECT_ADMIN_SECRETS = Object.freeze([
+  'STRIPE_SECRET_KEY=STRIPE_SECRET_KEY:4',
+  'SUPER_ADMIN_EMAIL=SUPER_ADMIN_EMAIL:3'
+]);
+const G9_OUTBOX_SECRETS = Object.freeze([
+  'GMAIL_EMAIL=GMAIL_EMAIL:2',
+  'GMAIL_PASSWORD=GMAIL_PASSWORD:5',
+  'RESEND_API_KEY=RESEND_API_KEY:1'
+]);
+const g9Http = ({
+  name,
+  triggerType = 'http-callable',
+  runtimeServiceAccount = G8_RUNTIME_SERVICE_ACCOUNT,
+  memory = '256Mi',
+  timeout = '60s',
+  secrets = [],
+  schedule = null
+}) => Object.freeze({
+  create: true,
+  g9: true,
+  triggerType,
+  region: 'europe-west1',
+  runtime: 'nodejs22',
+  entryPoint: name,
+  runtimeServiceAccount,
+  buildServiceAccount: G8_BUILD_SERVICE_ACCOUNT,
+  memory,
+  cpu: '167m',
+  timeout,
+  concurrency: '1',
+  minInstances: '0',
+  maxInstances: '1',
+  ingressSettings: 'all',
+  secrets,
+  ...(schedule ? {
+    functionUrl: `https://europe-west1-secondevienextjsssr.cloudfunctions.net/${name}`,
+    schedulerJob: `firebase-schedule-${name}-europe-west1`,
+    schedule,
+    timeZone: 'UTC',
+    schedulerServiceAccount: runtimeServiceAccount,
+    schedulerAttemptDeadline: '300s'
+  } : {})
+});
+const G9_GEN2_TARGETS = Object.freeze({
+  getStripeConnectStatusGen2: g9Http({ name: 'getStripeConnectStatusGen2', secrets: G8_STRIPE_SECRET }),
+  startStripeConnectOnboardingGen2: g9Http({ name: 'startStripeConnectOnboardingGen2', secrets: G9_CONNECT_ADMIN_SECRETS }),
+  syncStripeConnectAccountGen2: g9Http({ name: 'syncStripeConnectAccountGen2', secrets: G8_STRIPE_SECRET }),
+  requestStripeConnectReconnectGen2: g9Http({ name: 'requestStripeConnectReconnectGen2', secrets: G9_CONNECT_ADMIN_SECRETS }),
+  confirmStripeConnectReconnectGen2: g9Http({ name: 'confirmStripeConnectReconnectGen2', secrets: G9_CONNECT_ADMIN_SECRETS }),
+  getCommerceOperationsStatusAdminGen2: g9Http({ name: 'getCommerceOperationsStatusAdminGen2' }),
+  rebuildCommerceOperationsAdminGen2: g9Http({ name: 'rebuildCommerceOperationsAdminGen2', memory: '512Mi', timeout: '300s' }),
+  cleanupFixtureRunAdminGen2: g9Http({ name: 'cleanupFixtureRunAdminGen2', memory: '512Mi', timeout: '180s' }),
+  createAdminPaymentLinkGen2: g9Http({ name: 'createAdminPaymentLinkGen2', secrets: G9_PAYMENT_LINK_SECRETS }),
+  listAdminPaymentLinksGen2: g9Http({ name: 'listAdminPaymentLinksGen2', secrets: G9_PAYMENT_LINK_SECRETS }),
+  extendAdminPaymentLinkGen2: g9Http({ name: 'extendAdminPaymentLinkGen2', secrets: G9_PAYMENT_LINK_SECRETS }),
+  regenerateAdminPaymentLinkGen2: g9Http({ name: 'regenerateAdminPaymentLinkGen2', secrets: G9_PAYMENT_LINK_SECRETS }),
+  recreateAdminPaymentLinkGen2: g9Http({ name: 'recreateAdminPaymentLinkGen2', secrets: G9_PAYMENT_LINK_SECRETS }),
+  cancelAdminPaymentLinkGen2: g9Http({ name: 'cancelAdminPaymentLinkGen2', secrets: G9_PAYMENT_LINK_SECRETS }),
+  getAdminPaymentLinkPublicGen2: g9Http({ name: 'getAdminPaymentLinkPublicGen2', secrets: G9_PAYMENT_LINK_SECRETS }),
+  prepareAdminPaymentLinkPaymentGen2: g9Http({ name: 'prepareAdminPaymentLinkPaymentGen2', secrets: G9_PAYMENT_LINK_SECRETS }),
+  resumeAdminPaymentLinkPaymentGen2: g9Http({ name: 'resumeAdminPaymentLinkPaymentGen2', secrets: G9_PAYMENT_LINK_SECRETS }),
+  createCheckoutV2Gen2: g9Http({ name: 'createCheckoutV2Gen2', secrets: G8_STRIPE_SECRET }),
+  resumeCheckoutV2Gen2: g9Http({ name: 'resumeCheckoutV2Gen2', secrets: G8_STRIPE_SECRET }),
+  requestRefundAdminGen2: g9Http({ name: 'requestRefundAdminGen2', secrets: G8_STRIPE_SECRET }),
+  commerceOperationsReconcilerGen2: g9Http({
+    name: 'commerceOperationsReconcilerGen2', triggerType: 'http-scheduler',
+    runtimeServiceAccount: 'commerce-operations-reconciler@secondevienextjsssr.iam.gserviceaccount.com',
+    memory: '512Mi', timeout: '300s', schedule: 'every 60 minutes'
+  }),
+  commerceOutboxDispatcherGen2: g9Http({
+    name: 'commerceOutboxDispatcherGen2', triggerType: 'http-scheduler',
+    runtimeServiceAccount: 'commerce-outbox-dispatcher@secondevienextjsssr.iam.gserviceaccount.com',
+    memory: '512Mi', timeout: '300s', schedule: 'every 2 minutes', secrets: G9_OUTBOX_SECRETS
+  }),
+  commerceReservationExpiryDispatcherGen2: g9Http({
+    name: 'commerceReservationExpiryDispatcherGen2', triggerType: 'http-scheduler',
+    runtimeServiceAccount: 'commerce-reservation-expiry@secondevienextjsssr.iam.gserviceaccount.com',
+    memory: '512Mi', timeout: '300s', schedule: 'every 2 minutes', secrets: G8_STRIPE_SECRET
+  }),
+  expireAdminPaymentLinksGen2: g9Http({
+    name: 'expireAdminPaymentLinksGen2', triggerType: 'http-scheduler',
+    runtimeServiceAccount: 'admin-payment-link-expiry@secondevienextjsssr.iam.gserviceaccount.com',
+    memory: '512Mi', timeout: '300s', schedule: 'every 5 minutes', secrets: G9_PAYMENT_LINK_SECRETS
+  })
+});
 const g7Http = ({ name, triggerType = 'http-callable', memory = '256Mi', timeout = '60s', secrets = [] }) => Object.freeze({
   create: true,
   g7: true,
@@ -263,6 +352,7 @@ export const GCLOUD_GEN2_TARGETS = Object.freeze({
   ...G6_GEN2_TARGETS,
   ...G7_GEN2_TARGETS,
   ...G8_GEN2_TARGETS,
+  ...G9_GEN2_TARGETS,
   removeAdminUserGen2: Object.freeze({
     create: true,
     triggerType: 'http-callable',
@@ -1234,12 +1324,12 @@ export function validateDeploymentRequest({
     if (entries[0].cloud?.present !== false || entries[0].decision?.classification !== 'MIGRATION_PARALLEL') {
       fail('Creation gcloud Gen2 exige une cible parallele absente du cloud');
     }
-    if (target.g6 || target.g7 || target.g8) {
+    if (target.g6 || target.g7 || target.g8 || target.g9) {
       const sourceUri = required(args, 'source-uri');
       const sourceSha256 = required(args, 'source-sha256');
       const sourceGeneration = required(args, 'source-generation');
       const sourceSize = String(manifest.deploymentPolicy?.archiveSize || '');
-      const wave = target.g8 ? 'g8' : (target.g7 ? 'g7' : 'g6');
+      const wave = target.g9 ? 'g9' : (target.g8 ? 'g8' : (target.g7 ? 'g7' : 'g6'));
       if (!new RegExp(`^gs://gcf-v2-sources-231220287936-europe-west1/${wave}/[0-9a-f]{64}/function-source\\.zip$`).test(sourceUri)) {
         fail(`Archive source ${wave.toUpperCase()} immutable invalide`);
       }
@@ -1347,7 +1437,7 @@ export function buildGcloudGen2DeployArgs(validation) {
     `--region=${target.region}`,
     '--gen2',
     `--runtime=${target.runtime}`,
-    `--source=${target.g6 || target.g7 || target.g8 ? validation.sourceUri : 'functions'}`,
+    `--source=${target.g6 || target.g7 || target.g8 || target.g9 ? validation.sourceUri : 'functions'}`,
     `--entry-point=${target.entryPoint}`,
     ...triggerArgs,
     `--run-service-account=${target.runtimeServiceAccount}`,
