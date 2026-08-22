@@ -798,6 +798,15 @@ restent desactivees; leur eventuelle reconstruction avec
 comptage, sauvegarde, pagination, reprise et quarantaine attend un besoin
 metier/pre-live distinct.
 
+Decision G11-R du 2026-08-22: les six outils globaux ci-dessus,
+`getUploadUrl`, `clearAllAffiliateClicks` et `clearAllSessions` sont
+`RETIRE_G12_A`. Les handlers de dashboard conserves ne constituent pas des
+appelants atteignables; les deux boutons analytics globaux n'ont aucun trafic
+sur trente jours et doivent converger vers la retention bornee. Seule la
+suppression ciblee `deleteSession` reste un besoin d'exploitation et doit etre
+reconstruite en Gen2 avec confirmation serveur structuree, dry-run,
+precondition de version, audit idempotent et reprise avant toute bascule.
+
 ## 9. Performance du back-office
 
 - garder les vues lourdes lazy;

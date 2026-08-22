@@ -888,8 +888,13 @@ quatre jobs Gen1 commerce sont `PAUSED`; leurs nouveaux owners Gen2 sont
 `ENABLED`, fences liberes et rollback inverse prouve. Le registre client G9
 est servi par `build-2026-08-22-001`, apres rollback reel vers
 `build-2026-08-19-005` et reactivation. Le manifeste final est
-`apphostingaudit/manifests/functions-gen2-g10.json`; G10 est fermee et G11
-reste non ouverte.
+`apphostingaudit/manifests/functions-gen2-g10.json`; G10 est fermee. G11-R est
+fermee par `apphostingaudit/manifests/functions-gen2-g11-r.json`: neuf cibles
+sont `RETIRE_G12_A`, seule `deleteSession` est `MIGRATE_GEN2` (`d = 1`) et les
+dix noms ont zero execution Cloud Logging sur trente jours. Aucun deploy,
+retrait Gen1, build App Hosting ou acces aux donnees n'a eu lieu. Le HOLD G11-D
+a ete leve explicitement pour le sandbox le 2026-08-22, sans autoriser de
+destruction de donnees reelles; ses preconditions restent a prouver avant deploy.
 Les garde-fous locaux post-audit recalculent strictement 251/246, refusent une
 vague parallele inconnue, lient l'archive a URI/SHA-256/generation/taille et
 neutralisent les outboxes `testContext` avant le provider. Le harnais G8 ne
@@ -1191,8 +1196,8 @@ ouvert.
 | newsletter/avantages | `drawNewsletterReward`, `claimNewsletterReward`, `listMyNewsletterRewards` |
 | publication sociale | `startInstagramOAuthAdmin`, `instagramOAuthCallback`, `getInstagramConnectionStatusAdmin`, `verifyInstagramConnectionAdmin`, `disconnectInstagramConnectionAdmin`; rail Facebook optionnel `startMetaOAuthAdmin`, `metaOAuthCallback`, `getMetaConnectionStatusAdmin`, `selectMetaAssetAdmin`, `verifyMetaConnectionAdmin`, `disconnectMetaConnectionAdmin`; saga `prepareSocialPublicationAdmin`, `runSocialPublicationAdmin`, `getSocialPublicationStatusAdmin` |
 | e-mail | `onOrderCreated`, `onOrderUpdated`, `sendTestEmail`, `sendRefundStatusEmailAdmin` |
-| analytics | `initLiveSession`, `syncSession`, `syncSessionBeacon`, `deleteSession`, `clearAllSessions`, `clearAllAffiliateClicks`, `trackAdminIP`, `updateUserSessions`, `onOrderStatsWrite` |
-| maintenance | resets/purges, `runGarbageCollector`, `getUploadUrl` |
+| analytics | `initLiveSession`, `syncSession`, `syncSessionBeacon`, `deleteSession` (seule cible G11-R a migrer), `clearAllSessions` et `clearAllAffiliateClicks` (`RETIRE_G12_A`), `trackAdminIP`, `updateUserSessions`, `onOrderStatsWrite` |
+| maintenance | resets/purges, `runGarbageCollector`, `getUploadUrl`: les sept noms sont `RETIRE_G12_A`; aucune Gen1 n'est retiree avant G12-A |
 | triggers catalogue | `onArtifactDeleted`, `onArtifactUpdated` |
 | catalogue materialise | `onCatalogSourceWrite`, `dispatchCatalogBuild`, `dispatchCatalogRevalidation`, `catalogReconciler`, `catalogMediaGarbageCollector`, `getCatalogPublicationStatus`, `rollbackCatalogSnapshot`, `rebuildCatalogSnapshot` |
 

@@ -311,6 +311,13 @@ n'a ete lancee pendant la passe du 2026-08-12.
 | `affiliate_clicks` | attribution bornee, backend-only | 90 jours |
 | registre `admin_ips` | exclusion analytics des administrateurs | nettoyage opportuniste apres 90 jours |
 
+G11-R ferme la classification des suppressions analytics: les purges globales
+`clearAllSessions` et `clearAllAffiliateClicks` sont `RETIRE_G12_A`, car elles
+effacent toute la collection sans respecter la fenetre de retention et doublent
+l'outil operateur borne. `deleteSession` est `MIGRATE_GEN2`: l'action ciblee
+reste exposee pour le support dans `AdminAnalytics`, mais sa future Gen2 doit
+etre dry-run par defaut, liee a la version observee du document et auditee.
+
 Les audits securite conservent l'UID brut parce qu'il est la cle
 d'imputabilite, mais e-mail, IP et user-agent y sont hashes. Les sessions
 analytics gardent les donnees minimales necessaires au moteur pendant leur

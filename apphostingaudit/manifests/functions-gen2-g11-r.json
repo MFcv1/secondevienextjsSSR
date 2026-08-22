@@ -1,0 +1,184 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "codebase": "main",
+    "environment": "sandbox",
+    "wave": "G11-R",
+    "baselineCommit": "604d39e25aaed26189e65911c89f6a4ea423021e",
+    "openedAt": "2026-08-22T14:30:00Z",
+    "closedAt": "2026-08-22T14:42:18Z",
+    "status": "CLOSED",
+    "sourceCount": 275,
+    "cloudCount": 272,
+    "gen1Count": 139,
+    "gen2Count": 133,
+    "d": 1
+  },
+  "authorization": {
+    "g11RReadOnly": true,
+    "g11DHoldLiftedAfterClassification": true,
+    "g11DEnvironment": "sandbox",
+    "realDataDestructionAllowed": false,
+    "productionAllowed": false,
+    "stripeLiveAllowed": false,
+    "gen1RemovalAllowedInG11": false,
+    "appHostingBuildAllowedInG11R": false
+  },
+  "evidence": {
+    "callerSearchRoots": ["app", "src", "functions", "scripts", "test", "tests"],
+    "callerSearchExclusions": ["node_modules", ".next", "output", "tmp", "apphostingaudit", "_DOCS", "logs", "archives"],
+    "trafficWindow": {
+      "start": "2026-07-23T00:00:00Z",
+      "end": "2026-08-22T14:42:18Z",
+      "source": "Cloud Logging cloud_function execution_id",
+      "allTargetsExecutionIds": 0
+    },
+    "freshCloudRead": {
+      "project": "secondevienextjsssr",
+      "allTargetsPresent": true,
+      "allTargetsGeneration": 1,
+      "inventoryUnchanged": true
+    },
+    "appHosting": {
+      "activeBuild": "build-2026-08-22-001",
+      "activeRollout": "g9-reactivate-20260822-001",
+      "activeRolloutState": "SUCCEEDED",
+      "rollbackBuild": "build-2026-08-19-005",
+      "rollbackRollout": "g9-rollback-20260822-001",
+      "rollbackRolloutState": "SUCCEEDED",
+      "buildCreatedInG11R": false
+    }
+  },
+  "decisions": [
+    {
+      "name": "getUploadUrl",
+      "version": "6",
+      "updatedAt": "2026-08-11T15:52:33.357Z",
+      "callers": [],
+      "traffic30d": { "executionIds": 0, "lastExecutionAt": null },
+      "protections": ["App Check", "active strong admin", "sanitized collection/file/content type", "signed URL expires after 15 minutes"],
+      "functionalOverlap": ["AdminForm direct Storage upload under Storage Rules", "productPublicationClient resumable Storage upload"],
+      "decision": "RETIRE_G12_A",
+      "reason": "No executable caller and the two current upload paths use Storage directly with their existing rules."
+    },
+    {
+      "name": "purgeAllProducts",
+      "version": "7",
+      "updatedAt": "2026-08-11T16:00:34.508Z",
+      "callers": ["dead AdminDashboard handler retained for rollback; no rendered control"],
+      "traffic30d": { "executionIds": 0, "lastExecutionAt": null },
+      "protections": ["unconditional legacy hard-stop before auth/read/write", "App Check", "strong super-admin", "confirmation text", "security audit"],
+      "functionalOverlap": ["bounded product deletion command", "catalog media quarantine and garbage collection"],
+      "decision": "RETIRE_G12_A",
+      "reason": "Global product purge is unreachable, permanently contained and conflicts with the authoritative bounded publication/catalogue lifecycle."
+    },
+    {
+      "name": "purgeAnonymousUsers",
+      "version": "7",
+      "updatedAt": "2026-08-11T16:00:29.753Z",
+      "callers": ["dead AdminDashboard handler retained for rollback; no rendered control"],
+      "traffic30d": { "executionIds": 0, "lastExecutionAt": null },
+      "protections": ["unconditional legacy hard-stop before auth/read/write", "App Check", "strong super-admin", "confirmation text", "security audit"],
+      "functionalOverlap": ["future account deletion/retention workflow must be scoped rather than global"],
+      "decision": "RETIRE_G12_A",
+      "reason": "No reachable operation or observed use; the global sweep does not satisfy the current coordinated account-deletion model."
+    },
+    {
+      "name": "resetAllOrders",
+      "version": "7",
+      "updatedAt": "2026-08-11T16:02:20.545Z",
+      "callers": ["dead AdminDashboard handler retained for rollback; no rendered control"],
+      "traffic30d": { "executionIds": 0, "lastExecutionAt": null },
+      "protections": ["unconditional legacy hard-stop before auth/read/write", "App Check", "strong super-admin", "confirmation text", "security audit"],
+      "functionalOverlap": ["commerce v2 archive/refund/disposition commands", "accounting retention"],
+      "decision": "RETIRE_G12_A",
+      "reason": "A global order reset is unreachable and incompatible with durable paid-order and accounting invariants."
+    },
+    {
+      "name": "resetAllStats",
+      "version": "8",
+      "updatedAt": "2026-08-11T16:02:20.526Z",
+      "callers": [],
+      "traffic30d": { "executionIds": 0, "lastExecutionAt": null },
+      "protections": ["unconditional legacy hard-stop before auth/read/write", "App Check"],
+      "functionalOverlap": ["onOrderStatsWrite idempotent projections", "bounded analytics retention tooling"],
+      "decision": "RETIRE_G12_A",
+      "reason": "No caller, no implementation beyond the hard-stop and current statistics are rebuilt/maintained by authoritative projections."
+    },
+    {
+      "name": "resetAllUsers",
+      "version": "7",
+      "updatedAt": "2026-08-11T16:03:58.327Z",
+      "callers": ["dead AdminDashboard handler retained for rollback; no rendered control"],
+      "traffic30d": { "executionIds": 0, "lastExecutionAt": null },
+      "protections": ["unconditional legacy hard-stop before auth/read/write", "App Check", "strong super-admin", "confirmation text", "security audit", "super-admin preservation"],
+      "functionalOverlap": ["future coordinated account deletion/retention workflow"],
+      "decision": "RETIRE_G12_A",
+      "reason": "The global Auth deletion sweep is unreachable and cannot meet the current data-retention and coordinated-deletion requirements."
+    },
+    {
+      "name": "runGarbageCollector",
+      "version": "7",
+      "updatedAt": "2026-08-11T16:05:35.212Z",
+      "callers": ["dead AdminDashboard handler retained for rollback; no rendered control"],
+      "traffic30d": { "executionIds": 0, "lastExecutionAt": null },
+      "protections": ["unconditional legacy hard-stop before auth/read/write", "App Check", "active strong admin", "confirmation text", "security audit"],
+      "functionalOverlap": ["catalogMediaGarbageCollector with quarantine/grace", "read-only storage orphan audit"],
+      "decision": "RETIRE_G12_A",
+      "reason": "The immediate-delete legacy collector is unreachable and superseded by the catalog quarantine/grace lifecycle."
+    },
+    {
+      "name": "clearAllAffiliateClicks",
+      "version": "7",
+      "updatedAt": "2026-08-11T15:40:38.987Z",
+      "callers": ["AdminAnalytics global Purger Data button"],
+      "traffic30d": { "executionIds": 0, "lastExecutionAt": null },
+      "protections": ["App Check", "active strong admin", "browser confirm only", "500-document batches"],
+      "functionalOverlap": ["retention-scoped purge-expired-firestore operator tool"],
+      "decision": "RETIRE_G12_A",
+      "reason": "The caller exists but has no observed use and deletes all attribution data without server confirmation, dry-run, resume ledger or audit; retention tooling is the supported need."
+    },
+    {
+      "name": "clearAllSessions",
+      "version": "10",
+      "updatedAt": "2026-08-11T15:40:41.072Z",
+      "callers": ["AdminAnalytics global Purger Data button"],
+      "traffic30d": { "executionIds": 0, "lastExecutionAt": null },
+      "protections": ["App Check", "active strong admin", "browser confirm only", "500-document batches"],
+      "functionalOverlap": ["retention-scoped purge-expired-firestore operator tool"],
+      "decision": "RETIRE_G12_A",
+      "reason": "The caller exists but has no observed use and global deletion conflicts with the 366-day retention model; the bounded operator purge is the supported path."
+    },
+    {
+      "name": "deleteSession",
+      "version": "11",
+      "updatedAt": "2026-08-11T15:42:29.635Z",
+      "callers": ["AdminAnalytics per-session delete action"],
+      "traffic30d": { "executionIds": 0, "lastExecutionAt": null },
+      "protections": ["App Check", "active strong admin", "sessionId required", "browser confirm only"],
+      "functionalOverlap": [],
+      "decision": "MIGRATE_GEN2",
+      "reason": "A current targeted support operation has a real executable caller and no equivalent server command; G11-D must add structured confirmation, dry-run, precondition, idempotent audit and resume-safe semantics."
+    }
+  ],
+  "validation": {
+    "readOnlyOnly": true,
+    "manifestJsonParse": "passed",
+    "gitDiffCheck": "passed",
+    "callerSearch": "passed_bounded",
+    "cloudInventory": "passed_275_272_139_133",
+    "appHostingRolloutRead": "passed_active_and_rollback_succeeded",
+    "deploymentCount": 0,
+    "dataWriteCount": 0,
+    "functionDeletionCount": 0,
+    "appHostingBuildCount": 0
+  },
+  "next": {
+    "phase": "G11-D",
+    "authorizedSeparately": true,
+    "hold": "LIFTED_BY_EXPLICIT_USER_AUTHORIZATION_2026-08-22",
+    "targets": ["deleteSessionGen2"],
+    "requiredBeforeDeploy": ["fresh backup proof", "structured confirmation contract", "dry-run default", "document precondition", "idempotent audit/resume", "immutable rollback archive", "least-privilege runtime identity"]
+  }
+}
