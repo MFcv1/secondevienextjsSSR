@@ -16,7 +16,10 @@
     "gen2Before": 133,
     "expectedGen2After": 134,
     "d": 1,
-    "status": "READY_TO_DEPLOY"
+    "cloudCountObserved": 273,
+    "gen1Observed": 139,
+    "gen2Observed": 134,
+    "status": "FUNCTION_ACTIVE_CLIENT_CUTOVER_PENDING"
   },
   "authorization": {
     "hold": "HOLD_G11_DESTRUCTIVE_PRECONDITIONS",
@@ -101,9 +104,13 @@
         ]
       },
       "cloud": {
-        "present": false,
+        "present": true,
         "generation": 2,
-        "region": "europe-west1"
+        "region": "europe-west1",
+        "state": "ACTIVE",
+        "revision": "deletesessiongen2-00001-mug",
+        "createTime": "2026-08-22T14:54:33.462361160Z",
+        "updateTime": "2026-08-22T14:55:53.174809248Z"
       },
       "runtime": {
         "runtime": "nodejs22",
@@ -145,10 +152,21 @@
     "gen1RemovalAllowed": false
   },
   "validation": {
-    "deploymentCount": 0,
+    "deploymentCount": 1,
     "destructiveInvocationCount": 0,
-    "dryRunInvocationCount": 0,
+    "dryRunInvocationCount": 1,
+    "withoutAppCheckHttp": 401,
+    "invalidAppCheckHttp": 401,
+    "dryRunHttp": 200,
+    "dryRunWouldDelete": false,
+    "dryRunBatchSize": 0,
+    "dryRunAuditWritten": false,
+    "probeRetry": {
+      "firstAttemptReachedFunction": false,
+      "cause": "App Check custom token TTL below SDK minimum",
+      "correction": "use the documented 30 minute minimum"
+    },
     "appHostingBuildCount": 0,
-    "status": "PENDING_DEPLOY"
+    "status": "FUNCTION_ACTIVE_CLIENT_CUTOVER_PENDING"
   }
 }
