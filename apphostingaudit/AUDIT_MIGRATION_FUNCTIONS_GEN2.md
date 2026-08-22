@@ -65,16 +65,16 @@ sont conservees dans les manifestes `functions-gen2-*`.
 | Element | Etat de reprise |
 | --- | --- |
 | branche | `main` |
-| baseline d'ouverture G10 | `ddbe5fde0448dec9fa5fbbcb29ccea2bdcd32daa` |
+| baseline source G11-D | `fa20bbbb0ed59dbc298590dfef65a5a14308d5bd` |
 | worktree attendu a la reprise | propre hors `output/` et `tmp/` utilisateur; verifier le statut sans rejouer |
-| phases fermees | G0, G1, G2-A, G2-B 13/13, G3, G4, G5, G6, G7-R, G7-D, G8, G9, G10 et G11-R |
-| phase active | aucune; G11-R fermee le 2026-08-22, G11-D autorisee mais pas encore ouverte |
-| inventaire courant | 275 exports locaux, 272 cloud, 139 Gen1, 133 Gen2 |
-| cibles paralleles actives | les deux webhooks G10, les 24 Gen2 G9 et les 37 Gen2 G8 sont ACTIVE sous Node 22; toutes les Gen1 restent intactes |
-| cutover client | App Hosting sert `build-2026-08-22-001`; rollback exact `build-2026-08-19-005`, puis reactivation G9 prouves |
+| phases fermees | G0, G1, G2-A, G2-B 13/13, G3, G4, G5, G6, G7-R, G7-D, G8, G9, G10, G11-R et G11-D |
+| phase active | aucune; G11 fermee le 2026-08-22, G12-A non ouverte |
+| inventaire courant | 276 exports locaux, 273 cloud, 139 Gen1, 134 Gen2 |
+| cibles paralleles actives | `deleteSessionGen2`, les deux webhooks G10, les 24 Gen2 G9 et les 37 Gen2 G8 sont ACTIVE sous Node 22; toutes les Gen1 restent intactes |
+| cutover client | App Hosting sert `build-2026-08-22-002`; rollback exact `build-2026-08-22-001`, puis reactivation G11 prouves |
 | observation G4 | G4-A1 a G4-A5 fermees en validation acceleree; Gen1 et rollbacks preserves |
 | retrait Gen1 | aucun avant G12-A |
-| prochain lot | G11-D, uniquement apres preuve backup fraiche et verification de toutes ses preconditions; le HOLD a ete leve explicitement pour le sandbox sans autoriser de destruction de donnees reelles |
+| prochain lot | `G12-A:<cohorte>` uniquement apres nomination exacte de la cohorte et preuve de sa quiet-window maximale, de ses consommateurs bascules et de son rollback redeployable |
 
 Le correctif Monitoring du 2026-08-17 est applique et idempotent: cinq
 metriques, huit policies severisees et deux canaux conformes; la boucle
@@ -2801,6 +2801,20 @@ interdisant toute destruction de donnees reelles, production et Stripe live.
 Cette autorisation ne remplace pas les preuves backup, preconditions, dry-run,
 audit/reprise et rollback requises avant le deploy de `deleteSessionGen2`.
 
+Fermeture G11-D du 2026-08-22: le backup eur3 est `READY` et le restore drill
+G1 reste prouve. `deleteSessionGen2` est `ACTIVE` en revision
+`deletesessiongen2-00001-mug`, Node 22, 167m/256 MiB, concurrence 1 et max 1,
+sur `analytics-runtime` au moindre privilege. Les six tests G11 passent; la
+probe cloud refuse App Check absent/invalide puis effectue un dry-run 200 sur
+une cible inexistante, avec batch zero, audit zero et aucune suppression.
+App Hosting sert `build-2026-08-22-002` apres rollback reel vers
+`build-2026-08-22-001` par `g11-rollback-20260822-001`, puis reactivation par
+`g11-reactivate-20260822-001`. La quiet-window
+`2026-08-22T15:23:48Z`--`15:30:58Z` compte zero erreur Gen2 et zero entree
+`deleteSession` Gen1. Inventaire final: 276 local / 273 cloud / 139 Gen1 / 134
+Gen2. Les dix Gen1, donnees, IAM et secrets sont intacts. Le manifeste final
+est `manifests/functions-gen2-g11.json`.
+
 ### G12 - Retrait Gen1 cible, reversible puis nettoye
 
 Avant chaque suppression:
@@ -3022,41 +3036,44 @@ La migration est terminee uniquement si:
 
 ## 15. Reprise optimisee
 
-G8, G9, G10 et G11-R sont fermes. G11-D n'est pas encore ouverte. Ne pas relire le journal
+G8, G9, G10 et G11 sont fermes. G12-A n'est pas ouverte. Ne pas relire le journal
 historique ni rejouer une preuve fermee sans drift concret.
 
 ```text
 Branche: main.
-Baseline d'ouverture G10:
-`ddbe5fde0448dec9fa5fbbcb29ccea2bdcd32daa`.
+Baseline source G11-D:
+`fa20bbbb0ed59dbc298590dfef65a5a14308d5bd`.
 Projet cloud obligatoire: secondevienextjsssr.
-Etat: G0-G10 et G11-R fermes; G11-D autorisee sous preconditions; inventaire
-`275 local / 272 cloud / 139 Gen1 / 133 Gen2`.
+Etat: G0-G11 fermes; inventaire
+`276 local / 273 cloud / 139 Gen1 / 134 Gen2`.
 Les 24 Gen2 G9 sont ACTIVE et toutes les Gen1 restent intactes. Les quatre
-owners Scheduler finaux sont Gen2. App Hosting sert `build-2026-08-22-001`
-apres rollback reel vers `build-2026-08-19-005` et reactivation.
+owners Scheduler finaux sont Gen2. `deleteSessionGen2` est ACTIVE. App Hosting
+sert `build-2026-08-22-002` apres rollback reel vers
+`build-2026-08-22-001` et reactivation.
 
-Action immediate: verifier la preuve backup fraiche et les preconditions G11-D,
-puis migrer uniquement `deleteSession` (`d = 1`) en restant strictement
-read-only/dry-run sur les donnees sandbox. Le HOLD G11-D a ete leve par
-autorisation utilisateur explicite le 2026-08-22; aucune destruction de donnee
-reelle n'est autorisee. Ne rejouer aucun test ferme.
+Action immediate: avant G12-A, nommer exactement une cohorte et prouver pour
+chacune de ses cibles la bascule des consommateurs, la quiet-window couvrant la
+duree maximale d'ancien bundle/session, ainsi que l'archive et le rollback
+redeployables. Ne supprimer aucune Gen1 sur une autorisation globale et ne
+rejouer aucun test ferme.
 
 Garde-fous quota: applique strictement la liste de la section 2.1. Recherches
 bornees avec exclusions, sorties de commandes plafonnees, aucun navigateur si
 le harnais suffit, fixtures validees avant appel externe et secrets utilises
 sans transformation, aucun doublon d upload/build/poll, aucun sous-agent ou
 scan large. Un retry n est autorise qu apres identification et correction de sa
-cause. L'autorisation G11-D du 2026-08-22 est bornee au sandbox et ne se
-transmet pas a une destruction de donnees reelles, a la production ou a Stripe live.
+cause. L'autorisation G11-D du 2026-08-22 et l'autorisation de poursuivre vers
+G12/G13 restent bornees au sandbox et ne remplacent ni la nomination exacte
+d'une cohorte G12, ni ses quiet-windows datees, ni la decision distincte G12-B.
 
 Autonomie: les operations sandbox non destructives, Custom Tokens et jetons
 App Check ephemeres sont autorises sans confirmation. Ils restent en memoire,
 non affiches, non journalises et non persistants. Continue automatiquement
 tant que les gates sont vertes.
 
-Interdits: production, Stripe live, deploy Functions global, suppression Gen1,
-nettoyage IAM/secrets/code avant G12-B, triggers Auth limites et cibles Meta sous HOLD,
+Interdits: production, Stripe live, deploy Functions global, suppression Gen1
+hors cohorte G12-A exactement nommee et admissible, nettoyage IAM/secrets/code
+avant G12-B, triggers Auth limites et cibles Meta sous HOLD,
 ou scripts Stripe DO_NOT_RUN. Au premier drift reel, rollback du build touche
 et diagnostic borne; ne recommence pas toute la migration.
 ```

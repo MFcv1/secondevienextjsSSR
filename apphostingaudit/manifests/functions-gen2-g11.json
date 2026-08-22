@@ -19,7 +19,7 @@
     "cloudCountObserved": 273,
     "gen1Observed": 139,
     "gen2Observed": 134,
-    "status": "FUNCTION_ACTIVE_CLIENT_CUTOVER_PENDING"
+    "status": "G11_CLOSED"
   },
   "authorization": {
     "hold": "HOLD_G11_DESTRUCTIVE_PRECONDITIONS",
@@ -65,7 +65,20 @@
     },
     "appHosting": {
       "entryBuild": "build-2026-08-22-001",
-      "rollbackBuild": "build-2026-08-19-005",
+      "activeBuild": "build-2026-08-22-002",
+      "rollbackBuild": "build-2026-08-22-001",
+      "cutoverRollout": "build-2026-08-22-002",
+      "cutoverState": "SUCCEEDED",
+      "rollbackRollout": "g11-rollback-20260822-001",
+      "rollbackState": "SUCCEEDED",
+      "rollbackCompletedAt": "2026-08-22T15:18:42.644021Z",
+      "reactivationRollout": "g11-reactivate-20260822-001",
+      "reactivationState": "SUCCEEDED",
+      "reactivationCompletedAt": "2026-08-22T15:23:48.265063Z",
+      "rollbackBundleContainedDeleteSessionGen2": false,
+      "activeBundleContainedDeleteSessionGen2": true,
+      "homeHttp": 200,
+      "adminHttp": 200,
       "clientRegistryChangeRequired": true,
       "planDriftCorrected": "deleteSession has a real client caller, so G11 permits one build even though getUploadUrl is retired"
     }
@@ -166,7 +179,23 @@
       "cause": "App Check custom token TTL below SDK minimum",
       "correction": "use the documented 30 minute minimum"
     },
-    "appHostingBuildCount": 0,
-    "status": "FUNCTION_ACTIVE_CLIENT_CUTOVER_PENDING"
+    "appHostingBuildCount": 1,
+    "appHostingRollbackCount": 1,
+    "appHostingReactivationCount": 1,
+    "quietWindow": {
+      "start": "2026-08-22T15:23:48Z",
+      "end": "2026-08-22T15:30:58Z",
+      "durationSeconds": 430,
+      "gen2ErrorCount": 0,
+      "deleteSessionGen1EntryCount": 0,
+      "destructiveInvocationCount": 0
+    },
+    "finalInventory": {
+      "source": 276,
+      "cloud": 273,
+      "gen1": 139,
+      "gen2": 134
+    },
+    "status": "G11_CLOSED"
   }
 }

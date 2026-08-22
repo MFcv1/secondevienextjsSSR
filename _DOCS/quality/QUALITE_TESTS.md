@@ -333,7 +333,7 @@ Les anciennes gates de micro-cache `public/meta` ont ete retirees avec `publicCa
 | factures manuelles admin | `test:invoices`, lint cible, build; envoi Gmail reel uniquement sur demande explicite |
 | couts Firestore | `test:analytics`, mesure Usage Insights/Data Access avant-apres si necessaire |
 | retention/audits | `test:retention`, `security:audit:static`, dry-run de purge uniquement sur autorisation explicite |
-| G11 maintenance destructrice | G11-R: manifeste/appelants/trafic en lecture seule; G11-D: `test:functions-g11` unique, refus Auth/App Check, confirmation invalide, dry-run, precondition, audit/reprise et zero destruction de donnees reelles |
+| G11 maintenance destructrice | ferme: manifeste/appelants/trafic en lecture seule; `test:functions-g11` 6/6, refus Auth/App Check, confirmation invalide, dry-run, precondition, audit/reprise, probe cloud dry-run et zero destruction de donnees reelles |
 | infra | `test:deployment-cache`, `infra:env`, `infra:deploy`, `appcheck:audit` en lecture |
 | socle Next.js majeur | lint, `test:deployment-cache`, `test:auth`, `test:admin-cache`, `test:catalog:core`, `test:catalog:resilience`, `test:catalog:security`, `seo:surface`, build Turbopack, `next:routes`, `mobile:contract`, smoke local, puis smoke sandbox lors du deploiement autorise |
 

@@ -150,22 +150,26 @@ Git conserve l'audit et la roadmap retires.
 Plan temporaire de reprise explicitement demande:
 
 - [AUDIT_MIGRATION_FUNCTIONS_GEN2.md](apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md):
-  plan ferme G0 a G13. G0-G10 et G11-R sont fermes sur `main`, sandbox et Stripe test
+  plan ferme G0 a G13. G0-G11 sont fermes sur `main`, sandbox et Stripe test
   uniquement. Les webhooks `stripeWebhookV2Gen2` et
   `stripeConnectWebhookV2Gen2` sont `ACTIVE`; les 24 Gen2 G9 restent `ACTIVE`
   et les quatre owners
   Scheduler Gen2 sont `ENABLED` apres rollback inverse prouve, et l'inventaire
-  vaut 275 local / 272 cloud / 139 Gen1 / 133 Gen2. App Hosting sert
-  `build-2026-08-22-001` apres rollback reel vers `build-2026-08-19-005` et
+  vaut 276 local / 273 cloud / 139 Gen1 / 134 Gen2. App Hosting sert
+  `build-2026-08-22-002` apres rollback reel vers `build-2026-08-22-001` et
   reactivation. Le lot G8 compte 37 Gen2 ACTIVE sous
   Node 22, `l = 2`; toutes les Gen1 restent intactes. Dernier inventaire
   prouve a l'entree: 251 exports locaux, 246 cloud, 139 Gen1 et 107 Gen2. G11-R
   classe neuf cibles `RETIRE_G12_A` et conserve uniquement `deleteSession` pour
   G11-D, soit `d = 1`, avec zero execution des dix noms sur trente jours. Son
-  manifeste est `apphostingaudit/manifests/functions-gen2-g11-r.json`. Reprendre
+  manifeste de classification est `apphostingaudit/manifests/functions-gen2-g11-r.json`.
+  `deleteSessionGen2` est `ACTIVE` en revision
+  `deletesessiongen2-00001-mug`, avec zero destruction de donnee; le manifeste
+  de fermeture est `apphostingaudit/manifests/functions-gen2-g11.json`. Reprendre
   directement au checkpoint court des sections
   2.1 et 15 du plan, sans rejouer les preuves fermees ni un preflight global.
-  G11-D n'est pas ouverte par ce checkpoint. Les prochains lots restent coherents: deploiements Functions allowlistes
+  G12-A ne peut commencer que par une cohorte exactement nommee et une
+  quiet-window couvrant l'ancien bundle supporte. Les prochains lots restent coherents: deploiements Functions allowlistes
   individuellement, puis un build, un cutover, un rollback et une observation
   groupes par lot. G7 est ferme par
   `apphostingaudit/manifests/functions-gen2-g7.json`; le hold Meta a ete leve
@@ -190,16 +194,16 @@ Plan temporaire de reprise explicitement demande:
   affiches, ni journalises, ni persistes. Aucun retrait Gen1 avant G12-A, aucun
   nettoyage IAM/secrets/code avant G12-B, aucune production/Stripe live. Les
   trois triggers Auth limites par Firebase restent Gen1; le hold Meta reste
-  inchange. Le HOLD G11-D a ete leve explicitement le 2026-08-22 pour le
-  sandbox sans autoriser de destruction de donnees reelles; backup frais,
-  preconditions, dry-run et rollback restent obligatoires avant deploy.
+  inchange. Le HOLD G11-D a ete leve explicitement le 2026-08-22 et G11-D a
+  ferme sur le sandbox sans destruction de donnees reelles.
   Revue et fusion canonique au plus tard le 2026-10-31.
   Les correctifs post-audit du 2026-08-19 (neutralisation outbox fixture,
   cleanup verifie, archive strictement liee, inventaire 251/246 recalculable et
   preconditions `inventoryVersion` digestées) sont integres sur `main`. Le
   dispatcher Gen1 est `ACTIVE` en version 12 depuis le commit source `0f09dc8`.
   G10 classe les deux webhooks legacy `RETIRE_G12_A` sur preuve Stripe test et
-  trafic frais; aucun retrait n'a eu lieu. G11-R est fermee et G11-D reste a executer.
+  trafic frais; aucun retrait n'a eu lieu. G11 est fermee; G12 reste soumise a
+  ses cohortes et fenetres de rollback propres.
 - [STABILISATION_SECURITE_SANDBOX.md](_DOCS/security/STABILISATION_SECURITE_SANDBOX.md):
   campagne finale bornee S0 a S4 fermee sur le socle `05f4830`, statut
   `SANDBOX_SECURITY_STABILIZED`; production, domaine, Resend, Stripe live et

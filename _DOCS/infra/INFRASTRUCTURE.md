@@ -159,13 +159,16 @@ immutable de 97 Mo a ete composee depuis 24 composants bornes. App Hosting sert
 `build-2026-08-22-001`, apres rollback reel vers `build-2026-08-19-005` et
 reactivation. G9 est fermee. Les paragraphes suivants conservent les
 details durables des lots G4 et G5.
-G11-R est fermee en lecture seule par
+G11 est fermee par
 `apphostingaudit/manifests/functions-gen2-g11-r.json`: les dix Gen1 sont
 toujours presentes, neuf sont classees `RETIRE_G12_A` et seule
-`deleteSession` est `MIGRATE_GEN2` (`d = 1`). Zero execution a ete observee sur
-trente jours. L'inventaire reste 275 local / 272 cloud / 139 Gen1 / 133 Gen2,
-et App Hosting sert toujours `build-2026-08-22-001`. Aucun deploy, IAM, secret,
-donnee ou build n'a ete modifie par G11-R.
+`deleteSession` est `MIGRATE_GEN2` (`d = 1`). `deleteSessionGen2` est `ACTIVE`
+en revision `deletesessiongen2-00001-mug`, sous Node 22 et le compte runtime
+analytics au moindre privilege. L'inventaire est 276 local / 273 cloud / 139
+Gen1 / 134 Gen2. App Hosting sert `build-2026-08-22-002` apres rollback reel
+vers `build-2026-08-22-001` et reactivation. La probe est dry-run, sans ecriture
+ni suppression; aucun Gen1, IAM ou secret n'a ete retire. Le manifeste final
+est `apphostingaudit/manifests/functions-gen2-g11.json`.
 G5-A1 ajoute
 `getUserStatsGen2`, ACTIVE en revision `getuserstatsgen2-00001-niv`, avec
 runtime `auth-reader-runtime`, CPU 167m, 512 MiB, 300 s, concurrence/max 1 et

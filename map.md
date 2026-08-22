@@ -876,8 +876,11 @@ functions/
 
 ## 9. Exports Cloud Functions
 
-Etat G10 au 2026-08-22: `functions/index.js` contient 275 exports uniques; 272
-Functions sont deployees dans le sandbox (139 Gen1, 133 Gen2). Les paralleles
+Etat G11 au 2026-08-22: `functions/index.js` contient 276 exports uniques; 273
+Functions sont deployees dans le sandbox (139 Gen1, 134 Gen2). Le parallele
+`deleteSessionGen2` est `ACTIVE` en revision
+`deletesessiongen2-00001-mug`; le registre client actif le cible et les dix
+Gen1 G11 restent preserves. Les paralleles
 `stripeWebhookV2Gen2` et `stripeConnectWebhookV2Gen2` sont `ACTIVE` en
 `europe-west1`, Node 22; les quatre webhooks Gen1 sont preserves. Les deux
 legacy historiques sans endpoint ni trafic sont classes `RETIRE_G12_A`, sans
@@ -889,13 +892,14 @@ quatre jobs Gen1 commerce sont `PAUSED`; leurs nouveaux owners Gen2 sont
 `ENABLED`, fences liberes et rollback inverse prouve. Le registre client G9
 est servi par `build-2026-08-22-001`, apres rollback reel vers
 `build-2026-08-19-005` et reactivation. Le manifeste final est
-`apphostingaudit/manifests/functions-gen2-g10.json`; G10 est fermee. G11-R est
-fermee par `apphostingaudit/manifests/functions-gen2-g11-r.json`: neuf cibles
+`apphostingaudit/manifests/functions-gen2-g10.json`; G10 est fermee. G11 est
+fermee par `apphostingaudit/manifests/functions-gen2-g11.json`, apres la
+classification `apphostingaudit/manifests/functions-gen2-g11-r.json`: neuf cibles
 sont `RETIRE_G12_A`, seule `deleteSession` est `MIGRATE_GEN2` (`d = 1`) et les
-dix noms ont zero execution Cloud Logging sur trente jours. Aucun deploy,
-retrait Gen1, build App Hosting ou acces aux donnees n'a eu lieu. Le HOLD G11-D
-a ete leve explicitement pour le sandbox le 2026-08-22, sans autoriser de
-destruction de donnees reelles; ses preconditions restent a prouver avant deploy.
+dix noms avaient zero execution Cloud Logging sur trente jours. Le build
+`build-2026-08-22-002` sert le registre Gen2 apres rollback prouve vers
+`build-2026-08-22-001` et reactivation. La probe est exclusivement dry-run;
+aucune destruction de donnee, suppression Gen1 ou mutation IAM/secret n'a eu lieu.
 Les garde-fous locaux post-audit recalculent strictement 251/246, refusent une
 vague parallele inconnue, lient l'archive a URI/SHA-256/generation/taille et
 neutralisent les outboxes `testContext` avant le provider. Le harnais G8 ne

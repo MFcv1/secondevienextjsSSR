@@ -805,7 +805,10 @@ appelants atteignables; les deux boutons analytics globaux n'ont aucun trafic
 sur trente jours et doivent converger vers la retention bornee. Seule la
 suppression ciblee `deleteSession` reste un besoin d'exploitation et doit etre
 reconstruite en Gen2 avec confirmation serveur structuree, dry-run,
-precondition de version, audit idempotent et reprise avant toute bascule.
+precondition de version, audit idempotent et reprise avant toute bascule. Cette
+bascule est fermee: `AdminAnalytics` execute d'abord le dry-run
+`deleteSessionGen2`, puis exige son `updateTime` exact pour un commit confirme;
+la probe de qualification n'a supprime aucune donnee.
 
 ## 9. Performance du back-office
 

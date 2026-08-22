@@ -315,8 +315,10 @@ G11-R ferme la classification des suppressions analytics: les purges globales
 `clearAllSessions` et `clearAllAffiliateClicks` sont `RETIRE_G12_A`, car elles
 effacent toute la collection sans respecter la fenetre de retention et doublent
 l'outil operateur borne. `deleteSession` est `MIGRATE_GEN2`: l'action ciblee
-reste exposee pour le support dans `AdminAnalytics`, mais sa future Gen2 doit
-etre dry-run par defaut, liee a la version observee du document et auditee.
+reste exposee pour le support dans `AdminAnalytics`. Sa Gen2 est desormais
+active: confirmation structuree exacte, dry-run par defaut, precondition liee
+a l'`updateTime`, suppression et audit atomiques, operation idempotente et
+reprise par `operationId`. La validation cloud n'a effectue aucune suppression.
 
 Les audits securite conservent l'UID brut parce qu'il est la cle
 d'imputabilite, mais e-mail, IP et user-agent y sont hashes. Les sessions
