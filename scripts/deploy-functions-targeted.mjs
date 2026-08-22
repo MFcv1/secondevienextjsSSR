@@ -133,6 +133,26 @@ const G10_GEN2_TARGETS = Object.freeze({
     entryPoint: 'stripeConnectWebhookV2'
   })
 });
+const G11_GEN2_TARGETS = Object.freeze({
+  deleteSessionGen2: Object.freeze({
+    create: true,
+    g11: true,
+    triggerType: 'http-callable',
+    region: 'europe-west1',
+    runtime: 'nodejs22',
+    entryPoint: 'deleteSessionGen2',
+    runtimeServiceAccount: 'analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com',
+    buildServiceAccount: G6_BUILD_SERVICE_ACCOUNT,
+    memory: '256Mi',
+    cpu: '167m',
+    timeout: '60s',
+    concurrency: '1',
+    minInstances: '0',
+    maxInstances: '1',
+    ingressSettings: 'all',
+    secrets: []
+  })
+});
 const g9Http = ({
   name,
   triggerType = 'http-callable',
@@ -389,6 +409,7 @@ export const GCLOUD_GEN2_TARGETS = Object.freeze({
   ...G8_GEN2_TARGETS,
   ...G9_GEN2_TARGETS,
   ...G10_GEN2_TARGETS,
+  ...G11_GEN2_TARGETS,
   removeAdminUserGen2: Object.freeze({
     create: true,
     triggerType: 'http-callable',
@@ -1360,12 +1381,12 @@ export function validateDeploymentRequest({
     if (entries[0].cloud?.present !== false || entries[0].decision?.classification !== 'MIGRATION_PARALLEL') {
       fail('Creation gcloud Gen2 exige une cible parallele absente du cloud');
     }
-    if (target.g6 || target.g7 || target.g8 || target.g9 || target.g10) {
+    if (target.g6 || target.g7 || target.g8 || target.g9 || target.g10 || target.g11) {
       const sourceUri = required(args, 'source-uri');
       const sourceSha256 = required(args, 'source-sha256');
       const sourceGeneration = required(args, 'source-generation');
       const sourceSize = String(manifest.deploymentPolicy?.archiveSize || '');
-      const wave = target.g10 ? 'g10' : (target.g9 ? 'g9' : (target.g8 ? 'g8' : (target.g7 ? 'g7' : 'g6')));
+      const wave = target.g11 ? 'g11' : (target.g10 ? 'g10' : (target.g9 ? 'g9' : (target.g8 ? 'g8' : (target.g7 ? 'g7' : 'g6'))));
       if (!new RegExp(`^gs://gcf-v2-sources-231220287936-europe-west1/${wave}/[0-9a-f]{64}/function-source\\.zip$`).test(sourceUri)) {
         fail(`Archive source ${wave.toUpperCase()} immutable invalide`);
       }
@@ -1496,7 +1517,7 @@ export function buildGcloudGen2DeployArgs(validation) {
     `--region=${target.region}`,
     '--gen2',
     `--runtime=${target.runtime}`,
-    `--source=${target.g6 || target.g7 || target.g8 || target.g9 || target.g10 ? validation.sourceUri : 'functions'}`,
+    `--source=${target.g6 || target.g7 || target.g8 || target.g9 || target.g10 || target.g11 ? validation.sourceUri : 'functions'}`,
     `--entry-point=${target.entryPoint}`,
     ...triggerArgs,
     `--run-service-account=${target.runtimeServiceAccount}`,

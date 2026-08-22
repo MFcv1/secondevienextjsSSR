@@ -842,7 +842,8 @@ functions/
     |-- analytics/
     |   |-- constants.js
     |   |-- sessionAuthorizationCache.js ... cache borne/TTL du hash de jeton
-    |   |-- sessions.js
+    |   |-- sessions.js ................. collecte active, Gen1 historique et exports Gen2
+    |   |-- sessionMaintenance.js ....... contrat G11 dry-run/precondition/audit/reprise ciblee
     |   |-- updateUserSessions.js
     |   `-- adminIP.js
     |-- maintenance/

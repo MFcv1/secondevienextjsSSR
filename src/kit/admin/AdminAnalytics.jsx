@@ -1965,7 +1965,26 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
         if (!window.confirm("Supprimer cette session ? (Action irréversible)")) return;
         try {
             const deleteSession = await getCallableFunction('deleteSession');
-            await deleteSession({ sessionId: id });
+            const operationId = globalThis.crypto?.randomUUID?.()
+                || `session_${Date.now()}_${Math.random().toString(36).slice(2, 14)}`;
+            const confirmation = { action: 'DELETE_ANALYTICS_SESSION', sessionId: id };
+            const dryRun = await deleteSession({
+                mode: 'dry_run',
+                sessionId: id,
+                operationId,
+                confirmation
+            });
+            if (!dryRun.data?.wouldDelete || !dryRun.data?.precondition?.updateTime) {
+                await loadSessions();
+                return;
+            }
+            await deleteSession({
+                mode: 'commit',
+                sessionId: id,
+                operationId,
+                confirmation,
+                expectedUpdateTime: dryRun.data.precondition.updateTime
+            });
             loadSessions();
         } catch (e) {
             console.error("Delete error:", e);

@@ -21,6 +21,7 @@ const {
     toMillis
 } = require('./sessionSecurity');
 const { createSessionAuthorizationCache } = require('./sessionAuthorizationCache');
+const { createDeleteSessionHandler } = require('./sessionMaintenance');
 const { ANALYTICS_SESSION_RETENTION_DAYS, timestampFromNow } = require('./constants');
 
 const db = admin.firestore();
@@ -445,6 +446,15 @@ exports.deleteSession = regionalFunctions().runWith({ enforceAppCheck: true }).h
     return { success: true };
 });
 
+const deleteSessionGen2Handler = createDeleteSessionHandler({
+    authorizationCache: sessionAuthorizationCache
+});
+
+exports.deleteSessionGen2 = onCall(
+    ANALYTICS_CALLABLE_GEN2_RUNTIME,
+    (request) => deleteSessionGen2Handler(request.data, request)
+);
+
 exports.clearAllSessions = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
     await checkActiveStrongAdmin(context);
     try {
@@ -500,5 +510,6 @@ exports.clearAllAffiliateClicks = regionalFunctions().runWith({ enforceAppCheck:
 exports.initLiveSessionHandler = initLiveSessionHandler;
 exports.syncSessionHandler = syncSessionHandler;
 exports.syncSessionBeaconHandler = syncSessionBeaconHandler;
+exports.deleteSessionGen2Handler = deleteSessionGen2Handler;
 exports.ANALYTICS_CALLABLE_GEN2_RUNTIME = ANALYTICS_CALLABLE_GEN2_RUNTIME;
 exports.ANALYTICS_BEACON_GEN2_RUNTIME = ANALYTICS_BEACON_GEN2_RUNTIME;

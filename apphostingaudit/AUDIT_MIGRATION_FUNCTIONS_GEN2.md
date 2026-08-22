@@ -2773,8 +2773,9 @@ negative ou dry-run: aucune purge/reset/GC destructive sur les donnees
 sandbox courantes. Une fixture jetable n'est creee et supprimee que si le
 dry-run ne suffit pas, une seule pour tout le lot et hors collections metier.
 
-Un build App Hosting n'est permis que si `getUploadUrl` est conserve et son
-registre client change; sinon zero build. Budget dur: un controle read-only,
+Un build App Hosting n'est permis que si une cible conservee possede un appelant
+client et change le registre; G11-R prouve que c'est le cas de `deleteSession`.
+Sinon zero build. Budget dur: un controle read-only,
 une commande de tests, au plus un lint, zero ou une archive/upload,
 `d` deploys allowlistes, zero operation destructive reelle, au plus un build
 App Hosting avec rollback/reactivation et une quiet-window. Les cibles retirees

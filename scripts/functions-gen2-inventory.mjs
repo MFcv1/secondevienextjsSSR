@@ -76,6 +76,7 @@ export const PARALLEL_MIGRATION_EXPORTS = new Set([
   'createProductAdminGen2',
   'createPromotionCodeAdminGen2',
   'createPublishedProductAdminGen2',
+  'deleteSessionGen2',
   'decideCustomerReturnRequestAdminGen2',
   'deleteProductAdminGen2',
   'getDeliveryPolicyAdminGen2',
@@ -195,7 +196,7 @@ export const MIGRATE_OR_RETIRE = new Set([
 
 const WAVE_GROUPS = [
   ['G2', KEEP_GEN2],
-  ['G4', new Set(['clearAllAffiliateClicks', 'clearAllSessions', 'deleteSession', 'initLiveSession', 'syncSession', 'syncSessionBeacon', 'trackAdminIP', 'updateUserSessions'])],
+  ['G4', new Set(['initLiveSession', 'syncSession', 'syncSessionBeacon', 'trackAdminIP', 'updateUserSessions'])],
   ['G5', new Set([
     'addAdminUser', 'ensureAdminAccessRegistry', 'generatePasskeyAuthenticationOptions',
     'generatePasskeyRegistrationOptions', 'getUserStats', 'logUserConnection',
@@ -245,7 +246,7 @@ const WAVE_GROUPS = [
     'startStripeConnectOnboarding', 'syncStripeConnectAccount'
   ])],
   ['G10', new Set(['stripeConnectWebhookV2', 'stripeWebhookV2'])],
-  ['G11', new Set(['getUploadUrl', 'purgeAllProducts', 'purgeAnonymousUsers', 'resetAllOrders', 'resetAllStats', 'resetAllUsers', 'runGarbageCollector'])]
+  ['G11', new Set(['clearAllAffiliateClicks', 'clearAllSessions', 'deleteSession', 'getUploadUrl', 'purgeAllProducts', 'purgeAnonymousUsers', 'resetAllOrders', 'resetAllStats', 'resetAllUsers', 'runGarbageCollector'])]
 ];
 
 const FINANCE_TARGETS = new Set([

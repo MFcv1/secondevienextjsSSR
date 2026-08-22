@@ -5,7 +5,7 @@ const FUNCTION_TARGETS = Object.freeze({
   claimNewsletterReward: 'claimNewsletterRewardGen2',
   clearAllAffiliateClicks: 'clearAllAffiliateClicks',
   clearAllSessions: 'clearAllSessions',
-  deleteSession: 'deleteSession',
+  deleteSession: 'deleteSessionGen2',
   addAdminUser: 'addAdminUserGen2',
   completeBillingGuideAdmin: 'completeBillingGuideAdminGen2',
   createOrder: 'createOrderGen2',

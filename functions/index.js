@@ -571,6 +571,7 @@ const {
     syncSessionBeacon,
     syncSessionBeaconGen2,
     deleteSession,
+    deleteSessionGen2,
     clearAllSessions,
     clearAllAffiliateClicks
 } = require('./src/analytics/sessions');
@@ -585,6 +586,7 @@ exports.syncSessionGen2 = syncSessionGen2;
 exports.syncSessionBeacon = syncSessionBeacon;
 exports.syncSessionBeaconGen2 = syncSessionBeaconGen2;
 exports.deleteSession = deleteSession;
+exports.deleteSessionGen2 = deleteSessionGen2;
 exports.clearAllSessions = clearAllSessions;
 exports.clearAllAffiliateClicks = clearAllAffiliateClicks;
 exports.trackAdminIP = trackAdminIP;
