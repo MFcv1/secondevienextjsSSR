@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "codebase": "main",
+    "environment": "sandbox",
+    "wave": "G11-D",
+    "baselineCommit": "fa20bbbb0ed59dbc298590dfef65a5a14308d5bd",
+    "classificationManifest": "apphostingaudit/manifests/functions-gen2-g11-r.json",
+    "sourceCountBefore": 275,
+    "sourceCountAfter": 276,
+    "cloudCountBefore": 272,
+    "expectedCloudCountAfter": 273,
+    "gen1Before": 139,
+    "expectedGen1After": 139,
+    "gen2Before": 133,
+    "expectedGen2After": 134,
+    "d": 1,
+    "status": "READY_TO_DEPLOY"
+  },
+  "authorization": {
+    "hold": "HOLD_G11_DESTRUCTIVE_PRECONDITIONS",
+    "holdLifted": true,
+    "holdLiftedAt": "2026-08-22T14:28:00Z",
+    "environment": "sandbox",
+    "realDataDestructionAllowed": false,
+    "productionAllowed": false,
+    "stripeLiveAllowed": false,
+    "gen1RemovalAllowed": false,
+    "globalDeployAllowed": false
+  },
+  "preconditions": {
+    "backup": {
+      "name": "projects/secondevienextjsssr/locations/eur3/backups/4efaab36-29f0-44cf-aeab-fcc37cb9db10",
+      "state": "READY",
+      "snapshotTime": "2026-08-21T21:20:40.507885Z",
+      "expireTime": "2026-09-04T21:20:40.507885Z",
+      "restoreDrillManifest": "apphostingaudit/manifests/functions-gen2-g1-restore.json",
+      "freshReadOnlyVerification": true
+    },
+    "contract": {
+      "strongAdminAal2": true,
+      "appCheck": true,
+      "structuredConfirmation": "DELETE_ANALYTICS_SESSION + exact sessionId",
+      "dryRunDefault": true,
+      "batchLimit": 1,
+      "precondition": "exact Firestore updateTime returned by dry-run",
+      "idempotency": "operationId bound to payload hash",
+      "resume": "completed sys_audit_security operation returns alreadyApplied",
+      "audit": "delete and backend-only audit write share one Firestore transaction",
+      "rollback": "keep deleteSession Gen1 and restore the preceding App Hosting build"
+    },
+    "runtimeIam": {
+      "serviceAccount": "analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com",
+      "disabled": false,
+      "projectRoles": [
+        "roles/datastore.user",
+        "roles/logging.logWriter",
+        "roles/serviceusage.serviceUsageConsumer"
+      ],
+      "leastPrivilegeVerified": true
+    },
+    "appHosting": {
+      "entryBuild": "build-2026-08-22-001",
+      "rollbackBuild": "build-2026-08-19-005",
+      "clientRegistryChangeRequired": true,
+      "planDriftCorrected": "deleteSession has a real client caller, so G11 permits one build even though getUploadUrl is retired"
+    }
+  },
+  "deploymentPolicy": {
+    "transport": "gcloud-gen2-create",
+    "immutableArchiveWave": "g11",
+    "maxTargetsPerDeploy": 1,
+    "expectedDeployCount": 1,
+    "archiveUri": "gs://gcf-v2-sources-231220287936-europe-west1/g11/6ba72b5a9a065d5bf458b6d32826805b4e39e0824248f829989797299a28c2df/function-source.zip",
+    "archiveSha256": "6ba72b5a9a065d5bf458b6d32826805b4e39e0824248f829989797299a28c2df",
+    "archiveGeneration": "1787410366615461",
+    "archiveSize": 389002,
+    "uploadCount": 1,
+    "forbiddenTargets": [
+      "getUploadUrlGen2",
+      "purgeAllProductsGen2",
+      "purgeAnonymousUsersGen2",
+      "resetAllOrdersGen2",
+      "resetAllStatsGen2",
+      "resetAllUsersGen2",
+      "runGarbageCollectorGen2",
+      "clearAllAffiliateClicksGen2",
+      "clearAllSessionsGen2"
+    ]
+  },
+  "functions": [
+    {
+      "name": "deleteSessionGen2",
+      "source": {
+        "export": "deleteSessionGen2",
+        "entryPoint": "deleteSessionGen2",
+        "files": [
+          "functions/src/analytics/sessions.js",
+          "functions/src/analytics/sessionMaintenance.js"
+        ]
+      },
+      "cloud": {
+        "present": false,
+        "generation": 2,
+        "region": "europe-west1"
+      },
+      "runtime": {
+        "runtime": "nodejs22",
+        "cpu": "167m",
+        "memory": "256Mi",
+        "timeoutSeconds": 60,
+        "concurrency": 1,
+        "minInstances": 0,
+        "maxInstances": 1,
+        "serviceAccount": "analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com",
+        "appCheck": "ENFORCED"
+      },
+      "caller": {
+        "logicalName": "deleteSession",
+        "source": "src/kit/admin/AdminAnalytics.jsx",
+        "registryTarget": "deleteSessionGen2",
+        "flow": "browser confirmation -> dry_run -> exact updateTime -> commit"
+      },
+      "decision": {
+        "classification": "MIGRATION_PARALLEL",
+        "deploymentMaxBatchSize": 1,
+        "rollback": "preserve deleteSession Gen1; rollback App Hosting to build-2026-08-22-001 if the new callable or client contract drifts"
+      }
+    }
+  ],
+  "gates": {
+    "g11RClosed": true,
+    "g11DHoldLifted": true,
+    "backupReady": true,
+    "restoreDrillProved": true,
+    "runtimeIamReady": true,
+    "contractTests": "6/6 passed",
+    "lint": "0 errors; pre-existing warnings only",
+    "deploymentAllowed": true,
+    "clientCutoverAuthorized": true,
+    "dataDestructionProbeAllowed": false,
+    "dryRunProbeAllowed": true,
+    "appHostingBuildAllowed": true,
+    "gen1RemovalAllowed": false
+  },
+  "validation": {
+    "deploymentCount": 0,
+    "destructiveInvocationCount": 0,
+    "dryRunInvocationCount": 0,
+    "appHostingBuildCount": 0,
+    "status": "PENDING_DEPLOY"
+  }
+}
