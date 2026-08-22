@@ -143,14 +143,21 @@ Le correctif outbox post-audit a ete deploye seul depuis `main` au commit
 `0f09dc8`: `commerceOutboxDispatcher` Gen1 version 12 est `ACTIVE`, build
 `43c90da7-3738-4058-85cf-a0045d953009`, avec le Scheduler `ENABLED` conserve.
 
-Etat courant du chantier Gen2 au 2026-08-22: G0-G8 sont fermes et les 24
-Functions G9 sont `ACTIVE`. L'inventaire vaut 275 local / 270 cloud / 139 Gen1
-/ 131 Gen2; aucun rail Gen1 n'a ete retire. Les quatre jobs Gen1 G9 sont
+Etat courant du chantier Gen2 au 2026-08-22: G0-G10 sont fermes. Les deux
+webhooks G10 Gen2 sont `ACTIVE`, soit 275 local / 272 cloud / 139 Gen1 / 133
+Gen2. Les endpoints Stripe test Platform et Connect servent
+`stripeWebhookV2Gen2` et `stripeConnectWebhookV2Gen2`; l'ancien endpoint
+Connect est `disabled`, les quatre Gen1 et leurs secrets de rollback sont
+conserves. Aucun build App Hosting G10 n'a ete cree:
+`build-2026-08-22-001` reste servi. Les 24
+Functions G9 sont `ACTIVE`. Leur inventaire de fermeture avant G10 valait 275
+local / 270 cloud / 139 Gen1 / 131 Gen2; aucun rail Gen1 n'a ete retire. Les
+quatre jobs Gen1 G9 sont
 `PAUSED`, les jobs HTTP Gen2 correspondants `ENABLED`, avec IAM OIDC, double
 invocation bornee, fence libere et rollback inverse prouves. L'archive source
 immutable de 97 Mo a ete composee depuis 24 composants bornes. App Hosting sert
 `build-2026-08-22-001`, apres rollback reel vers `build-2026-08-19-005` et
-reactivation. G9 est fermee et G10 reste non ouverte. Les paragraphes suivants conservent les
+reactivation. G9 est fermee. Les paragraphes suivants conservent les
 details durables des lots G4 et G5.
 G5-A1 ajoute
 `getUserStatsGen2`, ACTIVE en revision `getuserstatsgen2-00001-niv`, avec

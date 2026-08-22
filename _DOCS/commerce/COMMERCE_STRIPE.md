@@ -198,6 +198,11 @@ deterministe derivee de la demande client et ne provoque aucun restock seul.
 ## 6. Webhooks
 
 `stripeWebhookV2` et `stripeConnectWebhookV2` verifient la signature Stripe.
+Depuis G10, leurs owners fournisseur sont les paralleles Gen2
+`stripeWebhookV2Gen2` et `stripeConnectWebhookV2Gen2`. Ils acceptent pendant la
+fenetre de rollback le secret precedent et le secret G10 distinct; les quatre
+Functions Gen1 et les versions de secrets precedentes sont conservees jusqu'a
+G12.
 Le handler:
 
 - utiliser le secret de l'environnement correspondant;
@@ -365,8 +370,10 @@ uniquement. Les revisions sont `ACTIVE`, leurs Gen1 restent intactes et aucun
 appel Connect mutateur n'a servi de preuve. `commerce:e2e:gate7b` n'a pas ete
 consomme: son preflight exige `v2_fixture/read_only`, incompatible avec l'etat
 sandbox autorise `v2_all/v2`. Le cutover client attend toujours le build App
-Hosting G9 est servi par `build-2026-08-22-001` apres rollback et reactivation;
-les webhooks restent hors perimetre jusqu'a une autorisation G10 distincte.
+Hosting G9 est servi par `build-2026-08-22-001` apres rollback et reactivation.
+G10 a ensuite bascule les endpoints Stripe test Platform et Connect vers les
+deux paralleles Gen2, avec refus non signe 400, replay idempotent, rollback et
+reactivation. Aucun build App Hosting n'etait requis.
 
 Gate 7A a ferme les projections/exploitation et Gate 7B a qualifie le
 manifeste `release_gate7a_c5259a87f875_f00378380561`. Les deux runs

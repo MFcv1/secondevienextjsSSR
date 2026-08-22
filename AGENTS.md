@@ -150,18 +150,19 @@ Git conserve l'audit et la roadmap retires.
 Plan temporaire de reprise explicitement demande:
 
 - [AUDIT_MIGRATION_FUNCTIONS_GEN2.md](apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md):
-  plan ferme G0 a G13. G0-G9 sont fermes et G10 est ouverte explicitement sur
-  `main` au HEAD `ddbe5fde0448dec9fa5fbbcb29ccea2bdcd32daa`, sandbox et Stripe
-  test uniquement. Les 24 Gen2 G9 sont `ACTIVE`, les quatre owners
+  plan ferme G0 a G13. G0-G10 sont fermes sur `main`, sandbox et Stripe test
+  uniquement. Les webhooks `stripeWebhookV2Gen2` et
+  `stripeConnectWebhookV2Gen2` sont `ACTIVE`; les 24 Gen2 G9 restent `ACTIVE`
+  et les quatre owners
   Scheduler Gen2 sont `ENABLED` apres rollback inverse prouve, et l'inventaire
-  vaut 275 local / 270 cloud / 139 Gen1 / 131 Gen2. App Hosting sert
+  vaut 275 local / 272 cloud / 139 Gen1 / 133 Gen2. App Hosting sert
   `build-2026-08-22-001` apres rollback reel vers `build-2026-08-19-005` et
   reactivation. Le lot G8 compte 37 Gen2 ACTIVE sous
   Node 22, `l = 2`; toutes les Gen1 restent intactes. Dernier inventaire
   prouve a l'entree: 251 exports locaux, 246 cloud, 139 Gen1 et 107 Gen2. Reprendre
   directement au checkpoint court des sections
-  2.1, G10 et 15 du plan, sans rejouer les preuves fermees ni un preflight
-  global. Les prochains lots restent coherents: deploiements Functions allowlistes
+  2.1 et 15 du plan, sans rejouer les preuves fermees ni un preflight global.
+  G11 n'est pas ouverte par ce checkpoint. Les prochains lots restent coherents: deploiements Functions allowlistes
   individuellement, puis un build, un cutover, un rollback et une observation
   groupes par lot. G7 est ferme par
   `apphostingaudit/manifests/functions-gen2-g7.json`; le hold Meta a ete leve
@@ -192,7 +193,7 @@ Plan temporaire de reprise explicitement demande:
   preconditions `inventoryVersion` digestées) sont integres sur `main`. Le
   dispatcher Gen1 est `ACTIVE` en version 12 depuis le commit source `0f09dc8`.
   G10 classe les deux webhooks legacy `RETIRE_G12_A` sur preuve Stripe test et
-  trafic frais; aucun retrait n'est permis dans G10 et G11 reste ferme.
+  trafic frais; aucun retrait n'a eu lieu. G11 reste ferme.
 - [STABILISATION_SECURITE_SANDBOX.md](_DOCS/security/STABILISATION_SECURITE_SANDBOX.md):
   campagne finale bornee S0 a S4 fermee sur le socle `05f4830`, statut
   `SANDBOX_SECURITY_STABILIZED`; production, domaine, Resend, Stripe live et

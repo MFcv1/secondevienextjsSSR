@@ -875,15 +875,21 @@ functions/
 
 ## 9. Exports Cloud Functions
 
-Etat G9 au 2026-08-22: `functions/index.js` contient 275 exports uniques; 270
-sont `ACTIVE` dans le sandbox (139 Gen1, 131 Gen2). Les 24 paralleles G9 sont
+Etat G10 au 2026-08-22: `functions/index.js` contient 275 exports uniques; 272
+Functions sont deployees dans le sandbox (139 Gen1, 133 Gen2). Les paralleles
+`stripeWebhookV2Gen2` et `stripeConnectWebhookV2Gen2` sont `ACTIVE` en
+`europe-west1`, Node 22; les quatre webhooks Gen1 sont preserves. Les deux
+legacy historiques sans endpoint ni trafic sont classes `RETIRE_G12_A`, sans
+retrait dans G10. Les endpoints Stripe test Platform et Connect pointent vers
+les nouveaux owners apres rollback et reactivation; l'ancien endpoint Connect
+est desactive. Les 24 paralleles G9 restent
 `ACTIVE` en `europe-west1`, Node 22, et toutes les Gen1 sont preservees. Les
 quatre jobs Gen1 commerce sont `PAUSED`; leurs nouveaux owners Gen2 sont
 `ENABLED`, fences liberes et rollback inverse prouve. Le registre client G9
 est servi par `build-2026-08-22-001`, apres rollback reel vers
 `build-2026-08-19-005` et reactivation. Le manifeste final est
-`apphostingaudit/manifests/functions-gen2-g9.json`; G9 est fermee et G10 reste
-non ouverte.
+`apphostingaudit/manifests/functions-gen2-g10.json`; G10 est fermee et G11
+reste non ouverte.
 Les garde-fous locaux post-audit recalculent strictement 251/246, refusent une
 vague parallele inconnue, lient l'archive a URI/SHA-256/generation/taille et
 neutralisent les outboxes `testContext` avant le provider. Le harnais G8 ne

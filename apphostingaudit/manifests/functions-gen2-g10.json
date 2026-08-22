@@ -17,14 +17,18 @@
     "expectedGen2After": 133,
     "w": 0,
     "openedAt": "2026-08-22T13:30:00Z",
-    "status": "OPEN"
+    "closedAt": "2026-08-22T14:12:43Z",
+    "cloudCountObserved": 272,
+    "gen1Observed": 139,
+    "gen2Observed": 133,
+    "status": "CLOSED"
   },
   "gates": {
     "g9Closed": true,
     "g10Opened": true,
-    "g10Closed": false,
+    "g10Closed": true,
     "classificationComplete": true,
-    "deploymentAllowed": true,
+    "deploymentAllowed": false,
     "productionAllowed": false,
     "stripeLiveAllowed": false,
     "gen1RemovalAllowed": false,
@@ -40,7 +44,8 @@
     "archiveGeneration": "1787406521056822",
     "archiveSize": 386866,
     "uploadCount": 1,
-    "deployCount": 0
+    "deployCount": 2,
+    "failedDeployAttempts": 2
   },
   "classificationEvidence": {
     "providerObservedAt": "2026-08-22T13:37:00Z",
@@ -71,7 +76,7 @@
     {
       "name": "stripeWebhookV2Gen2",
       "entryPoint": "stripeWebhookV2",
-      "cloud": { "present": false, "generation": 2, "state": null, "revision": null },
+      "cloud": { "present": true, "generation": 2, "state": "ACTIVE", "revision": "stripewebhookv2gen2-00001-qul" },
       "identities": {
         "runtimeServiceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
         "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/231220287936-compute@developer.gserviceaccount.com"
@@ -81,7 +86,7 @@
     {
       "name": "stripeConnectWebhookV2Gen2",
       "entryPoint": "stripeConnectWebhookV2",
-      "cloud": { "present": false, "generation": 2, "state": null, "revision": null },
+      "cloud": { "present": true, "generation": 2, "state": "ACTIVE", "revision": "stripeconnectwebhookv2gen2-00001-zey" },
       "identities": {
         "runtimeServiceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
         "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/231220287936-compute@developer.gserviceaccount.com"
@@ -97,7 +102,11 @@
       "stagedStatus": "disabled",
       "secret": "STRIPE_WH_SECRET_G10:1",
       "targetUrl": "https://europe-west1-secondevienextjsssr.cloudfunctions.net/stripeWebhookV2Gen2",
-      "status": "staged"
+      "activationHttp": [200, 200],
+      "rollback": "new endpoint disabled; exact entry state restored",
+      "reactivation": "new endpoint enabled",
+      "finalStatus": "enabled",
+      "status": "reactivated"
     },
     "connect": {
       "entryEndpointId": "we_1ToPcBRgzgSZ0erpTKBp9ZBD",
@@ -107,17 +116,26 @@
       "stagedStatus": "disabled",
       "secret": "STRIPE_CONNECT_WH_SECRET_G10:1",
       "targetUrl": "https://europe-west1-secondevienextjsssr.cloudfunctions.net/stripeConnectWebhookV2Gen2",
-      "status": "staged"
+      "replayHttp": [200, 200],
+      "dedup": { "inboxStatus": "processed", "attemptCount": 1, "orderUnchanged": true },
+      "cutover": "old endpoint disabled",
+      "rollback": "old enabled; new disabled",
+      "reactivation": "old disabled; new enabled",
+      "finalStatus": "enabled",
+      "status": "reactivated"
     }
   },
   "validation": {
     "testCommand": "npm run test:functions-g10",
     "testResult": "39/39 passed",
+    "testCommandRuns": 3,
+    "testRunReason": "initial preparation, then one rerun after each of two corrected deployment precondition causes",
     "functionsLint": "passed once",
-    "unsignedPlatform": null,
-    "unsignedConnect": null,
-    "replayPlatform": null,
-    "replayConnect": null,
+    "functionsLintCommandRuns": 1,
+    "unsignedPlatform": 400,
+    "unsignedConnect": 400,
+    "replayPlatform": "two signed non-mutating events returned 200; no safe platform v2 PaymentIntent existed",
+    "replayConnect": "two identical signed payment_intent.succeeded deliveries returned 200; one processed inbox attempt; order unchanged",
     "additionalPaymentOrRefundRunCount": 0,
     "boundedCorrections": [
       {
@@ -125,17 +143,31 @@
         "failedDeployCount": 1,
         "cloudMutation": false,
         "resolution": "Create stripeWebhookV2Gen2 and stripeConnectWebhookV2Gen2 with the existing immutable archive entry points."
+      },
+      {
+        "cause": "The two new signing secrets lacked Secret Accessor for the existing webhook runtime identity.",
+        "failedDeployCount": 1,
+        "cloudMutation": "FAILED Gen2 shell without URI or revision",
+        "resolution": "Add only the two scoped accessor bindings, delete the failed Gen2 shell, and recreate the same target from the same archive."
       }
     ]
   },
   "appHosting": {
     "entryBuild": "build-2026-08-22-001",
     "buildCreated": false,
+    "activeBuild": "build-2026-08-22-001",
+    "activeRollout": "g9-reactivate-20260822-001",
+    "activeRolloutState": "SUCCEEDED",
+    "rollbackBuild": "build-2026-08-19-005",
     "reason": "Stripe is the only G10 consumer; no client registry change."
   },
   "quietWindow": {
-    "startedAt": null,
-    "completedAt": null,
-    "status": "pending"
+    "startedAt": "2026-08-22T14:05:56Z",
+    "completedAt": "2026-08-22T14:11:26Z",
+    "durationSeconds": 330,
+    "status": "passed_after_reactivation",
+    "functionErrors": 0,
+    "blockedInbox": 0,
+    "finalProviderState": "Platform G10 enabled; Connect G10 enabled; previous Connect endpoint disabled"
   }
 }

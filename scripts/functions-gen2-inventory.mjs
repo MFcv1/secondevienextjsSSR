@@ -131,9 +131,14 @@ export const PARALLEL_MIGRATION_EXPORTS = new Set([
   'startStripeConnectOnboardingGen2',
   'syncStripeConnectAccountGen2'
 ]);
+export const CLOUD_ONLY_PARALLEL_TARGETS = new Set([
+  'stripeWebhookV2Gen2',
+  'stripeConnectWebhookV2Gen2'
+]);
 
 export const EXPECTED_CURRENT_SOURCE_COUNT = EXPECTED_SOURCE_COUNT + PARALLEL_MIGRATION_EXPORTS.size;
-export const EXPECTED_CURRENT_CLOUD_COUNT = EXPECTED_CLOUD_COUNT + PARALLEL_MIGRATION_EXPORTS.size;
+export const EXPECTED_CURRENT_CLOUD_COUNT = EXPECTED_CLOUD_COUNT +
+  PARALLEL_MIGRATION_EXPORTS.size + CLOUD_ONLY_PARALLEL_TARGETS.size;
 
 export const KEEP_GEN2 = new Set([
   'catalogMediaGarbageCollector',

@@ -75,6 +75,14 @@ leurs jobs Gen2 sont owners finaux. La probe Auth/App Check des trois lecteurs
 est verte. Le registre client est servi par `build-2026-08-22-001`, apres
 rollback reel vers `build-2026-08-19-005` et reactivation; G9 est fermee.
 
+G10 a ferme le 2026-08-22 la bascule des webhooks sous Stripe test. Les
+paralleles `stripeWebhookV2Gen2` et `stripeConnectWebhookV2Gen2` sont `ACTIVE`
+sous Node 22; leurs sources Gen1 et les deux legacy historiques restent
+intactes. Platform et Connect ont chacun prouve activation, rollback fournisseur
+et reactivation. Le replay Connect a produit une seule tentative inbox
+`processed`, sans changer la commande ni dupliquer fait, outbox, mouvement ou
+refund. Aucun paiement/refund supplementaire ni build App Hosting n'a ete cree.
+
 ## 3. Ce qui a ete realise par Gate
 
 | Gate | Objet | Resultat ferme |

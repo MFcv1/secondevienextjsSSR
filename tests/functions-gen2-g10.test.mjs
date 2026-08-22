@@ -21,13 +21,13 @@ const require = createRequire(import.meta.url);
 const read = (relativePath) => fs.readFileSync(path.join(ROOT, relativePath), 'utf8');
 const TARGETS = Object.freeze(['stripeWebhookV2Gen2', 'stripeConnectWebhookV2Gen2']);
 
-test('G10 preserves the 275/270 inventory and keeps both legacy webhooks', () => {
+test('G10 closes at 275 local / 272 cloud and keeps both legacy webhooks', () => {
   const exported = require(path.join(ROOT, 'functions/index.js'));
   const local = extractLocalExports(ROOT);
   assert.equal(Object.keys(exported).length, 275);
   assert.equal(local.length, 275);
   assert.equal(EXPECTED_CURRENT_SOURCE_COUNT, 275);
-  assert.equal(EXPECTED_CURRENT_CLOUD_COUNT, 270);
+  assert.equal(EXPECTED_CURRENT_CLOUD_COUNT, 272);
   assert.equal(waveFor('stripeWebhookV2Gen2', 'MIGRATION_PARALLEL'), 'G10');
   assert.equal(waveFor('stripeConnectWebhookV2Gen2', 'MIGRATION_PARALLEL'), 'G10');
   assert.equal(typeof exported.stripeWebhookV2, 'function');

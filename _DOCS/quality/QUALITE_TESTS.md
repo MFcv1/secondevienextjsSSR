@@ -112,6 +112,16 @@ au sandbox `v2_all/v2`. Le build App Hosting `build-2026-08-22-001`, son
 rollback exact vers `build-2026-08-19-005`, sa reactivation et la quiet-window
 finale ferment G9. Les suites interdites n'ont pas ete executees.
 
+G10 ajoute `npm run test:functions-g10`: 39 tests couvrent le corps brut, le
+refus de signature, les secrets de transition, l'inbox et la deduplication. La
+suite est verte apres la correction bornee du constat Gen1/Gen2; le lint
+Functions a passe une seule fois. Les deux refus non signes cloud retournent
+400. Le replay Connect identique retourne deux fois 200 pour une seule tentative
+inbox `processed`, commande inchangee; Platform utilise un replay signe non
+mutateur faute de PaymentIntent v2 Platform sur le sandbox. La quiet-window de
+330 secondes compte zero erreur et zero inbox bloquee. Aucun script
+`e2e:hosted-stripe`, `e2e:refund-stripe` ou `commerce:e2e:gate7b` n'a ete lance.
+
 La gate G5 courante est bornee a `npm run test:functions-g5`, `npm run
 test:auth`, l'audit App Check et `npm run lint:functions`. G5-A1 a G5-A3 sont
 fermees: `test:functions-g5` porte 10/10 contrats, dont le harnais Auth/App Check et le
