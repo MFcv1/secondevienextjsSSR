@@ -39,6 +39,8 @@
         "/pageUI",
         "/video",
         "/videohero",
+        "/output",
+        "/tmp",
         "test-results",
         "playwright-report",
         "functions",
