@@ -16,7 +16,7 @@
     "gen2Before": 131,
     "expectedGen2After": 131,
     "w": 0,
-    "openedAt": "2026-08-22T14:05:00Z",
+    "openedAt": "2026-08-22T13:30:00Z",
     "status": "OPEN"
   },
   "gates": {
@@ -24,7 +24,7 @@
     "g10Opened": true,
     "g10Closed": false,
     "classificationComplete": true,
-    "deploymentAllowed": false,
+    "deploymentAllowed": true,
     "productionAllowed": false,
     "stripeLiveAllowed": false,
     "gen1RemovalAllowed": false,
@@ -35,15 +35,15 @@
     "immutableArchiveWave": "g10",
     "maxTargetsPerDeploy": 1,
     "expectedDeployCount": 2,
-    "archiveUri": null,
-    "archiveSha256": null,
-    "archiveGeneration": null,
-    "archiveSize": null,
-    "uploadCount": 0,
+    "archiveUri": "gs://gcf-v2-sources-231220287936-europe-west1/g10/4c6e6bac38cad720c31217d0d4e0770e008da598fd4257562e6783581260e5f1/function-source.zip",
+    "archiveSha256": "4c6e6bac38cad720c31217d0d4e0770e008da598fd4257562e6783581260e5f1",
+    "archiveGeneration": "1787406521056822",
+    "archiveSize": 386866,
+    "uploadCount": 1,
     "deployCount": 0
   },
   "classificationEvidence": {
-    "providerObservedAt": "2026-08-22T14:05:00Z",
+    "providerObservedAt": "2026-08-22T13:37:00Z",
     "stripeLivemode": false,
     "projectEndpointCount": 1,
     "legacyTrafficWindowStart": "2026-08-04T14:00:00Z",
@@ -91,21 +91,25 @@
     "platform": {
       "entryState": "no Seconde Vie endpoint",
       "rollbackState": "no Seconde Vie endpoint",
-      "newEndpointId": null,
-      "status": "pending"
+      "newEndpointId": "we_1U7FHLRgzgSZ0erp55KR24hX",
+      "stagedStatus": "disabled",
+      "secret": "STRIPE_WH_SECRET_G10:1",
+      "status": "staged"
     },
     "connect": {
       "entryEndpointId": "we_1ToPcBRgzgSZ0erpTKBp9ZBD",
       "entryUrl": "https://europe-west1-secondevienextjsssr.cloudfunctions.net/stripeConnectWebhookV2",
       "entryStatus": "enabled",
-      "newEndpointId": null,
-      "status": "pending"
+      "newEndpointId": "we_1U7FHPRgzgSZ0erpsIHD1wO8",
+      "stagedStatus": "disabled",
+      "secret": "STRIPE_CONNECT_WH_SECRET_G10:1",
+      "status": "staged"
     }
   },
   "validation": {
     "testCommand": "npm run test:functions-g10",
-    "testResult": null,
-    "functionsLint": null,
+    "testResult": "39/39 passed",
+    "functionsLint": "passed once",
     "unsignedPlatform": null,
     "unsignedConnect": null,
     "replayPlatform": null,
