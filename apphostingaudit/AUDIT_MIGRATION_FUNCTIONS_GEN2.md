@@ -68,13 +68,13 @@ sont conservees dans les manifestes `functions-gen2-*`.
 | baseline d'ouverture G9 | `a743e3172013ebee451849927e581a1ae5c9665a` |
 | worktree attendu a la reprise | propre apres le commit local de fermeture G8; verifier le statut sans rejouer |
 | phases fermees | G0, G1, G2-A, G2-B 13/13, G3, G4, G5, G6, G7-R, G7-D et G8 |
-| phase active | aucune; G9 fermee le 2026-08-22, G10 non ouverte |
+| phase active | G10 ouverte explicitement le 2026-08-22, sandbox et Stripe test uniquement |
 | inventaire courant | 275 exports locaux, 270 cloud, 139 Gen1, 131 Gen2 |
 | cibles paralleles actives | les 24 Gen2 G9 et les 37 Gen2 G8 sont ACTIVE sous Node 22; toutes les Gen1 restent intactes |
 | cutover client | App Hosting sert `build-2026-08-22-001`; rollback exact `build-2026-08-19-005`, puis reactivation G9 prouves |
 | observation G4 | G4-A1 a G4-A5 fermees en validation acceleree; Gen1 et rollbacks preserves |
 | retrait Gen1 | aucun avant G12-A |
-| prochain lot | G10 exige une autorisation explicite distincte et reste interdit par ce checkpoint |
+| prochain lot | executer et fermer uniquement G10; G11 reste interdit sans autorisation distincte |
 
 Le correctif Monitoring du 2026-08-17 est applique et idempotent: cinq
 metriques, huit policies severisees et deux canaux conformes; la boucle
@@ -2990,23 +2990,23 @@ La migration est terminee uniquement si:
 
 ## 15. Reprise optimisee
 
-G8 et G9 sont fermes. Le prochain agent ne relit pas le journal historique et
-ne rejoue aucune preuve fermee sans drift concret. G10 exige une autorisation
-explicite distincte et n'est pas ouverte par ce checkpoint.
+G8 et G9 sont fermes. G10 est ouverte explicitement le 2026-08-22 sur le
+sandbox, Stripe test uniquement. Ne pas relire le journal historique ni
+rejouer une preuve fermee sans drift concret.
 
 ```text
 Branche: main.
 Baseline d'ouverture G9:
 `a743e3172013ebee451849927e581a1ae5c9665a`.
 Projet cloud obligatoire: secondevienextjsssr.
-Etat: G0-G9 fermes; G10 non ouverte; inventaire
+Etat: G0-G9 fermes; G10 ouverte; inventaire
 `275 local / 270 cloud / 139 Gen1 / 131 Gen2`.
 Les 24 Gen2 G9 sont ACTIVE et toutes les Gen1 restent intactes. Les quatre
 owners Scheduler finaux sont Gen2. App Hosting sert `build-2026-08-22-001`
 apres rollback reel vers `build-2026-08-19-005` et reactivation.
 
-Action immediate: aucune. Ne pas ouvrir G10 sans une autorisation explicite
-distincte. Ne redeploie aucune Function et ne rejoue aucun test ferme.
+Action immediate: executer la carte G10 et s'arreter avant G11. Ne rejouer
+aucun test ferme.
 
 Garde-fous quota: applique strictement la liste de la section 2.1. Recherches
 bornees avec exclusions, sorties de commandes plafonnees, aucun navigateur si

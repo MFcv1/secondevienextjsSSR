@@ -484,6 +484,12 @@ function createCommerceV2Runtime({
     clock = createClock(),
     failpoints = null
 }) {
+    const platformWebhookSecrets = Array.isArray(platformWebhookSecret)
+        ? platformWebhookSecret
+        : [platformWebhookSecret];
+    const connectWebhookSecrets = Array.isArray(connectWebhookSecret)
+        ? connectWebhookSecret
+        : [connectWebhookSecret];
     if (
         typeof db?.doc !== 'function' ||
         typeof db?.runTransaction !== 'function' ||
@@ -492,8 +498,10 @@ function createCommerceV2Runtime({
         typeof stripe?.webhooks?.constructEvent !== 'function' ||
         typeof appId !== 'string' ||
         !appId ||
-        typeof platformWebhookSecret !== 'string' ||
-        typeof connectWebhookSecret !== 'string' ||
+        !platformWebhookSecrets.length ||
+        platformWebhookSecrets.some((secret) => typeof secret !== 'string' || !secret) ||
+        !connectWebhookSecrets.length ||
+        connectWebhookSecrets.some((secret) => typeof secret !== 'string' || !secret) ||
         typeof sendOutbox !== 'function'
     ) {
         throw runtimeError('COMMERCE_V2_RUNTIME_DEPENDENCY_INVALID');
@@ -550,15 +558,17 @@ function createCommerceV2Runtime({
         failpoints
     });
     const webhookIngress = createStripeWebhookIngress({
-        verifyPlatformEvent: (rawBody, signature) => stripe.webhooks.constructEvent(
+        verifyPlatformEvent: (rawBody, signature) => verifyStripeEventWithSecrets(
+            stripe,
             rawBody,
             signature,
-            platformWebhookSecret
+            platformWebhookSecrets
         ),
-        verifyConnectEvent: (rawBody, signature) => stripe.webhooks.constructEvent(
+        verifyConnectEvent: (rawBody, signature) => verifyStripeEventWithSecrets(
+            stripe,
             rawBody,
             signature,
-            connectWebhookSecret
+            connectWebhookSecrets
         ),
         inboxRepository,
         clock
@@ -677,6 +687,18 @@ function createCommerceV2Runtime({
     });
 }
 
+function verifyStripeEventWithSecrets(stripe, rawBody, signature, secrets) {
+    let lastError = null;
+    for (const secret of secrets) {
+        try {
+            return stripe.webhooks.constructEvent(rawBody, signature, secret);
+        } catch (error) {
+            lastError = error;
+        }
+    }
+    throw lastError || runtimeError('COMMERCE_WEBHOOK_SIGNATURE_INVALID');
+}
+
 module.exports = {
     createAdminPaymentLinkRuntime,
     createCancellationRuntime,
@@ -685,5 +707,6 @@ module.exports = {
     createReservationExpiryRuntime,
     createRefundRuntime,
     createReturnRuntime,
-    createStripeAdapter
+    createStripeAdapter,
+    verifyStripeEventWithSecrets
 };

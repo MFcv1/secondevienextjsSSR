@@ -5,8 +5,10 @@ const { APP_ID } = require('../../helpers/config');
 const { regionalFunctions } = require('../../helpers/runtime');
 const {
     STRIPE_CONNECT_WH_SECRET,
+    STRIPE_CONNECT_WH_SECRET_G10,
     STRIPE_SECRET_KEY,
-    STRIPE_WH_SECRET
+    STRIPE_WH_SECRET,
+    STRIPE_WH_SECRET_G10
 } = require('../../helpers/secrets');
 const { createCommerceV2Runtime } = require('./domain/v2Runtime');
 
@@ -16,8 +18,14 @@ function runtime() {
         db: admin.firestore(),
         stripe: Stripe(STRIPE_SECRET_KEY.value()),
         appId: APP_ID,
-        platformWebhookSecret: STRIPE_WH_SECRET.value(),
-        connectWebhookSecret: STRIPE_CONNECT_WH_SECRET.value(),
+        platformWebhookSecret: [
+            STRIPE_WH_SECRET.value(),
+            STRIPE_WH_SECRET_G10.value()
+        ],
+        connectWebhookSecret: [
+            STRIPE_CONNECT_WH_SECRET.value(),
+            STRIPE_CONNECT_WH_SECRET_G10.value()
+        ],
         sendOutbox: async () => {
             throw new Error('COMMERCE_OUTBOX_SEND_NOT_AVAILABLE_FROM_WEBHOOK');
         }
@@ -78,7 +86,9 @@ const webhookRuntime = regionalFunctions().runWith({
     secrets: [
         STRIPE_SECRET_KEY,
         STRIPE_WH_SECRET,
-        STRIPE_CONNECT_WH_SECRET
+        STRIPE_CONNECT_WH_SECRET,
+        STRIPE_WH_SECRET_G10,
+        STRIPE_CONNECT_WH_SECRET_G10
     ]
 });
 

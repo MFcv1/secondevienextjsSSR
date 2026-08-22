@@ -98,6 +98,35 @@ const G9_OUTBOX_SECRETS = Object.freeze([
   'GMAIL_PASSWORD=GMAIL_PASSWORD:5',
   'RESEND_API_KEY=RESEND_API_KEY:1'
 ]);
+const G10_WEBHOOK_SECRETS = Object.freeze([
+  'STRIPE_SECRET_KEY=STRIPE_SECRET_KEY:4',
+  'STRIPE_WH_SECRET=STRIPE_WH_SECRET:3',
+  'STRIPE_CONNECT_WH_SECRET=STRIPE_CONNECT_WH_SECRET:1',
+  'STRIPE_WH_SECRET_G10=STRIPE_WH_SECRET_G10:1',
+  'STRIPE_CONNECT_WH_SECRET_G10=STRIPE_CONNECT_WH_SECRET_G10:1'
+]);
+const g10Webhook = (name) => Object.freeze({
+  create: true,
+  g10: true,
+  triggerType: 'http-public',
+  region: 'europe-west1',
+  runtime: 'nodejs22',
+  entryPoint: name,
+  runtimeServiceAccount: G8_RUNTIME_SERVICE_ACCOUNT,
+  buildServiceAccount: 'projects/secondevienextjsssr/serviceAccounts/231220287936-compute@developer.gserviceaccount.com',
+  memory: '256Mi',
+  cpu: '167m',
+  timeout: '60s',
+  concurrency: '1',
+  minInstances: '0',
+  maxInstances: '1',
+  ingressSettings: 'all',
+  secrets: G10_WEBHOOK_SECRETS
+});
+const G10_GEN2_TARGETS = Object.freeze({
+  stripeWebhookV2: g10Webhook('stripeWebhookV2'),
+  stripeConnectWebhookV2: g10Webhook('stripeConnectWebhookV2')
+});
 const g9Http = ({
   name,
   triggerType = 'http-callable',
@@ -353,6 +382,7 @@ export const GCLOUD_GEN2_TARGETS = Object.freeze({
   ...G7_GEN2_TARGETS,
   ...G8_GEN2_TARGETS,
   ...G9_GEN2_TARGETS,
+  ...G10_GEN2_TARGETS,
   removeAdminUserGen2: Object.freeze({
     create: true,
     triggerType: 'http-callable',
@@ -1324,12 +1354,12 @@ export function validateDeploymentRequest({
     if (entries[0].cloud?.present !== false || entries[0].decision?.classification !== 'MIGRATION_PARALLEL') {
       fail('Creation gcloud Gen2 exige une cible parallele absente du cloud');
     }
-    if (target.g6 || target.g7 || target.g8 || target.g9) {
+    if (target.g6 || target.g7 || target.g8 || target.g9 || target.g10) {
       const sourceUri = required(args, 'source-uri');
       const sourceSha256 = required(args, 'source-sha256');
       const sourceGeneration = required(args, 'source-generation');
       const sourceSize = String(manifest.deploymentPolicy?.archiveSize || '');
-      const wave = target.g9 ? 'g9' : (target.g8 ? 'g8' : (target.g7 ? 'g7' : 'g6'));
+      const wave = target.g10 ? 'g10' : (target.g9 ? 'g9' : (target.g8 ? 'g8' : (target.g7 ? 'g7' : 'g6')));
       if (!new RegExp(`^gs://gcf-v2-sources-231220287936-europe-west1/${wave}/[0-9a-f]{64}/function-source\\.zip$`).test(sourceUri)) {
         fail(`Archive source ${wave.toUpperCase()} immutable invalide`);
       }
@@ -1347,9 +1377,32 @@ export function validateDeploymentRequest({
   if (transport === 'gcloud-gen2-update') {
     const target = allowlist.length === 1 ? GCLOUD_GEN2_TARGETS[allowlist[0]] : null;
     if (!target?.create) fail('Mise a jour gcloud Gen2 limitee a une cible parallele approuvee');
-    if (manifest.gates?.remediationDeploymentAllowed !== true) fail('Remediation Gen2 bloquee par la gate du manifeste');
-    if (entries[0].cloud?.present !== true || entries[0].decision?.classification !== 'MIGRATION_PARALLEL') {
-      fail('Remediation Gen2 exige une cible parallele active dans le cloud');
+    if (target.g10) {
+      if (manifest.gates?.deploymentAllowed !== true) fail('Deploiement G10 bloque par la gate du manifeste');
+      if (entries[0].cloud?.present !== true || entries[0].decision?.classification !== 'KEEP_GEN2') {
+        fail('G10 exige un webhook Gen2 existant et conserve');
+      }
+      const sourceUri = required(args, 'source-uri');
+      const sourceSha256 = required(args, 'source-sha256');
+      const sourceGeneration = required(args, 'source-generation');
+      if (!/^gs:\/\/gcf-v2-sources-231220287936-europe-west1\/g10\/[0-9a-f]{64}\/function-source\.zip$/.test(sourceUri)) {
+        fail('Archive source G10 immutable invalide');
+      }
+      if (!/^[0-9a-f]{64}$/.test(sourceSha256) || !/^[1-9][0-9]+$/.test(sourceGeneration)) {
+        fail('Preuve archive source G10 invalide');
+      }
+      if (
+        !sourceUri.includes(`/g10/${sourceSha256}/`) ||
+        manifest.deploymentPolicy?.archiveUri !== sourceUri ||
+        manifest.deploymentPolicy?.archiveSha256 !== sourceSha256 ||
+        String(manifest.deploymentPolicy?.archiveGeneration || '') !== sourceGeneration ||
+        !/^[1-9][0-9]*$/.test(String(manifest.deploymentPolicy?.archiveSize || ''))
+      ) fail('Archive source G10 differente du manifeste approuve');
+    } else {
+      if (manifest.gates?.remediationDeploymentAllowed !== true) fail('Remediation Gen2 bloquee par la gate du manifeste');
+      if (entries[0].cloud?.present !== true || entries[0].decision?.classification !== 'MIGRATION_PARALLEL') {
+        fail('Remediation Gen2 exige une cible parallele active dans le cloud');
+      }
     }
   }
   if (transport === 'gcloud-gen2-rollback') {
@@ -1437,7 +1490,7 @@ export function buildGcloudGen2DeployArgs(validation) {
     `--region=${target.region}`,
     '--gen2',
     `--runtime=${target.runtime}`,
-    `--source=${target.g6 || target.g7 || target.g8 || target.g9 ? validation.sourceUri : 'functions'}`,
+    `--source=${target.g6 || target.g7 || target.g8 || target.g9 || target.g10 ? validation.sourceUri : 'functions'}`,
     `--entry-point=${target.entryPoint}`,
     ...triggerArgs,
     `--run-service-account=${target.runtimeServiceAccount}`,
@@ -1661,6 +1714,23 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
       '--format=json'
     ], { cwd: rootDir }));
     assertGcloudGen2Preconditions(before, validation);
+    if (target.g10) {
+      const sourceObject = JSON.parse(run('gcloud', [
+        'storage', 'objects', 'describe', validation.sourceUri,
+        `--project=${validation.project}`, '--format=json'
+      ], { cwd: rootDir }));
+      if (
+        String(sourceObject.generation || '') !== validation.sourceGeneration ||
+        Number(sourceObject.size) !== Number(validation.sourceSize)
+      ) fail('Objet source G10 different du manifeste approuve');
+      const sourceBytes = spawnSync('gcloud', [
+        'storage', 'cat', validation.sourceUri,
+        `--project=${validation.project}`
+      ], { cwd: rootDir, env: process.env, encoding: null, maxBuffer: 25 * 1024 * 1024 });
+      if (sourceBytes.error || sourceBytes.status !== 0) fail('Lecture archive source G10 impossible');
+      const actualSourceSha256 = crypto.createHash('sha256').update(sourceBytes.stdout || Buffer.alloc(0)).digest('hex');
+      if (actualSourceSha256 !== validation.sourceSha256) fail('SHA-256 archive source G10 different du manifeste approuve');
+    }
     if (target.triggerType === 'http-task') {
       const queueBefore = JSON.parse(run('gcloud', [
         'tasks', 'queues', 'describe', target.queueName,

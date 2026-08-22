@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "codebase": "main",
+    "environment": "sandbox",
+    "stripeMode": "test",
+    "wave": "G10",
+    "baselineCommit": "ddbe5fde0448dec9fa5fbbcb29ccea2bdcd32daa",
+    "sourceCountBefore": 275,
+    "sourceCountAfter": 275,
+    "cloudCountBefore": 270,
+    "expectedCloudCountAfter": 270,
+    "gen1Before": 139,
+    "expectedGen1After": 139,
+    "gen2Before": 131,
+    "expectedGen2After": 131,
+    "w": 0,
+    "openedAt": "2026-08-22T14:05:00Z",
+    "status": "OPEN"
+  },
+  "gates": {
+    "g9Closed": true,
+    "g10Opened": true,
+    "g10Closed": false,
+    "classificationComplete": true,
+    "deploymentAllowed": false,
+    "productionAllowed": false,
+    "stripeLiveAllowed": false,
+    "gen1RemovalAllowed": false,
+    "appHostingBuildAllowed": false
+  },
+  "deploymentPolicy": {
+    "transport": "gcloud-gen2-update",
+    "immutableArchiveWave": "g10",
+    "maxTargetsPerDeploy": 1,
+    "expectedDeployCount": 2,
+    "archiveUri": null,
+    "archiveSha256": null,
+    "archiveGeneration": null,
+    "archiveSize": null,
+    "uploadCount": 0,
+    "deployCount": 0
+  },
+  "classificationEvidence": {
+    "providerObservedAt": "2026-08-22T14:05:00Z",
+    "stripeLivemode": false,
+    "projectEndpointCount": 1,
+    "legacyTrafficWindowStart": "2026-08-04T14:00:00Z",
+    "legacyExecutionsObserved": 0
+  },
+  "legacy": [
+    {
+      "name": "stripeWebhook",
+      "url": "https://us-central1-secondevienextjsssr.cloudfunctions.net/stripeWebhook",
+      "cloud": { "present": true, "generation": 1, "status": "ACTIVE", "version": "30" },
+      "providerEndpointPresent": false,
+      "executionsSinceLastRevision": 0,
+      "decision": { "classification": "RETIRE_G12_A", "deployInG10": false }
+    },
+    {
+      "name": "stripeConnectWebhook",
+      "url": "https://us-central1-secondevienextjsssr.cloudfunctions.net/stripeConnectWebhook",
+      "cloud": { "present": true, "generation": 1, "status": "ACTIVE", "version": "8" },
+      "providerEndpointPresent": false,
+      "executionsSinceLastRevision": 0,
+      "decision": { "classification": "RETIRE_G12_A", "deployInG10": false }
+    }
+  ],
+  "functions": [
+    {
+      "name": "stripeWebhookV2",
+      "cloud": { "present": true, "generation": 2, "state": "ACTIVE", "revision": "10" },
+      "identities": {
+        "runtimeServiceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+        "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/231220287936-compute@developer.gserviceaccount.com"
+      },
+      "decision": { "classification": "KEEP_GEN2", "deploymentMaxBatchSize": 1 }
+    },
+    {
+      "name": "stripeConnectWebhookV2",
+      "cloud": { "present": true, "generation": 2, "state": "ACTIVE", "revision": "9" },
+      "identities": {
+        "runtimeServiceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+        "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/231220287936-compute@developer.gserviceaccount.com"
+      },
+      "decision": { "classification": "KEEP_GEN2", "deploymentMaxBatchSize": 1 }
+    }
+  ],
+  "providerTransitions": {
+    "platform": {
+      "entryState": "no Seconde Vie endpoint",
+      "rollbackState": "no Seconde Vie endpoint",
+      "newEndpointId": null,
+      "status": "pending"
+    },
+    "connect": {
+      "entryEndpointId": "we_1ToPcBRgzgSZ0erpTKBp9ZBD",
+      "entryUrl": "https://europe-west1-secondevienextjsssr.cloudfunctions.net/stripeConnectWebhookV2",
+      "entryStatus": "enabled",
+      "newEndpointId": null,
+      "status": "pending"
+    }
+  },
+  "validation": {
+    "testCommand": "npm run test:functions-g10",
+    "testResult": null,
+    "functionsLint": null,
+    "unsignedPlatform": null,
+    "unsignedConnect": null,
+    "replayPlatform": null,
+    "replayConnect": null,
+    "additionalPaymentOrRefundRunCount": 0
+  },
+  "appHosting": {
+    "entryBuild": "build-2026-08-22-001",
+    "buildCreated": false,
+    "reason": "Stripe is the only G10 consumer; no client registry change."
+  },
+  "quietWindow": {
+    "startedAt": null,
+    "completedAt": null,
+    "status": "pending"
+  }
+}
