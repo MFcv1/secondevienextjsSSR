@@ -105,13 +105,13 @@ const G10_WEBHOOK_SECRETS = Object.freeze([
   'STRIPE_WH_SECRET_G10=STRIPE_WH_SECRET_G10:1',
   'STRIPE_CONNECT_WH_SECRET_G10=STRIPE_CONNECT_WH_SECRET_G10:1'
 ]);
-const g10Webhook = (name) => Object.freeze({
+const g10Webhook = ({ name, entryPoint }) => Object.freeze({
   create: true,
   g10: true,
   triggerType: 'http-public',
   region: 'europe-west1',
   runtime: 'nodejs22',
-  entryPoint: name,
+  entryPoint,
   runtimeServiceAccount: G8_RUNTIME_SERVICE_ACCOUNT,
   buildServiceAccount: 'projects/secondevienextjsssr/serviceAccounts/231220287936-compute@developer.gserviceaccount.com',
   memory: '256Mi',
@@ -124,8 +124,14 @@ const g10Webhook = (name) => Object.freeze({
   secrets: G10_WEBHOOK_SECRETS
 });
 const G10_GEN2_TARGETS = Object.freeze({
-  stripeWebhookV2: g10Webhook('stripeWebhookV2'),
-  stripeConnectWebhookV2: g10Webhook('stripeConnectWebhookV2')
+  stripeWebhookV2Gen2: g10Webhook({
+    name: 'stripeWebhookV2Gen2',
+    entryPoint: 'stripeWebhookV2'
+  }),
+  stripeConnectWebhookV2Gen2: g10Webhook({
+    name: 'stripeConnectWebhookV2Gen2',
+    entryPoint: 'stripeConnectWebhookV2'
+  })
 });
 const g9Http = ({
   name,

@@ -19,7 +19,7 @@ import {
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
 const read = (relativePath) => fs.readFileSync(path.join(ROOT, relativePath), 'utf8');
-const TARGETS = Object.freeze(['stripeWebhookV2', 'stripeConnectWebhookV2']);
+const TARGETS = Object.freeze(['stripeWebhookV2Gen2', 'stripeConnectWebhookV2Gen2']);
 
 test('G10 preserves the 275/270 inventory and keeps both legacy webhooks', () => {
   const exported = require(path.join(ROOT, 'functions/index.js'));
@@ -28,10 +28,10 @@ test('G10 preserves the 275/270 inventory and keeps both legacy webhooks', () =>
   assert.equal(local.length, 275);
   assert.equal(EXPECTED_CURRENT_SOURCE_COUNT, 275);
   assert.equal(EXPECTED_CURRENT_CLOUD_COUNT, 270);
-  for (const name of TARGETS) {
-    assert.equal(typeof exported[name], 'function');
-    assert.equal(waveFor(name, 'KEEP_GEN2'), 'G10');
-  }
+  assert.equal(waveFor('stripeWebhookV2Gen2', 'MIGRATION_PARALLEL'), 'G10');
+  assert.equal(waveFor('stripeConnectWebhookV2Gen2', 'MIGRATION_PARALLEL'), 'G10');
+  assert.equal(typeof exported.stripeWebhookV2, 'function');
+  assert.equal(typeof exported.stripeConnectWebhookV2, 'function');
   assert.equal(typeof exported.stripeWebhook, 'function');
   assert.equal(typeof exported.stripeConnectWebhook, 'function');
 });
@@ -53,7 +53,7 @@ test('G10 targeted deploys bind the one immutable archive and both rollback secr
       'STRIPE_CONNECT_WH_SECRET_G10=STRIPE_CONNECT_WH_SECRET_G10:1'
     ]);
     const args = buildGcloudGen2DeployArgs({
-      transport: 'gcloud-gen2-update',
+      transport: 'gcloud-gen2-create',
       project: 'secondevienextjsssr',
       allowlist: [name],
       sourceUri,
@@ -61,6 +61,7 @@ test('G10 targeted deploys bind the one immutable archive and both rollback secr
     });
     assert.ok(args.includes(`--source=${sourceUri}`));
     assert.ok(args.includes('--allow-unauthenticated'));
+    assert.ok(args.includes(`--entry-point=${name.slice(0, -4)}`));
   }
 });
 

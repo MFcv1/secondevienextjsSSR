@@ -10,11 +10,11 @@
     "sourceCountBefore": 275,
     "sourceCountAfter": 275,
     "cloudCountBefore": 270,
-    "expectedCloudCountAfter": 270,
+    "expectedCloudCountAfter": 272,
     "gen1Before": 139,
     "expectedGen1After": 139,
     "gen2Before": 131,
-    "expectedGen2After": 131,
+    "expectedGen2After": 133,
     "w": 0,
     "openedAt": "2026-08-22T13:30:00Z",
     "status": "OPEN"
@@ -31,7 +31,7 @@
     "appHostingBuildAllowed": false
   },
   "deploymentPolicy": {
-    "transport": "gcloud-gen2-update",
+    "transport": "gcloud-gen2-create",
     "immutableArchiveWave": "g10",
     "maxTargetsPerDeploy": 1,
     "expectedDeployCount": 2,
@@ -69,22 +69,24 @@
   ],
   "functions": [
     {
-      "name": "stripeWebhookV2",
-      "cloud": { "present": true, "generation": 2, "state": "ACTIVE", "revision": "10" },
+      "name": "stripeWebhookV2Gen2",
+      "entryPoint": "stripeWebhookV2",
+      "cloud": { "present": false, "generation": 2, "state": null, "revision": null },
       "identities": {
         "runtimeServiceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
         "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/231220287936-compute@developer.gserviceaccount.com"
       },
-      "decision": { "classification": "KEEP_GEN2", "deploymentMaxBatchSize": 1 }
+      "decision": { "classification": "MIGRATION_PARALLEL", "deploymentMaxBatchSize": 1 }
     },
     {
-      "name": "stripeConnectWebhookV2",
-      "cloud": { "present": true, "generation": 2, "state": "ACTIVE", "revision": "9" },
+      "name": "stripeConnectWebhookV2Gen2",
+      "entryPoint": "stripeConnectWebhookV2",
+      "cloud": { "present": false, "generation": 2, "state": null, "revision": null },
       "identities": {
         "runtimeServiceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
         "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/231220287936-compute@developer.gserviceaccount.com"
       },
-      "decision": { "classification": "KEEP_GEN2", "deploymentMaxBatchSize": 1 }
+      "decision": { "classification": "MIGRATION_PARALLEL", "deploymentMaxBatchSize": 1 }
     }
   ],
   "providerTransitions": {
@@ -94,6 +96,7 @@
       "newEndpointId": "we_1U7FHLRgzgSZ0erp55KR24hX",
       "stagedStatus": "disabled",
       "secret": "STRIPE_WH_SECRET_G10:1",
+      "targetUrl": "https://europe-west1-secondevienextjsssr.cloudfunctions.net/stripeWebhookV2Gen2",
       "status": "staged"
     },
     "connect": {
@@ -103,6 +106,7 @@
       "newEndpointId": "we_1U7FHPRgzgSZ0erpsIHD1wO8",
       "stagedStatus": "disabled",
       "secret": "STRIPE_CONNECT_WH_SECRET_G10:1",
+      "targetUrl": "https://europe-west1-secondevienextjsssr.cloudfunctions.net/stripeConnectWebhookV2Gen2",
       "status": "staged"
     }
   },
@@ -114,7 +118,15 @@
     "unsignedConnect": null,
     "replayPlatform": null,
     "replayConnect": null,
-    "additionalPaymentOrRefundRunCount": 0
+    "additionalPaymentOrRefundRunCount": 0,
+    "boundedCorrections": [
+      {
+        "cause": "The v2 API projection exposed stripeWebhookV2 as serviceConfig, but the create gate proved it is still Gen1.",
+        "failedDeployCount": 1,
+        "cloudMutation": false,
+        "resolution": "Create stripeWebhookV2Gen2 and stripeConnectWebhookV2Gen2 with the existing immutable archive entry points."
+      }
+    ]
   },
   "appHosting": {
     "entryBuild": "build-2026-08-22-001",
