@@ -108,8 +108,9 @@ sont verts apres une correction locale bornee de l'extracteur, puis
 la probe sans paiement des trois lecteurs Gen2 passe avec Auth/App Check. Les
 quatre schedulers ont passe double invocation et rollback inverse. La gate 7B
 n'a pas ete lancee car son preflight `v2_fixture/read_only` ne correspond pas
-au sandbox `v2_all/v2`. La fermeture demeure bloquee avant build App Hosting;
-les suites interdites n'ont pas ete executees.
+au sandbox `v2_all/v2`. Le build App Hosting `build-2026-08-22-001`, son
+rollback exact vers `build-2026-08-19-005`, sa reactivation et la quiet-window
+finale ferment G9. Les suites interdites n'ont pas ete executees.
 
 La gate G5 courante est bornee a `npm run test:functions-g5`, `npm run
 test:auth`, l'audit App Check et `npm run lint:functions`. G5-A1 a G5-A3 sont

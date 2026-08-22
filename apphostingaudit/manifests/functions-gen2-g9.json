@@ -18,12 +18,12 @@
     "cloudCountObserved": 270,
     "gen1Observed": 139,
     "gen2Observed": 131,
-    "status": "BLOCKED_APP_HOSTING_SOURCE_UPLOAD"
+    "status": "CLOSED"
   },
   "gates": {
     "g8Closed": true,
     "g9Opened": true,
-    "g9Closed": false,
+    "g9Closed": true,
     "schedulerOwnershipPrepared": true,
     "deploymentAllowed": false,
     "productionAllowed": false,
@@ -82,19 +82,25 @@
   "appHosting": {
     "entryBuild": "build-2026-08-19-005",
     "entryRollbackBuild": "build-2026-08-19-004",
-    "build": null,
-    "rollbackRollout": null,
-    "reactivationRollout": null,
-    "status": "blocked_before_build_creation",
+    "build": "build-2026-08-22-001",
+    "cutoverRollout": "build-2026-08-22-001",
+    "rollbackRollout": "g9-rollback-20260822-001",
+    "reactivationRollout": "g9-reactivate-20260822-001",
+    "status": "reactivated",
     "sourceArchiveSha256": "857bad9b2957f0394cee07589376ad9f301cdb71c5b0babdd002d2386ba38498",
     "sourceArchiveSize": 97090480,
-    "sourceObjectFinalized": false,
-    "blocker": "All three bounded transports stalled on the 97 MB Storage upload; the resumable session committed only 1572864 bytes before timeout. No G9 build or rollout exists."
+    "sourceObject": "gs://firebaseapphosting-sources-231220287936-europe-west4/g9/857bad9b2957f0394cee07589376ad9f301cdb71c5b0babdd002d2386ba38498.zip",
+    "sourceGeneration": "1787404155308487",
+    "sourceObjectFinalized": true,
+    "sourceComponentCount": 24,
+    "uploadResolution": "The immutable archive was split into 24 parallel 4 MiB components and composed server-side after monolithic transports stalled.",
+    "routesAfterReactivation": { "/": 200, "/admin": 200, "/checkout": 200 },
+    "checkoutRegistryGen2": true
   },
   "quietWindow": {
-    "startedAt": "2026-08-22T12:46:49Z",
-    "completedAt": "2026-08-22T12:55:59Z",
-    "status": "passed_functions_and_schedulers",
+    "startedAt": "2026-08-22T13:24:08Z",
+    "completedAt": "2026-08-22T13:29:34Z",
+    "status": "passed_after_reactivation",
     "functionErrors": 0,
     "schedulerErrors": 0,
     "finalSchedulerOwnership": "four Gen1 jobs PAUSED; four Gen2 jobs ENABLED"

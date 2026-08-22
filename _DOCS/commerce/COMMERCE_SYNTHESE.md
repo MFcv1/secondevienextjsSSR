@@ -72,9 +72,8 @@ G9 a deploye le 2026-08-22 les 24 paralleles checkout, Connect, refund,
 operations et liens de paiement en Gen2, sans retirer leurs Gen1. Les quatre
 schedulers ont chacun prouve double invocation bornee et rollback inverse;
 leurs jobs Gen2 sont owners finaux. La probe Auth/App Check des trois lecteurs
-est verte. Le registre client est pret, mais son cutover reste bloque avant
-creation du build App Hosting par l'upload source; le site continue donc de
-servir le registre du build `build-2026-08-19-005` et G9 reste ouverte.
+est verte. Le registre client est servi par `build-2026-08-22-001`, apres
+rollback reel vers `build-2026-08-19-005` et reactivation; G9 est fermee.
 
 ## 3. Ce qui a ete realise par Gate
 

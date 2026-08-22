@@ -880,10 +880,10 @@ sont `ACTIVE` dans le sandbox (139 Gen1, 131 Gen2). Les 24 paralleles G9 sont
 `ACTIVE` en `europe-west1`, Node 22, et toutes les Gen1 sont preservees. Les
 quatre jobs Gen1 commerce sont `PAUSED`; leurs nouveaux owners Gen2 sont
 `ENABLED`, fences liberes et rollback inverse prouve. Le registre client G9
-est committe mais App Hosting sert encore `build-2026-08-19-005`: l'upload de
-la source de 97 Mo bloque avant toute creation de build. Le manifeste courant
-est `apphostingaudit/manifests/functions-gen2-g9.json`; G9 reste ouverte et
-G10 interdite.
+est servi par `build-2026-08-22-001`, apres rollback reel vers
+`build-2026-08-19-005` et reactivation. Le manifeste final est
+`apphostingaudit/manifests/functions-gen2-g9.json`; G9 est fermee et G10 reste
+non ouverte.
 Les garde-fous locaux post-audit recalculent strictement 251/246, refusent une
 vague parallele inconnue, lient l'archive a URI/SHA-256/generation/taille et
 neutralisent les outboxes `testContext` avant le provider. Le harnais G8 ne
@@ -1160,9 +1160,9 @@ prompt G0 est obsolete et ne doit plus etre utilise.
 
 Inventaire apres les deploys Functions G9: 275 exports locaux, 270 cloud,
 139 Gen1 et 131 Gen2. Les 24 nouvelles cibles sont ACTIVE et toutes les Gen1
-restent intactes. App Hosting sert encore `build-2026-08-19-005`; aucun build
-G9 n'a ete cree, donc rollback/reactivation client restent a executer avant la
-fermeture de G9. G10 n'est pas ouvert.
+restent intactes. App Hosting sert `build-2026-08-22-001`, rollback exact vers
+`build-2026-08-19-005` et reactivation prouves. G9 est fermee; G10 n'est pas
+ouvert.
 
 | Domaine | Exports |
 | --- | --- |

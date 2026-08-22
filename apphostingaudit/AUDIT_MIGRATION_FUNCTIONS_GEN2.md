@@ -68,13 +68,13 @@ sont conservees dans les manifestes `functions-gen2-*`.
 | baseline d'ouverture G9 | `a743e3172013ebee451849927e581a1ae5c9665a` |
 | worktree attendu a la reprise | propre apres le commit local de fermeture G8; verifier le statut sans rejouer |
 | phases fermees | G0, G1, G2-A, G2-B 13/13, G3, G4, G5, G6, G7-R, G7-D et G8 |
-| phase active | G9, ouverte explicitement le 2026-08-22 et bloquee avant creation du build App Hosting |
+| phase active | aucune; G9 fermee le 2026-08-22, G10 non ouverte |
 | inventaire courant | 275 exports locaux, 270 cloud, 139 Gen1, 131 Gen2 |
 | cibles paralleles actives | les 24 Gen2 G9 et les 37 Gen2 G8 sont ACTIVE sous Node 22; toutes les Gen1 restent intactes |
-| cutover client | non execute pour G9; App Hosting sert toujours `build-2026-08-19-005`, dont le rollback `build-2026-08-19-004` reste la preuve d'entree |
+| cutover client | App Hosting sert `build-2026-08-22-001`; rollback exact `build-2026-08-19-005`, puis reactivation G9 prouves |
 | observation G4 | G4-A1 a G4-A5 fermees en validation acceleree; Gen1 et rollbacks preserves |
 | retrait Gen1 | aucun avant G12-A |
-| prochain lot | reprendre uniquement upload/build/cutover/rollback/reactivation/quiet-window G9; G10 reste ferme et interdit |
+| prochain lot | G10 exige une autorisation explicite distincte et reste interdit par ce checkpoint |
 
 Le correctif Monitoring du 2026-08-17 est applique et idempotent: cinq
 metriques, huit policies severisees et deux canaux conformes; la boucle
@@ -2699,10 +2699,15 @@ a prouve double invocation bornee, fence libere et rollback inverse. La probe
 Auth/App Check sans paiement des trois lecteurs est verte. La gate 7B est
 restee a zero run car son preflight exige `v2_fixture/read_only` alors que le
 sandbox autorise est `v2_all/v2`. Inventaire: 275 local, 270 cloud, 139 Gen1,
-131 Gen2. G9 reste ouverte: l'archive App Hosting de 97 090 480 octets n'a pas
-ete finalisee par Firebase CLI, gcloud Storage ni le protocole resumable borne;
-aucun build, rollout, rollback ou reactivation G9 n'a ete cree. Reprendre a
-cette gate seulement, sans redeployer Functions ni ouvrir G10.
+131 Gen2. Apres blocage des transports monolithiques, l'archive App Hosting de
+97 090 480 octets a ete divisee en 24 composants de 4 Mio puis composee cote
+GCS sous generation `1787404155308487`. Le build `build-2026-08-22-001` est
+`READY`, son rollout a reussi, le rollback exact
+`g9-rollback-20260822-001` vers `build-2026-08-19-005` et la reactivation
+`g9-reactivate-20260822-001` sont `SUCCEEDED`. Les routes `/`, `/admin` et
+`/checkout` repondent 200 et le bundle checkout sert le registre Gen2. G9 est
+fermee apres quiet-window `13:24:08Z`--`13:29:34Z` sans erreur Function ni
+Scheduler; G10 n'est pas ouverte.
 
 ### G10 - Webhooks Stripe v2
 
@@ -2985,25 +2990,23 @@ La migration est terminee uniquement si:
 
 ## 15. Reprise optimisee
 
-G8 est ferme. Le prochain agent ne relit pas le journal historique et ne
-rejoue aucune preuve fermee sans drift concret. G9 est ouverte explicitement
-le 2026-08-22 sur le sandbox uniquement; cette ouverture n'autorise pas G10.
+G8 et G9 sont fermes. Le prochain agent ne relit pas le journal historique et
+ne rejoue aucune preuve fermee sans drift concret. G10 exige une autorisation
+explicite distincte et n'est pas ouverte par ce checkpoint.
 
 ```text
 Branche: main.
 Baseline d'ouverture G9:
 `a743e3172013ebee451849927e581a1ae5c9665a`.
 Projet cloud obligatoire: secondevienextjsssr.
-Etat: G0-G8 fermes; G9 ouverte et bloquee avant build App Hosting; inventaire
+Etat: G0-G9 fermes; G10 non ouverte; inventaire
 `275 local / 270 cloud / 139 Gen1 / 131 Gen2`.
 Les 24 Gen2 G9 sont ACTIVE et toutes les Gen1 restent intactes. Les quatre
-owners Scheduler finaux sont Gen2. App Hosting sert toujours
-`build-2026-08-19-005`; aucun build G9 n'existe.
+owners Scheduler finaux sont Gen2. App Hosting sert `build-2026-08-22-001`
+apres rollback reel vers `build-2026-08-19-005` et reactivation.
 
-Action immediate: reprends uniquement l'upload source App Hosting, puis le
-build, cutover, rollback exact, reactivation et quiet-window de fermeture G9.
-Ne redeploie aucune Function et ne rejoue aucun test ferme. Arrete-toi
-obligatoirement avant G10.
+Action immediate: aucune. Ne pas ouvrir G10 sans une autorisation explicite
+distincte. Ne redeploie aucune Function et ne rejoue aucun test ferme.
 
 Garde-fous quota: applique strictement la liste de la section 2.1. Recherches
 bornees avec exclusions, sorties de commandes plafonnees, aucun navigateur si
