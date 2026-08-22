@@ -875,13 +875,15 @@ functions/
 
 ## 9. Exports Cloud Functions
 
-Etat apres fermeture G8 du 2026-08-19: `functions/index.js` contient 251
-exports uniques; 246 sont `ACTIVE` dans le sandbox (139 Gen1, 107 Gen2). Les
-37 paralleles commerce G8 sont `ACTIVE` en `europe-west1`,
-Node 22, avec `l = 2`; toutes les Gen1 sont preservees. Le registre client
-bascule les 35 cibles fixes ainsi que `createOrder` et
-`getOrderStatusClient` vers Gen2. Le manifeste final est
-`apphostingaudit/manifests/functions-gen2-g8.json`.
+Etat G9 au 2026-08-22: `functions/index.js` contient 275 exports uniques; 270
+sont `ACTIVE` dans le sandbox (139 Gen1, 131 Gen2). Les 24 paralleles G9 sont
+`ACTIVE` en `europe-west1`, Node 22, et toutes les Gen1 sont preservees. Les
+quatre jobs Gen1 commerce sont `PAUSED`; leurs nouveaux owners Gen2 sont
+`ENABLED`, fences liberes et rollback inverse prouve. Le registre client G9
+est committe mais App Hosting sert encore `build-2026-08-19-005`: l'upload de
+la source de 97 Mo bloque avant toute creation de build. Le manifeste courant
+est `apphostingaudit/manifests/functions-gen2-g9.json`; G9 reste ouverte et
+G10 interdite.
 Les garde-fous locaux post-audit recalculent strictement 251/246, refusent une
 vague parallele inconnue, lient l'archive a URI/SHA-256/generation/taille et
 neutralisent les outboxes `testContext` avant le provider. Le harnais G8 ne
@@ -1156,10 +1158,11 @@ Le checkpoint executable et le prompt de reprise courant sont les sections
 2.1 et 15 de `apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md`; l'ancien
 prompt G0 est obsolete et ne doit plus etre utilise.
 
-Inventaire apres G8: 251 exports locaux, 246 cloud, 139 Gen1 et 107 Gen2. Les
-37 cibles commerce non financieres G8 sont ACTIVE et toutes les Gen1 restent
-intactes. App Hosting sert `build-2026-08-19-005` apres rollback reel vers
-`004` et reactivation. G9 reste non ouvert.
+Inventaire apres les deploys Functions G9: 275 exports locaux, 270 cloud,
+139 Gen1 et 131 Gen2. Les 24 nouvelles cibles sont ACTIVE et toutes les Gen1
+restent intactes. App Hosting sert encore `build-2026-08-19-005`; aucun build
+G9 n'a ete cree, donc rollback/reactivation client restent a executer avant la
+fermeture de G9. G10 n'est pas ouvert.
 
 | Domaine | Exports |
 | --- | --- |

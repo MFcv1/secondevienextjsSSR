@@ -68,6 +68,14 @@ mais aucune ecriture n'etait autorisee par le prompt G8. Le plan read-only
 porte maintenant, pour chacun, `lastUpdateTime`, un hash de preuve et un digest
 deterministe des dix preconditions afin qu'un futur backfill refuse tout drift.
 
+G9 a deploye le 2026-08-22 les 24 paralleles checkout, Connect, refund,
+operations et liens de paiement en Gen2, sans retirer leurs Gen1. Les quatre
+schedulers ont chacun prouve double invocation bornee et rollback inverse;
+leurs jobs Gen2 sont owners finaux. La probe Auth/App Check des trois lecteurs
+est verte. Le registre client est pret, mais son cutover reste bloque avant
+creation du build App Hosting par l'upload source; le site continue donc de
+servir le registre du build `build-2026-08-19-005` et G9 reste ouverte.
+
 ## 3. Ce qui a ete realise par Gate
 
 | Gate | Objet | Resultat ferme |

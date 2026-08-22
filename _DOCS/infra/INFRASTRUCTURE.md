@@ -143,9 +143,15 @@ Le correctif outbox post-audit a ete deploye seul depuis `main` au commit
 `0f09dc8`: `commerceOutboxDispatcher` Gen1 version 12 est `ACTIVE`, build
 `43c90da7-3738-4058-85cf-a0045d953009`, avec le Scheduler `ENABLED` conserve.
 
-Etat courant du chantier Gen2 au 2026-08-19: G0-G8 sont fermes; App Hosting
-sert `build-2026-08-19-005` apres rollback reel vers `004` et reactivation.
-G9 reste ferme sans autorisation distincte. Les paragraphes suivants conservent les
+Etat courant du chantier Gen2 au 2026-08-22: G0-G8 sont fermes et les 24
+Functions G9 sont `ACTIVE`. L'inventaire vaut 275 local / 270 cloud / 139 Gen1
+/ 131 Gen2; aucun rail Gen1 n'a ete retire. Les quatre jobs Gen1 G9 sont
+`PAUSED`, les jobs HTTP Gen2 correspondants `ENABLED`, avec IAM OIDC, double
+invocation bornee, fence libere et rollback inverse prouves. App Hosting sert
+toujours `build-2026-08-19-005`: les transports Firebase CLI, gcloud Storage
+et resumable direct n'ont pas finalise l'archive source de 97 Mo, donc aucun
+build G9, rollback ou reactivation client n'existe. G9 reste ouverte sur cette
+seule gate et G10 reste interdite. Les paragraphes suivants conservent les
 details durables des lots G4 et G5.
 G5-A1 ajoute
 `getUserStatsGen2`, ACTIVE en revision `getuserstatsgen2-00001-niv`, avec

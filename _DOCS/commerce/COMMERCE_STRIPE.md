@@ -359,6 +359,15 @@ run-scoped et correles.
 L'architecture PaymentIntent est le choix qualifie; aucune migration vers
 Checkout Sessions n'est recommandee.
 
+La vague Functions G9 du 2026-08-22 a cree les paralleles Gen2 des callables
+Connect, checkout/reprise, refund et liens de paiement sous Stripe test
+uniquement. Les revisions sont `ACTIVE`, leurs Gen1 restent intactes et aucun
+appel Connect mutateur n'a servi de preuve. `commerce:e2e:gate7b` n'a pas ete
+consomme: son preflight exige `v2_fixture/read_only`, incompatible avec l'etat
+sandbox autorise `v2_all/v2`. Le cutover client attend toujours le build App
+Hosting G9 bloque avant creation; les webhooks restent hors perimetre jusqu'a
+une autorisation G10 distincte.
+
 Gate 7A a ferme les projections/exploitation et Gate 7B a qualifie le
 manifeste `release_gate7a_c5259a87f875_f00378380561`. Les deux runs
 consecutifs, 11 scenarios chacun, sont verts sur le meme SHA `c5259a8` avec

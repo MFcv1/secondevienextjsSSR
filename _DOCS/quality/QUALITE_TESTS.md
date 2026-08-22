@@ -102,6 +102,15 @@ liaison exacte archive URI/SHA-256/generation/taille au manifeste approuve. Le
 lint Functions a ete execute une fois. La quiet-window finale compte zero
 erreur Gen2 et zero entree Gen1 correspondante.
 
+G9 ajoute `npm run test:functions-g9`: 100 tests Node et 5 controles Rules
+sont verts apres une correction locale bornee de l'extracteur, puis
+`lint:functions` a passe une seule fois. Les 24 revisions cloud sont ACTIVE et
+la probe sans paiement des trois lecteurs Gen2 passe avec Auth/App Check. Les
+quatre schedulers ont passe double invocation et rollback inverse. La gate 7B
+n'a pas ete lancee car son preflight `v2_fixture/read_only` ne correspond pas
+au sandbox `v2_all/v2`. La fermeture demeure bloquee avant build App Hosting;
+les suites interdites n'ont pas ete executees.
+
 La gate G5 courante est bornee a `npm run test:functions-g5`, `npm run
 test:auth`, l'audit App Check et `npm run lint:functions`. G5-A1 a G5-A3 sont
 fermees: `test:functions-g5` porte 10/10 contrats, dont le harnais Auth/App Check et le

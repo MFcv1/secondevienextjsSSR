@@ -150,14 +150,20 @@ Git conserve l'audit et la roadmap retires.
 Plan temporaire de reprise explicitement demande:
 
 - [AUDIT_MIGRATION_FUNCTIONS_GEN2.md](apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md):
-  plan ferme G0 a G13. G0-G8 sont fermes; G9 n'est pas ouvert par ce
-  checkpoint. App Hosting sert `build-2026-08-19-005` apres rollback reel vers
+  plan ferme G0 a G13. G0-G8 sont fermes; G9 est ouverte mais bloquee avant
+  son build App Hosting: les 24 Gen2 G9 sont `ACTIVE`, les quatre owners
+  Scheduler Gen2 sont `ENABLED` apres rollback inverse prouve, et l'inventaire
+  vaut 275 local / 270 cloud / 139 Gen1 / 131 Gen2. L'upload de la source
+  App Hosting de 97 Mo n'a pas finalise d'objet ni cree de build malgre trois
+  transports bornes; G9 n'est donc pas fermee et G10 reste interdite. App
+  Hosting sert toujours `build-2026-08-19-005` apres rollback reel vers
   `build-2026-08-19-004` et reactivation. Le lot G8 compte 37 Gen2 ACTIVE sous
   Node 22, `l = 2`; toutes les Gen1 restent intactes. Dernier inventaire
-  prouve: 251 exports locaux, 246 cloud, 139 Gen1 et 107 Gen2. Reprendre
+  prouve a l'entree: 251 exports locaux, 246 cloud, 139 Gen1 et 107 Gen2. Reprendre
   directement au checkpoint court des sections
   2.1 et 15 du plan, sans rejouer les preuves fermees ni un preflight global.
-  La reprise G9 n'est pas ouverte par ce checkpoint. Les prochains lots restent coherents: deploiements Functions allowlistes
+  La reprise G9 doit repartir uniquement de la gate App Hosting bloquee, sans
+  redeployer les 24 Functions ni rejouer leurs tests. Les prochains lots restent coherents: deploiements Functions allowlistes
   individuellement, puis un build, un cutover, un rollback et une observation
   groupes par lot. G7 est ferme par
   `apphostingaudit/manifests/functions-gen2-g7.json`; le hold Meta a ete leve
@@ -187,7 +193,7 @@ Plan temporaire de reprise explicitement demande:
   cleanup verifie, archive strictement liee, inventaire 251/246 recalculable et
   preconditions `inventoryVersion` digestées) sont integres sur `main`. Le
   dispatcher Gen1 est `ACTIVE` en version 12 depuis le commit source `0f09dc8`;
-  G9 reste soumis a son autorisation explicite et a ses propres gates.
+  le manifeste G9 conserve le blocage et aucune autorisation G10 n'est ouverte.
 - [STABILISATION_SECURITE_SANDBOX.md](_DOCS/security/STABILISATION_SECURITE_SANDBOX.md):
   campagne finale bornee S0 a S4 fermee sur le socle `05f4830`, statut
   `SANDBOX_SECURITY_STABILIZED`; production, domaine, Resend, Stripe live et
