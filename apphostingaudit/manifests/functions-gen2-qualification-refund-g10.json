@@ -32,7 +32,15 @@
   "functions": [
     {
       "name": "stripeWebhookV2Gen2",
-      "cloud": { "present": true, "generation": 2, "state": "ACTIVE", "revision": "stripewebhookv2gen2-00001-qul" },
+      "cloud": {
+        "present": true,
+        "generation": 2,
+        "state": "ACTIVE",
+        "revision": "stripewebhookv2gen2-00002-pid",
+        "latestReadyRevision": "stripewebhookv2gen2-00001-qul",
+        "trafficOnLatestReadyPercent": 100,
+        "failedRevisionReason": "Missing deploy-only G10 entry point; zero traffic shifted."
+      },
       "identities": {
         "runtimeServiceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
         "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/231220287936-compute@developer.gserviceaccount.com"
