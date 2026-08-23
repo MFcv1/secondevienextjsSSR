@@ -21,6 +21,9 @@ Le shell de connexion de `/mes-commandes` reste dans le chunk initial leger;
 le workspace `MyOrdersView` est charge separement seulement apres identification
 d'un utilisateur connecte. La route deconnectee ne doit donc jamais attendre
 le bundle complet des commandes pour proposer la connexion.
+Le segment n'a volontairement plus de `loading.jsx`: la page serveur ne charge
+aucune donnee et l'etat Auth appartient a `OrdersPageIsland`. Cela evite qu'un
+fallback de streaming reste affiche si Safari ne remplace pas la frontiere.
 Les actions `connectez-vous` et `inscrivez-vous` de `/wishlist` ouvrent la
 modale Auth publique commune via `sv:open-login`; elles ne redirigent jamais
 vers `/admin`.
@@ -288,7 +291,6 @@ Le detail de ce contrat est dans `../security/AUTHENTIFICATION.md`.
 
 ```text
 app/mes-commandes/page.jsx
-app/mes-commandes/loading.jsx
 app/mes-commandes/OrdersPageIsland.jsx
 app/wishlist/page.jsx
 app/wishlist/WishlistPageIsland.jsx

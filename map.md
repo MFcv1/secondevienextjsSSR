@@ -478,7 +478,6 @@ app/
 |   `-- PaymentLinkPageIsland.jsx ..... coordonnees puis Payment Element sans compte
 |-- mes-commandes/
 |   |-- page.jsx ...................... route dynamique
-|   |-- loading.jsx ................... loading coherent du compte
 |   `-- OrdersPageIsland.jsx .......... shell Auth leger; MyOrdersView lazy apres connexion
 |-- admin/
 |   |-- layout.jsx .................... layout admin
