@@ -46,6 +46,19 @@ test('G9 preserve le Scheduler outbox HTTP existant pendant une remediation', ()
     'https://commerceoutboxdispatchergen2-evkkvyaaga-ew.a.run.app'
   );
   assert.equal(target.schedulerAttemptDeadline, '300s');
+  assert.deepEqual(target.environmentVariables, [
+    'SITE_URL=https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app'
+  ]);
+  const args = buildGcloudGen2DeployArgs({
+    transport: 'gcloud-gen2-update',
+    project: 'secondevienextjsssr',
+    allowlist: ['commerceOutboxDispatcherGen2'],
+    sourceUri: `gs://gcf-v2-sources-231220287936-europe-west1/g9/${'a'.repeat(64)}/function-source.zip`,
+    commit: 'b'.repeat(40)
+  });
+  assert.ok(args.includes(
+    '--set-env-vars=SITE_URL=https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app'
+  ));
 });
 
 function createFakeDb() {

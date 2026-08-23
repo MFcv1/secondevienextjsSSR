@@ -161,6 +161,7 @@ const g9Http = ({
   memory = '256Mi',
   timeout = '60s',
   secrets = [],
+  environmentVariables = [],
   schedule = null,
   expectedSchedulerAudience = null,
   schedulerUpdateRequired = true
@@ -181,6 +182,7 @@ const g9Http = ({
   maxInstances: '1',
   ingressSettings: 'all',
   secrets,
+  environmentVariables,
   ...(schedule ? {
     functionUrl: `https://europe-west1-secondevienextjsssr.cloudfunctions.net/${name}`,
     schedulerJob: `firebase-schedule-${name}-europe-west1`,
@@ -222,6 +224,9 @@ const G9_GEN2_TARGETS = Object.freeze({
     name: 'commerceOutboxDispatcherGen2', triggerType: 'http-scheduler',
     runtimeServiceAccount: 'commerce-outbox-dispatcher@secondevienextjsssr.iam.gserviceaccount.com',
     memory: '512Mi', timeout: '300s', schedule: 'every 2 minutes', secrets: G9_OUTBOX_SECRETS,
+    environmentVariables: [
+      'SITE_URL=https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app'
+    ],
     expectedSchedulerAudience: 'https://commerceoutboxdispatchergen2-evkkvyaaga-ew.a.run.app',
     schedulerUpdateRequired: false
   }),
