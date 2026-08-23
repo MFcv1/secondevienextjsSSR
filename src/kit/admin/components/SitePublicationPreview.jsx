@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { Heart, Image as ImageIcon, Lock, Plus } from 'lucide-react';
-import { slugify } from '../../../utils/slug';
+import { getProductUrl, slugify } from '../../../utils/slug';
 import { ScaledStage } from './PublicationPhoneShell';
 
 const STAGE_WIDTH = 400;
@@ -23,6 +23,7 @@ export default function SitePublicationPreview({
   price = 0,
   priceOnRequest = false,
   stock = '',
+  productId = null,
   expanded = false,
 }) {
   const cover = galleryItems[0];
@@ -33,7 +34,10 @@ export default function SitePublicationPreview({
     : Number(price) > 0
       ? `${Number(price).toLocaleString('fr-FR')} EUR`
       : '';
-  const url = `secondevie.fr/produit/${slugify(title)}`;
+  const productPath = productId
+    ? getProductUrl({ id: productId, title })
+    : `/produit/${slugify(title)}-id-apres-publication`;
+  const url = `secondevie.fr${productPath}`;
 
   return (
     <ScaledStage

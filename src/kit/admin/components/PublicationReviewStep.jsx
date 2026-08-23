@@ -97,7 +97,7 @@ function PreviewZoomOverlay({ darkMode, tabs, channel, onSelect, onClose, anchor
 }
 
 /** Un canal, un rendu : la scene est identique dans le panneau et en grand. */
-function ChannelPreview({ channel, formData, galleryItems, hashtags, darkMode, expanded = false }) {
+function ChannelPreview({ channel, formData, galleryItems, hashtags, darkMode, productId, expanded = false }) {
   if (channel === 'instagram') {
     return (
       <InstagramPublicationPreview
@@ -129,6 +129,7 @@ function ChannelPreview({ channel, formData, galleryItems, hashtags, darkMode, e
       price={formData.startingPrice}
       priceOnRequest={formData.priceOnRequest}
       stock={formData.stock}
+      productId={productId}
       expanded={expanded}
     />
   );
@@ -182,6 +183,7 @@ export default function PublicationReviewStep({
   onHashtagsChange,
   socialPublication,
   uploading = false,
+  productId = null,
 }) {
   const [channel, setChannel] = React.useState('site');
   const [zoomed, setZoomed] = React.useState(false);
@@ -240,7 +242,7 @@ export default function PublicationReviewStep({
           className={`mt-3 flex min-h-[420px] flex-1 items-center justify-center overflow-hidden rounded-[22px] px-3 py-4 ring-1 sm:px-5 sm:py-5 xl:min-h-[340px] ${darkMode ? 'bg-black/25 ring-white/10' : 'bg-[#f3f1ed] ring-black/[0.05]'}`}
         >
           <div key={channel} className="pub-channel-enter flex h-full w-full items-center justify-center">
-            <ChannelPreview channel={channel} formData={formData} galleryItems={galleryItems} hashtags={hashtags} darkMode={darkMode} />
+            <ChannelPreview channel={channel} formData={formData} galleryItems={galleryItems} hashtags={hashtags} darkMode={darkMode} productId={productId} />
           </div>
         </div>
       </section>
@@ -330,7 +332,7 @@ export default function PublicationReviewStep({
         onSelect={setChannel}
         onClose={() => setZoomed(false)}
       >
-        <ChannelPreview expanded channel={channel} formData={formData} galleryItems={galleryItems} hashtags={hashtags} darkMode={darkMode} />
+        <ChannelPreview expanded channel={channel} formData={formData} galleryItems={galleryItems} hashtags={hashtags} darkMode={darkMode} productId={productId} />
       </PreviewZoomOverlay>
     )}
     </>

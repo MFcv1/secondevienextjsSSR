@@ -1243,6 +1243,7 @@ const AdminForm = ({
                 onHashtagsChange={setInstagramHashtags}
                 socialPublication={socialPublication}
                 uploading={uploading}
+                productId={editData?.id || null}
               />
             </div>
           </div>

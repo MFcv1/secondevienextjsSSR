@@ -32,6 +32,18 @@ test('publication admin attend la projection publique exacte sans attendre le HT
   assert.match(workspace, /setView\('history'\)/);
 });
 
+test('apercu publication ne presente jamais un slug seul comme URL produit valide', () => {
+  const form = readWorkspaceFile('src/kit/admin/AdminForm.jsx');
+  const review = readWorkspaceFile('src/kit/admin/components/PublicationReviewStep.jsx');
+  const preview = readWorkspaceFile('src/kit/admin/components/SitePublicationPreview.jsx');
+
+  assert.match(form, /productId=\{editData\?\.id \|\| null\}/);
+  assert.match(review, /productId=\{productId\}/);
+  assert.match(preview, /getProductUrl\(\{ id: productId, title \}\)/);
+  assert.match(preview, /id-apres-publication/);
+  assert.doesNotMatch(preview, /const url = `secondevie\.fr\/produit\/\$\{slugify\(title\)\}`/);
+});
+
 test('progression admin annonce des etapes reelles sans faux pourcentage', () => {
   const dialog = readWorkspaceFile('src/kit/admin/components/PublicationProgressDialog.jsx');
   assert.match(dialog, /Étape \$\{Math\.min\(activeIndex \+ 1, phases\.length\)\}\/\$\{phases\.length\}/);

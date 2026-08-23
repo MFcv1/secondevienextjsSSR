@@ -100,6 +100,11 @@ visible:
    `sessionStorage` conserve cette destination si l'ile admin est remontee
    pendant la transition.
 
+L'apercu de diffusion n'affiche jamais un slug seul comme s'il s'agissait
+d'une URL publique valide. Pour une creation qui ne possede pas encore d'ID,
+il montre explicitement le suffixe `id-apres-publication`; pour une edition,
+il reutilise la route canonique `<slug>-<id>` construite par `getProductUrl`.
+
 Ainsi, un echec d'image ne cree aucun meuble et n'ajoute aucun brouillon a la
 liste. Le rail `product_publication_sessions` qui creait le brouillon avant le
 premier upload est retire de `AdminForm` apres deux refus reproductibles
