@@ -27,7 +27,7 @@
   "functions": [
     {
       "name": "commerceOutboxDispatcherGen2",
-      "cloud": { "present": true, "state": "ACTIVE", "revision": "commerceoutboxdispatchergen2-00001-doy" },
+      "cloud": { "present": true, "state": "ACTIVE", "revision": "commerceoutboxdispatchergen2-00002-hap" },
       "identities": {
         "runtimeServiceAccount": "commerce-outbox-dispatcher@secondevienextjsssr.iam.gserviceaccount.com",
         "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com"
