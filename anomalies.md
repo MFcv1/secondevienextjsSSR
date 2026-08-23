@@ -1959,15 +1959,19 @@ de code.
   trois variables projet, la config malformee avec fallback et l'absence
   totale de projet.
 - validation locale avant deploy: suite document `5/5`, lint Functions strict
-  et `git diff --check` verts; deploiement et requalification Safari encore
-  requis.
-- deploiement prevu: uniquement `prepareCommerceDocumentDeliveryGen2` sur le
-  sandbox via le wrapper fail-closed; aucun App Hosting, autre Function,
-  production, Stripe, IAM, secret ou ecriture financiere.
+  et `git diff --check` verts.
+- deploiement effectue: uniquement `prepareCommerceDocumentDeliveryGen2` sur
+  le sandbox via le wrapper fail-closed, revision
+  `preparecommercedocumentdeliverygen2-00002-riw`; aucun autre endpoint,
+  production, Stripe, IAM, secret ou ecriture financiere. La requalification
+  Safari reste retenue car l'action materialise le PDF prive et envoie
+  automatiquement sa copie a l'adresse enregistree sur la commande; cet effet
+  externe necessite l'autorisation explicite de l'utilisateur au moment du
+  clic.
 
 ### A-030 - Un favori historique masque sa disponibilite catalogue
 
-- statut: `CORRIGEE_A_REQUALIFIER`
+- statut: `REQUALIFIEE`
 - severite: `IMPORTANTE`
 - phase: wishlist client
 - environnement: sandbox / Safari / compte client de recette
@@ -1977,9 +1981,9 @@ de code.
   desactive, alors que sa fiche et `/api/catalog?id=...` le donnent publie,
   non vendu, a 800 EUR et stock 1. Deux autres favoris a stock 0 sont, eux,
   correctement non achetables.
-- preuve active: le catalogue 306 repond HTTP 200 avec le Buffet publie,
-  non vendu, a 800 EUR et stock 1; pourtant les trois cartes conservent leur
-  snapshot sans nom ni prix sur le rollout `c578f65`.
+- preuve active avant correction: le catalogue 306 repondait HTTP 200 avec le
+  Buffet publie, non vendu, a 800 EUR et stock 1; pourtant les trois cartes
+  conservaient leur snapshot sans nom ni prix sur le rollout `c578f65`.
 - causes racines: les anciens documents wishlist ne portent pas `originalId`.
   Le premier correctif a bien rapproche `originalId || id`, mais la page
   passait directement `fetchPublicCatalogProduct` a `Array.map`. L'index fourni
@@ -1992,8 +1996,14 @@ de code.
   catalogue son nom, son prix et son stock achetable; la page doit appeler le
   chargeur avec une fonction unaire explicite `(id) => ...`, jamais directement
   comme callback de `Array.map`.
-- deploiement prevu: uniquement App Hosting sandbox, puis requalification
-  Safari; aucune Function, donnee, production, Stripe live ou commande.
+- deploiement effectue: uniquement App Hosting sandbox, deployment
+  `sv-mt68w8hq-bb26aeae8dfe`; aucune Function, donnee, production, Stripe live
+  ou commande.
+- requalification Safari: sur `/wishlist?refresh=3174bf5`, le favori historique
+  affiche desormais `Buffet`, 800 EUR et l'action d'ajout au panier; les deux
+  favoris a stock nul restent correctement `Deja reserve`. L'ajout ouvre le
+  tiroir avec quantite 1 et sous-total 800 EUR, le panier reste stable apres
+  cinq secondes, puis la suppression ramene l'etat vide sans anomalie.
 
 ## Raccordement codes promotionnels — 2026-08-13
 
