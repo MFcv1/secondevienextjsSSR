@@ -904,7 +904,8 @@ revision/generation/digest; le soak final en cours reste dans
 Le collecteur read-only `scripts/functions-gen2-final-observe.mjs`, expose par
 `npm run functions:gen2:final-observe`, verifie a chaque checkpoint la revision
 finale, les 137 Functions, le trafic Cloud Run, les deux holds Storage et les
-429/5xx/erreurs depuis l'origine F6 sans recopier les messages sensibles.
+429/5xx/erreurs Gen2 et Auth Gen1 depuis l'origine F6 sans recopier les
+messages sensibles.
 
 G1 est `TERMINEE_G2_A_LOCAL_ONLY`: protections Firestore, backup,
 restore reconcilie et deux canaux Monitoring testes sont actifs. Le reconciler Gen1 est en version

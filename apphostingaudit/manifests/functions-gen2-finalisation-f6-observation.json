@@ -3,7 +3,7 @@
   "project": "secondevienextjsssr",
   "environment": "sandbox",
   "gate": "FINALISATION:F6",
-  "generatedAt": "2026-08-23T01:59:23.636Z",
+  "generatedAt": "2026-08-23T02:01:47.351Z",
   "status": "IN_PROGRESS",
   "reference": {
     "function": "getCatalogPublicationStatusGen2",
@@ -18,7 +18,7 @@
     "start": "2026-08-23T01:46:24.611705732Z",
     "minimumEnd": "2026-08-30T01:46:24.611705732Z",
     "requiredSeconds": 604800,
-    "observedSeconds": 779
+    "observedSeconds": 922
   },
   "checkpoints": [
     {
@@ -50,6 +50,24 @@
       "request5xx": 0,
       "errorSeverityEntries": 0,
       "qualification": "DETERMINISTIC_COLLECTOR_VALIDATED"
+    },
+    {
+      "checkedAt": "2026-08-23T02:01:47.351Z",
+      "observedSeconds": 922,
+      "revisionUnchanged": true,
+      "configUnchanged": true,
+      "trafficPercent": 100,
+      "cloudFunctions": 137,
+      "gen2Active": 134,
+      "gen1AuthActive": 3,
+      "functionsUpdatedSinceStart": ["getCatalogPublicationStatusGen2"],
+      "rollbackSourceHeld": true,
+      "reactivationSourceHeld": true,
+      "request429": 0,
+      "request5xx": 0,
+      "errorSeverityEntries": 0,
+      "logResourceTypes": ["cloud_run_revision", "cloud_function"],
+      "qualification": "GEN2_AND_AUTH_GEN1_QUIET"
     }
   ],
   "automation": {

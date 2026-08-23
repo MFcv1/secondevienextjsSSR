@@ -93,6 +93,13 @@ test('le collecteur F6 classe les erreurs sans recopier leur contenu', () => {
   assert.equal(summary.request5xx, 1);
   assert.equal(summary.errorSeverityEntries, 1);
   assert.equal(JSON.stringify(summary).includes('secret-looking'), false);
+  const gen1Summary = summarizeFailureLogs([{
+    timestamp: '2026-08-23T02:02:00Z', severity: 'ERROR',
+    resource: { labels: { function_name: 'grantAdminOnAuth' } },
+    textPayload: 'unknown auth trigger failure'
+  }]);
+  assert.equal(gen1Summary.groups[0].service, 'grantAdminOnAuth');
+  assert.equal(gen1Summary.groups[0].messageClass.startsWith('REDACTED_'), true);
 });
 
 test('le checkpoint F6 ne ferme pas la fenetre avant 604800 secondes', () => {

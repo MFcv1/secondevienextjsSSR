@@ -144,7 +144,7 @@ export function summarizeFailureLogs(rows) {
     if (['ERROR', 'CRITICAL', 'ALERT', 'EMERGENCY'].includes(row.severity)) errorSeverityEntries += 1;
     const message = row.textPayload || row.jsonPayload?.message || row.jsonPayload?.error || '';
     const item = {
-      service: row.resource?.labels?.service_name || 'unknown',
+      service: row.resource?.labels?.service_name || row.resource?.labels?.function_name || 'unknown',
       revision: row.resource?.labels?.revision_name || 'unknown',
       status,
       severity: row.severity || null,
@@ -222,7 +222,7 @@ export function main(now = new Date()) {
     'storage', 'objects', 'describe', source.uri, `--project=${FINAL_OBSERVATION.project}`
   ]));
   const filter = [
-    'resource.type="cloud_run_revision"',
+    '(resource.type="cloud_run_revision" OR resource.type="cloud_function")',
     `timestamp>="${FINAL_OBSERVATION.start}"`,
     `timestamp<="${end}"`,
     '(httpRequest.status=429 OR httpRequest.status>=500 OR severity>=ERROR)'
