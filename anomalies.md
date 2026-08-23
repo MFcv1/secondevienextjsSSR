@@ -677,8 +677,9 @@ Dupliquer cette section pour chaque anomalie et remplacer `A-000`.
 - preuve: inspection du code executable actuel dans
   `functions/src/commerce/domain/stripeWebhookIngress.js`,
   `functions/src/commerce/domain/webhookWorker.js` et
-  `functions/src/commerce/stripeWebhook.js`, avant toute ouverture ou achat
-  de la campagne; controles commerce encore fermes a la revision 52.
+  l'ancien `functions/src/commerce/stripeWebhook.js` (retire en G12-B), avant
+  toute ouverture ou achat de la campagne; controles commerce encore fermes a
+  la revision 52.
 - impact: impossible de qualifier sans risque M12/M13, la chronologie d'un
   remboursement asynchrone Stripe et la projection financiere finale.
 - cause racine ou hypothese: cause technique apparente, a confirmer par

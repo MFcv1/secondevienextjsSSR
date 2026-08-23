@@ -1,0 +1,317 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "cohort": "auth-callables-g5",
+  "exactNames": [
+    "addAdminUser",
+    "ensureAdminAccessRegistry",
+    "generatePasskeyAuthenticationOptions",
+    "generatePasskeyRegistrationOptions",
+    "logUserConnection",
+    "removeAdminUser",
+    "sendCustomerLoginOtp",
+    "sendGuestCheckoutOtp",
+    "syncSuperAdminClaim",
+    "verifyCustomerLoginOtp",
+    "verifyGuestCheckoutOtp",
+    "verifyPasskeyAuthentication",
+    "verifyPasskeyRegistration"
+  ],
+  "archive": {
+    "uri": "gs://gcf-v2-sources-231220287936-europe-west1/g11/6ba72b5a9a065d5bf458b6d32826805b4e39e0824248f829989797299a28c2df/function-source.zip",
+    "sha256": "6ba72b5a9a065d5bf458b6d32826805b4e39e0824248f829989797299a28c2df",
+    "generation": "1787410366615461",
+    "size": 389002,
+    "digestVerified": true,
+    "containsAll120Exports": true
+  },
+  "functions": [
+    {
+      "name": "addAdminUser",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "9",
+      "runtime": "nodejs22",
+      "entryPoint": "addAdminUser",
+      "memoryMb": 256,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [
+        {
+          "key": "SUPER_ADMIN_EMAIL",
+          "secret": "SUPER_ADMIN_EMAIL",
+          "version": "3"
+        }
+      ],
+      "replacement": "addAdminUserGen2"
+    },
+    {
+      "name": "ensureAdminAccessRegistry",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "11",
+      "runtime": "nodejs22",
+      "entryPoint": "ensureAdminAccessRegistry",
+      "memoryMb": 256,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [
+        {
+          "key": "SUPER_ADMIN_EMAIL",
+          "secret": "SUPER_ADMIN_EMAIL",
+          "version": "3"
+        }
+      ],
+      "replacement": "ensureAdminAccessRegistryGen2"
+    },
+    {
+      "name": "generatePasskeyAuthenticationOptions",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "11",
+      "runtime": "nodejs22",
+      "entryPoint": "generatePasskeyAuthenticationOptions",
+      "memoryMb": 256,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [],
+      "replacement": "generatePasskeyAuthenticationOptionsGen2"
+    },
+    {
+      "name": "generatePasskeyRegistrationOptions",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "12",
+      "runtime": "nodejs22",
+      "entryPoint": "generatePasskeyRegistrationOptions",
+      "memoryMb": 256,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [],
+      "replacement": "generatePasskeyRegistrationOptionsGen2"
+    },
+    {
+      "name": "logUserConnection",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "9",
+      "runtime": "nodejs22",
+      "entryPoint": "logUserConnection",
+      "memoryMb": 256,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [],
+      "replacement": "logUserConnectionGen2"
+    },
+    {
+      "name": "removeAdminUser",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "9",
+      "runtime": "nodejs22",
+      "entryPoint": "removeAdminUser",
+      "memoryMb": 256,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [
+        {
+          "key": "SUPER_ADMIN_EMAIL",
+          "secret": "SUPER_ADMIN_EMAIL",
+          "version": "3"
+        }
+      ],
+      "replacement": "removeAdminUserGen2"
+    },
+    {
+      "name": "sendCustomerLoginOtp",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "11",
+      "runtime": "nodejs22",
+      "entryPoint": "sendCustomerLoginOtp",
+      "memoryMb": 256,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [
+        {
+          "key": "GMAIL_EMAIL",
+          "secret": "GMAIL_EMAIL",
+          "version": "2"
+        },
+        {
+          "key": "GMAIL_PASSWORD",
+          "secret": "GMAIL_PASSWORD",
+          "version": "5"
+        },
+        {
+          "key": "RESEND_API_KEY",
+          "secret": "RESEND_API_KEY",
+          "version": "1"
+        },
+        {
+          "key": "OTP_HMAC_SECRET",
+          "secret": "OTP_HMAC_SECRET",
+          "version": "1"
+        }
+      ],
+      "replacement": "sendCustomerLoginOtpGen2"
+    },
+    {
+      "name": "sendGuestCheckoutOtp",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "11",
+      "runtime": "nodejs22",
+      "entryPoint": "sendGuestCheckoutOtp",
+      "memoryMb": 256,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [
+        {
+          "key": "GMAIL_EMAIL",
+          "secret": "GMAIL_EMAIL",
+          "version": "2"
+        },
+        {
+          "key": "GMAIL_PASSWORD",
+          "secret": "GMAIL_PASSWORD",
+          "version": "5"
+        },
+        {
+          "key": "RESEND_API_KEY",
+          "secret": "RESEND_API_KEY",
+          "version": "1"
+        },
+        {
+          "key": "OTP_HMAC_SECRET",
+          "secret": "OTP_HMAC_SECRET",
+          "version": "1"
+        }
+      ],
+      "replacement": "sendGuestCheckoutOtpGen2"
+    },
+    {
+      "name": "syncSuperAdminClaim",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "9",
+      "runtime": "nodejs22",
+      "entryPoint": "syncSuperAdminClaim",
+      "memoryMb": 256,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [
+        {
+          "key": "SUPER_ADMIN_EMAIL",
+          "secret": "SUPER_ADMIN_EMAIL",
+          "version": "3"
+        }
+      ],
+      "replacement": "syncSuperAdminClaimGen2"
+    },
+    {
+      "name": "verifyCustomerLoginOtp",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "12",
+      "runtime": "nodejs22",
+      "entryPoint": "verifyCustomerLoginOtp",
+      "memoryMb": 256,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [
+        {
+          "key": "OTP_HMAC_SECRET",
+          "secret": "OTP_HMAC_SECRET",
+          "version": "1"
+        }
+      ],
+      "replacement": "verifyCustomerLoginOtpGen2"
+    },
+    {
+      "name": "verifyGuestCheckoutOtp",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "9",
+      "runtime": "nodejs22",
+      "entryPoint": "verifyGuestCheckoutOtp",
+      "memoryMb": 256,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [
+        {
+          "key": "OTP_HMAC_SECRET",
+          "secret": "OTP_HMAC_SECRET",
+          "version": "1"
+        }
+      ],
+      "replacement": "verifyGuestCheckoutOtpGen2"
+    },
+    {
+      "name": "verifyPasskeyAuthentication",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "11",
+      "runtime": "nodejs22",
+      "entryPoint": "verifyPasskeyAuthentication",
+      "memoryMb": 256,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [],
+      "replacement": "verifyPasskeyAuthenticationGen2"
+    },
+    {
+      "name": "verifyPasskeyRegistration",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "11",
+      "runtime": "nodejs22",
+      "entryPoint": "verifyPasskeyRegistration",
+      "memoryMb": 256,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [],
+      "replacement": "verifyPasskeyRegistrationGen2"
+    }
+  ],
+  "rollbackWindow": {
+    "openedAt": "2026-08-22T23:30:04.482Z",
+    "expiresAt": "2026-08-22T23:30:04.482Z",
+    "status": "EXPIRED_IMMEDIATELY_BY_EXPLICIT_USER_AUTHORIZATION"
+  },
+  "restorePolicy": "Individual Gen1 restore only from the pinned digest and recorded runtime configuration; no data mutation.",
+  "prohibited": [
+    "production",
+    "stripe-live",
+    "global-deploy",
+    "data-destruction",
+    "auth-trigger-removal"
+  ]
+}

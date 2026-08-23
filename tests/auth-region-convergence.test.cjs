@@ -41,11 +41,8 @@ test('H6 routes Auth and protected admin callables through regionalFunctions', (
     'functions/src/analytics/sessions.js': [
       'initLiveSession',
       'syncSession',
-      'syncSessionBeacon',
-      'deleteSession',
-      'clearAllSessions'
+      'syncSessionBeacon'
     ],
-    'functions/src/commerce/refundOrder.js': ['refundOrderAdmin', 'syncRefundStatusAdmin'],
     'functions/src/commerce/stripeConnect.js': [
       'getStripeConnectStatus',
       'startStripeConnectOnboarding',

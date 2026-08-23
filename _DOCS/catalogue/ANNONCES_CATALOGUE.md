@@ -350,3 +350,15 @@ npm run test:catalog:security
 ```
 
 Les scripts E2E ou les backfills qui touchent Firebase ne sont lances que sur l'environnement explicitement choisi et avec leurs confirmations protegees.
+
+Le 2026-08-22, `G12-A:G3` a retire du sandbox les quatre callables Gen1 du flux
+durable historique de publication produit. `AdminForm` reste autoritaire via
+`createPublishedProductAdmin`; les helpers locaux de reprise sont conserves
+uniquement pour rollback. La collection `product_publication_sessions` etait
+vide. `processProductPublicationImage`, `cleanupProductPublicationSessions` et
+`reconcileProductPublicationSessions` restent `ACTIVE` avec leurs triggers,
+hors de la cohorte autorisee.
+G12-B:G3 a ensuite retire les quatre exports/handlers callables et la logique
+cliente de reprise serveur devenue morte. `productPublicationClient.js`
+conserve seulement le nettoyage local d'un ancien descripteur et l'attente de
+la release catalogue publique exacte; les trois workers Gen2 restent intacts.

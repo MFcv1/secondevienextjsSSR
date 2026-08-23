@@ -29,11 +29,11 @@ const CALLABLES = Object.freeze([
 const TRIGGER = 'onQuoteRequestSubmitted';
 const TARGETS = [...CALLABLES, TRIGGER].map((name) => `${name}Gen2`);
 
-test('G6 exports exactly 24 parallel Gen2 functions while preserving Gen1', () => {
+test('G6 exports exactly 24 Gen2 functions after Gen1 retirement', () => {
   const exported = require(path.join(root, 'functions/index.js'));
-  assert.equal(Object.keys(exported).length, 200);
+  assert.equal(Object.keys(exported).length, 140);
   for (const name of [...CALLABLES, TRIGGER]) {
-    assert.equal(typeof exported[name], 'function', `${name} Gen1 absent`);
+    assert.equal(exported[name], undefined, `${name} Gen1 encore exportee`);
     assert.equal(typeof exported[`${name}Gen2`], 'function', `${name}Gen2 absent`);
   }
 });
@@ -55,8 +55,9 @@ test('G6 deployment definitions use six bounded runtime families', () => {
   for (const name of TARGETS.filter((target) => target !== 'onQuoteRequestSubmittedGen2')) {
     assert.equal(GCLOUD_GEN2_TARGETS[name].triggerType, 'http-callable');
     assert.equal(GCLOUD_GEN2_TARGETS[name].concurrency, '1');
-    assert.equal(GCLOUD_GEN2_TARGETS[name].maxInstances, '1');
+    assert.equal(GCLOUD_GEN2_TARGETS[name].maxInstances, name === 'getCatalogPublicationStatusGen2' ? '2' : '1');
   }
+  assert.match(read('functions/src/catalog/catalogMaintenance.js'), /CATALOG_STATUS_GEN2_RUNTIME[\s\S]*maxInstances:\s*2/);
 });
 
 test('G6 deploy requires one immutable remote archive and never local source', () => {
@@ -66,7 +67,7 @@ test('G6 deploy requires one immutable remote archive and never local source', (
   const manifest = {
     metadata: { project: 'secondevienextjsssr', codebase: 'main', baselineCommit: 'f5886ba3f36610a2e990b342bec6ff97c9d3d228' },
     gates: { deploymentAllowed: true },
-    deploymentPolicy: { forbiddenTargets: [] },
+    deploymentPolicy: { forbiddenTargets: [], archiveUri: sourceUri, archiveSha256: digest, archiveGeneration: '123', archiveSize: 1 },
     functions: [{ name: targetName, cloud: { present: false }, decision: { classification: 'MIGRATION_PARALLEL' } }]
   };
   const validation = validateDeploymentRequest({

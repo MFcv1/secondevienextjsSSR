@@ -12,9 +12,11 @@ import {
   validateDeploymentRequest
 } from '../scripts/deploy-functions-targeted.mjs';
 import {
+  CLOUD_ONLY_PARALLEL_TARGETS,
   EXPECTED_CURRENT_CLOUD_COUNT,
   EXPECTED_CURRENT_SOURCE_COUNT,
   HOLD_META_RECONCILIATION,
+  KEEP_GEN1_AUTH,
   PARALLEL_MIGRATION_EXPORTS,
   buildInventory,
   extractLocalExports,
@@ -43,38 +45,39 @@ const RETIRE_G12_A = Object.freeze(['cancelOrderClient', 'refundOrderAdmin', 'sy
 const LOGICAL = Object.freeze([...FIXED, ...MIGRATED_LEGACY]);
 const TARGETS = Object.freeze(LOGICAL.map((name) => `${name}Gen2`));
 
-test('G8 exposes 35 fixed plus l=2 parallel Gen2 callables and preserves Gen1', () => {
+test('G8 exposes 35 fixed plus l=2 Gen2 callables after the Gen1 retirement', () => {
   const exported = require(path.join(ROOT, 'functions/index.js'));
-  assert.equal(Object.keys(exported).length, 251);
+  assert.equal(Object.keys(exported).length, 140);
   assert.equal(FIXED.length, 35);
   assert.equal(MIGRATED_LEGACY.length, 2);
   for (const name of LOGICAL) {
-    assert.equal(typeof exported[name], 'function', `${name} Gen1 absent`);
+    assert.equal(exported[name], undefined, `${name} Gen1 encore exportee`);
     assert.equal(typeof exported[`${name}Gen2`], 'function', `${name}Gen2 absent`);
   }
-  for (const name of RETIRE_G12_A) assert.equal(typeof exported[name], 'function', `${name} Gen1 retiree trop tot`);
+  for (const name of RETIRE_G12_A) assert.equal(exported[name], undefined, `${name} Gen1 encore exportee`);
 });
 
 test('G8 inventory extractor recognizes every parallel export', () => {
   const exports = extractLocalExports(ROOT);
-  assert.equal(exports.length, 251);
-  assert.equal(EXPECTED_CURRENT_SOURCE_COUNT, 251);
-  assert.equal(EXPECTED_CURRENT_CLOUD_COUNT, 246);
-  assert.equal(PARALLEL_MIGRATION_EXPORTS.size, 94);
+  assert.equal(exports.length, 140);
+  assert.equal(EXPECTED_CURRENT_SOURCE_COUNT, 140);
+  assert.equal(EXPECTED_CURRENT_CLOUD_COUNT, 137);
+  assert.equal(PARALLEL_MIGRATION_EXPORTS.size, 119);
   assert.deepEqual(exports.filter(({ name }) => name.endsWith('Gen2') && !PARALLEL_MIGRATION_EXPORTS.has(name)), []);
 });
 
-test('G8 inventory rebuild accepts 246 cloud targets and assigns the real wave', () => {
+test('G8 inventory rebuild accepts the final 137 cloud targets and assigns the real wave', () => {
   const exports = extractLocalExports(ROOT);
   const cloudNames = exports
     .map(({ name }) => name)
-    .filter((name) => !HOLD_META_RECONCILIATION.has(name));
+    .filter((name) => !HOLD_META_RECONCILIATION.has(name))
+    .concat([...CLOUD_ONLY_PARALLEL_TARGETS]);
   const firebaseRows = cloudNames.map((id, index) => ({
     id,
     state: 'ACTIVE',
     project: 'secondevienextjsssr',
     codebase: 'main',
-    platform: index < 139 ? 'gcfv1' : 'gcfv2',
+    platform: KEEP_GEN1_AUTH.has(id) ? 'gcfv1' : 'gcfv2',
     region: 'europe-west1',
     runtime: 'nodejs22',
     callableTrigger: {}
@@ -88,10 +91,10 @@ test('G8 inventory rebuild accepts 246 cloud targets and assigns the real wave',
     commit: 'c'.repeat(40),
     operator: 'test'
   });
-  assert.equal(inventory.metadata.sourceCount, 251);
-  assert.equal(inventory.metadata.cloudCount, 246);
-  assert.equal(inventory.metadata.cloudGen1Count, 139);
-  assert.equal(inventory.metadata.cloudGen2Count, 107);
+  assert.equal(inventory.metadata.sourceCount, 140);
+  assert.equal(inventory.metadata.cloudCount, 137);
+  assert.equal(inventory.metadata.cloudGen1Count, 3);
+  assert.equal(inventory.metadata.cloudGen2Count, 134);
   for (const name of TARGETS) assert.equal(waveFor(name, 'MIGRATION_PARALLEL'), 'G8');
 });
 

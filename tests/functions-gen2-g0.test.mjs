@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 import {
   EXPECTED_CLOUD_COUNT,
+  EXPECTED_CURRENT_SOURCE_COUNT,
   EXPECTED_SOURCE_COUNT,
   HOLD_META_RECONCILIATION,
   KEEP_GEN1_AUTH,
@@ -57,9 +58,9 @@ function validate(args) {
   });
 }
 
-test('inventaire source: baseline 157 plus exports paralleles de migration, uniques et resolus', () => {
+test('inventaire source final: 140 exports uniques et resolus apres G12-B', () => {
   const exports = extractLocalExports(ROOT);
-  const expectedCurrentCount = EXPECTED_SOURCE_COUNT + PARALLEL_MIGRATION_EXPORTS.size;
+  const expectedCurrentCount = EXPECTED_CURRENT_SOURCE_COUNT;
   assert.equal(exports.length, expectedCurrentCount);
   assert.equal(new Set(exports.map(({ name }) => name)).size, expectedCurrentCount);
   assert.deepEqual(

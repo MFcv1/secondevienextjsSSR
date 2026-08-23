@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { COHORTS as G12_REMAINING_COHORTS } from './functions-gen2-g12-remaining.mjs';
 
 export const EXPECTED_PROJECT = 'secondevienextjsssr';
 export const EXPECTED_CODEBASE = 'main';
@@ -136,10 +137,35 @@ export const CLOUD_ONLY_PARALLEL_TARGETS = new Set([
   'stripeWebhookV2Gen2',
   'stripeConnectWebhookV2Gen2'
 ]);
+export const CLEANED_G12B_GEN1_TARGETS = new Set([
+  'deleteSession',
+  'getUploadUrl',
+  'purgeAllProducts',
+  'purgeAnonymousUsers',
+  'resetAllOrders',
+  'resetAllStats',
+  'resetAllUsers',
+  'runGarbageCollector',
+  'clearAllAffiliateClicks',
+  'clearAllSessions'
+]);
+export const RETIRED_G12A_G3_TARGETS = new Set([
+  'e2eCheckoutProof',
+  'e2eStripeHardeningProof',
+  'getProductPublicationSessionAdmin',
+  'reportProductPublicationClientErrorAdmin',
+  'retryProductPublicationFinalizationAdmin',
+  'startProductPublicationAdmin'
+]);
+export const CLEANED_G12B_G3_TARGETS = RETIRED_G12A_G3_TARGETS;
+export const CLEANED_G12B_REMAINING_TARGETS = new Set(Object.values(G12_REMAINING_COHORTS).flat());
 
-export const EXPECTED_CURRENT_SOURCE_COUNT = EXPECTED_SOURCE_COUNT + PARALLEL_MIGRATION_EXPORTS.size;
+export const EXPECTED_CURRENT_SOURCE_COUNT = EXPECTED_SOURCE_COUNT +
+  PARALLEL_MIGRATION_EXPORTS.size - CLEANED_G12B_GEN1_TARGETS.size - CLEANED_G12B_G3_TARGETS.size -
+  CLEANED_G12B_REMAINING_TARGETS.size;
 export const EXPECTED_CURRENT_CLOUD_COUNT = EXPECTED_CLOUD_COUNT +
-  PARALLEL_MIGRATION_EXPORTS.size + CLOUD_ONLY_PARALLEL_TARGETS.size;
+  PARALLEL_MIGRATION_EXPORTS.size + CLOUD_ONLY_PARALLEL_TARGETS.size -
+  CLEANED_G12B_GEN1_TARGETS.size - RETIRED_G12A_G3_TARGETS.size - CLEANED_G12B_REMAINING_TARGETS.size;
 
 export const KEEP_GEN2 = new Set([
   'catalogMediaGarbageCollector',
@@ -587,10 +613,14 @@ export function buildInventory({ rootDir, firebaseRows, gcloudRows, iamPolicies,
   if (cloudByName.size !== EXPECTED_CURRENT_CLOUD_COUNT) {
     throw new Error(`Inventaire cloud inattendu: ${cloudByName.size}/${EXPECTED_CURRENT_CLOUD_COUNT}`);
   }
-  const cloudOnly = [...cloudByName.keys()].filter((name) => !localNames.has(name));
+  const cloudOnly = [...cloudByName.keys()].filter((name) => !localNames.has(name)).sort();
   const localOnly = [...localNames].filter((name) => !cloudByName.has(name)).sort();
-  if (cloudOnly.length) throw new Error(`Cibles cloud sans source: ${cloudOnly.join(', ')}`);
-  if (JSON.stringify(localOnly) !== JSON.stringify([...HOLD_META_RECONCILIATION].sort())) {
+  const expectedCloudOnly = [...CLOUD_ONLY_PARALLEL_TARGETS].sort();
+  if (JSON.stringify(cloudOnly) !== JSON.stringify(expectedCloudOnly)) {
+    throw new Error(`Cibles cloud sans source inattendues: ${cloudOnly.join(', ')}`);
+  }
+  const expectedLocalOnly = [...HOLD_META_RECONCILIATION].sort();
+  if (JSON.stringify(localOnly) !== JSON.stringify(expectedLocalOnly)) {
     throw new Error(`Ecart local/cloud inattendu: ${localOnly.join(', ')}`);
   }
   const callers = collectCallers(rootDir, localExports);
@@ -658,6 +688,66 @@ export function buildInventory({ rootDir, firebaseRows, gcloudRows, iamPolicies,
       }
     };
   });
+  for (const name of cloudOnly) {
+    const cloud = cloudByName.get(name);
+    const gcloud = gcloudByName.get(name) || null;
+    const entryPoint = name === 'stripeWebhookV2Gen2' ? 'stripeWebhookV2' : 'stripeConnectWebhookV2';
+    const sourceFile = 'functions/src/commerce/v2Webhooks.js';
+    const sourceMetadata = scanSourceMetadata(rootDir, sourceFile, entryPoint);
+    const trigger = triggerFromCloud(cloud, gcloud) || { type: 'http', filter: null, retry: false };
+    const runtimeServiceAccount = gcloud?.serviceConfig?.serviceAccountEmail || cloud?.serviceAccount || null;
+    const buildServiceAccount = gcloud?.buildConfig?.serviceAccount || null;
+    const invokerServiceAccount = trigger.transportServiceAccount || null;
+    serviceAccounts.push(runtimeServiceAccount, buildServiceAccount, invokerServiceAccount);
+    functions.push({
+      name,
+      source: { file: sourceFile, export: entryPoint },
+      cloud: {
+        present: true,
+        state: cloud.state,
+        project: cloud.project,
+        codebase: cloud.codebase,
+        generation: 2,
+        region: cloud.region,
+        runtime: cloud.runtime,
+        revision: gcloud?.serviceConfig?.revision || null,
+        updatedAt: gcloud?.updateTime || null,
+        uri: cloud.uri || gcloud?.serviceConfig?.uri || null
+      },
+      trigger,
+      identities: {
+        runtimeServiceAccount,
+        buildServiceAccount,
+        invokerServiceAccount,
+        resourceIam: iamPolicies.get(name) || []
+      },
+      secrets: (cloud.secretEnvironmentVariables || gcloud?.serviceConfig?.secretEnvironmentVariables || [])
+        .map((secret) => ({ name: secret.secret || secret.key, version: String(secret.version || 'unknown') }))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+      runtime: {
+        cpu: cloud.cpu ?? gcloud?.serviceConfig?.availableCpu ?? null,
+        memoryMiB: cloud.availableMemoryMb ?? null,
+        timeoutSeconds: cloud.timeoutSeconds ?? null,
+        concurrency: cloud.concurrency ?? gcloud?.serviceConfig?.maxInstanceRequestConcurrency ?? null,
+        minInstances: gcloud?.serviceConfig?.minInstanceCount ?? 0,
+        maxInstances: cloud.maxInstances ?? gcloud?.serviceConfig?.maxInstanceCount ?? null,
+        ingress: cloud.ingressSettings ?? gcloud?.serviceConfig?.ingressSettings ?? null,
+        retry: trigger.retry,
+        sourceExplicitOptions: sourceMetadata.explicitRuntimeOptions
+      },
+      callers: [],
+      dataAccess: sourceMetadata.dataAccess,
+      idempotence: sourceMetadata.idempotence,
+      ownership: overlapFor(name, trigger),
+      decision: {
+        classification: 'MIGRATION_PARALLEL',
+        target: name,
+        wave: 'G10',
+        deploymentMaxBatchSize: 1,
+        rollback: rollbackFor(name, 'MIGRATION_PARALLEL', trigger)
+      }
+    });
+  }
   const projectIamByServiceAccount = projectRolesFor(projectIam, serviceAccounts);
   const counts = Object.fromEntries(['KEEP_GEN2', 'KEEP_GEN1_AUTH', 'MIGRATE', 'MIGRATE_OR_RETIRE', 'HOLD_META_RECONCILIATION', 'MIGRATION_PARALLEL']
     .map((classification) => [classification, functions.filter((entry) => entry.decision.classification === classification).length]));
@@ -669,10 +759,10 @@ export function buildInventory({ rootDir, firebaseRows, gcloudRows, iamPolicies,
       baselineCommit: commit,
       operator,
       generatedAt: new Date().toISOString(),
-      sourceCount: functions.length,
-      cloudCount: functions.filter((entry) => entry.cloud.present).length,
-      cloudGen1Count: functions.filter((entry) => entry.cloud.generation === 1).length,
-      cloudGen2Count: functions.filter((entry) => entry.cloud.generation === 2).length,
+      sourceCount: localExports.length,
+      cloudCount: cloudByName.size,
+      cloudGen1Count: [...cloudByName.values()].filter((entry) => entry.platform !== 'gcfv2').length,
+      cloudGen2Count: [...cloudByName.values()].filter((entry) => entry.platform === 'gcfv2').length,
       localOnly: localOnly,
       classifications: counts
     },

@@ -14,7 +14,7 @@ test('G5 prepare uniquement getUserStatsGen2 avec handler et securite partages',
   const source = read('functions/src/auth/adminManagement.js');
   const exports = extractLocalExports(ROOT);
   const target = GCLOUD_GEN2_TARGETS.getUserStatsGen2;
-  assert.ok(exports.some(({ name }) => name === 'getUserStats'));
+  assert.ok(!exports.some(({ name }) => name === 'getUserStats'));
   assert.ok(exports.some(({ name }) => name === 'getUserStatsGen2'));
   assert.equal(classificationFor('getUserStatsGen2'), 'MIGRATION_PARALLEL');
   assert.match(source, /const getUserStatsHandler = async \(data, context\) =>/);
@@ -33,7 +33,7 @@ test('G5-A2 prepare et bascule uniquement logUserConnectionGen2 dans le registre
   const source = read('functions/src/auth/adminManagement.js');
   const exports = extractLocalExports(ROOT);
   const target = GCLOUD_GEN2_TARGETS.logUserConnectionGen2;
-  assert.ok(exports.some(({ name }) => name === 'logUserConnection'));
+  assert.ok(!exports.some(({ name }) => name === 'logUserConnection'));
   assert.ok(exports.some(({ name }) => name === 'logUserConnectionGen2'));
   assert.equal(classificationFor('logUserConnectionGen2'), 'MIGRATION_PARALLEL');
   assert.match(source, /const logUserConnectionHandler = async \(data, context\) =>/);
@@ -67,7 +67,7 @@ test('G5-A3 prepare uniquement ensureAdminAccessRegistryGen2 avec parite et secr
   const source = read('functions/src/auth/adminManagement.js');
   const exports = extractLocalExports(ROOT);
   const target = GCLOUD_GEN2_TARGETS.ensureAdminAccessRegistryGen2;
-  assert.ok(exports.some(({ name }) => name === 'ensureAdminAccessRegistry'));
+  assert.ok(!exports.some(({ name }) => name === 'ensureAdminAccessRegistry'));
   assert.ok(exports.some(({ name }) => name === 'ensureAdminAccessRegistryGen2'));
   assert.equal(classificationFor('ensureAdminAccessRegistryGen2'), 'MIGRATION_PARALLEL');
   assert.match(source, /const ensureAdminAccessRegistryHandler = async \(_data, context\) =>/);
@@ -105,7 +105,7 @@ test('G5-A4 prepare uniquement sendGuestCheckoutOtpGen2 avec handler et secrets 
   const source = read('functions/src/auth/guestCheckoutOtp.js');
   const exports = extractLocalExports(ROOT);
   const target = GCLOUD_GEN2_TARGETS.sendGuestCheckoutOtpGen2;
-  assert.ok(exports.some(({ name }) => name === 'sendGuestCheckoutOtp'));
+  assert.ok(!exports.some(({ name }) => name === 'sendGuestCheckoutOtp'));
   assert.ok(exports.some(({ name }) => name === 'sendGuestCheckoutOtpGen2'));
   assert.equal(classificationFor('sendGuestCheckoutOtpGen2'), 'MIGRATION_PARALLEL');
   assert.match(source, /const sendGuestCheckoutOtpHandler = async \(data, context\) =>/);
@@ -151,7 +151,7 @@ test('G5-A5 prepare uniquement verifyGuestCheckoutOtpGen2 avec handler et secret
   const source = read('functions/src/auth/guestCheckoutOtp.js');
   const exports = extractLocalExports(ROOT);
   const target = GCLOUD_GEN2_TARGETS.verifyGuestCheckoutOtpGen2;
-  assert.ok(exports.some(({ name }) => name === 'verifyGuestCheckoutOtp'));
+  assert.ok(!exports.some(({ name }) => name === 'verifyGuestCheckoutOtp'));
   assert.ok(exports.some(({ name }) => name === 'verifyGuestCheckoutOtpGen2'));
   assert.equal(classificationFor('verifyGuestCheckoutOtpGen2'), 'MIGRATION_PARALLEL');
   assert.match(source, /const verifyGuestCheckoutOtpHandler = async \(data, context\) =>/);
@@ -247,7 +247,7 @@ test('G5-A6 prepare uniquement sendCustomerLoginOtpGen2 avec runtime OTP reutili
   const exports = extractLocalExports(ROOT);
   const target = GCLOUD_GEN2_TARGETS.sendCustomerLoginOtpGen2;
   const manifest = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g5-send-customer-login-otp.json'));
-  assert.ok(exports.some(({ name }) => name === 'sendCustomerLoginOtp'));
+  assert.ok(!exports.some(({ name }) => name === 'sendCustomerLoginOtp'));
   assert.ok(exports.some(({ name }) => name === 'sendCustomerLoginOtpGen2'));
   assert.equal(classificationFor('sendCustomerLoginOtpGen2'), 'MIGRATION_PARALLEL');
   assert.match(source, /const sendCustomerLoginOtpHandler = async \(data, context\) =>/);
@@ -296,7 +296,7 @@ test('G5-A7 prepare verifyCustomerLoginOtpGen2 avec handler partage et runtime l
   const source = read('functions/src/auth/customerLoginOtp.js');
   const exports = extractLocalExports(ROOT);
   const target = GCLOUD_GEN2_TARGETS.verifyCustomerLoginOtpGen2;
-  assert.ok(exports.some(({ name }) => name === 'verifyCustomerLoginOtp'));
+  assert.ok(!exports.some(({ name }) => name === 'verifyCustomerLoginOtp'));
   assert.ok(exports.some(({ name }) => name === 'verifyCustomerLoginOtpGen2'));
   assert.equal(classificationFor('verifyCustomerLoginOtpGen2'), 'MIGRATION_PARALLEL');
   assert.match(source, /const verifyCustomerLoginOtpHandler = async \(data, _context\) =>/);
@@ -511,7 +511,7 @@ test('G5-A12-A14 prepare les trois mutations admin Gen2 avec handlers partages',
     ['addAdminUser', 'addAdminUserGen2', 'addAdminUserHandler'],
     ['removeAdminUser', 'removeAdminUserGen2', 'removeAdminUserHandler'],
   ]) {
-    assert.ok(exports.some(({ name }) => name === legacyName));
+    assert.ok(!exports.some(({ name }) => name === legacyName));
     assert.ok(exports.some(({ name }) => name === gen2Name));
     assert.equal(classificationFor(gen2Name), 'MIGRATION_PARALLEL');
     assert.match(source, new RegExp(`const ${handlerName} = async \\(data, context\\) =>`));

@@ -644,7 +644,7 @@ src/kit/admin/
 |-- quoteAdminClient.js ............... cache court et callables protégées Devis
 |-- AdminAnalytics.jsx ................ moteur Data canonique: UID/IP, live, parcours illustres, courbes
 |-- AdminForm.jsx ..................... creation/edition annonces
-|   |-- productPublicationClient.js ... utilitaires historiques de session + attente de la release publique exacte
+|   |-- productPublicationClient.js ... nettoyage local de reprise obsolete + attente de la release publique exacte
 |   |-- components/InstagramPublicationPreview.jsx .. apercu prive Instagram iPhone 17 Pro
 |   |-- components/MetaConnectionBadge.jsx ........ gestion des connexions Instagram direct et Facebook
 |   |-- components/useMetaConnection.js ........... etat OAuth agrege des deux fournisseurs
@@ -811,14 +811,11 @@ functions/
     |   |-- v2RefundCommands.js ............ callable refund active sous controle v2
     |   |-- v2ReturnCommands.js ............ callables retours actives sous controle v2
     |   |-- v2CustomerReturnRequests.js .... demande client + decisions admin vers refund/retour existants
-    |   |-- stripeWebhook.js
+    |   |-- v2Webhooks.js ................ webhooks paiement/Connect Gen2 seuls apres G12-B
     |   |-- stripeConnect.js
-    |   |-- cancelOrder.js
-    |   |-- refundOrder.js
     |   |-- orderStatus.js
     |   |-- orderStats.js ................. projection legacy transactionnelle et ledger idempotent G2-A
-    |   |-- e2eCheckoutProof.js
-    |   `-- e2eStripeHardeningProof.js
+    |   `-- legacyContainment.js .......... barriere de compatibilite sans export legacy
     |-- email/
     |   |-- emailDesignSystem.js .......... shell HTML/texte premium partage
     |   |-- commerceEmailTemplates.js ..... paiement, fulfillment, refund et document v2
@@ -842,12 +839,10 @@ functions/
     |-- analytics/
     |   |-- constants.js
     |   |-- sessionAuthorizationCache.js ... cache borne/TTL du hash de jeton
-    |   |-- sessions.js ................. collecte active, Gen1 historique et exports Gen2
+    |   |-- sessions.js ................. collecte active et suppression ciblee Gen2
     |   |-- sessionMaintenance.js ....... contrat G11 dry-run/precondition/audit/reprise ciblee
     |   |-- updateUserSessions.js
     |   `-- adminIP.js
-    |-- maintenance/
-    |   `-- tools.js
     |-- onboarding/
     |   |-- billingGuide.js ........... callables, modes, etat backend-only
     |   `-- billingGuideContract.js ... modes, etapes, UID cible et format Billing
@@ -876,40 +871,27 @@ functions/
 
 ## 9. Exports Cloud Functions
 
-Etat G11 au 2026-08-22: `functions/index.js` contient 276 exports uniques; 273
-Functions sont deployees dans le sandbox (139 Gen1, 134 Gen2). Le parallele
-`deleteSessionGen2` est `ACTIVE` en revision
-`deletesessiongen2-00001-mug`; le registre client actif le cible et les dix
-Gen1 G11 restent preserves. Les paralleles
-`stripeWebhookV2Gen2` et `stripeConnectWebhookV2Gen2` sont `ACTIVE` en
-`europe-west1`, Node 22; les quatre webhooks Gen1 sont preserves. Les deux
-legacy historiques sans endpoint ni trafic sont classes `RETIRE_G12_A`, sans
-retrait dans G10. Les endpoints Stripe test Platform et Connect pointent vers
-les nouveaux owners apres rollback et reactivation; l'ancien endpoint Connect
-est desactive. Les 24 paralleles G9 restent
-`ACTIVE` en `europe-west1`, Node 22, et toutes les Gen1 sont preservees. Les
-quatre jobs Gen1 commerce sont `PAUSED`; leurs nouveaux owners Gen2 sont
-`ENABLED`, fences liberes et rollback inverse prouve. Le registre client G9
-est servi par `build-2026-08-22-001`, apres rollback reel vers
-`build-2026-08-19-005` et reactivation. Le manifeste final est
-`apphostingaudit/manifests/functions-gen2-g10.json`; G10 est fermee. G11 est
-fermee par `apphostingaudit/manifests/functions-gen2-g11.json`, apres la
-classification `apphostingaudit/manifests/functions-gen2-g11-r.json`: neuf cibles
-sont `RETIRE_G12_A`, seule `deleteSession` est `MIGRATE_GEN2` (`d = 1`) et les
-dix noms avaient zero execution Cloud Logging sur trente jours. Le build
-`build-2026-08-22-002` sert le registre Gen2 apres rollback prouve vers
-`build-2026-08-22-001` et reactivation. La probe est exclusivement dry-run;
-aucune destruction de donnee, suppression Gen1 ou mutation IAM/secret n'a eu lieu.
-Les garde-fous locaux post-audit recalculent strictement 251/246, refusent une
-vague parallele inconnue, lient l'archive a URI/SHA-256/generation/taille et
-neutralisent les outboxes `testContext` avant le provider. Le harnais G8 ne
-declare le succes qu'apres verification de son cleanup. Ils sont integres sur
-`main`; le dispatcher Gen1 est `ACTIVE` en version 12 depuis le commit source
-`0f09dc8`, Scheduler conserve et premier run post-deploiement `ok`.
-Les decisions par nom, appelants, acces donnees, IAM, secrets et rollback sont dans
-`apphostingaudit/manifests/functions-g0.json`; la reconciliation des 13 Gen2,
-Schedulers, queues et Eventarc est dans
-`apphostingaudit/manifests/functions-platform-g0.json`.
+Etat final apres G12-A/B et G13 au 2026-08-23: `functions/index.js` contient
+140 exports uniques; 137 Functions sont deployees dans le sandbox (3 Gen1,
+134 Gen2). Les trois seules Gen1 sont les triggers Auth
+`grantAdminOnAuth`, `onRegisteredUserCreated` et `onRegisteredUserDeleted`.
+Toutes les autres cibles cloud conservees sont Gen2 `ACTIVE`; les quatre
+owners Scheduler commerce sont `ENABLED` et les endpoints Stripe test pointent
+uniquement vers les owners Gen2. Les cinq exports Instagram locaux expliquent
+l'ecart source/cloud et restent explicitement hors deploy global.
+
+Les dix retraits maintenance, les six G3 et les neuf cohortes restantes ont
+ete supprimes individuellement apres appelants, trafic, quiet-windows et
+rollbacks exacts. Leurs manifests sont indexes par
+`apphostingaudit/manifests/functions-gen2-g12a-remaining.json`; le nettoyage
+source est prouve par `functions-gen2-g12b-remaining.json`. Aucun IAM partage,
+secret, donnee ou trigger Auth n'a ete retire.
+
+G13 conserve un seul tuning cible du statut catalogue:
+`getcatalogpublicationstatusgen2-00002-yoq`, max instances 2 et rollback
+digeste. App Hosting sert `build-2026-08-22-003`, rollback prouve
+`build-2026-08-22-002`. L'ADR canonique est
+`_DOCS/architecture/FUNCTIONS_RUNTIME_ADR.md`.
 
 G1 est `TERMINEE_G2_A_LOCAL_ONLY`: protections Firestore, backup,
 restore reconcilie et deux canaux Monitoring testes sont actifs. Le reconciler Gen1 est en version
@@ -1170,9 +1152,9 @@ sync owner, promotion puis revocation avec refresh tokens revoques et fixture
 jetable restauree. App Hosting sert `build-2026-08-19-002` apres rollback reel
 `001`, reactivation et quiet-window de 313 secondes a zero erreur Gen2 et zero
 appel Gen1. Les trois Gen1 et les trois triggers Auth limites restent intacts.
-Le checkpoint executable et le prompt de reprise courant sont les sections
-2.1 et 15 de `apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md`; l'ancien
-prompt G0 est obsolete et ne doit plus etre utilise.
+  La migration est fermee; l'architecture executable et les conditions de
+  reprise ciblee sont dans `_DOCS/architecture/FUNCTIONS_RUNTIME_ADR.md`.
+  L'ancien prompt de migration ne doit plus etre utilise.
 
 Inventaire apres les deploys Functions G9: 275 exports locaux, 270 cloud,
 139 Gen1 et 131 Gen2. Les 24 nouvelles cibles sont ACTIVE et toutes les Gen1
@@ -1201,8 +1183,8 @@ ouvert.
 | newsletter/avantages | `drawNewsletterReward`, `claimNewsletterReward`, `listMyNewsletterRewards` |
 | publication sociale | `startInstagramOAuthAdmin`, `instagramOAuthCallback`, `getInstagramConnectionStatusAdmin`, `verifyInstagramConnectionAdmin`, `disconnectInstagramConnectionAdmin`; rail Facebook optionnel `startMetaOAuthAdmin`, `metaOAuthCallback`, `getMetaConnectionStatusAdmin`, `selectMetaAssetAdmin`, `verifyMetaConnectionAdmin`, `disconnectMetaConnectionAdmin`; saga `prepareSocialPublicationAdmin`, `runSocialPublicationAdmin`, `getSocialPublicationStatusAdmin` |
 | e-mail | `onOrderCreated`, `onOrderUpdated`, `sendTestEmail`, `sendRefundStatusEmailAdmin` |
-| analytics | `initLiveSession`, `syncSession`, `syncSessionBeacon`, `deleteSession` (seule cible G11-R a migrer), `clearAllSessions` et `clearAllAffiliateClicks` (`RETIRE_G12_A`), `trackAdminIP`, `updateUserSessions`, `onOrderStatsWrite` |
-| maintenance | resets/purges, `runGarbageCollector`, `getUploadUrl`: les sept noms sont `RETIRE_G12_A`; aucune Gen1 n'est retiree avant G12-A |
+| analytics | `initLiveSession`, `syncSession`, `syncSessionBeacon`, `deleteSessionGen2`, `trackAdminIP`, `updateUserSessions`, `onOrderStatsWrite`; les Gen1 `deleteSession`, `clearAllSessions` et `clearAllAffiliateClicks` ont ete retirees du cloud en G12-A puis de la source en G12-B |
+| maintenance | les sept Gen1 resets/purges, `runGarbageCollector` et `getUploadUrl` ont ete retires du cloud en G12-A puis de la source en G12-B; aucun IAM ou secret dedie n'existait, les identites partagees sont preservees |
 | triggers catalogue | `onArtifactDeleted`, `onArtifactUpdated` |
 | catalogue materialise | `onCatalogSourceWrite`, `dispatchCatalogBuild`, `dispatchCatalogRevalidation`, `catalogReconciler`, `catalogMediaGarbageCollector`, `getCatalogPublicationStatus`, `rollbackCatalogSnapshot`, `rebuildCatalogSnapshot` |
 
@@ -1333,8 +1315,6 @@ benchmark-auth-ui.mjs
 ```text
 e2e-auth-email-otp.mjs
 e2e-sandbox-role-session.mjs ......... bootstrap ephemere client/admin, sandbox strict, sans secret persiste
-e2e-hosted-stripe-checkout.mjs ........ en quarantaine commerce
-e2e-refund-latest-stripe-order.mjs .... en quarantaine commerce
 read-latest-auth-otp.mjs .............. outil local sensible
 audit-refund-failed-v2.mjs ............ gate non mutante M12/M13, zero evenement injecte
 ```

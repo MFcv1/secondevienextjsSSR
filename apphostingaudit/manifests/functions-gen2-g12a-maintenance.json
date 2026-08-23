@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "codebase": "main",
+    "environment": "sandbox",
+    "wave": "G12-A:maintenance/destructives-G11",
+    "entryHead": "2c663e4834dcd9b5ee770d9d84001bd4b671b172",
+    "sourceCount": 276,
+    "cloudCountBefore": 273,
+    "cloudCountAfter": 263,
+    "gen1Before": 139,
+    "gen1After": 129,
+    "gen2Before": 134,
+    "gen2After": 134,
+    "status": "G12_A_MAINTENANCE_CLOSED"
+  },
+  "authorization": {
+    "cohort": "maintenance/destructives-G11",
+    "exactGen1Names": [
+      "deleteSession",
+      "getUploadUrl",
+      "purgeAllProducts",
+      "purgeAnonymousUsers",
+      "resetAllOrders",
+      "resetAllStats",
+      "resetAllUsers",
+      "runGarbageCollector",
+      "clearAllAffiliateClicks",
+      "clearAllSessions"
+    ],
+    "sandboxOnly": true,
+    "productionAllowed": false,
+    "stripeLiveAllowed": false,
+    "globalDeployAllowed": false,
+    "realDataDestructionAllowed": false,
+    "iamSecretCodeRemovalAllowed": false,
+    "g12BAllowed": false,
+    "g13Allowed": false
+  },
+  "preconditions": {
+    "callers": {
+      "serverMaintenanceHandlersReachable": false,
+      "retiredAnalyticsUiCallers": ["clearAllAffiliateClicks", "clearAllSessions"],
+      "uiCallersRemovedFromActiveBundle": true,
+      "deleteSessionClientTarget": "deleteSessionGen2"
+    },
+    "traffic": {
+      "freshReadFrom": "2026-08-22T15:23:48Z",
+      "freshReadTo": "2026-08-22T21:23:49Z",
+      "legacyExecutionCount": 0,
+      "quietWindowFrom": "2026-08-22T22:05:51Z",
+      "quietWindowTo": "2026-08-22T22:13:16Z",
+      "quietWindowDurationSeconds": 445,
+      "legacyExecutionCountDuringQuietWindow": 0,
+      "deleteSessionGen2ErrorCountDuringQuietWindow": 0
+    },
+    "deleteSessionGen2": {
+      "state": "ACTIVE",
+      "revision": "deletesessiongen2-00001-mug",
+      "runtime": "nodejs22",
+      "updateTime": "2026-08-22T14:55:53.174809248Z"
+    },
+    "rollbackManifest": "apphostingaudit/manifests/functions-gen2-g12a-maintenance-rollback.json",
+    "rollbackArchiveSha256Verified": true
+  },
+  "appHosting": {
+    "previousBuild": "build-2026-08-22-002",
+    "activeBuild": "build-2026-08-22-003",
+    "sourceArchive": "gs://firebaseapphosting-sources-231220287936-europe-west4/secondevie-next-sandbox--g12a-d9e5098ac4c8.zip",
+    "sourceArchiveSha256": "d9e5098ac4c82aae404f28a438de7bd90c2cfa7f12977c64ceddc9158d22c9ef",
+    "sourceArchiveSize": 97108508,
+    "buildState": "READY",
+    "cutoverState": "SUCCEEDED",
+    "rollbackRollout": "g12a-rollback-20260822-001",
+    "rollbackBuild": "build-2026-08-22-002",
+    "rollbackState": "SUCCEEDED",
+    "rollbackCompletedAt": "2026-08-22T22:00:46.034436Z",
+    "reactivationRollout": "g12a-reactivate-20260822-001",
+    "reactivationState": "SUCCEEDED",
+    "reactivationCompletedAt": "2026-08-22T22:05:51.700559Z",
+    "homeHttp": 200,
+    "adminHttp": 200,
+    "buildCount": 1,
+    "failedSourceUploadBeforeBuildCount": 1,
+    "failedSourceUploadCause": "firebase-tools used a non-resumable PUT for the 97 MB source archive",
+    "correctedTransport": "gcloud storage resumable upload followed by App Hosting orchestration on the exact uploaded object"
+  },
+  "rollback": {
+    "archiveUri": "gs://gcf-v2-sources-231220287936-europe-west1/g11/6ba72b5a9a065d5bf458b6d32826805b4e39e0824248f829989797299a28c2df/function-source.zip",
+    "archiveSha256": "6ba72b5a9a065d5bf458b6d32826805b4e39e0824248f829989797299a28c2df",
+    "archiveGeneration": "1787410366615461",
+    "archiveSize": 389002,
+    "allTenExportsVerified": true,
+    "windowStart": "2026-08-22T22:15:02Z",
+    "windowExpiresAt": "2026-08-22T22:45:38Z",
+    "windowStatus": "EXPIRED_BY_FORMAL_APPROVAL",
+    "formalApprovalRequiredAfterExpiry": false
+  },
+  "deletions": [
+    { "name": "deleteSession", "generation": 1, "result": "DELETED" },
+    { "name": "getUploadUrl", "generation": 1, "result": "DELETED" },
+    { "name": "purgeAllProducts", "generation": 1, "result": "DELETED" },
+    { "name": "purgeAnonymousUsers", "generation": 1, "result": "DELETED" },
+    { "name": "resetAllOrders", "generation": 1, "result": "DELETED" },
+    { "name": "resetAllStats", "generation": 1, "result": "DELETED" },
+    { "name": "resetAllUsers", "generation": 1, "result": "DELETED" },
+    { "name": "runGarbageCollector", "generation": 1, "result": "DELETED" },
+    { "name": "clearAllAffiliateClicks", "generation": 1, "result": "DELETED" },
+    { "name": "clearAllSessions", "generation": 1, "result": "DELETED" }
+  ],
+  "validation": {
+    "destructiveFunctionInvocationCount": 0,
+    "realDataDeletionCount": 0,
+    "functionsDeployCount": 0,
+    "individualGen1DeleteCount": 10,
+    "retiredNamesStillPresent": [],
+    "finalInventory": { "source": 276, "cloud": 263, "gen1": 129, "gen2": 134 },
+    "authGen1Preserved": ["grantAdminOnAuth", "onRegisteredUserCreated", "onRegisteredUserDeleted"],
+    "alertPolicies": { "total": 8, "enabled": 8, "disabled": 0 },
+    "deleteSessionGen2ActiveAfterDeletion": true,
+    "appHostingRoutesHealthy": true,
+    "status": "PASS"
+  },
+  "next": {
+    "g12B": "AUTHORIZED_AND_CLOSED_IN_FUNCTIONS_GEN2_G12B_MAINTENANCE",
+    "g12BCondition": "satisfied at 2026-08-22T22:45:38Z",
+    "g13": "FORBIDDEN_UNTIL_ALL_G12_A_AND_G12_B_COHORTS_ARE_CLOSED"
+  }
+}

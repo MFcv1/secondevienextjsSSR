@@ -227,7 +227,6 @@ test('admin authorization has no hidden recent-passkey gate', () => {
     '../functions/src/commerce/v2DeliveryPolicyAdmin.js',
     '../functions/src/commerce/stripeConnect.js',
     '../functions/src/catalog/catalogMaintenance.js',
-    '../functions/src/maintenance/tools.js',
     '../src/kit/config/firebaseLazy.js'
   ].map((relativePath) => fs.readFileSync(path.resolve(__dirname, relativePath), 'utf8')).join('\n');
   assert.doesNotMatch(sources, /checkRecent|recent-strong-auth-required|verified-passkey-required|maxAgeSeconds\s*=\s*900/);

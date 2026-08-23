@@ -60,11 +60,11 @@ if (functionsCodebases.get('main') !== 'functions') {
   addFinding('error', 'functions', 'firebase.json must keep main codebase at functions');
 }
 if (functionsCodebases.has('public')) addFinding('error', 'functions', 'legacy public Functions codebase must be removed');
-if (!functionsIndex.includes('exports.stripeWebhook') || !functionsIndex.includes('exports.createOrder')) {
-  addFinding('error', 'functions-main', 'functions/index.js missing commerce exports');
+if (!functionsIndex.includes('exports.createCheckoutV2Gen2') || !functionsIndex.includes('exports.createOrderGen2')) {
+  addFinding('error', 'functions-main', 'functions/index.js missing Gen2 commerce exports');
 }
-if (!functionsIndex.includes('exports.sendTestEmail')) {
-  addFinding('warn', 'functions-main', 'functions/index.js should export sendTestEmail while admin diagnostic button exists');
+if (!functionsIndex.includes('exports.sendTestEmailGen2')) {
+  addFinding('warn', 'functions-main', 'functions/index.js should export sendTestEmailGen2 while admin diagnostic button exists');
 }
 
 if (firebaseJson.firestore?.rules !== 'firestore.rules') {

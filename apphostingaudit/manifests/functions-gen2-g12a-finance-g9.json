@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "gate": "G12-A:finance-g9",
+  "status": "CLOSED",
+  "exactNames": [
+    "cancelAdminPaymentLink",
+    "cleanupFixtureRunAdmin",
+    "confirmStripeConnectReconnect",
+    "createAdminPaymentLink",
+    "createCheckoutV2",
+    "extendAdminPaymentLink",
+    "getAdminPaymentLinkPublic",
+    "getCommerceOperationsStatusAdmin",
+    "getStripeConnectStatus",
+    "listAdminPaymentLinks",
+    "prepareAdminPaymentLinkPayment",
+    "rebuildCommerceOperationsAdmin",
+    "recreateAdminPaymentLink",
+    "regenerateAdminPaymentLink",
+    "requestRefundAdmin",
+    "requestStripeConnectReconnect",
+    "resumeAdminPaymentLinkPayment",
+    "resumeCheckoutV2",
+    "startStripeConnectOnboarding",
+    "syncStripeConnectAccount"
+  ],
+  "deletion": {
+    "mode": "INDIVIDUAL_ALLOWLISTED",
+    "firstAt": "2026-08-22T23:37:37.837Z",
+    "finishedAt": "2026-08-22T23:39:11.085Z",
+    "completed": 20,
+    "failures": 0
+  },
+  "preconditions": {
+    "gen2OwnersActive": true,
+    "archiveDigestVerified": true,
+    "callersCutOver": true,
+    "trafficChecked": true,
+    "quietWindow": {
+      "start": "2026-08-22T23:22:55Z",
+      "end": "2026-08-22T23:28:06Z",
+      "seconds": 311,
+      "requiredBundleTtlSeconds": 300,
+      "legacyEntries": 0,
+      "status": "PASS"
+    },
+    "appHosting": {
+      "appHostingBuild": "build-2026-08-22-003",
+      "appHostingTrafficPercent": 100,
+      "schedulerGen2Enabled": 4,
+      "stripeTestGen2WebhooksEnabled": 2,
+      "stripeTestLegacyWebhooksEnabled": 0,
+      "newBuildRequired": false
+    }
+  },
+  "inventory": {
+    "before": {
+      "total": 161,
+      "gen1": 27,
+      "gen2": 134
+    },
+    "after": {
+      "total": 141,
+      "gen1": 7,
+      "gen2": 134
+    }
+  },
+  "rollbackManifest": "apphostingaudit/manifests/functions-gen2-g12a-finance-g9-rollback.json",
+  "rollbackWindow": {
+    "openedAt": "2026-08-22T23:39:11.085Z",
+    "expiresAt": "2026-08-22T23:39:11.085Z",
+    "status": "EXPIRED_IMMEDIATELY_BY_EXPLICIT_USER_AUTHORIZATION"
+  },
+  "guarantees": {
+    "dataDestruction": false,
+    "productionTouched": false,
+    "stripeLiveTouched": false,
+    "authTriggersRemoved": false,
+    "iamOrSecretsRemoved": false
+  }
+}

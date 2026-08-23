@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "cohort": "webhooks-g10",
+  "exactNames": [
+    "stripeConnectWebhook",
+    "stripeConnectWebhookV2",
+    "stripeWebhook",
+    "stripeWebhookV2"
+  ],
+  "archive": {
+    "uri": "gs://gcf-v2-sources-231220287936-europe-west1/g11/6ba72b5a9a065d5bf458b6d32826805b4e39e0824248f829989797299a28c2df/function-source.zip",
+    "sha256": "6ba72b5a9a065d5bf458b6d32826805b4e39e0824248f829989797299a28c2df",
+    "generation": "1787410366615461",
+    "size": 389002,
+    "digestVerified": true,
+    "containsAll120Exports": true
+  },
+  "functions": [
+    {
+      "name": "stripeConnectWebhook",
+      "region": "us-central1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "8",
+      "runtime": "nodejs22",
+      "entryPoint": "stripeConnectWebhook",
+      "memoryMb": 256,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [
+        {
+          "key": "STRIPE_SECRET_KEY",
+          "secret": "STRIPE_SECRET_KEY",
+          "version": "4"
+        },
+        {
+          "key": "STRIPE_CONNECT_WH_SECRET",
+          "secret": "STRIPE_CONNECT_WH_SECRET",
+          "version": "1"
+        }
+      ],
+      "replacement": null
+    },
+    {
+      "name": "stripeConnectWebhookV2",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "9",
+      "runtime": "nodejs22",
+      "entryPoint": "stripeConnectWebhookV2",
+      "memoryMb": 256,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [
+        {
+          "key": "STRIPE_SECRET_KEY",
+          "secret": "STRIPE_SECRET_KEY",
+          "version": "4"
+        },
+        {
+          "key": "STRIPE_WH_SECRET",
+          "secret": "STRIPE_WH_SECRET",
+          "version": "3"
+        },
+        {
+          "key": "STRIPE_CONNECT_WH_SECRET",
+          "secret": "STRIPE_CONNECT_WH_SECRET",
+          "version": "1"
+        }
+      ],
+      "replacement": "stripeConnectWebhookV2Gen2"
+    },
+    {
+      "name": "stripeWebhook",
+      "region": "us-central1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "30",
+      "runtime": "nodejs22",
+      "entryPoint": "stripeWebhook",
+      "memoryMb": 256,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [
+        {
+          "key": "STRIPE_SECRET_KEY",
+          "secret": "STRIPE_SECRET_KEY",
+          "version": "4"
+        },
+        {
+          "key": "STRIPE_WH_SECRET",
+          "secret": "STRIPE_WH_SECRET",
+          "version": "3"
+        }
+      ],
+      "replacement": null
+    },
+    {
+      "name": "stripeWebhookV2",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "10",
+      "runtime": "nodejs22",
+      "entryPoint": "stripeWebhookV2",
+      "memoryMb": 256,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [
+        {
+          "key": "STRIPE_SECRET_KEY",
+          "secret": "STRIPE_SECRET_KEY",
+          "version": "4"
+        },
+        {
+          "key": "STRIPE_WH_SECRET",
+          "secret": "STRIPE_WH_SECRET",
+          "version": "3"
+        },
+        {
+          "key": "STRIPE_CONNECT_WH_SECRET",
+          "secret": "STRIPE_CONNECT_WH_SECRET",
+          "version": "1"
+        }
+      ],
+      "replacement": "stripeWebhookV2Gen2"
+    }
+  ],
+  "rollbackWindow": {
+    "openedAt": "2026-08-22T23:39:33.003Z",
+    "expiresAt": "2026-08-22T23:39:33.003Z",
+    "status": "EXPIRED_IMMEDIATELY_BY_EXPLICIT_USER_AUTHORIZATION"
+  },
+  "restorePolicy": "Individual Gen1 restore only from the pinned digest and recorded runtime configuration; no data mutation.",
+  "prohibited": [
+    "production",
+    "stripe-live",
+    "global-deploy",
+    "data-destruction",
+    "auth-trigger-removal"
+  ]
+}

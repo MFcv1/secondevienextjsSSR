@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "gate": "G12-A:commerce-g8",
+  "status": "CLOSED",
+  "exactNames": [
+    "adjustInventoryAdmin",
+    "archiveOrderAdmin",
+    "cancelOrderClient",
+    "cancelReturnAdmin",
+    "createOrder",
+    "createProductAdmin",
+    "createPromotionCodeAdmin",
+    "createPublishedProductAdmin",
+    "decideCustomerReturnRequestAdmin",
+    "deleteProductAdmin",
+    "getDeliveryPolicyAdmin",
+    "getOrderStatusClient",
+    "getOrderTimelineAdminV2",
+    "listCustomerReturnRequestsAdminV2",
+    "listMyOrdersV2",
+    "listOrdersAdminV2",
+    "listPromotionCodesAdmin",
+    "listReturnsAdminV2",
+    "markOrderDeliveredAdmin",
+    "markOrderPickedUpAdmin",
+    "markOrderPreparingAdmin",
+    "markOrderReadyForPickupAdmin",
+    "markOrderShippedAdmin",
+    "markReturnReceivedAdmin",
+    "openReturnAdmin",
+    "preflightProductMutationAdmin",
+    "prepareCommerceDocumentDelivery",
+    "previewPromotionCodeV2",
+    "publishProductAdmin",
+    "refundOrderAdmin",
+    "requestCustomerReturn",
+    "requestOrderCancellation",
+    "resolveReturnAdmin",
+    "restockReturnLinesAdmin",
+    "saveDeliveryPolicyAdmin",
+    "setPromotionCodeStatusAdmin",
+    "syncRefundStatusAdmin",
+    "updateOrderTrackingAdmin",
+    "updateProductOfferAdmin",
+    "writeOffReturnLinesAdmin"
+  ],
+  "deletion": {
+    "mode": "INDIVIDUAL_ALLOWLISTED",
+    "firstAt": "2026-08-22T23:33:09.892Z",
+    "finishedAt": "2026-08-22T23:36:34.121Z",
+    "completed": 40,
+    "failures": 0
+  },
+  "preconditions": {
+    "gen2OwnersActive": true,
+    "archiveDigestVerified": true,
+    "callersCutOver": true,
+    "trafficChecked": true,
+    "quietWindow": {
+      "start": "2026-08-22T23:22:55Z",
+      "end": "2026-08-22T23:28:06Z",
+      "seconds": 311,
+      "requiredBundleTtlSeconds": 300,
+      "legacyEntries": 0,
+      "status": "PASS"
+    },
+    "appHosting": {
+      "appHostingBuild": "build-2026-08-22-003",
+      "appHostingTrafficPercent": 100,
+      "schedulerGen2Enabled": 4,
+      "stripeTestGen2WebhooksEnabled": 2,
+      "stripeTestLegacyWebhooksEnabled": 0,
+      "newBuildRequired": false
+    }
+  },
+  "inventory": {
+    "before": {
+      "total": 205,
+      "gen1": 71,
+      "gen2": 134
+    },
+    "after": {
+      "total": 165,
+      "gen1": 31,
+      "gen2": 134
+    }
+  },
+  "rollbackManifest": "apphostingaudit/manifests/functions-gen2-g12a-commerce-g8-rollback.json",
+  "rollbackWindow": {
+    "openedAt": "2026-08-22T23:36:34.121Z",
+    "expiresAt": "2026-08-22T23:36:34.121Z",
+    "status": "EXPIRED_IMMEDIATELY_BY_EXPLICIT_USER_AUTHORIZATION"
+  },
+  "guarantees": {
+    "dataDestruction": false,
+    "productionTouched": false,
+    "stripeLiveTouched": false,
+    "authTriggersRemoved": false,
+    "iamOrSecretsRemoved": false
+  }
+}

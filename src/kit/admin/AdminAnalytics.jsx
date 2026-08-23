@@ -135,20 +135,6 @@ const writeAdminAnalyticsCache = async (key, data, loadedAt) => {
     }
 };
 
-const clearAdminAnalyticsCache = async (key) => {
-    try {
-        const database = await openAdminAnalyticsCache();
-        await new Promise((resolve, reject) => {
-            const tx = database.transaction(ADMIN_ANALYTICS_CACHE_STORE, 'readwrite');
-            tx.objectStore(ADMIN_ANALYTICS_CACHE_STORE).delete(key);
-            tx.oncomplete = resolve;
-            tx.onerror = () => reject(tx.error || new Error('IndexedDB delete failed'));
-        });
-    } catch {
-        // Ignorer si le cache navigateur n'est pas disponible.
-    }
-};
-
 // ─── Custom SVG Bar Chart — Premium responsive (remplace Recharts) ──
 const TrafficChart = ({ data, darkMode, valueLabel = 'visite', animationKey = 0 }) => {
     const containerRef = useRef(null);
@@ -1296,22 +1282,6 @@ const BoutiqueAnalytics = ({ darkMode, sessions = [], onRefreshSessions, session
         };
     }, [filteredClicks, topProducts, byProgram, clickChartData, comptoirSessions]);
 
-    const handleClearAllAffiliate = async () => {
-        if (!window.confirm("☢️ ACTION CRITIQUE : Supprimer TOUS les clics affiliés (boutique) définitivement ?")) return;
-        try {
-            const clearAffiliateClicks = await getCallableFunction('clearAllAffiliateClicks');
-            await clearAffiliateClicks({});
-            cachedAffiliateClicks = [];
-            cachedAffiliateClicksLoadedAt = Date.now();
-            setClicks([]);
-            setClicksRefreshKey(cachedAffiliateClicksLoadedAt);
-            clearAdminAnalyticsCache(ADMIN_AFFILIATE_CACHE_KEY);
-        } catch (e) {
-            console.error("Clear affiliate error:", e);
-            alert("Erreur lors du nettoyage des clics affiliés");
-        }
-    };
-
     if (refreshing && clicks.length === 0) return <div className="p-12 text-center text-stone-400 font-bold animate-pulse">Chargement Boutique Data...</div>;
 
     const maxTop = topProducts[0]?.count || 1;
@@ -1342,12 +1312,6 @@ const BoutiqueAnalytics = ({ darkMode, sessions = [], onRefreshSessions, session
                             Maj {new Date(clicksRefreshKey).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                         </span>
                     )}
-                    <button
-                        onClick={handleClearAllAffiliate}
-                        className="px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all border border-red-500/20 text-red-500/60 hover:bg-red-500 hover:text-white active:scale-95"
-                    >
-                        Purger Data
-                    </button>
                     <div className={`flex flex-wrap p-1 rounded-xl border ${darkMode ? 'bg-stone-900 border-white/5' : 'bg-stone-100 border-stone-200'}`}>
                         {BOUTIQUE_TIME_FILTERS.map(tf => (
                             <button key={tf.id} onClick={() => setTimeFilter(tf.id)}
@@ -1992,22 +1956,6 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
         }
     };
 
-    const handleClearAll = async () => {
-        if (!window.confirm("☢️ ACTION CRITIQUE : Supprimer TOUTES les données d'analytics définitivement ?")) return;
-        setLoading(true);
-        try {
-            const clearSessions = await getCallableFunction('clearAllSessions');
-            await clearSessions({});
-            clearAdminAnalyticsCache(ADMIN_SESSIONS_CACHE_KEY);
-            await loadSessions();
-            setLoading(false);
-        } catch (e) {
-            console.error("Clear error:", e);
-            setLoading(false);
-            alert("Erreur lors du nettoyage");
-        }
-    };
-
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
@@ -2036,12 +1984,6 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
                             Maj {new Date(sessionsRefreshKey).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                         </span>
                     )}
-                    <button
-                        onClick={handleClearAll}
-                        className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all border border-red-500/20 text-red-500/60 hover:bg-red-500 hover:text-white active:scale-95`}
-                    >
-                        Purger Data
-                    </button>
                     <div className={`flex p-1 rounded-xl border ${darkMode ? 'bg-stone-900 border-white/5' : 'bg-stone-100 border-stone-200'}`}>
                         {ANALYTICS_TIME_FILTERS.map(tf => (
                             <button

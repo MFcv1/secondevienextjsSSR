@@ -265,6 +265,16 @@ decision separee et un nouveau perimetre:
 
 Aucune de ces actions n'a ete effectuee implicitement.
 
+Les deux anciennes Functions de preuve Stripe `e2eCheckoutProof` et
+`e2eStripeHardeningProof` ont ete retirees du sandbox en `G12-A:G3` apres 310
+secondes sans trafic. Les commandes `e2e:hosted-stripe` et
+`e2e:refund-stripe` restent `DO_NOT_RUN` et fail-closed; aucune requete Stripe,
+mutation commerce ou destruction de donnee n'a ete executee. Le code et les
+versions de secrets sont restes disponibles pendant le rollback date. Apres
+expiration formelle, G12-B:G3 a retire les deux modules et scripts historiques;
+les commandes package restent fail-closed et les secrets partages n'ont pas
+ete detruits.
+
 ## 10. Sources de detail
 
 | Besoin | Source |

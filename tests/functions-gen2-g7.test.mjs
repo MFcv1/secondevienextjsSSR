@@ -6,7 +6,7 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
 import { GCLOUD_GEN2_TARGETS, buildGcloudGen2DeployArgs } from '../scripts/deploy-functions-targeted.mjs';
-import { PARALLEL_MIGRATION_EXPORTS, extractLocalExports } from '../scripts/functions-gen2-inventory.mjs';
+import { EXPECTED_CURRENT_SOURCE_COUNT, PARALLEL_MIGRATION_EXPORTS, extractLocalExports } from '../scripts/functions-gen2-inventory.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
@@ -34,19 +34,23 @@ const LOGICAL_NAMES = Object.freeze([...CLOUD_NAMES, ...INSTAGRAM_NAMES]);
 const TARGETS = Object.freeze(LOGICAL_NAMES.map((name) => `${name}Gen2`));
 const CALLBACKS = new Set(['metaOAuthCallback', 'instagramOAuthCallback']);
 
-test('G7 exports exactly 14 parallel Gen2 functions and preserves every Gen1', () => {
+test('G7 conserve exactement ses 14 Gen2 apres le retrait des proprietaires Gen1', () => {
   const exported = require(path.join(ROOT, 'functions/index.js'));
-  assert.equal(Object.keys(exported).length, 214);
-  for (const name of LOGICAL_NAMES) {
-    assert.equal(typeof exported[name], 'function', `${name} Gen1 absent`);
+  assert.equal(Object.keys(exported).length, EXPECTED_CURRENT_SOURCE_COUNT);
+  for (const name of CLOUD_NAMES) {
+    assert.equal(exported[name], undefined, `${name} Gen1 encore exportee`);
+    assert.equal(typeof exported[`${name}Gen2`], 'function', `${name}Gen2 absent`);
+  }
+  for (const name of INSTAGRAM_NAMES) {
+    assert.equal(typeof exported[name], 'function', `${name} alias local conserve absent`);
     assert.equal(typeof exported[`${name}Gen2`], 'function', `${name}Gen2 absent`);
   }
 });
 
 test('G7 reconciles the inventory extractor through G6 and the 14 G7 exports', () => {
   const exports = extractLocalExports(ROOT);
-  assert.equal(exports.length, 214);
-  assert.equal(PARALLEL_MIGRATION_EXPORTS.size, 57);
+  assert.equal(exports.length, EXPECTED_CURRENT_SOURCE_COUNT);
+  assert.equal(PARALLEL_MIGRATION_EXPORTS.size, 119);
   assert.deepEqual(
     exports.filter(({ name }) => name.endsWith('Gen2') && !PARALLEL_MIGRATION_EXPORTS.has(name)),
     []

@@ -133,6 +133,7 @@ Next.js 16.3.
 | back-office | [BACKOFFICE.md](_DOCS/admin/BACKOFFICE.md) | AdminAppIsland, `src/kit/admin` | preprod |
 | OAuth Instagram/Facebook | [INSTAGRAM_OAUTH_RUNBOOK.md](_DOCS/admin/INSTAGRAM_OAUTH_RUNBOOK.md) | `MetaConnectionBadge`, `useMetaConnection`, `functions/src/integrations/meta.js` | sandbox operationnel, production Meta differee |
 | infrastructure | [INFRASTRUCTURE.md](_DOCS/infra/INFRASTRUCTURE.md) | Firebase/App Hosting/config/env | sandbox actif |
+| runtime Functions | [FUNCTIONS_RUNTIME_ADR.md](_DOCS/architecture/FUNCTIONS_RUNTIME_ADR.md) | Gen2, exceptions Auth, capacite, rollback et horizon Node | sandbox migre et durci |
 | deploiement/cache client | [DEPLOIEMENT_CACHE_CLIENT.md](_DOCS/infra/DEPLOIEMENT_CACHE_CLIENT.md) | `next.config.mjs`, `scripts/with-env.mjs`, `scripts/deployment-id.mjs` | actif |
 | donnees/analytics | [DONNEES_ANALYTICS.md](_DOCS/data/DONNEES_ANALYTICS.md) + [AUDIT_COUTS_FIRESTORE.md](_DOCS/data/AUDIT_COUTS_FIRESTORE.md) | Firestore, UID/IP, sessions live, couts et migrations | moteur Tous a Table adapte, P1 couts public/analytics implemente, catalogue post-cutover mesure a zero lecture Firestore publique |
 | exploitation | [EXPLOITATION.md](_DOCS/operations/EXPLOITATION.md) | commandes, deploy, rollback, backlog | actif |
@@ -147,63 +148,28 @@ durables et preuves de qualification sont fusionnees dans les chapitres
 canoniques commerce, admin, client, qualite, infrastructure et exploitation.
 Git conserve l'audit et la roadmap retires.
 
-Plan temporaire de reprise explicitement demande:
+La migration Firebase Functions Gen1 vers Gen2 est fermee sur le sandbox avec
+le statut `SANDBOX_GEN2_MIGRATED_AND_HARDENED`. L'architecture durable est
+dans [FUNCTIONS_RUNTIME_ADR.md](_DOCS/architecture/FUNCTIONS_RUNTIME_ADR.md):
+140 exports locaux, 137 Functions cloud, 134 Gen2 `ACTIVE` et uniquement les
+trois triggers Auth limites par Firebase encore en Gen1. Les quatre owners
+Scheduler commerce sont Gen2 `ENABLED`; les endpoints Stripe test actifs sont
+Gen2. App Hosting sert `build-2026-08-22-003`, avec rollback prouve
+`build-2026-08-22-002`.
 
-- [AUDIT_MIGRATION_FUNCTIONS_GEN2.md](apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md):
-  plan ferme G0 a G13. G0-G11 sont fermes sur `main`, sandbox et Stripe test
-  uniquement. Les webhooks `stripeWebhookV2Gen2` et
-  `stripeConnectWebhookV2Gen2` sont `ACTIVE`; les 24 Gen2 G9 restent `ACTIVE`
-  et les quatre owners
-  Scheduler Gen2 sont `ENABLED` apres rollback inverse prouve, et l'inventaire
-  vaut 276 local / 273 cloud / 139 Gen1 / 134 Gen2. App Hosting sert
-  `build-2026-08-22-002` apres rollback reel vers `build-2026-08-22-001` et
-  reactivation. Le lot G8 compte 37 Gen2 ACTIVE sous
-  Node 22, `l = 2`; toutes les Gen1 restent intactes. Dernier inventaire
-  prouve a l'entree: 251 exports locaux, 246 cloud, 139 Gen1 et 107 Gen2. G11-R
-  classe neuf cibles `RETIRE_G12_A` et conserve uniquement `deleteSession` pour
-  G11-D, soit `d = 1`, avec zero execution des dix noms sur trente jours. Son
-  manifeste de classification est `apphostingaudit/manifests/functions-gen2-g11-r.json`.
-  `deleteSessionGen2` est `ACTIVE` en revision
-  `deletesessiongen2-00001-mug`, avec zero destruction de donnee; le manifeste
-  de fermeture est `apphostingaudit/manifests/functions-gen2-g11.json`. Reprendre
-  directement au checkpoint court des sections
-  2.1 et 15 du plan, sans rejouer les preuves fermees ni un preflight global.
-  G12-A ne peut commencer que par une cohorte exactement nommee et une
-  quiet-window couvrant l'ancien bundle supporte. Les prochains lots restent coherents: deploiements Functions allowlistes
-  individuellement, puis un build, un cutover, un rollback et une observation
-  groupes par lot. G7 est ferme par
-  `apphostingaudit/manifests/functions-gen2-g7.json`; le hold Meta a ete leve
-  explicitement pour ce lot seulement, l'extracteur a ete corrige et la
-  quiet-window finale est saine. Les tests sont lances une fois par lot et seulement pour les
-  flux touches. Les sections G7 a G13 portent chacune une carte
-  d'execution et un budget quota fermes; la chaine de prompts de la section 15
-  ouvre un seul lot a la fois et les variables Meta/legacy/maintenance sont
-  recalculees depuis chaque manifeste, jamais depuis un total historique. A la
-  reprise, ne relire que le checkpoint et les sections
-  code/documentation directement touchees; ne pas recharger le journal complet.
-  Un etat cloud frais par transition suffit; reutiliser les sessions de poll et
-  ne pas relancer un test vert sans changement du code concerne. Les
-  recherches sont bornees au flux touche avec `node_modules`, `.next`, logs et
-  archives exclus; sorties de commandes plafonnees, navigateur seulement si le
-  harnais ne couvre pas la gate, fixtures validees avant appel externe et
-  secrets utilises sans transformation. Aucun doublon d'upload/build/poll,
-  sous-agent, scan large ou retry sans cause corrigee. Le lot annonce est ferme
-  avant l'arret, puis le lot suivant n'est pas anticipe. Les Custom
-  Tokens et jetons App Check ephemeres du harnais
-  sandbox sont autorises sans confirmation intermediaire; ils ne sont ni
-  affiches, ni journalises, ni persistes. Aucun retrait Gen1 avant G12-A, aucun
-  nettoyage IAM/secrets/code avant G12-B, aucune production/Stripe live. Les
-  trois triggers Auth limites par Firebase restent Gen1; le hold Meta reste
-  inchange. Le HOLD G11-D a ete leve explicitement le 2026-08-22 et G11-D a
-  ferme sur le sandbox sans destruction de donnees reelles.
-  Revue et fusion canonique au plus tard le 2026-10-31.
-  Les correctifs post-audit du 2026-08-19 (neutralisation outbox fixture,
-  cleanup verifie, archive strictement liee, inventaire 251/246 recalculable et
-  preconditions `inventoryVersion` digestées) sont integres sur `main`. Le
-  dispatcher Gen1 est `ACTIVE` en version 12 depuis le commit source `0f09dc8`.
-  G10 classe les deux webhooks legacy `RETIRE_G12_A` sur preuve Stripe test et
-  trafic frais; aucun retrait n'a eu lieu. G11 est fermee; G12 reste soumise a
-  ses cohortes et fenetres de rollback propres.
+Les retraits G12-A ont ete individuels, allowlistes, precedes d'appelants,
+trafic, quiet-windows et rollbacks digestes. G12-B a retire le code exclusif
+sans destruction de donnee, IAM partage, secret ou trigger Auth. Les preuves
+finales sont `apphostingaudit/manifests/functions-gen2-g12a-remaining.json` et
+`functions-gen2-g12b-remaining.json`. G13 a observe sept jours et deploye une
+seule remediation ciblee: `getCatalogPublicationStatusGen2` revision
+`getcatalogpublicationstatusgen2-00002-yoq`, max instances 2, avec rollback
+Storage versionne. Aucun build App Hosting, deploy global, production ou Stripe
+live n'a ete utilise en G13. Le budget Billing reste non prouve car l'API Budget
+est desactivee. Ne pas recreer de plan de migration; rouvrir uniquement une
+operation ciblee depuis l'ADR et les manifestes si un drift concret apparait.
+
+Plans temporaires de reprise encore actifs:
 - [STABILISATION_SECURITE_SANDBOX.md](_DOCS/security/STABILISATION_SECURITE_SANDBOX.md):
   campagne finale bornee S0 a S4 fermee sur le socle `05f4830`, statut
   `SANDBOX_SECURITY_STABILIZED`; production, domaine, Resend, Stripe live et

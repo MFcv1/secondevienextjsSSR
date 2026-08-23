@@ -263,7 +263,7 @@ const G7_GEN2_TARGETS = Object.freeze({
   verifyInstagramConnectionAdminGen2: g7Http({ name: 'verifyInstagramConnectionAdminGen2', secrets: G7_PUBLICATION_SECRETS }),
   verifyMetaConnectionAdminGen2: g7Http({ name: 'verifyMetaConnectionAdminGen2', secrets: G7_PUBLICATION_SECRETS })
 });
-const g6Callable = ({ name, serviceAccount, memory = '256Mi', timeout = '60s', secrets = [], environmentVariables = [], environmentVariableNames = [] }) => Object.freeze({
+const g6Callable = ({ name, serviceAccount, memory = '256Mi', timeout = '60s', maxInstances = '1', secrets = [], environmentVariables = [], environmentVariableNames = [] }) => Object.freeze({
   create: true,
   g6: true,
   triggerType: 'http-callable',
@@ -277,14 +277,14 @@ const g6Callable = ({ name, serviceAccount, memory = '256Mi', timeout = '60s', s
   timeout,
   concurrency: '1',
   minInstances: '0',
-  maxInstances: '1',
+  maxInstances,
   ingressSettings: 'all',
   secrets,
   environmentVariables,
   environmentVariableNames
 });
 const G6_GEN2_TARGETS = Object.freeze({
-  getCatalogPublicationStatusGen2: g6Callable({ name: 'getCatalogPublicationStatusGen2', serviceAccount: 'catalog-builder', memory: '512Mi' }),
+  getCatalogPublicationStatusGen2: g6Callable({ name: 'getCatalogPublicationStatusGen2', serviceAccount: 'catalog-builder', memory: '512Mi', maxInstances: '2' }),
   rebuildCatalogSnapshotGen2: g6Callable({ name: 'rebuildCatalogSnapshotGen2', serviceAccount: 'catalog-builder', memory: '512Mi' }),
   rollbackCatalogSnapshotGen2: g6Callable({ name: 'rollbackCatalogSnapshotGen2', serviceAccount: 'catalog-builder', memory: '512Mi', timeout: '120s' }),
   sendRefundStatusEmailAdminGen2: g6Callable({ name: 'sendRefundStatusEmailAdminGen2', serviceAccount: 'email-manual-runtime', secrets: G6_EMAIL_SECRETS, environmentVariableNames: ['TRANSACTIONAL_EMAIL_PROVIDER'] }),

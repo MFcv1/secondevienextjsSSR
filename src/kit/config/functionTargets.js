@@ -3,8 +3,6 @@ const FUNCTION_TARGETS = Object.freeze({
   archiveOrderAdmin: 'archiveOrderAdminGen2',
   cancelReturnAdmin: 'cancelReturnAdminGen2',
   claimNewsletterReward: 'claimNewsletterRewardGen2',
-  clearAllAffiliateClicks: 'clearAllAffiliateClicks',
-  clearAllSessions: 'clearAllSessions',
   deleteSession: 'deleteSessionGen2',
   addAdminUser: 'addAdminUserGen2',
   completeBillingGuideAdmin: 'completeBillingGuideAdminGen2',

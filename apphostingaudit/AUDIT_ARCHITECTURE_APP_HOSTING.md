@@ -62,10 +62,11 @@ Le verdict consolide est donc:
 - les dix `inventoryVersion`, vingt-six commandes/KPI et limites du reconciler
   sont P1; le nettoyage analytics historique est P2 et ne bloque pas la demo.
 
-L'ordre d'execution corrige, les preuves cloud actuelles et le prompt se trouvent
-dans [AUDIT_MIGRATION_FUNCTIONS_GEN2.md](AUDIT_MIGRATION_FUNCTIONS_GEN2.md),
-phases G0 a G13. En cas d'ecart, ce plan revalide prime sur les nombres et l'ordre
-historique des sections 3, 9, 10 et 13 du present document.
+La migration G0 a G13 est fermee. Sa decision d'architecture durable se trouve
+dans [FUNCTIONS_RUNTIME_ADR.md](../_DOCS/architecture/FUNCTIONS_RUNTIME_ADR.md),
+et ses preuves cloud restent dans `apphostingaudit/manifests/`. Ces preuves
+finales priment sur les nombres historiques des sections 3, 9, 10 et 13 du
+present document.
 
 Une restauration Firestore geree cree une nouvelle base nommee dans le meme
 projet et la meme localisation. Elle inclut donnees et indexes, mais pas Rules

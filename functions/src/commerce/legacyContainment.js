@@ -3,14 +3,6 @@
 const CONTROL_PATH = 'sys_commerce_control/current';
 const CONTAINMENT_CODE = 'COMMERCE_READ_ONLY';
 const V2_HANDLER_REQUIRED_CODE = 'V2_ORDER_REQUIRES_V2_HANDLER';
-const DESTRUCTIVE_MAINTENANCE_ACTIONS = Object.freeze([
-    'resetAllStats',
-    'runGarbageCollector',
-    'resetAllUsers',
-    'purgeAnonymousUsers',
-    'purgeAllProducts',
-    'resetAllOrders'
-]);
 
 function containmentError(functions, action) {
     return new functions.https.HttpsError(
@@ -81,7 +73,6 @@ function mayReleaseLegacyReservation(paymentIntentStatus) {
 module.exports = {
     CONTAINMENT_CODE,
     CONTROL_PATH,
-    DESTRUCTIVE_MAINTENANCE_ACTIONS,
     V2_HANDLER_REQUIRED_CODE,
     assertLegacyOrderDocument,
     assertLegacyMutationBlocked,

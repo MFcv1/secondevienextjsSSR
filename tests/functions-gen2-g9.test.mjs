@@ -64,12 +64,12 @@ function createFakeDb() {
   };
 }
 
-test('G9 exposes exactly 24 parallel Gen2 targets and preserves every Gen1', () => {
+test('G9 exposes exactly 24 Gen2 targets after retirement of every matching Gen1', () => {
   const exported = require(path.join(ROOT, 'functions/index.js'));
-  assert.equal(Object.keys(exported).length, 275);
+  assert.equal(Object.keys(exported).length, 140);
   assert.equal(LOGICAL.length, 24);
   for (const name of LOGICAL) {
-    assert.equal(typeof exported[name], 'function', `${name} Gen1 absente`);
+    assert.equal(exported[name], undefined, `${name} Gen1 encore exportee`);
     assert.equal(typeof exported[`${name}Gen2`], 'function', `${name}Gen2 absente`);
     assert.equal(waveFor(`${name}Gen2`, 'MIGRATION_PARALLEL'), 'G9');
   }
@@ -77,10 +77,10 @@ test('G9 exposes exactly 24 parallel Gen2 targets and preserves every Gen1', () 
 
 test('G9 inventory counts are recalculated from the complete source set', () => {
   const exports = extractLocalExports(ROOT);
-  assert.equal(exports.length, 275);
-  assert.equal(EXPECTED_CURRENT_SOURCE_COUNT, 275);
-  assert.equal(EXPECTED_CURRENT_CLOUD_COUNT, 270);
-  assert.equal(PARALLEL_MIGRATION_EXPORTS.size, 118);
+  assert.equal(exports.length, 140);
+  assert.equal(EXPECTED_CURRENT_SOURCE_COUNT, 140);
+  assert.equal(EXPECTED_CURRENT_CLOUD_COUNT, 137);
+  assert.equal(PARALLEL_MIGRATION_EXPORTS.size, 119);
   assert.deepEqual(
     exports.filter(({ name }) => name.endsWith('Gen2') && !PARALLEL_MIGRATION_EXPORTS.has(name)),
     []

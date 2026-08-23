@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "codebase": "main",
+    "environment": "sandbox",
+    "wave": "G12-B:maintenance/destructives-G11",
+    "entryHead": "2c663e4834dcd9b5ee770d9d84001bd4b671b172",
+    "authorizedAt": "2026-08-22T22:45:38Z",
+    "sourceCountBefore": 276,
+    "sourceCountAfter": 266,
+    "cloudCount": 263,
+    "gen1CloudCount": 129,
+    "gen2CloudCount": 134,
+    "status": "G12_B_MAINTENANCE_CLOSED"
+  },
+  "authorization": {
+    "formalUserApproval": true,
+    "rollbackWindowExpiredImmediatelyByApproval": true,
+    "sandboxOnly": true,
+    "cohort": "maintenance/destructives-G11",
+    "productionAllowed": false,
+    "stripeLiveAllowed": false,
+    "globalDeployAllowed": false,
+    "dataDestructionAllowed": false,
+    "g13Allowed": false
+  },
+  "dependencies": {
+    "exactNames": [
+      "deleteSession",
+      "getUploadUrl",
+      "purgeAllProducts",
+      "purgeAnonymousUsers",
+      "resetAllOrders",
+      "resetAllStats",
+      "resetAllUsers",
+      "runGarbageCollector",
+      "clearAllAffiliateClicks",
+      "clearAllSessions"
+    ],
+    "activeCallers": [],
+    "cloudFunctionsStillPresent": [],
+    "dedicatedIamBindings": [],
+    "dedicatedRuntimeServiceAccounts": [],
+    "dedicatedBuildServiceAccounts": [],
+    "secretVersions": [],
+    "sharedResourcesPreserved": [
+      "231220287936-compute@developer.gserviceaccount.com",
+      "secondevienextjsssr@appspot.gserviceaccount.com",
+      "functions/src/commerce/legacyContainment.js"
+    ]
+  },
+  "sourceCleanup": {
+    "deletedFiles": ["functions/src/maintenance/tools.js"],
+    "updatedFiles": [
+      "functions/index.js",
+      "functions/src/analytics/sessions.js",
+      "functions/src/commerce/legacyContainment.js",
+      "src/kit/admin/AdminDashboard.jsx",
+      "scripts/functions-gen2-inventory.mjs"
+    ],
+    "removedExports": 10,
+    "deleteSessionGen2Preserved": true,
+    "deadAdminDashboardCallersRemoved": true,
+    "globalAnalyticsPurgeCallersRemoved": true
+  },
+  "cloudCleanup": {
+    "iamBindingsDeleted": 0,
+    "serviceAccountsDeleted": 0,
+    "secretVersionsDestroyed": 0,
+    "reason": "the cohort had no secrets or dedicated identities; function-scoped IAM disappeared with G12-A and shared project identities remain in scope for other Functions",
+    "functionsDeployed": 0,
+    "appHostingBuildsCreated": 0,
+    "dataMutations": 0
+  },
+  "forensicPreservation": {
+    "g11Manifest": "apphostingaudit/manifests/functions-gen2-g11.json",
+    "g12aManifest": "apphostingaudit/manifests/functions-gen2-g12a-maintenance.json",
+    "rollbackManifest": "apphostingaudit/manifests/functions-gen2-g12a-maintenance-rollback.json",
+    "rollbackArchiveRetainedAsHistoricalEvidence": true
+  },
+  "validation": {
+    "sourceExports": 266,
+    "expectedSourceExports": 266,
+    "cloudFunctions": 263,
+    "expectedCloudFunctions": 263,
+    "retiredNamesStillExported": [],
+    "retiredNamesStillInCloud": [],
+    "deleteSessionGen2Retained": true,
+    "authTriggersRemoved": 0,
+    "dataDestroyed": false,
+    "status": "PASS"
+  },
+  "next": {
+    "maintenanceCohort": "CLOSED_G12_A_AND_G12_B",
+    "otherG12Cohorts": "REQUIRE_DISTINCT_AUTHORIZATION",
+    "g13": "NOT_OPENED"
+  }
+}

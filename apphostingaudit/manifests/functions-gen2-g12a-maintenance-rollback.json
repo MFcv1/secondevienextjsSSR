@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "environment": "sandbox",
+    "wave": "G12-A:maintenance/destructives-G11",
+    "preparedFromHead": "2c663e4834dcd9b5ee770d9d84001bd4b671b172",
+    "preparedAt": "2026-08-22T22:11:22Z",
+    "status": "WINDOW_EXPIRED_BY_FORMAL_APPROVAL"
+  },
+  "sourceArchive": {
+    "uri": "gs://gcf-v2-sources-231220287936-europe-west1/g11/6ba72b5a9a065d5bf458b6d32826805b4e39e0824248f829989797299a28c2df/function-source.zip",
+    "sha256": "6ba72b5a9a065d5bf458b6d32826805b4e39e0824248f829989797299a28c2df",
+    "generation": "1787410366615461",
+    "size": 389002,
+    "digestVerifiedAt": "2026-08-22T22:11:22Z",
+    "containsAllTenGen1Exports": true
+  },
+  "appHosting": {
+    "rollbackBuild": "build-2026-08-22-002",
+    "activeBuild": "build-2026-08-22-003",
+    "rollbackRollout": "g12a-rollback-20260822-001",
+    "rollbackState": "SUCCEEDED",
+    "rollbackCompletedAt": "2026-08-22T22:00:46.034436Z",
+    "reactivationRollout": "g12a-reactivate-20260822-001",
+    "reactivationState": "SUCCEEDED",
+    "reactivationCompletedAt": "2026-08-22T22:05:51.700559Z"
+  },
+  "commonConfiguration": {
+    "generation": 1,
+    "region": "europe-west1",
+    "runtime": "nodejs22",
+    "trigger": "https",
+    "ingress": "ALLOW_ALL",
+    "runtimeServiceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+    "iam": [
+      {
+        "role": "roles/cloudfunctions.invoker",
+        "members": ["allUsers"]
+      }
+    ],
+    "labels": {
+      "deployment-callable": "true",
+      "deployment-tool": "cli-firebase",
+      "firebase-functions-codebase": "main",
+      "firebase-functions-hash": "c9846d0fc2b0f81430076edcd8440f48346aee06"
+    }
+  },
+  "functions": [
+    { "name": "deleteSession", "entryPoint": "deleteSession", "versionId": "11", "buildId": "a8406487-3daf-42f8-a7ed-9a7156e37359", "memoryMb": 256, "timeoutSeconds": 60 },
+    { "name": "getUploadUrl", "entryPoint": "getUploadUrl", "versionId": "6", "buildId": "49547df5-76d0-4fda-85be-b943f883cb00", "memoryMb": 256, "timeoutSeconds": 60 },
+    { "name": "purgeAllProducts", "entryPoint": "purgeAllProducts", "versionId": "7", "buildId": "9617bf90-561f-476a-ac25-5175ecdd1256", "memoryMb": 1024, "timeoutSeconds": 540 },
+    { "name": "purgeAnonymousUsers", "entryPoint": "purgeAnonymousUsers", "versionId": "7", "buildId": "9617bf90-561f-476a-ac25-5175ecdd1256", "memoryMb": 1024, "timeoutSeconds": 540 },
+    { "name": "resetAllOrders", "entryPoint": "resetAllOrders", "versionId": "7", "buildId": "f0d0aec9-bc0c-48cc-a67f-86d13a494e7f", "memoryMb": 256, "timeoutSeconds": 60 },
+    { "name": "resetAllStats", "entryPoint": "resetAllStats", "versionId": "8", "buildId": "f0d0aec9-bc0c-48cc-a67f-86d13a494e7f", "memoryMb": 256, "timeoutSeconds": 60 },
+    { "name": "resetAllUsers", "entryPoint": "resetAllUsers", "versionId": "7", "buildId": "6fa71193-a3dd-4c27-b1b2-51d6c8535bb3", "memoryMb": 1024, "timeoutSeconds": 540 },
+    { "name": "runGarbageCollector", "entryPoint": "runGarbageCollector", "versionId": "7", "buildId": "08691604-4786-48ee-a610-28147469985f", "memoryMb": 1024, "timeoutSeconds": 540 },
+    { "name": "clearAllAffiliateClicks", "entryPoint": "clearAllAffiliateClicks", "versionId": "7", "buildId": "4d10e96d-c6ef-4c21-8964-6209ab0ecaf2", "memoryMb": 256, "timeoutSeconds": 60 },
+    { "name": "clearAllSessions", "entryPoint": "clearAllSessions", "versionId": "10", "buildId": "4d10e96d-c6ef-4c21-8964-6209ab0ecaf2", "memoryMb": 256, "timeoutSeconds": 60 }
+  ],
+  "restoreProcedure": {
+    "scope": "redeploy exactly one missing Gen1 name at a time from sourceArchive, using its captured entryPoint, memory and timeout plus commonConfiguration",
+    "commandTemplate": "gcloud functions deploy <name> --project=secondevienextjsssr --region=europe-west1 --runtime=nodejs22 --source=<sourceArchive.uri> --entry-point=<entryPoint> --trigger-http --allow-unauthenticated --service-account=secondevienextjsssr@appspot.gserviceaccount.com --memory=<memoryMb>MB --timeout=<timeoutSeconds>s --ingress-settings=all",
+    "postRestore": [
+      "verify the single restored function is ACTIVE",
+      "verify roles/cloudfunctions.invoker still contains allUsers",
+      "if restoring a retired analytics UI caller, roll App Hosting back to build-2026-08-22-002",
+      "do not invoke any purge, reset, garbage collection or real-data deletion"
+    ]
+  },
+  "rollbackWindow": {
+    "start": "2026-08-22T22:15:02Z",
+    "expiresAt": "2026-08-22T22:45:38Z",
+    "status": "EXPIRED_BY_FORMAL_APPROVAL",
+    "formalApprovalRecordedAt": "2026-08-22T22:45:38Z",
+    "g12BAllowed": true,
+    "g12BCondition": "satisfied by distinct formal user approval"
+  },
+  "forbidden": [
+    "production",
+    "Stripe live",
+    "global Functions deploy",
+    "data destruction",
+    "IAM removal",
+    "secret removal",
+    "source-code removal",
+    "Auth trigger removal",
+    "G12-B",
+    "G13"
+  ]
+}

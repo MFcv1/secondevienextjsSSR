@@ -301,10 +301,7 @@ test('aucun moteur catalogue legacy ne subsiste dans le code executable', () => 
   ].join('\n');
   assert.doesNotMatch(executable, /publicCatalog|PUBLIC_CATALOG_SOURCE|snapshot_canary|x-catalog-canary|functions-public/);
   assert.match(read('functions/src/catalog/catalogReconciler.js'), /if \(!impactPlan && !pendingPlanDeclared\)/);
-  assert.doesNotMatch(
-    read('scripts/e2e-hosted-stripe-checkout.mjs'),
-    /firestore\.googleapis\.com\/v1\/projects\/[^/]+\/databases\/\(default\)\/documents\/artifacts\/[^/]+\/public\/data\/furniture/,
-  );
+  assert.equal(fs.existsSync(path.join(root, 'scripts/e2e-hosted-stripe-checkout.mjs')), false);
   const createOrder = read('functions/src/commerce/createOrder.js');
   assert.match(createOrder, /reason: 'price_changed'/);
   assert.equal((createOrder.match(/itemDb\.status !== 'published'/g) || []).length, 2);

@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "gate": "G12-A:analytics-g4",
+  "status": "CLOSED",
+  "exactNames": [
+    "initLiveSession",
+    "syncSession",
+    "syncSessionBeacon",
+    "trackAdminIP",
+    "updateUserSessions"
+  ],
+  "deletion": {
+    "mode": "INDIVIDUAL_ALLOWLISTED",
+    "firstAt": "2026-08-22T23:28:37.351Z",
+    "finishedAt": "2026-08-22T23:28:58.495Z",
+    "completed": 5,
+    "failures": 0
+  },
+  "preconditions": {
+    "gen2OwnersActive": true,
+    "archiveDigestVerified": true,
+    "callersCutOver": true,
+    "trafficChecked": true,
+    "quietWindow": {
+      "start": "2026-08-22T23:22:55Z",
+      "end": "2026-08-22T23:28:06Z",
+      "seconds": 311,
+      "requiredBundleTtlSeconds": 300,
+      "legacyEntries": 0,
+      "status": "PASS"
+    },
+    "appHosting": {
+      "appHostingBuild": "build-2026-08-22-003",
+      "appHostingTrafficPercent": 100,
+      "schedulerGen2Enabled": 4,
+      "stripeTestGen2WebhooksEnabled": 2,
+      "stripeTestLegacyWebhooksEnabled": 0,
+      "newBuildRequired": false
+    }
+  },
+  "inventory": {
+    "before": {
+      "total": 256,
+      "gen1": 122,
+      "gen2": 134
+    },
+    "after": {
+      "total": 251,
+      "gen1": 117,
+      "gen2": 134
+    }
+  },
+  "rollbackManifest": "apphostingaudit/manifests/functions-gen2-g12a-analytics-g4-rollback.json",
+  "rollbackWindow": {
+    "openedAt": "2026-08-22T23:28:58.495Z",
+    "expiresAt": "2026-08-22T23:28:58.495Z",
+    "status": "EXPIRED_IMMEDIATELY_BY_EXPLICIT_USER_AUTHORIZATION"
+  },
+  "guarantees": {
+    "dataDestruction": false,
+    "productionTouched": false,
+    "stripeLiveTouched": false,
+    "authTriggersRemoved": false,
+    "iamOrSecretsRemoved": false
+  }
+}

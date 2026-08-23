@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "gate": "G12-A:auth-callables-g5",
+  "status": "CLOSED",
+  "exactNames": [
+    "addAdminUser",
+    "ensureAdminAccessRegistry",
+    "generatePasskeyAuthenticationOptions",
+    "generatePasskeyRegistrationOptions",
+    "logUserConnection",
+    "removeAdminUser",
+    "sendCustomerLoginOtp",
+    "sendGuestCheckoutOtp",
+    "syncSuperAdminClaim",
+    "verifyCustomerLoginOtp",
+    "verifyGuestCheckoutOtp",
+    "verifyPasskeyAuthentication",
+    "verifyPasskeyRegistration"
+  ],
+  "deletion": {
+    "mode": "INDIVIDUAL_ALLOWLISTED",
+    "firstAt": "2026-08-22T23:29:03.822Z",
+    "finishedAt": "2026-08-22T23:30:04.482Z",
+    "completed": 13,
+    "failures": 0
+  },
+  "preconditions": {
+    "gen2OwnersActive": true,
+    "archiveDigestVerified": true,
+    "callersCutOver": true,
+    "trafficChecked": true,
+    "quietWindow": {
+      "start": "2026-08-22T23:22:55Z",
+      "end": "2026-08-22T23:28:06Z",
+      "seconds": 311,
+      "requiredBundleTtlSeconds": 300,
+      "legacyEntries": 0,
+      "status": "PASS"
+    },
+    "appHosting": {
+      "appHostingBuild": "build-2026-08-22-003",
+      "appHostingTrafficPercent": 100,
+      "schedulerGen2Enabled": 4,
+      "stripeTestGen2WebhooksEnabled": 2,
+      "stripeTestLegacyWebhooksEnabled": 0,
+      "newBuildRequired": false
+    }
+  },
+  "inventory": {
+    "before": {
+      "total": 251,
+      "gen1": 117,
+      "gen2": 134
+    },
+    "after": {
+      "total": 238,
+      "gen1": 104,
+      "gen2": 134
+    }
+  },
+  "rollbackManifest": "apphostingaudit/manifests/functions-gen2-g12a-auth-callables-g5-rollback.json",
+  "rollbackWindow": {
+    "openedAt": "2026-08-22T23:30:04.482Z",
+    "expiresAt": "2026-08-22T23:30:04.482Z",
+    "status": "EXPIRED_IMMEDIATELY_BY_EXPLICIT_USER_AUTHORIZATION"
+  },
+  "guarantees": {
+    "dataDestruction": false,
+    "productionTouched": false,
+    "stripeLiveTouched": false,
+    "authTriggersRemoved": false,
+    "iamOrSecretsRemoved": false
+  }
+}

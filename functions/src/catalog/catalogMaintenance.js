@@ -46,6 +46,11 @@ const CATALOG_MAINTENANCE_GEN2_RUNTIME = Object.freeze({
     serviceAccount: CATALOG_BUILDER_SERVICE_ACCOUNT,
     enforceAppCheck: true
 });
+const CATALOG_STATUS_GEN2_RUNTIME = Object.freeze({
+    ...CATALOG_MAINTENANCE_GEN2_RUNTIME,
+    maxInstances: 2,
+    timeoutSeconds: 60
+});
 
 const bucket = () => admin.storage().bucket(CATALOG_SNAPSHOT_BUCKET);
 
@@ -460,7 +465,7 @@ module.exports = {
     checkedPublicPointer,
     getCatalogPublicationStatus,
     getCatalogPublicationStatusGen2: onCall(
-        { ...CATALOG_MAINTENANCE_GEN2_RUNTIME, timeoutSeconds: 60 },
+        CATALOG_STATUS_GEN2_RUNTIME,
         async (request) => getCatalogPublicationStatus.run(request.data, request)
     ),
     rebuildCatalogSnapshot,

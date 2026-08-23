@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "environment": "sandbox",
+    "wave": "G12-A:G3",
+    "preparedFromHead": "2c663e4834dcd9b5ee770d9d84001bd4b671b172",
+    "preparedAt": "2026-08-22T23:04:38Z",
+    "status": "WINDOW_EXPIRED_BY_FORMAL_APPROVAL"
+  },
+  "sourceArchive": {
+    "uri": "gs://gcf-v2-sources-231220287936-europe-west1/g11/6ba72b5a9a065d5bf458b6d32826805b4e39e0824248f829989797299a28c2df/function-source.zip",
+    "sha256": "6ba72b5a9a065d5bf458b6d32826805b4e39e0824248f829989797299a28c2df",
+    "generation": "1787410366615461",
+    "size": 389002,
+    "digestVerifiedAt": "2026-08-22T22:57:18Z",
+    "containsAllSixGen1Exports": true
+  },
+  "commonConfiguration": {
+    "generation": 1,
+    "runtime": "nodejs22",
+    "trigger": "https",
+    "ingress": "ALLOW_ALL",
+    "runtimeServiceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+    "iam": [{ "role": "roles/cloudfunctions.invoker", "members": ["allUsers"] }]
+  },
+  "functions": [
+    { "name": "e2eCheckoutProof", "region": "us-central1", "entryPoint": "e2eCheckoutProof", "versionId": "19", "memoryMb": 256, "timeoutSeconds": 60, "secrets": ["STRIPE_SECRET_KEY:4", "E2E_PROOF_TOKEN:2"] },
+    { "name": "e2eStripeHardeningProof", "region": "us-central1", "entryPoint": "e2eStripeHardeningProof", "versionId": "17", "memoryMb": 512, "timeoutSeconds": 180, "secrets": ["STRIPE_SECRET_KEY:4", "E2E_PROOF_TOKEN:2"] },
+    { "name": "getProductPublicationSessionAdmin", "region": "europe-west1", "entryPoint": "getProductPublicationSessionAdmin", "versionId": "4", "memoryMb": 256, "timeoutSeconds": 60, "secrets": [] },
+    { "name": "reportProductPublicationClientErrorAdmin", "region": "europe-west1", "entryPoint": "reportProductPublicationClientErrorAdmin", "versionId": "3", "memoryMb": 256, "timeoutSeconds": 60, "secrets": [] },
+    { "name": "retryProductPublicationFinalizationAdmin", "region": "europe-west1", "entryPoint": "retryProductPublicationFinalizationAdmin", "versionId": "4", "memoryMb": 512, "timeoutSeconds": 120, "secrets": [] },
+    { "name": "startProductPublicationAdmin", "region": "europe-west1", "entryPoint": "startProductPublicationAdmin", "versionId": "4", "memoryMb": 512, "timeoutSeconds": 120, "secrets": [] }
+  ],
+  "restoreProcedure": {
+    "scope": "redeploy exactly one missing Gen1 name at a time from sourceArchive",
+    "commandTemplate": "gcloud functions deploy <name> --project=secondevienextjsssr --region=<region> --runtime=nodejs22 --source=<sourceArchive.uri> --entry-point=<entryPoint> --trigger-http --allow-unauthenticated --service-account=secondevienextjsssr@appspot.gserviceaccount.com --memory=<memoryMb>MB --timeout=<timeoutSeconds>s --ingress-settings=all",
+    "diagnosticSecretSuffix": "for e2eCheckoutProof or e2eStripeHardeningProof only, append --set-secrets=STRIPE_SECRET_KEY=STRIPE_SECRET_KEY:4,E2E_PROOF_TOKEN=E2E_PROOF_TOKEN:2",
+    "postRestore": [
+      "verify only the restored function is ACTIVE",
+      "verify roles/cloudfunctions.invoker contains allUsers",
+      "do not run either quarantined Stripe proof command",
+      "do not invoke any restored handler against real data"
+    ]
+  },
+  "rollbackWindow": {
+    "start": "2026-08-22T23:06:13Z",
+    "expiresAt": "2026-08-22T23:10:40Z",
+    "status": "EXPIRED_BY_FORMAL_APPROVAL",
+    "formalApprovalRecordedAt": "2026-08-22T23:10:40Z",
+    "g12BAllowed": true,
+    "g12BCondition": "satisfied by the user's distinct instruction to continue and finish implementation"
+  },
+  "forbidden": ["production", "Stripe live", "global Functions deploy", "data destruction", "IAM removal", "secret removal", "source-code removal", "Auth trigger removal", "G12-B:G3", "G13"]
+}

@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "gate": "G12-A:REMAINING",
+  "status": "CLOSED",
+  "startedAt": "2026-08-22T23:28:26.440Z",
+  "finishedAt": "2026-08-22T23:39:33.004Z",
+  "cohorts": [
+    {
+      "cohort": "readers-g5-a1",
+      "closeoutFile": "functions-gen2-g12a-readers-g5-a1.json",
+      "rollbackFile": "functions-gen2-g12a-readers-g5-a1-rollback.json",
+      "names": 1,
+      "inventoryAfter": {
+        "total": 256,
+        "gen1": 122,
+        "gen2": 134
+      }
+    },
+    {
+      "cohort": "analytics-g4",
+      "closeoutFile": "functions-gen2-g12a-analytics-g4.json",
+      "rollbackFile": "functions-gen2-g12a-analytics-g4-rollback.json",
+      "names": 5,
+      "inventoryAfter": {
+        "total": 251,
+        "gen1": 117,
+        "gen2": 134
+      }
+    },
+    {
+      "cohort": "auth-callables-g5",
+      "closeoutFile": "functions-gen2-g12a-auth-callables-g5.json",
+      "rollbackFile": "functions-gen2-g12a-auth-callables-g5-rollback.json",
+      "names": 13,
+      "inventoryAfter": {
+        "total": 238,
+        "gen1": 104,
+        "gen2": 134
+      }
+    },
+    {
+      "cohort": "content-admin-g6",
+      "closeoutFile": "functions-gen2-g12a-content-admin-g6.json",
+      "rollbackFile": "functions-gen2-g12a-content-admin-g6-rollback.json",
+      "names": 24,
+      "inventoryAfter": {
+        "total": 214,
+        "gen1": 80,
+        "gen2": 134
+      }
+    },
+    {
+      "cohort": "meta-g7",
+      "closeoutFile": "functions-gen2-g12a-meta-g7.json",
+      "rollbackFile": "functions-gen2-g12a-meta-g7-rollback.json",
+      "names": 9,
+      "inventoryAfter": {
+        "total": 205,
+        "gen1": 71,
+        "gen2": 134
+      }
+    },
+    {
+      "cohort": "commerce-g8",
+      "closeoutFile": "functions-gen2-g12a-commerce-g8.json",
+      "rollbackFile": "functions-gen2-g12a-commerce-g8-rollback.json",
+      "names": 40,
+      "inventoryAfter": {
+        "total": 165,
+        "gen1": 31,
+        "gen2": 134
+      }
+    },
+    {
+      "cohort": "schedulers-g9",
+      "closeoutFile": "functions-gen2-g12a-schedulers-g9.json",
+      "rollbackFile": "functions-gen2-g12a-schedulers-g9-rollback.json",
+      "names": 4,
+      "inventoryAfter": {
+        "total": 161,
+        "gen1": 27,
+        "gen2": 134
+      }
+    },
+    {
+      "cohort": "finance-g9",
+      "closeoutFile": "functions-gen2-g12a-finance-g9.json",
+      "rollbackFile": "functions-gen2-g12a-finance-g9-rollback.json",
+      "names": 20,
+      "inventoryAfter": {
+        "total": 141,
+        "gen1": 7,
+        "gen2": 134
+      }
+    },
+    {
+      "cohort": "webhooks-g10",
+      "closeoutFile": "functions-gen2-g12a-webhooks-g10.json",
+      "rollbackFile": "functions-gen2-g12a-webhooks-g10-rollback.json",
+      "names": 4,
+      "inventoryAfter": {
+        "total": 137,
+        "gen1": 3,
+        "gen2": 134
+      }
+    }
+  ],
+  "inventory": {
+    "before": {
+      "total": 257,
+      "gen1": 123,
+      "gen2": 134
+    },
+    "after": {
+      "total": 137,
+      "gen1": 3,
+      "gen2": 134
+    }
+  },
+  "protectedGen1Remaining": [
+    "grantAdminOnAuth",
+    "onRegisteredUserCreated",
+    "onRegisteredUserDeleted"
+  ]
+}

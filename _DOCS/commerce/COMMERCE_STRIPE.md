@@ -439,10 +439,10 @@ src/kit/commerce/CheckoutPaymentStep.jsx
 src/kit/commerce/purchasability.js
 functions/src/commerce/createOrder.js
 functions/src/commerce/legacyContainment.js
-functions/src/commerce/stripeWebhook.js
+functions/src/commerce/v2Webhooks.js
 functions/src/commerce/stripeConnect.js
-functions/src/commerce/cancelOrder.js
-functions/src/commerce/refundOrder.js
+functions/src/commerce/v2Cancellation.js
+functions/src/commerce/v2RefundCommands.js
 functions/src/commerce/orderStatus.js
 functions/src/commerce/domain/refundEffectApplier.js
 src/kit/admin/AdminOrders.jsx

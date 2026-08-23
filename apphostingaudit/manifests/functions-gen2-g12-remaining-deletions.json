@@ -1,0 +1,730 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "startedAt": "2026-08-22T23:28:26.440Z",
+  "completed": [
+    {
+      "name": "getUserStats",
+      "cohort": "readers-g5-a1",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:28:31.946Z"
+    },
+    {
+      "name": "initLiveSession",
+      "cohort": "analytics-g4",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:28:37.351Z"
+    },
+    {
+      "name": "syncSession",
+      "cohort": "analytics-g4",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:28:42.560Z"
+    },
+    {
+      "name": "syncSessionBeacon",
+      "cohort": "analytics-g4",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:28:47.453Z"
+    },
+    {
+      "name": "trackAdminIP",
+      "cohort": "analytics-g4",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:28:53.466Z"
+    },
+    {
+      "name": "updateUserSessions",
+      "cohort": "analytics-g4",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:28:58.495Z"
+    },
+    {
+      "name": "addAdminUser",
+      "cohort": "auth-callables-g5",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:29:03.822Z"
+    },
+    {
+      "name": "ensureAdminAccessRegistry",
+      "cohort": "auth-callables-g5",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:29:08.577Z"
+    },
+    {
+      "name": "generatePasskeyAuthenticationOptions",
+      "cohort": "auth-callables-g5",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:29:13.365Z"
+    },
+    {
+      "name": "generatePasskeyRegistrationOptions",
+      "cohort": "auth-callables-g5",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:29:18.184Z"
+    },
+    {
+      "name": "logUserConnection",
+      "cohort": "auth-callables-g5",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:29:23.086Z"
+    },
+    {
+      "name": "removeAdminUser",
+      "cohort": "auth-callables-g5",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:29:27.988Z"
+    },
+    {
+      "name": "sendCustomerLoginOtp",
+      "cohort": "auth-callables-g5",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:29:32.624Z"
+    },
+    {
+      "name": "sendGuestCheckoutOtp",
+      "cohort": "auth-callables-g5",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:29:38.095Z"
+    },
+    {
+      "name": "syncSuperAdminClaim",
+      "cohort": "auth-callables-g5",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:29:43.743Z"
+    },
+    {
+      "name": "verifyCustomerLoginOtp",
+      "cohort": "auth-callables-g5",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:29:49.468Z"
+    },
+    {
+      "name": "verifyGuestCheckoutOtp",
+      "cohort": "auth-callables-g5",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:29:53.954Z"
+    },
+    {
+      "name": "verifyPasskeyAuthentication",
+      "cohort": "auth-callables-g5",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:29:58.954Z"
+    },
+    {
+      "name": "verifyPasskeyRegistration",
+      "cohort": "auth-callables-g5",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:30:04.482Z"
+    },
+    {
+      "name": "claimNewsletterReward",
+      "cohort": "content-admin-g6",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:30:08.966Z"
+    },
+    {
+      "name": "completeBillingGuideAdmin",
+      "cohort": "content-admin-g6",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:30:13.244Z"
+    },
+    {
+      "name": "createQuoteRequest",
+      "cohort": "content-admin-g6",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:30:17.930Z"
+    },
+    {
+      "name": "drawNewsletterReward",
+      "cohort": "content-admin-g6",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:30:22.811Z"
+    },
+    {
+      "name": "finalizeQuoteRequest",
+      "cohort": "content-admin-g6",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:30:28.298Z"
+    },
+    {
+      "name": "getBillingGuideOperatorStatus",
+      "cohort": "content-admin-g6",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:30:32.986Z"
+    },
+    {
+      "name": "getBillingGuideStatus",
+      "cohort": "content-admin-g6",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:30:38.300Z"
+    },
+    {
+      "name": "getCatalogPublicationStatus",
+      "cohort": "content-admin-g6",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:30:43.419Z"
+    },
+    {
+      "name": "getManualInvoiceWorkspaceAdmin",
+      "cohort": "content-admin-g6",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:30:49.076Z"
+    },
+    {
+      "name": "getQuoteRequestAdmin",
+      "cohort": "content-admin-g6",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:30:53.914Z"
+    },
+    {
+      "name": "listMyNewsletterRewards",
+      "cohort": "content-admin-g6",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:30:58.396Z"
+    },
+    {
+      "name": "listQuoteRequestsAdmin",
+      "cohort": "content-admin-g6",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:31:03.495Z"
+    },
+    {
+      "name": "onQuoteRequestSubmitted",
+      "cohort": "content-admin-g6",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:31:24.777Z"
+    },
+    {
+      "name": "prepareManualInvoicePdfAdmin",
+      "cohort": "content-admin-g6",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:31:29.087Z"
+    },
+    {
+      "name": "rebuildCatalogSnapshot",
+      "cohort": "content-admin-g6",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:31:34.195Z"
+    },
+    {
+      "name": "resetBillingGuideTest",
+      "cohort": "content-admin-g6",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:31:39.876Z"
+    },
+    {
+      "name": "rollbackCatalogSnapshot",
+      "cohort": "content-admin-g6",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:31:44.835Z"
+    },
+    {
+      "name": "saveBillingGuideProgress",
+      "cohort": "content-admin-g6",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:31:49.610Z"
+    },
+    {
+      "name": "saveManualInvoiceDraftAdmin",
+      "cohort": "content-admin-g6",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:31:54.706Z"
+    },
+    {
+      "name": "sendManualInvoiceAdmin",
+      "cohort": "content-admin-g6",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:31:59.238Z"
+    },
+    {
+      "name": "sendRefundStatusEmailAdmin",
+      "cohort": "content-admin-g6",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:32:04.696Z"
+    },
+    {
+      "name": "sendTestEmail",
+      "cohort": "content-admin-g6",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:32:09.514Z"
+    },
+    {
+      "name": "updateQuoteRequestAdmin",
+      "cohort": "content-admin-g6",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:32:14.713Z"
+    },
+    {
+      "name": "uploadQuoteRequestPhoto",
+      "cohort": "content-admin-g6",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:32:19.763Z"
+    },
+    {
+      "name": "disconnectMetaConnectionAdmin",
+      "cohort": "meta-g7",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:32:25.378Z"
+    },
+    {
+      "name": "getMetaConnectionStatusAdmin",
+      "cohort": "meta-g7",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:32:30.312Z"
+    },
+    {
+      "name": "getSocialPublicationStatusAdmin",
+      "cohort": "meta-g7",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:32:35.835Z"
+    },
+    {
+      "name": "metaOAuthCallback",
+      "cohort": "meta-g7",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:32:41.243Z"
+    },
+    {
+      "name": "prepareSocialPublicationAdmin",
+      "cohort": "meta-g7",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:32:45.981Z"
+    },
+    {
+      "name": "runSocialPublicationAdmin",
+      "cohort": "meta-g7",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:32:50.894Z"
+    },
+    {
+      "name": "selectMetaAssetAdmin",
+      "cohort": "meta-g7",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:32:56.147Z"
+    },
+    {
+      "name": "startMetaOAuthAdmin",
+      "cohort": "meta-g7",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:33:01.047Z"
+    },
+    {
+      "name": "verifyMetaConnectionAdmin",
+      "cohort": "meta-g7",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:33:05.508Z"
+    },
+    {
+      "name": "adjustInventoryAdmin",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:33:09.892Z"
+    },
+    {
+      "name": "archiveOrderAdmin",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:33:15.336Z"
+    },
+    {
+      "name": "cancelOrderClient",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:33:20.213Z"
+    },
+    {
+      "name": "cancelReturnAdmin",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:33:25.178Z"
+    },
+    {
+      "name": "createOrder",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:33:30.464Z"
+    },
+    {
+      "name": "createProductAdmin",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:33:34.981Z"
+    },
+    {
+      "name": "createPromotionCodeAdmin",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:33:40.048Z"
+    },
+    {
+      "name": "createPublishedProductAdmin",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:33:44.812Z"
+    },
+    {
+      "name": "decideCustomerReturnRequestAdmin",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:33:49.313Z"
+    },
+    {
+      "name": "deleteProductAdmin",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:33:53.598Z"
+    },
+    {
+      "name": "getDeliveryPolicyAdmin",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:33:58.947Z"
+    },
+    {
+      "name": "getOrderStatusClient",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:34:03.621Z"
+    },
+    {
+      "name": "getOrderTimelineAdminV2",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:34:08.043Z"
+    },
+    {
+      "name": "listCustomerReturnRequestsAdminV2",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:34:13.007Z"
+    },
+    {
+      "name": "listMyOrdersV2",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:34:17.598Z"
+    },
+    {
+      "name": "listOrdersAdminV2",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:34:23.142Z"
+    },
+    {
+      "name": "listPromotionCodesAdmin",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:34:27.761Z"
+    },
+    {
+      "name": "listReturnsAdminV2",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:34:33.115Z"
+    },
+    {
+      "name": "markOrderDeliveredAdmin",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:34:37.598Z"
+    },
+    {
+      "name": "markOrderPickedUpAdmin",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:34:41.874Z"
+    },
+    {
+      "name": "markOrderPreparingAdmin",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:34:46.806Z"
+    },
+    {
+      "name": "markOrderReadyForPickupAdmin",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:34:51.140Z"
+    },
+    {
+      "name": "markOrderShippedAdmin",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:34:55.796Z"
+    },
+    {
+      "name": "markReturnReceivedAdmin",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:35:00.614Z"
+    },
+    {
+      "name": "openReturnAdmin",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:35:05.460Z"
+    },
+    {
+      "name": "preflightProductMutationAdmin",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:35:09.816Z"
+    },
+    {
+      "name": "prepareCommerceDocumentDelivery",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:35:15.035Z"
+    },
+    {
+      "name": "previewPromotionCodeV2",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:35:20.796Z"
+    },
+    {
+      "name": "publishProductAdmin",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:35:26.315Z"
+    },
+    {
+      "name": "refundOrderAdmin",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:35:31.071Z"
+    },
+    {
+      "name": "requestCustomerReturn",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:35:35.767Z"
+    },
+    {
+      "name": "requestOrderCancellation",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:35:43.055Z"
+    },
+    {
+      "name": "resolveReturnAdmin",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:35:48.214Z"
+    },
+    {
+      "name": "restockReturnLinesAdmin",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:35:52.533Z"
+    },
+    {
+      "name": "saveDeliveryPolicyAdmin",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:35:57.716Z"
+    },
+    {
+      "name": "setPromotionCodeStatusAdmin",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:36:02.646Z"
+    },
+    {
+      "name": "syncRefundStatusAdmin",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:36:08.221Z"
+    },
+    {
+      "name": "updateOrderTrackingAdmin",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:36:15.500Z"
+    },
+    {
+      "name": "updateProductOfferAdmin",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:36:25.257Z"
+    },
+    {
+      "name": "writeOffReturnLinesAdmin",
+      "cohort": "commerce-g8",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:36:34.121Z"
+    },
+    {
+      "name": "commerceOperationsReconciler",
+      "cohort": "schedulers-g9",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:36:50.169Z"
+    },
+    {
+      "name": "commerceOutboxDispatcher",
+      "cohort": "schedulers-g9",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:37:04.368Z"
+    },
+    {
+      "name": "commerceReservationExpiryDispatcher",
+      "cohort": "schedulers-g9",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:37:19.921Z"
+    },
+    {
+      "name": "expireAdminPaymentLinks",
+      "cohort": "schedulers-g9",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:37:31.047Z"
+    },
+    {
+      "name": "cancelAdminPaymentLink",
+      "cohort": "finance-g9",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:37:37.837Z"
+    },
+    {
+      "name": "cleanupFixtureRunAdmin",
+      "cohort": "finance-g9",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:37:42.705Z"
+    },
+    {
+      "name": "confirmStripeConnectReconnect",
+      "cohort": "finance-g9",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:37:47.135Z"
+    },
+    {
+      "name": "createAdminPaymentLink",
+      "cohort": "finance-g9",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:37:51.781Z"
+    },
+    {
+      "name": "createCheckoutV2",
+      "cohort": "finance-g9",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:37:57.311Z"
+    },
+    {
+      "name": "extendAdminPaymentLink",
+      "cohort": "finance-g9",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:38:02.271Z"
+    },
+    {
+      "name": "getAdminPaymentLinkPublic",
+      "cohort": "finance-g9",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:38:07.329Z"
+    },
+    {
+      "name": "getCommerceOperationsStatusAdmin",
+      "cohort": "finance-g9",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:38:12.684Z"
+    },
+    {
+      "name": "getStripeConnectStatus",
+      "cohort": "finance-g9",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:38:17.833Z"
+    },
+    {
+      "name": "listAdminPaymentLinks",
+      "cohort": "finance-g9",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:38:22.523Z"
+    },
+    {
+      "name": "prepareAdminPaymentLinkPayment",
+      "cohort": "finance-g9",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:38:27.838Z"
+    },
+    {
+      "name": "rebuildCommerceOperationsAdmin",
+      "cohort": "finance-g9",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:38:32.622Z"
+    },
+    {
+      "name": "recreateAdminPaymentLink",
+      "cohort": "finance-g9",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:38:36.872Z"
+    },
+    {
+      "name": "regenerateAdminPaymentLink",
+      "cohort": "finance-g9",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:38:42.086Z"
+    },
+    {
+      "name": "requestRefundAdmin",
+      "cohort": "finance-g9",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:38:47.234Z"
+    },
+    {
+      "name": "requestStripeConnectReconnect",
+      "cohort": "finance-g9",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:38:51.835Z"
+    },
+    {
+      "name": "resumeAdminPaymentLinkPayment",
+      "cohort": "finance-g9",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:38:57.216Z"
+    },
+    {
+      "name": "resumeCheckoutV2",
+      "cohort": "finance-g9",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:39:01.913Z"
+    },
+    {
+      "name": "startStripeConnectOnboarding",
+      "cohort": "finance-g9",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:39:06.599Z"
+    },
+    {
+      "name": "syncStripeConnectAccount",
+      "cohort": "finance-g9",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:39:11.085Z"
+    },
+    {
+      "name": "stripeConnectWebhook",
+      "cohort": "webhooks-g10",
+      "region": "us-central1",
+      "at": "2026-08-22T23:39:17.125Z"
+    },
+    {
+      "name": "stripeConnectWebhookV2",
+      "cohort": "webhooks-g10",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:39:22.219Z"
+    },
+    {
+      "name": "stripeWebhook",
+      "cohort": "webhooks-g10",
+      "region": "us-central1",
+      "at": "2026-08-22T23:39:28.218Z"
+    },
+    {
+      "name": "stripeWebhookV2",
+      "cohort": "webhooks-g10",
+      "region": "europe-west1",
+      "at": "2026-08-22T23:39:33.003Z"
+    }
+  ],
+  "failures": [],
+  "finishedAt": "2026-08-22T23:39:33.004Z",
+  "status": "COMPLETE"
+}

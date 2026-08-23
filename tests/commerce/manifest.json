@@ -13,10 +13,6 @@
         "control-off-or-unknown-cannot-reenable-commerce",
         "manual-and-deferred-orders-are-blocked",
         "ambiguous-payment-outcomes-never-release-stock",
-        "six-destructive-maintenance-actions-are-blocked",
-        "server-wiring-blocks-writers-before-effects",
-        "webhook-drainage-preserves-retryable-and-paid-orders",
-        "refund-confirmation-never-restocks-automatically",
         "commerce-ui-is-active-with-server-side-guards"
       ]
     },

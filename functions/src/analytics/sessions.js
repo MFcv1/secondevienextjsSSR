@@ -4,7 +4,7 @@
  * - initLiveSession: Crée une session avec geo-IP + détection admin IP
  * - syncSession: Met à jour le parcours
  * - syncSessionBeacon: Endpoint fiable pour fermeture de page
- * - deleteSession / clearAllSessions: Admin cleanup
+ * - deleteSessionGen2: targeted admin cleanup
  */
 const { functions, regionalFunctions } = require('../../helpers/runtime');
 const { onCall, onRequest } = require('firebase-functions/v2/https');
@@ -12,7 +12,6 @@ const admin = require('firebase-admin');
 const crypto = require('crypto');
 const { isAdminIP } = require('./adminIP');
 const { getClientIpInfo } = require('./ip');
-const { checkActiveStrongAdmin } = require('../../helpers/security');
 const { getSiteUrl } = require('../../helpers/config');
 const {
     canResumeSession,
@@ -437,15 +436,6 @@ exports.syncSessionBeaconGen2 = onRequest(
     syncSessionBeaconHandler
 );
 
-exports.deleteSession = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
-    await checkActiveStrongAdmin(context);
-    const { sessionId } = data;
-    if (!sessionId) throw new functions.https.HttpsError('invalid-argument', 'Missing sessionId');
-    await db.collection('analytics_sessions').doc(sessionId).delete();
-    sessionAuthorizationCache.remove(sessionId);
-    return { success: true };
-});
-
 const deleteSessionGen2Handler = createDeleteSessionHandler({
     authorizationCache: sessionAuthorizationCache
 });
@@ -454,58 +444,6 @@ exports.deleteSessionGen2 = onCall(
     ANALYTICS_CALLABLE_GEN2_RUNTIME,
     (request) => deleteSessionGen2Handler(request.data, request)
 );
-
-exports.clearAllSessions = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
-    await checkActiveStrongAdmin(context);
-    try {
-        const sessionsRef = db.collection('analytics_sessions');
-        let totalDeleted = 0;
-
-        while (true) {
-            const snapshot = await sessionsRef.limit(500).get();
-            if (snapshot.empty) break;
-
-            const batch = db.batch();
-            snapshot.docs.forEach(doc => batch.delete(doc.ref));
-            await batch.commit();
-            totalDeleted += snapshot.size;
-
-            if (snapshot.size < 500) break;
-        }
-
-        sessionAuthorizationCache.clear();
-
-        return { success: true, count: totalDeleted };
-    } catch (error) {
-        console.error("Clear All Error:", error);
-        throw new functions.https.HttpsError('internal', 'Clear failed');
-    }
-});
-
-exports.clearAllAffiliateClicks = regionalFunctions().runWith({ enforceAppCheck: true }).https.onCall(async (data, context) => {
-    await checkActiveStrongAdmin(context);
-    try {
-        const ref = db.collection('affiliate_clicks');
-        let totalDeleted = 0;
-
-        while (true) {
-            const snapshot = await ref.limit(500).get();
-            if (snapshot.empty) break;
-
-            const batch = db.batch();
-            snapshot.docs.forEach(doc => batch.delete(doc.ref));
-            await batch.commit();
-            totalDeleted += snapshot.size;
-
-            if (snapshot.size < 500) break;
-        }
-
-        return { success: true, count: totalDeleted };
-    } catch (error) {
-        console.error("Clear All Affiliate Clicks Error:", error);
-        throw new functions.https.HttpsError('internal', 'Clear failed');
-    }
-});
 
 exports.initLiveSessionHandler = initLiveSessionHandler;
 exports.syncSessionHandler = syncSessionHandler;

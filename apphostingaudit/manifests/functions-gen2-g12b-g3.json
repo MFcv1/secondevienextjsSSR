@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "environment": "sandbox",
+    "wave": "G12-B:G3",
+    "entryHead": "2c663e4834dcd9b5ee770d9d84001bd4b671b172",
+    "authorizedAt": "2026-08-22T23:10:40Z",
+    "status": "G12_B_G3_CLOSED"
+  },
+  "authorization": {
+    "distinctUserContinuation": true,
+    "rollbackWindowExpiredImmediatelyByApproval": true,
+    "sandboxOnly": true,
+    "sourceCleanupOnlyForExactG3Names": true,
+    "productionAllowed": false,
+    "stripeLiveAllowed": false,
+    "globalDeployAllowed": false,
+    "dataDestructionAllowed": false,
+    "secretDestructionAllowed": false,
+    "g13Allowed": false
+  },
+  "dependencies": {
+    "exactNames": [
+      "e2eCheckoutProof",
+      "e2eStripeHardeningProof",
+      "getProductPublicationSessionAdmin",
+      "reportProductPublicationClientErrorAdmin",
+      "retryProductPublicationFinalizationAdmin",
+      "startProductPublicationAdmin"
+    ],
+    "activeCloudFunctions": [],
+    "activeApplicationCallers": [],
+    "dedicatedIamBindings": [],
+    "dedicatedServiceAccounts": [],
+    "sharedResourcesPreserved": [
+      "secondevienextjsssr@appspot.gserviceaccount.com",
+      "STRIPE_SECRET_KEY",
+      "E2E_PROOF_TOKEN",
+      "processProductPublicationImage",
+      "cleanupProductPublicationSessions",
+      "reconcileProductPublicationSessions"
+    ]
+  },
+  "sourceCleanup": {
+    "sourceCountBefore": 266,
+    "sourceCountAfter": 260,
+    "removedExports": 6,
+    "deletedFiles": [
+      "functions/src/commerce/e2eCheckoutProof.js",
+      "functions/src/commerce/e2eStripeHardeningProof.js",
+      "scripts/e2e-hosted-stripe-checkout.mjs",
+      "scripts/e2e-refund-latest-stripe-order.mjs"
+    ],
+    "updatedFiles": [
+      "functions/index.js",
+      "functions/src/publication/productPublication.js",
+      "src/kit/admin/productPublicationClient.js",
+      "scripts/functions-gen2-inventory.mjs"
+    ],
+    "legacyCallableClientRemoved": true,
+    "pendingLocalPublicationCleanupPreserved": true,
+    "catalogPublicationPollingPreserved": true,
+    "gen2WorkersPreserved": 3
+  },
+  "cloudCleanup": {
+    "functionsDeleted": 0,
+    "iamBindingsDeleted": 0,
+    "serviceAccountsDeleted": 0,
+    "secretVersionsDestroyed": 0,
+    "functionsDeployed": 0,
+    "appHostingBuildsCreated": 0,
+    "dataMutations": 0,
+    "reason": "function-scoped IAM disappeared in G12-A; runtime identity and Stripe secret are shared, and secret destruction was not authorized"
+  },
+  "forensicPreservation": {
+    "g3DecisionManifest": "apphostingaudit/manifests/functions-gen2-g3-decisions.json",
+    "g12aManifest": "apphostingaudit/manifests/functions-gen2-g12a-g3.json",
+    "rollbackManifest": "apphostingaudit/manifests/functions-gen2-g12a-g3-rollback.json",
+    "rollbackArchiveRetained": true
+  },
+  "validation": {
+    "sourceExports": 260,
+    "expectedSourceExports": 260,
+    "cloudFunctions": 257,
+    "expectedCloudFunctions": 257,
+    "retiredNamesStillExported": [],
+    "retiredNamesStillInCloud": [],
+    "gen2WorkersRetained": true,
+    "authTriggersRemoved": 0,
+    "dataDestroyed": false,
+    "status": "PASS"
+  },
+  "next": {
+    "g3Cohort": "CLOSED_G12_A_AND_G12_B",
+    "otherG12Cohorts": "REQUIRE_EXACT_NAMED_AUTHORIZATION",
+    "g13": "NOT_OPENED"
+  }
+}

@@ -1,6 +1,6 @@
 # Infrastructure Firebase, Next.js et environnements
 
-Derniere mise a jour: 2026-08-17
+Derniere mise a jour: 2026-08-23
 Statut: `PREPROD_READY - PRODUCTION_DEFERRED`
 
 ## 1. Runtime et gestionnaire de paquets
@@ -169,6 +169,42 @@ Gen1 / 134 Gen2. App Hosting sert `build-2026-08-22-002` apres rollback reel
 vers `build-2026-08-22-001` et reactivation. La probe est dry-run, sans ecriture
 ni suppression; aucun Gen1, IAM ou secret n'a ete retire. Le manifeste final
 est `apphostingaudit/manifests/functions-gen2-g11.json`.
+La cohorte `G12-A:maintenance/destructives-G11` et son nettoyage G12-B sont
+fermes avec 266 exports locaux, 263 Functions cloud, 129 Gen1 et 134 Gen2. App Hosting sert
+`build-2026-08-22-003` apres rollback reel vers `build-2026-08-22-002` et
+reactivation. Les dix Gen1 G11 ont ete retirees une par une; les trois triggers
+Auth Gen1 restent intacts et les huit policies Monitoring sont actives. Aucun
+IAM, secret ou code Functions n'a ete retire pendant G12-A. L'archive de
+rollback G11 reste verifiee par SHA-256; sa fenetre a expire immediatement sur
+approbation formelle le `2026-08-22T22:45:38Z`. G12-B a retire les dix exports
+Gen1 et le module source exclusif. Aucun IAM ou secret dedie n'existait; les
+identites et ressources partagees restent intactes.
+La cohorte `G12-A:G3` ferme ensuite six retraits Gen1 supplementaires, repartis
+entre `us-central1` et `europe-west1`. L'inventaire G12-A devient 266 local / 257
+cloud / 123 Gen1 / 134 Gen2. App Hosting reste a 100 % sur
+`build-2026-08-22-003`; aucun build n'etait requis. Les versions de secrets,
+IAM, source redeployable et archive digestee sont preserves. La fenetre a
+expire immediatement sur approbation le `2026-08-22T23:10:40Z`; G12-B:G3 a
+retire le code exclusif sans mutation cloud. Inventaire final: 260 local / 257
+cloud / 123 Gen1 / 134 Gen2. Les secrets et identites partages restent intacts.
+
+La migration Gen2 sandbox est fermee le 2026-08-23 avec le statut
+`SANDBOX_GEN2_MIGRATED_AND_HARDENED`. Les neuf cohortes G12-A restantes ont
+retire individuellement 120 Gen1 et leurs fenetres de rollback ont expire sur
+l'autorisation utilisateur. G12-B a retire leurs exports et les trois modules
+commerce exclusivement legacy, sans retirer IAM, secret, donnee ou trigger
+Auth. L'inventaire final vaut 140 exports locaux / 137 Functions cloud / 3
+Gen1 / 134 Gen2. Les trois seules Gen1 sont `grantAdminOnAuth`,
+`onRegisteredUserCreated` et `onRegisteredUserDeleted`.
+
+G13 observe sept jours, huit policies Monitoring actives, un dashboard et
+aucun depassement quota. Le budget Billing reste non verifiable car l'API
+Budget est desactivee; aucun cout exact n'est affirme. Un seul tuning cible
+porte `getCatalogPublicationStatusGen2` de max 1 a max 2 en revision
+`getcatalogpublicationstatusgen2-00002-yoq`, avec rollback Storage versionne
+et digeste. La saturation restante du burst admin est acceptee comme plafond
+de cout; aucun second tuning, build App Hosting ou deploy global n'a lieu. La
+decision durable est dans `_DOCS/architecture/FUNCTIONS_RUNTIME_ADR.md`.
 G5-A1 ajoute
 `getUserStatsGen2`, ACTIVE en revision `getuserstatsgen2-00001-niv`, avec
 runtime `auth-reader-runtime`, CPU 167m, 512 MiB, 300 s, concurrence/max 1 et

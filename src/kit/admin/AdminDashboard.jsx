@@ -1075,22 +1075,6 @@ export const preloadAdminDashboardData = async ({ force = false } = {}) => {
 
 // ─── ADMIN DASHBOARD ───
 
-const LoadingProgress = ({ progress, text, darkMode }) => (
-    <div className="mt-6 flex flex-col items-center w-full space-y-3">
-        <div className={`w-full h-2 rounded-full overflow-hidden ${darkMode ? 'bg-white/10' : 'bg-stone-100'}`}>
-            <div
-                className="h-full origin-left rounded-full bg-gradient-to-r from-red-500 to-amber-500 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
-                style={{ transform: `scaleX(${Math.max(0, Math.min(progress, 100)) / 100})` }}
-            />
-        </div>
-        <div className={`text-[10px] font-black uppercase tracking-widest flex justify-between w-full ${darkMode ? 'text-white/60' : 'text-stone-500'}`}>
-            <span>{progress >= 100 ? 'Terminé !' : text || 'Opération en cours...'}</span>
-            <span>{Math.round(progress)}%</span>
-        </div>
-    </div>
-);
-
-
 const AdminDashboard = ({
     user,
     darkMode = false,
@@ -1116,7 +1100,7 @@ const AdminDashboard = ({
     const [intradayOrders, setIntradayOrders] = useState(null);
     const [intradayOrdersLoading, setIntradayOrdersLoading] = useState(false);
     const intradayRequestRef = useRef(false);
-    const [allOrders, setAllOrders] = useState(cachedCore?.allOrders || []);
+    const [, setAllOrders] = useState(cachedCore?.allOrders || []);
     const [dailySales, setDailySales] = useState(cachedCore?.dailySales || []);
     const [recentOrders, setRecentOrders] = useState(cachedCore?.recentOrders || []);
     const [statusCounts, setStatusCounts] = useState(
@@ -1152,52 +1136,8 @@ const AdminDashboard = ({
     }, [insights.products, items]);
     const reducedMotion = useReducedMotion();
 
-    // Modals
-    const [isOrderResetModalOpen, setIsOrderResetModalOpen] = useState(false);
-    const [isCleaningModalOpen, setIsCleaningModalOpen] = useState(false);
-    const [isResetUsersModalOpen, setIsResetUsersModalOpen] = useState(false);
-    const [isPurgeAnonymousModalOpen, setIsPurgeAnonymousModalOpen] = useState(false);
-    const [isPurgeProductsModalOpen, setIsPurgeProductsModalOpen] = useState(false);
-    
     // Operation states
     const [exportingUsers, setExportingUsers] = useState(false);
-    const [resettingOrders, setResettingOrders] = useState(false);
-    const [cleaningCloud, setCleaningCloud] = useState(false);
-    const [resettingUsers, setResettingUsers] = useState(false);
-    const [purgingAnonymous, setPurgingAnonymous] = useState(false);
-    const [purgingProducts, setPurgingProducts] = useState(false);
-
-    // Progress states
-    const [progressValue, setProgressValue] = useState(0);
-    const [progressSubtitle, setProgressSubtitle] = useState('');
-
-    const executeWithProgress = async (actionFn, estimatedMs = 8000) => {
-        setProgressValue(0);
-        setProgressSubtitle('Initialisation...');
-        
-        let currentProgress = 0;
-        const interval = setInterval(() => {
-            currentProgress += (100 / (estimatedMs / 100));
-            if (currentProgress > 95) currentProgress = 95;
-            setProgressValue(currentProgress);
-            
-            if (currentProgress > 80) setProgressSubtitle('Finalisation...');
-            else if (currentProgress > 40) setProgressSubtitle('Traitement en cours...');
-            else if (currentProgress > 10) setProgressSubtitle('Suppression des données...');
-        }, 100);
-
-        try {
-            const result = await actionFn();
-            clearInterval(interval);
-            setProgressValue(100);
-            setProgressSubtitle('Terminé !');
-            await new Promise(resolve => setTimeout(resolve, 600)); // Show 100% briefly
-            return result;
-        } catch (e) {
-            clearInterval(interval);
-            throw e;
-        }
-    };
 
     const selectTimeFilter = async (filterId) => {
         setTimeFilter(filterId);
@@ -1406,104 +1346,6 @@ const AdminDashboard = ({
     }, []);
 
     // ─── ACTIONS ───
-    const _handleResetOrdersClick = () => setIsOrderResetModalOpen(true);
-    const requireConfirmText = (expectedText) => {
-        const value = window.prompt(`Tapez ${expectedText} pour confirmer cette action.`);
-        return value === expectedText ? value : null;
-    };
-
-    const exportToCsv = async (orders) => {
-        const exportOrders = orders && orders.length > 0
-            ? orders
-            : (await getDocs(collection(db, 'orders'))).docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }));
-        const data = exportOrders.map(order => ({
-            'ID Commande': order.id,
-            'Date': new Date(getMillis(order.createdAt)).toLocaleString(),
-            'Client': order.shipping?.fullName || 'N/A',
-            'Total': `${order.total} €`,
-            'Statut': order.status || 'N/A'
-        }));
-        downloadCsv(data, 'Commandes');
-    };
-
-    const confirmResetOrders = async () => {
-        const confirmText = requireConfirmText('PURGER COMMANDES');
-        if (!confirmText) return;
-        setResettingOrders(true);
-        try {
-            await exportToCsv(allOrders);
-            const resetOrdersFn = await getCallableFunction('resetAllOrders');
-            const result = await executeWithProgress(() => resetOrdersFn({ confirmText }), 5000);
-            const count = result.data.count;
-            setStats(prev => ({ ...prev, totalRevenue: 0, totalOrders: 0, averageOrderValue: 0 }));
-            setRecentOrders([]);
-            setAllOrders([]);
-            setDailySales([]);
-            setIsOrderResetModalOpen(false);
-            alert(`Succès ! ${count} commandes archivées et supprimées.`);
-        } catch (error) {
-            console.error(error);
-            alert("Erreur purge commandes: " + error.message);
-        } finally {
-            setResettingOrders(false);
-            setProgressValue(0);
-        }
-    };
-
-    const confirmCleaning = async () => {
-        const confirmText = requireConfirmText('NETTOYER CLOUD');
-        if (!confirmText) return;
-        setCleaningCloud(true);
-        try {
-            const garbageCollectorFn = await getCallableFunction('runGarbageCollector');
-            const result = await executeWithProgress(() => garbageCollectorFn({ confirmText }), 12000);
-            const s = result.data.stats;
-            const freedMb = (s.storageSpaceFreedBytes / (1024 * 1024)).toFixed(2);
-            setIsCleaningModalOpen(false);
-            alert(`✅ Nettoyage terminé.\nEspace libéré : ${freedMb} Mo\nImages supprimées : ${s.orphanedImagesDeleted}`);
-        } catch (error) { console.error(error); alert("Erreur nettoyage: " + error.message); }
-        finally { setCleaningCloud(false); setProgressValue(0); }
-    };
-
-    const confirmResetUsers = async () => {
-        const confirmText = requireConfirmText('PURGER CLIENTS');
-        if (!confirmText) return;
-        setResettingUsers(true);
-        try {
-            const resetUsersFn = await getCallableFunction('resetAllUsers');
-            const result = await executeWithProgress(() => resetUsersFn({ confirmText }), 4000);
-            setIsResetUsersModalOpen(false);
-            alert(`✅ Succès !\n${result.data.message}`);
-        } catch (error) { console.error(error); alert("Erreur purge utilisateurs: " + error.message); }
-        finally { setResettingUsers(false); setProgressValue(0); }
-    };
-
-    const confirmPurgeAnonymous = async () => {
-        const confirmText = requireConfirmText('PURGER ANONYMES');
-        if (!confirmText) return;
-        setPurgingAnonymous(true);
-        try {
-            const purgeAnonymousFn = await getCallableFunction('purgeAnonymousUsers');
-            const result = await executeWithProgress(() => purgeAnonymousFn({ confirmText }), 4000);
-            setIsPurgeAnonymousModalOpen(false);
-            alert(`✅ Succès !\n${result.data.message}`);
-        } catch (error) { console.error(error); alert("Erreur purge anonymes: " + error.message); } 
-        finally { setPurgingAnonymous(false); setProgressValue(0); }
-    };
-
-    const confirmPurgeProducts = async () => {
-        const confirmText = requireConfirmText('PURGER MEUBLES');
-        if (!confirmText) return;
-        setPurgingProducts(true);
-        try {
-            const purgeProductsFn = await getCallableFunction('purgeAllProducts');
-            const result = await executeWithProgress(() => purgeProductsFn({ confirmText }), 15000);
-            setIsPurgeProductsModalOpen(false);
-            alert(`✅ Purge terminée !\n${result.data.message}`);
-        } catch (error) { console.error(error); alert("Erreur purge meubles: " + error.message); }
-        finally { setPurgingProducts(false); setProgressValue(0); }
-    };
-
     const handleExportUsers = async () => {
         setExportingUsers(true);
         try {
@@ -1912,112 +1754,8 @@ const AdminDashboard = ({
                 </PanelFrame>
             </motion.div>
 
-            {/* MODALS */}
-            {isOrderResetModalOpen && (
-                <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md ${darkMode ? 'bg-black/80' : 'bg-stone-900/50'}`}>
-                    <div className={`rounded-[32px] p-8 max-w-sm w-full shadow-2xl border text-center space-y-4 ${darkMode ? 'bg-[#161616] border-white/10' : 'bg-white border-stone-100'}`}>
-                        <h3 className={`text-lg font-black ${darkMode ? 'text-white' : 'text-stone-900'}`}>Purger Commandes ?</h3>
-                        <p className={`text-xs ${textMuted}`}>Export CSV + Suppression définitive.</p>
-                        {resettingOrders ? (
-                            <LoadingProgress progress={progressValue} text={progressSubtitle} darkMode={darkMode} />
-                        ) : (
-                            <div className="flex gap-2 mt-4">
-                                <button onClick={confirmResetOrders} className="flex-1 py-3 bg-red-500 text-white rounded-xl font-bold text-xs hover:bg-red-600 transition-colors">Confirmer</button>
-                                <button onClick={() => setIsOrderResetModalOpen(false)} className={`flex-1 py-3 rounded-xl font-bold text-xs transition-colors ${darkMode ? 'bg-white/5 text-white/70 hover:bg-white/10' : 'bg-stone-200 text-stone-600 hover:bg-stone-300'}`}>Annuler</button>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-            {isCleaningModalOpen && (
-                <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md ${darkMode ? 'bg-black/80' : 'bg-stone-900/50'}`}>
-                    <div className={`rounded-[32px] p-8 max-w-sm w-full shadow-2xl border text-center space-y-4 ${darkMode ? 'bg-[#161616] border-white/10' : 'bg-white border-stone-100'}`}>
-                        <h3 className={`text-lg font-black ${darkMode ? 'text-white' : 'text-stone-900'}`}>Nettoyage Système ?</h3>
-                        <p className={`text-xs ${textMuted}`}>Supprime les images orphelines du stockage.</p>
-                        {cleaningCloud ? (
-                            <LoadingProgress progress={progressValue} text={progressSubtitle} darkMode={darkMode} />
-                        ) : (
-                            <div className="flex gap-2 mt-4">
-                                <button onClick={confirmCleaning} className="flex-1 py-3 bg-red-500 text-white rounded-xl font-bold text-xs hover:bg-red-600 transition-colors">Lancer</button>
-                                <button onClick={() => setIsCleaningModalOpen(false)} className={`flex-1 py-3 rounded-xl font-bold text-xs transition-colors ${darkMode ? 'bg-white/5 text-white/70 hover:bg-white/10' : 'bg-stone-200 text-stone-600 hover:bg-stone-300'}`}>Annuler</button>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-            {isResetUsersModalOpen && (
-                <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md ${darkMode ? 'bg-black/80' : 'bg-stone-900/50'}`}>
-                    <div className={`rounded-[32px] p-8 max-w-sm w-full shadow-2xl border text-center space-y-4 ${darkMode ? 'bg-[#161616] border-red-500/30' : 'bg-white border-stone-100'}`}>
-                        <h3 className={`text-lg font-black text-red-500`}>Purge Totale ?</h3>
-                        <p className={`text-[11px] ${textMuted}`}>
-                            Suppression de TOUS les comptes utilisateurs. Seuls les Super Admins seront épargnés.
-                        </p>
-                        {resettingUsers ? (
-                            <LoadingProgress progress={progressValue} text={progressSubtitle} darkMode={darkMode} />
-                        ) : (
-                            <div className="flex gap-2 mt-4">
-                                <button onClick={confirmResetUsers} className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold text-xs hover:bg-red-700 transition-colors">Confirmer</button>
-                                <button onClick={() => setIsResetUsersModalOpen(false)} className={`flex-1 py-3 rounded-xl font-bold text-xs transition-colors ${darkMode ? 'bg-white/5 text-white/70 hover:bg-white/10' : 'bg-stone-200 text-stone-600 hover:bg-stone-300'}`}>Annuler</button>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-            {isPurgeAnonymousModalOpen && (
-                <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md ${darkMode ? 'bg-black/80' : 'bg-stone-900/50'}`}>
-                    <div className={`rounded-[32px] p-8 max-w-sm w-full shadow-2xl border text-center space-y-4 ${darkMode ? 'bg-[#161616] border-amber-500/30' : 'bg-white border-stone-100'}`}>
-                        <h3 className={`text-lg font-black text-amber-500`}>Purge Anonymes ?</h3>
-                        <p className={`text-[11px] ${textMuted}`}>
-                            Supprime uniquement les comptes anonymes. Les vrais clients sont conservés.
-                        </p>
-                        {purgingAnonymous ? (
-                            <LoadingProgress progress={progressValue} text={progressSubtitle} darkMode={darkMode} />
-                        ) : (
-                            <div className="flex gap-2 mt-4">
-                                <button onClick={confirmPurgeAnonymous} className="flex-1 py-3 bg-amber-500 text-white rounded-xl font-bold text-xs hover:bg-amber-600 transition-colors">Confirmer</button>
-                                <button onClick={() => setIsPurgeAnonymousModalOpen(false)} className={`flex-1 py-3 rounded-xl font-bold text-xs transition-colors ${darkMode ? 'bg-white/5 text-white/70 hover:bg-white/10' : 'bg-stone-200 text-stone-600 hover:bg-stone-300'}`}>Annuler</button>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-            {isPurgeProductsModalOpen && (
-                <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md ${darkMode ? 'bg-black/80' : 'bg-stone-900/50'}`}>
-                    <div className={`rounded-[32px] p-8 max-w-sm w-full shadow-2xl border text-center space-y-4 ${darkMode ? 'bg-[#161616] border-red-500/30' : 'bg-white border-stone-100'}`}>
-                        <h3 className={`text-lg font-black text-red-500`}>Purge Meubles ?</h3>
-                        <p className={`text-[11px] ${textMuted}`}>
-                            Suppression de TOUS les meubles publiés, leurs images et sous-collections sociales. Irréversible.
-                        </p>
-                        {purgingProducts ? (
-                            <LoadingProgress progress={progressValue} text={progressSubtitle} darkMode={darkMode} />
-                        ) : (
-                            <div className="flex gap-2 mt-4">
-                                <button onClick={confirmPurgeProducts} className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold text-xs hover:bg-red-700 transition-colors">Confirmer</button>
-                                <button onClick={() => setIsPurgeProductsModalOpen(false)} className={`flex-1 py-3 rounded-xl font-bold text-xs transition-colors ${darkMode ? 'bg-white/5 text-white/70 hover:bg-white/10' : 'bg-stone-200 text-stone-600 hover:bg-stone-300'}`}>Annuler</button>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
         </motion.div>
     );
 };
-
-const _DangerButton = ({ onClick, text, darkMode }) => (
-    <button
-        type="button"
-        onClick={onClick}
-        className={`group relative rounded-2xl px-3 py-3.5 text-[8px] font-bold uppercase tracking-[0.12em] ring-1 transition-[transform,background-color,color] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
-            darkMode
-                ? 'bg-red-400/[0.045] text-red-300/60 ring-red-300/10 hover:bg-red-400/10 hover:text-red-200'
-                : 'bg-red-50/80 text-red-700 ring-red-900/10 hover:bg-red-100'
-        }`}
-    >
-        <span className="relative flex items-center justify-center gap-2">
-            <AlertTriangle size={12} strokeWidth={1.45} className="transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-px" />
-            {text}
-        </span>
-    </button>
-);
 
 export default AdminDashboard;

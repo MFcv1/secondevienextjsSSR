@@ -1,0 +1,525 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "cohort": "content-admin-g6",
+  "exactNames": [
+    "claimNewsletterReward",
+    "completeBillingGuideAdmin",
+    "createQuoteRequest",
+    "drawNewsletterReward",
+    "finalizeQuoteRequest",
+    "getBillingGuideOperatorStatus",
+    "getBillingGuideStatus",
+    "getCatalogPublicationStatus",
+    "getManualInvoiceWorkspaceAdmin",
+    "getQuoteRequestAdmin",
+    "listMyNewsletterRewards",
+    "listQuoteRequestsAdmin",
+    "onQuoteRequestSubmitted",
+    "prepareManualInvoicePdfAdmin",
+    "rebuildCatalogSnapshot",
+    "resetBillingGuideTest",
+    "rollbackCatalogSnapshot",
+    "saveBillingGuideProgress",
+    "saveManualInvoiceDraftAdmin",
+    "sendManualInvoiceAdmin",
+    "sendRefundStatusEmailAdmin",
+    "sendTestEmail",
+    "updateQuoteRequestAdmin",
+    "uploadQuoteRequestPhoto"
+  ],
+  "archive": {
+    "uri": "gs://gcf-v2-sources-231220287936-europe-west1/g11/6ba72b5a9a065d5bf458b6d32826805b4e39e0824248f829989797299a28c2df/function-source.zip",
+    "sha256": "6ba72b5a9a065d5bf458b6d32826805b4e39e0824248f829989797299a28c2df",
+    "generation": "1787410366615461",
+    "size": 389002,
+    "digestVerified": true,
+    "containsAll120Exports": true
+  },
+  "functions": [
+    {
+      "name": "claimNewsletterReward",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "2",
+      "runtime": "nodejs22",
+      "entryPoint": "claimNewsletterReward",
+      "memoryMb": 256,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [
+        {
+          "key": "GMAIL_EMAIL",
+          "secret": "GMAIL_EMAIL",
+          "version": "2"
+        },
+        {
+          "key": "GMAIL_PASSWORD",
+          "secret": "GMAIL_PASSWORD",
+          "version": "5"
+        },
+        {
+          "key": "RESEND_API_KEY",
+          "secret": "RESEND_API_KEY",
+          "version": "1"
+        }
+      ],
+      "replacement": "claimNewsletterRewardGen2"
+    },
+    {
+      "name": "completeBillingGuideAdmin",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "6",
+      "runtime": "nodejs22",
+      "entryPoint": "completeBillingGuideAdmin",
+      "memoryMb": 256,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [
+        {
+          "key": "SUPER_ADMIN_EMAIL",
+          "secret": "SUPER_ADMIN_EMAIL",
+          "version": "3"
+        }
+      ],
+      "replacement": "completeBillingGuideAdminGen2"
+    },
+    {
+      "name": "createQuoteRequest",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "4",
+      "runtime": "nodejs22",
+      "entryPoint": "createQuoteRequest",
+      "memoryMb": 512,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [],
+      "replacement": "createQuoteRequestGen2"
+    },
+    {
+      "name": "drawNewsletterReward",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "1",
+      "runtime": "nodejs22",
+      "entryPoint": "drawNewsletterReward",
+      "memoryMb": 256,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [],
+      "replacement": "drawNewsletterRewardGen2"
+    },
+    {
+      "name": "finalizeQuoteRequest",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "3",
+      "runtime": "nodejs22",
+      "entryPoint": "finalizeQuoteRequest",
+      "memoryMb": 512,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [],
+      "replacement": "finalizeQuoteRequestGen2"
+    },
+    {
+      "name": "getBillingGuideOperatorStatus",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "6",
+      "runtime": "nodejs22",
+      "entryPoint": "getBillingGuideOperatorStatus",
+      "memoryMb": 256,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [
+        {
+          "key": "SUPER_ADMIN_EMAIL",
+          "secret": "SUPER_ADMIN_EMAIL",
+          "version": "3"
+        }
+      ],
+      "replacement": "getBillingGuideOperatorStatusGen2"
+    },
+    {
+      "name": "getBillingGuideStatus",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "7",
+      "runtime": "nodejs22",
+      "entryPoint": "getBillingGuideStatus",
+      "memoryMb": 256,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [
+        {
+          "key": "SUPER_ADMIN_EMAIL",
+          "secret": "SUPER_ADMIN_EMAIL",
+          "version": "3"
+        }
+      ],
+      "replacement": "getBillingGuideStatusGen2"
+    },
+    {
+      "name": "getCatalogPublicationStatus",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "8",
+      "runtime": "nodejs22",
+      "entryPoint": "getCatalogPublicationStatus",
+      "memoryMb": 256,
+      "timeoutSeconds": 60,
+      "serviceAccount": "catalog-builder@secondevienextjsssr.iam.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [],
+      "replacement": "getCatalogPublicationStatusGen2"
+    },
+    {
+      "name": "getManualInvoiceWorkspaceAdmin",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "5",
+      "runtime": "nodejs22",
+      "entryPoint": "getManualInvoiceWorkspaceAdmin",
+      "memoryMb": 512,
+      "timeoutSeconds": 30,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [],
+      "replacement": "getManualInvoiceWorkspaceAdminGen2"
+    },
+    {
+      "name": "getQuoteRequestAdmin",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "3",
+      "runtime": "nodejs22",
+      "entryPoint": "getQuoteRequestAdmin",
+      "memoryMb": 512,
+      "timeoutSeconds": 30,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [],
+      "replacement": "getQuoteRequestAdminGen2"
+    },
+    {
+      "name": "listMyNewsletterRewards",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "1",
+      "runtime": "nodejs22",
+      "entryPoint": "listMyNewsletterRewards",
+      "memoryMb": 256,
+      "timeoutSeconds": 30,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [],
+      "replacement": "listMyNewsletterRewardsGen2"
+    },
+    {
+      "name": "listQuoteRequestsAdmin",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "3",
+      "runtime": "nodejs22",
+      "entryPoint": "listQuoteRequestsAdmin",
+      "memoryMb": 512,
+      "timeoutSeconds": 30,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [],
+      "replacement": "listQuoteRequestsAdminGen2"
+    },
+    {
+      "name": "onQuoteRequestSubmitted",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "3",
+      "runtime": "nodejs22",
+      "entryPoint": "onQuoteRequestSubmitted",
+      "memoryMb": 512,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [
+        {
+          "key": "GMAIL_EMAIL",
+          "secret": "GMAIL_EMAIL",
+          "version": "2"
+        },
+        {
+          "key": "GMAIL_PASSWORD",
+          "secret": "GMAIL_PASSWORD",
+          "version": "5"
+        },
+        {
+          "key": "RESEND_API_KEY",
+          "secret": "RESEND_API_KEY",
+          "version": "1"
+        }
+      ],
+      "replacement": "onQuoteRequestSubmittedGen2"
+    },
+    {
+      "name": "prepareManualInvoicePdfAdmin",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "5",
+      "runtime": "nodejs22",
+      "entryPoint": "prepareManualInvoicePdfAdmin",
+      "memoryMb": 512,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [],
+      "replacement": "prepareManualInvoicePdfAdminGen2"
+    },
+    {
+      "name": "rebuildCatalogSnapshot",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "8",
+      "runtime": "nodejs22",
+      "entryPoint": "rebuildCatalogSnapshot",
+      "memoryMb": 256,
+      "timeoutSeconds": 60,
+      "serviceAccount": "catalog-builder@secondevienextjsssr.iam.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [],
+      "replacement": "rebuildCatalogSnapshotGen2"
+    },
+    {
+      "name": "resetBillingGuideTest",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "6",
+      "runtime": "nodejs22",
+      "entryPoint": "resetBillingGuideTest",
+      "memoryMb": 256,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [
+        {
+          "key": "SUPER_ADMIN_EMAIL",
+          "secret": "SUPER_ADMIN_EMAIL",
+          "version": "3"
+        }
+      ],
+      "replacement": "resetBillingGuideTestGen2"
+    },
+    {
+      "name": "rollbackCatalogSnapshot",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "8",
+      "runtime": "nodejs22",
+      "entryPoint": "rollbackCatalogSnapshot",
+      "memoryMb": 512,
+      "timeoutSeconds": 120,
+      "serviceAccount": "catalog-builder@secondevienextjsssr.iam.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [],
+      "replacement": "rollbackCatalogSnapshotGen2"
+    },
+    {
+      "name": "saveBillingGuideProgress",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "6",
+      "runtime": "nodejs22",
+      "entryPoint": "saveBillingGuideProgress",
+      "memoryMb": 256,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [
+        {
+          "key": "SUPER_ADMIN_EMAIL",
+          "secret": "SUPER_ADMIN_EMAIL",
+          "version": "3"
+        }
+      ],
+      "replacement": "saveBillingGuideProgressGen2"
+    },
+    {
+      "name": "saveManualInvoiceDraftAdmin",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "5",
+      "runtime": "nodejs22",
+      "entryPoint": "saveManualInvoiceDraftAdmin",
+      "memoryMb": 512,
+      "timeoutSeconds": 30,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [],
+      "replacement": "saveManualInvoiceDraftAdminGen2"
+    },
+    {
+      "name": "sendManualInvoiceAdmin",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "5",
+      "runtime": "nodejs22",
+      "entryPoint": "sendManualInvoiceAdmin",
+      "memoryMb": 512,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [
+        {
+          "key": "GMAIL_EMAIL",
+          "secret": "GMAIL_EMAIL",
+          "version": "2"
+        },
+        {
+          "key": "GMAIL_PASSWORD",
+          "secret": "GMAIL_PASSWORD",
+          "version": "5"
+        },
+        {
+          "key": "RESEND_API_KEY",
+          "secret": "RESEND_API_KEY",
+          "version": "1"
+        }
+      ],
+      "replacement": "sendManualInvoiceAdminGen2"
+    },
+    {
+      "name": "sendRefundStatusEmailAdmin",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "10",
+      "runtime": "nodejs22",
+      "entryPoint": "sendRefundStatusEmailAdmin",
+      "memoryMb": 256,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [
+        {
+          "key": "GMAIL_EMAIL",
+          "secret": "GMAIL_EMAIL",
+          "version": "2"
+        },
+        {
+          "key": "GMAIL_PASSWORD",
+          "secret": "GMAIL_PASSWORD",
+          "version": "5"
+        },
+        {
+          "key": "RESEND_API_KEY",
+          "secret": "RESEND_API_KEY",
+          "version": "1"
+        }
+      ],
+      "replacement": "sendRefundStatusEmailAdminGen2"
+    },
+    {
+      "name": "sendTestEmail",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "10",
+      "runtime": "nodejs22",
+      "entryPoint": "sendTestEmail",
+      "memoryMb": 256,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [
+        {
+          "key": "GMAIL_EMAIL",
+          "secret": "GMAIL_EMAIL",
+          "version": "2"
+        },
+        {
+          "key": "GMAIL_PASSWORD",
+          "secret": "GMAIL_PASSWORD",
+          "version": "5"
+        },
+        {
+          "key": "RESEND_API_KEY",
+          "secret": "RESEND_API_KEY",
+          "version": "1"
+        }
+      ],
+      "replacement": "sendTestEmailGen2"
+    },
+    {
+      "name": "updateQuoteRequestAdmin",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "3",
+      "runtime": "nodejs22",
+      "entryPoint": "updateQuoteRequestAdmin",
+      "memoryMb": 512,
+      "timeoutSeconds": 30,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [],
+      "replacement": "updateQuoteRequestAdminGen2"
+    },
+    {
+      "name": "uploadQuoteRequestPhoto",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "3",
+      "runtime": "nodejs22",
+      "entryPoint": "uploadQuoteRequestPhoto",
+      "memoryMb": 512,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [],
+      "replacement": "uploadQuoteRequestPhotoGen2"
+    }
+  ],
+  "rollbackWindow": {
+    "openedAt": "2026-08-22T23:32:19.763Z",
+    "expiresAt": "2026-08-22T23:32:19.763Z",
+    "status": "EXPIRED_IMMEDIATELY_BY_EXPLICIT_USER_AUTHORIZATION"
+  },
+  "restorePolicy": "Individual Gen1 restore only from the pinned digest and recorded runtime configuration; no data mutation.",
+  "prohibited": [
+    "production",
+    "stripe-live",
+    "global-deploy",
+    "data-destruction",
+    "auth-trigger-removal"
+  ]
+}

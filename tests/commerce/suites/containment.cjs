@@ -3,8 +3,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const {
-  DESTRUCTIVE_MAINTENANCE_ACTIONS,
-  assertLegacyMutationBlocked,
   assertLegacyOrderCreationBlocked,
   mayReleaseLegacyReservation,
   readLegacyContainmentControl,
@@ -64,14 +62,6 @@ async function expectContainment(context, promise, action) {
 
 function readSource(relativePath) {
   return fs.readFileSync(path.join(repositoryRoot, relativePath), 'utf8');
-}
-
-function assertGuardPrecedes(context, source, guard, firstForbiddenEffect, label) {
-  const guardIndex = source.indexOf(guard);
-  const effectIndex = source.indexOf(firstForbiddenEffect);
-  context.ok(guardIndex >= 0, `${label}: containment guard must be wired`);
-  context.ok(effectIndex >= 0, `${label}: reference effect must remain observable`);
-  context.ok(guardIndex < effectIndex, `${label}: guard must execute before the first effect`);
 }
 
 const scenarios = {
@@ -154,60 +144,6 @@ const scenarios = {
     }
     context.equal(mayReleaseLegacyReservation('canceled'), true, 'only Stripe canceled is terminal proof');
     assertZeroEffects(context, context.effects, 'gate-0b-ambiguous-payment');
-  },
-
-  'six-destructive-maintenance-actions-are-blocked': async (context) => {
-    context.equal(DESTRUCTIVE_MAINTENANCE_ACTIONS.length, 6);
-    for (const action of DESTRUCTIVE_MAINTENANCE_ACTIONS) {
-      await expectContainment(
-        context,
-        Promise.resolve().then(() => assertLegacyMutationBlocked(fakeFunctions, action)),
-        action,
-      );
-    }
-    assertZeroEffects(context, context.effects, 'gate-0b-maintenance');
-  },
-
-  'server-wiring-blocks-writers-before-effects': async (context) => {
-    const createOrder = readSource('functions/src/commerce/createOrder.js');
-    const cancelOrder = readSource('functions/src/commerce/cancelOrder.js');
-    const refund = readSource('functions/src/commerce/refundOrder.js');
-    const e2eHardening = readSource('functions/src/commerce/e2eStripeHardeningProof.js');
-    const maintenance = readSource('functions/src/maintenance/tools.js');
-
-    assertGuardPrecedes(context, createOrder, 'await assertLegacyOrderCreationBlocked({', 'const stripe = Stripe(', 'createOrder');
-    assertGuardPrecedes(context, cancelOrder, "assertLegacyMutationBlocked(functions, 'legacy-order-cancellation')", 'const orderId = normalizeFirestoreId(', 'cancelOrderClient');
-    assertGuardPrecedes(context, refund, "assertLegacyMutationBlocked(functions, 'legacy-refund')", 'const adminInfo = await checkActiveStrongAdmin(', 'refundOrderAdmin');
-    assertGuardPrecedes(context, e2eHardening, 'if (!isE2eProofAllowed())', 'const stripe = Stripe(', 'e2eStripeHardeningProof sandbox flag');
-    assertGuardPrecedes(context, e2eHardening, "assertLegacyMutationBlocked(functions, 'legacy-e2e-stripe-hardening')", 'const stripe = Stripe(', 'e2eStripeHardeningProof containment');
-    for (const action of DESTRUCTIVE_MAINTENANCE_ACTIONS) {
-      context.ok(maintenance.includes(`assertLegacyMutationBlocked(functions, '${action}')`), `${action} must be guarded`);
-    }
-    assertZeroEffects(context, context.effects, 'gate-0b-writer-wiring');
-  },
-
-  'webhook-drainage-preserves-retryable-and-paid-orders': async (context) => {
-    const source = readSource('functions/src/commerce/stripeWebhook.js');
-    context.ok(source.includes("event.type === 'payment_intent.succeeded'"), 'paid intents remain drainable');
-    context.ok(source.includes('handlePaymentIntentRetryableFailure'), 'retryable failure handler must remain wired');
-    context.ok(source.includes("paymentAttemptStatus: 'requires_payment_method'"), 'retryable failure remains pending');
-    context.ok(source.includes('stockReserved: true'), 'retryable failure retains the reservation');
-    context.ok(source.includes('Webhook lease lost before commit'), 'webhook completion is fenced by lease token');
-    context.ok(source.includes('Webhook failure marker ignored after lease loss'), 'webhook failure is fenced by lease token');
-    context.ok(source.includes('processingUntil'), 'processing leases are reclaimable after expiry');
-    context.ok(source.includes('paid_payment_intent_missing_order'), 'orphan paid intents create a review incident');
-    context.ok(source.includes('legacy_checkout_session_completed'), 'legacy Checkout Session completion creates a review incident');
-    context.ok(!source.includes('await handleCheckoutSessionCompleted(stripe, session)'), 'legacy Checkout Session cannot create an order');
-    assertZeroEffects(context, context.effects, 'gate-0b-webhook-drainage');
-  },
-
-  'refund-confirmation-never-restocks-automatically': async (context) => {
-    const refund = readSource('functions/src/commerce/refundOrder.js');
-    const webhook = readSource('functions/src/commerce/stripeWebhook.js');
-    context.ok(refund.includes('physicalDispositionRequired'), 'admin reconciliation requires physical disposition');
-    context.ok(webhook.includes('physicalDispositionRequired'), 'webhook reconciliation requires physical disposition');
-    context.ok(!webhook.includes('await restoreStockAfterPaidRefund'), 'refund webhook cannot auto-restock');
-    assertZeroEffects(context, context.effects, 'gate-0b-refund-no-restock');
   },
 
   'commerce-ui-is-active-with-server-side-guards': async (context) => {

@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "cohort": "schedulers-g9",
+  "exactNames": [
+    "commerceOperationsReconciler",
+    "commerceOutboxDispatcher",
+    "commerceReservationExpiryDispatcher",
+    "expireAdminPaymentLinks"
+  ],
+  "archive": {
+    "uri": "gs://gcf-v2-sources-231220287936-europe-west1/g11/6ba72b5a9a065d5bf458b6d32826805b4e39e0824248f829989797299a28c2df/function-source.zip",
+    "sha256": "6ba72b5a9a065d5bf458b6d32826805b4e39e0824248f829989797299a28c2df",
+    "generation": "1787410366615461",
+    "size": 389002,
+    "digestVerified": true,
+    "containsAll120Exports": true
+  },
+  "functions": [
+    {
+      "name": "commerceOperationsReconciler",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "12",
+      "runtime": "nodejs22",
+      "entryPoint": "commerceOperationsReconciler",
+      "memoryMb": 512,
+      "timeoutSeconds": 300,
+      "serviceAccount": "commerce-operations-reconciler@secondevienextjsssr.iam.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [],
+      "replacement": "commerceOperationsReconcilerGen2"
+    },
+    {
+      "name": "commerceOutboxDispatcher",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "12",
+      "runtime": "nodejs22",
+      "entryPoint": "commerceOutboxDispatcher",
+      "memoryMb": 512,
+      "timeoutSeconds": 300,
+      "serviceAccount": "commerce-outbox-dispatcher@secondevienextjsssr.iam.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [
+        {
+          "key": "GMAIL_EMAIL",
+          "secret": "GMAIL_EMAIL",
+          "version": "2"
+        },
+        {
+          "key": "GMAIL_PASSWORD",
+          "secret": "GMAIL_PASSWORD",
+          "version": "5"
+        },
+        {
+          "key": "RESEND_API_KEY",
+          "secret": "RESEND_API_KEY",
+          "version": "1"
+        }
+      ],
+      "replacement": "commerceOutboxDispatcherGen2"
+    },
+    {
+      "name": "commerceReservationExpiryDispatcher",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "3",
+      "runtime": "nodejs22",
+      "entryPoint": "commerceReservationExpiryDispatcher",
+      "memoryMb": 512,
+      "timeoutSeconds": 300,
+      "serviceAccount": "commerce-reservation-expiry@secondevienextjsssr.iam.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [
+        {
+          "key": "STRIPE_SECRET_KEY",
+          "secret": "STRIPE_SECRET_KEY",
+          "version": "4"
+        }
+      ],
+      "replacement": "commerceReservationExpiryDispatcherGen2"
+    },
+    {
+      "name": "expireAdminPaymentLinks",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "5",
+      "runtime": "nodejs22",
+      "entryPoint": "expireAdminPaymentLinks",
+      "memoryMb": 512,
+      "timeoutSeconds": 300,
+      "serviceAccount": "admin-payment-link-expiry@secondevienextjsssr.iam.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [
+        {
+          "key": "STRIPE_SECRET_KEY",
+          "secret": "STRIPE_SECRET_KEY",
+          "version": "4"
+        },
+        {
+          "key": "PAYMENT_LINK_HMAC_SECRET",
+          "secret": "PAYMENT_LINK_HMAC_SECRET",
+          "version": "1"
+        }
+      ],
+      "replacement": "expireAdminPaymentLinksGen2"
+    }
+  ],
+  "rollbackWindow": {
+    "openedAt": "2026-08-22T23:37:31.047Z",
+    "expiresAt": "2026-08-22T23:37:31.047Z",
+    "status": "EXPIRED_IMMEDIATELY_BY_EXPLICIT_USER_AUTHORIZATION"
+  },
+  "restorePolicy": "Individual Gen1 restore only from the pinned digest and recorded runtime configuration; no data mutation.",
+  "prohibited": [
+    "production",
+    "stripe-live",
+    "global-deploy",
+    "data-destruction",
+    "auth-trigger-removal"
+  ]
+}

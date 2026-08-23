@@ -10,7 +10,7 @@ import {
   validateDeploymentRequest
 } from '../scripts/deploy-functions-targeted.mjs';
 import {
-  EXPECTED_SOURCE_COUNT,
+  EXPECTED_CURRENT_SOURCE_COUNT,
   PARALLEL_MIGRATION_EXPORTS,
   classificationFor,
   extractLocalExports
@@ -42,10 +42,11 @@ test('G4 garde les suppressions analytics hors migration', () => {
   }
 });
 
-test('G4 conserve ses cinq cibles et G5 ses exports paralleles courants', () => {
+test('G4-G5 restent couverts par leurs Gen2 apres le retrait final des Gen1', () => {
   const exports = extractLocalExports(ROOT);
-  assert.equal(exports.length, EXPECTED_SOURCE_COUNT + 16);
-  assert.deepEqual([...PARALLEL_MIGRATION_EXPORTS], ['ensureAdminAccessRegistryGen2', 'initLiveSessionGen2', 'syncSessionGen2', 'syncSessionBeaconGen2', 'trackAdminIPGen2', 'updateUserSessionsGen2', 'getUserStatsGen2', 'logUserConnectionGen2', 'sendGuestCheckoutOtpGen2', 'sendCustomerLoginOtpGen2', 'verifyGuestCheckoutOtpGen2', 'verifyCustomerLoginOtpGen2', 'generatePasskeyRegistrationOptionsGen2', 'verifyPasskeyRegistrationGen2', 'generatePasskeyAuthenticationOptionsGen2', 'verifyPasskeyAuthenticationGen2']);
+  assert.equal(exports.length, EXPECTED_CURRENT_SOURCE_COUNT);
+  const expectedGen2 = ['ensureAdminAccessRegistryGen2', 'initLiveSessionGen2', 'syncSessionGen2', 'syncSessionBeaconGen2', 'trackAdminIPGen2', 'updateUserSessionsGen2', 'getUserStatsGen2', 'logUserConnectionGen2', 'sendGuestCheckoutOtpGen2', 'sendCustomerLoginOtpGen2', 'verifyGuestCheckoutOtpGen2', 'verifyCustomerLoginOtpGen2', 'generatePasskeyRegistrationOptionsGen2', 'verifyPasskeyRegistrationGen2', 'generatePasskeyAuthenticationOptionsGen2', 'verifyPasskeyAuthenticationGen2'];
+  for (const name of expectedGen2) assert.ok(PARALLEL_MIGRATION_EXPORTS.has(name), name);
   assert.equal(classificationFor('initLiveSessionGen2'), 'MIGRATION_PARALLEL');
   assert.equal(classificationFor('syncSessionGen2'), 'MIGRATION_PARALLEL');
   assert.equal(classificationFor('syncSessionBeaconGen2'), 'MIGRATION_PARALLEL');
@@ -60,15 +61,15 @@ test('G4 conserve ses cinq cibles et G5 ses exports paralleles courants', () => 
   assert.equal(classificationFor('verifyPasskeyRegistrationGen2'), 'MIGRATION_PARALLEL');
   assert.equal(classificationFor('generatePasskeyAuthenticationOptionsGen2'), 'MIGRATION_PARALLEL');
   assert.equal(classificationFor('verifyPasskeyAuthenticationGen2'), 'MIGRATION_PARALLEL');
-  assert.ok(exports.some(({ name }) => name === 'trackAdminIP'));
+  assert.ok(!exports.some(({ name }) => name === 'trackAdminIP'));
   assert.ok(exports.some(({ name }) => name === 'trackAdminIPGen2'));
-  assert.ok(exports.some(({ name }) => name === 'updateUserSessions'));
+  assert.ok(!exports.some(({ name }) => name === 'updateUserSessions'));
   assert.ok(exports.some(({ name }) => name === 'updateUserSessionsGen2'));
-  assert.ok(exports.some(({ name }) => name === 'initLiveSession'));
+  assert.ok(!exports.some(({ name }) => name === 'initLiveSession'));
   assert.ok(exports.some(({ name }) => name === 'initLiveSessionGen2'));
-  assert.ok(exports.some(({ name }) => name === 'syncSession'));
+  assert.ok(!exports.some(({ name }) => name === 'syncSession'));
   assert.ok(exports.some(({ name }) => name === 'syncSessionGen2'));
-  assert.ok(exports.some(({ name }) => name === 'syncSessionBeacon'));
+  assert.ok(!exports.some(({ name }) => name === 'syncSessionBeacon'));
   assert.ok(exports.some(({ name }) => name === 'syncSessionBeaconGen2'));
 });
 

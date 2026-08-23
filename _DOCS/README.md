@@ -14,6 +14,7 @@ Une information structurante ne doit avoir qu'une seule reference active. Les an
 | Domaine | Reference canonique | Contenu |
 | --- | --- | --- |
 | Architecture et SEO | [NEXTJS_SEO.md](architecture/NEXTJS_SEO.md) | App Router, rendu, cache, metadata, indexation, revalidation |
+| Runtime Firebase Functions | [FUNCTIONS_RUNTIME_ADR.md](architecture/FUNCTIONS_RUNTIME_ADR.md) | architecture post-Gen2, exceptions Auth, capacite, rollback et horizon Node |
 | Catalogue et annonces | [ANNONCES_CATALOGUE.md](catalogue/ANNONCES_CATALOGUE.md) | modele produit, categories, publication, recherche, cycle de vie |
 | Interface et navigation | [INTERFACE_NAVIGATION.md](ux/INTERFACE_NAVIGATION.md) | header, mega menu, mobile, transitions, accessibilite UX |
 | Images et medias | [IMAGES_MEDIA.md](images/IMAGES_MEDIA.md) | Storage, variantes, metadata, affichage, backfills |
@@ -38,7 +39,6 @@ Une information structurante ne doit avoir qu'une seule reference active. Les an
 
 | Perimetre | Document | Statut | Echeance et cloture |
 | --- | --- | --- | --- |
-| migration Firebase Functions Gen1 vers Gen2 | [AUDIT_MIGRATION_FUNCTIONS_GEN2.md](../apphostingaudit/AUDIT_MIGRATION_FUNCTIONS_GEN2.md) | G0-G4 et G5-A1 fermees; build `005` servi, `getUserStatsGen2` prouve en Auth/App Check, Gen1 preservee | poursuivre automatiquement les cibles G5 puis G6-G13 sous leurs gates, puis fusionner les decisions durables et retirer le plan |
 | stabilisation securite sandbox | [STABILISATION_SECURITE_SANDBOX.md](security/STABILISATION_SECURITE_SANDBOX.md) | `SANDBOX_SECURITY_STABILIZED`, Gates S0-S4 fermees; production explicitement differee | conserver jusqu'a la fusion de la PR #5, puis verifier la fusion canonique et supprimer |
 | publication Meta sans friction | [META_OAUTH_PUBLICATION_PRD.md](admin/META_OAUTH_PUBLICATION_PRD.md) | `IMPLEMENTATION_LOCALE_M1_M3`, OAuth/saga/UI codes, configuration sandbox non lancee | Gates M4-M6, revue au plus tard le 2026-10-31, fusion admin/infra/securite/qualite/carte puis suppression |
 | reprise commerce post-Gate 8 | [COMMERCE_REPRISE.md](commerce/COMMERCE_REPRISE.md) | `PLAN_REPRISE_DIFFERE`, R0 documentaire termine, R1 UX suivant | revue au plus tard le 2026-10-31, fusion canonique puis suppression avec `TODO.md` |

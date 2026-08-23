@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "gate": "G13-B",
+  "target": "getCatalogPublicationStatusGen2",
+  "deployed": {
+    "archive": {
+      "uri": "gs://gcf-v2-sources-231220287936-europe-west1/g13/3ba9c8d5890e7fc678d12117099653f00f33ea48982f20b27097434f1df2dd81/function-source.zip",
+      "sha256": "3ba9c8d5890e7fc678d12117099653f00f33ea48982f20b27097434f1df2dd81",
+      "generation": "1787442998284455",
+      "size": 370918
+    },
+    "revision": "getcatalogpublicationstatusgen2-00002-yoq",
+    "maxInstances": 2
+  },
+  "rollback": {
+    "source": "gs://gcf-v2-sources-231220287936-europe-west1/getCatalogPublicationStatusGen2/function-source.zip#1787147721443973",
+    "sha256": "dacf4c1eb1257fdd18c94a03889822dfa042642d0835b0dd68b3be8f9b8f46da",
+    "generation": "1787147721443973",
+    "size": 381285,
+    "revisionBefore": "getcatalogpublicationstatusgen2-00001-qix",
+    "runtime": "nodejs22",
+    "entryPoint": "getCatalogPublicationStatusGen2",
+    "serviceAccount": "catalog-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "buildServiceAccount": "functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "cpu": "167m",
+    "memory": "512Mi",
+    "concurrency": 1,
+    "minInstances": 0,
+    "maxInstances": 1,
+    "timeoutSeconds": 60,
+    "ingress": "ALLOW_ALL"
+  },
+  "status": "AVAILABLE_BY_VERSIONED_OBJECT_DIGEST"
+}

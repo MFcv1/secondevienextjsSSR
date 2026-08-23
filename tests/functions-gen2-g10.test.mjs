@@ -21,22 +21,24 @@ const require = createRequire(import.meta.url);
 const read = (relativePath) => fs.readFileSync(path.join(ROOT, relativePath), 'utf8');
 const TARGETS = Object.freeze(['stripeWebhookV2Gen2', 'stripeConnectWebhookV2Gen2']);
 
-test('G10 manifest closes at 275/272 while the G11 parallel target advances current inventory', () => {
+test('G10 manifest preserves its historical counts while current inventory is fully retired', () => {
   const exported = require(path.join(ROOT, 'functions/index.js'));
   const local = extractLocalExports(ROOT);
   const g10 = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g10.json'));
   assert.equal(g10.metadata.sourceCountAfter, 275);
   assert.equal(g10.metadata.cloudCountObserved, 272);
-  assert.equal(Object.keys(exported).length, 276);
-  assert.equal(local.length, 276);
-  assert.equal(EXPECTED_CURRENT_SOURCE_COUNT, 276);
-  assert.equal(EXPECTED_CURRENT_CLOUD_COUNT, 273);
+  assert.equal(Object.keys(exported).length, 140);
+  assert.equal(local.length, 140);
+  assert.equal(EXPECTED_CURRENT_SOURCE_COUNT, 140);
+  assert.equal(EXPECTED_CURRENT_CLOUD_COUNT, 137);
   assert.equal(waveFor('stripeWebhookV2Gen2', 'MIGRATION_PARALLEL'), 'G10');
   assert.equal(waveFor('stripeConnectWebhookV2Gen2', 'MIGRATION_PARALLEL'), 'G10');
-  assert.equal(typeof exported.stripeWebhookV2, 'function');
-  assert.equal(typeof exported.stripeConnectWebhookV2, 'function');
-  assert.equal(typeof exported.stripeWebhook, 'function');
-  assert.equal(typeof exported.stripeConnectWebhook, 'function');
+  assert.equal(exported.stripeWebhookV2, undefined);
+  assert.equal(exported.stripeConnectWebhookV2, undefined);
+  assert.equal(exported.stripeWebhook, undefined);
+  assert.equal(exported.stripeConnectWebhook, undefined);
+  assert.equal(GCLOUD_GEN2_TARGETS.stripeWebhookV2Gen2.entryPoint, 'stripeWebhookV2');
+  assert.equal(GCLOUD_GEN2_TARGETS.stripeConnectWebhookV2Gen2.entryPoint, 'stripeConnectWebhookV2');
 });
 
 test('G10 targeted deploys bind the one immutable archive and both rollback secrets', () => {

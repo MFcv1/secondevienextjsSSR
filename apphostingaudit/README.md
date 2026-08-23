@@ -1,8 +1,8 @@
 # Centre de suivi Firebase, App Hosting et migration Gen2
 
-Derniere mise a jour: 2026-08-17
+Derniere mise a jour: 2026-08-23
 
-Statut: `CENTRE_DE_SUIVI_ACTIF - G0_G4_TERMINEES - G5_A1_CUTOVER_EN_ATTENTE`
+Statut: `MIGRATION_GEN2_FERMEE - PREUVES_CONSERVEES`
 
 Proprietaire: mainteneur Seconde Vie et agent d'execution des phases validees
 
@@ -17,8 +17,11 @@ Ce dossier est l'unique point d'entree du chantier:
 | Document | Role |
 | --- | --- |
 | [AUDIT_ARCHITECTURE_APP_HOSTING.md](AUDIT_ARCHITECTURE_APP_HOSTING.md) | photographie read-only de l'architecture Firestore, App Hosting, donnees, fiabilite et risques |
-| [AUDIT_MIGRATION_FUNCTIONS_GEN2.md](AUDIT_MIGRATION_FUNCTIONS_GEN2.md) | contre-audit des 152 Functions cloud et 157 exports locaux, prerequis fiabilite, architecture cible, phases G0-G13, gates, rollbacks et prompt d'execution |
 | `README.md` | tableau de bord vivant, journal des executions et point de reprise obligatoire |
+
+Le plan temporaire Gen2 a ete fusionne dans les chapitres canoniques et
+`_DOCS/architecture/FUNCTIONS_RUNTIME_ADR.md`, puis retire a la fermeture G13.
+Les manifestes de ce dossier conservent les preuves machine et rollbacks.
 
 Le dossier racine `Gen2/` a ete remplace par cette centralisation. Aucun contenu
 de l'audit Gen2 n'a ete supprime.
@@ -92,15 +95,15 @@ Valeurs autorisees:
 | G2 | socle Gen2 puis stabilisation ciblee des 13 Gen2 actuelles | `TERMINEE` | 13/13 Gen2 deployees et observees, inventaire sans drift, rollback conserve | `functions-gen2-g2b-closeout.json` |
 | G3 | decisions retrait/migration legacy, E2E, maintenance, publication historique | `TERMINEE` | six retraits differes G12-A, commandes Stripe fail-closed, zero suppression | `functions-gen2-g3-decisions.json` |
 | G4 | analytics | `TERMINEE` | parite, App Check, caches concurrents, observation acceleree autorisee | cinq cibles Gen2 basculees; build `004`, rollback `003`, Gen1 preservees |
-| G5 | Auth callables, OTP et passkeys | `EN_COURS` | Auth complete, parcours sandbox et rollback client | A1-A3 fermees; build `002`, rollback `001`; A4 `sendGuestCheckoutOtpGen2` suivante |
-| G6 | catalogue admin, devis, newsletter, e-mail et factures | `A_FAIRE` | writers/readers et trigger devis sans double effet | a renseigner |
-| G7 | Meta et reconciliation Instagram | `A_FAIRE` | hold leve par preuves, OAuth/secrets/rollback valides | a renseigner |
-| G8 | commerce non financier, lectures et hygiene P1 | `A_FAIRE` | stock/prix/KPI/cohortes sans divergence | a renseigner |
-| G9 | checkout, Connect, refunds, schedulers et workers | `A_FAIRE` | une cible a la fois, owner explicite, Stripe test borne | a renseigner |
-| G10 | webhooks Stripe v2 Gen2 | `A_FAIRE` | signatures, double endpoint deduplique, zero double effet | a renseigner |
-| G11 | maintenance destructrice | `A_FAIRE` | AAL2, dry-run, sauvegarde, instance/concurrence 1 | a renseigner |
-| G12 | retrait cible Gen1 puis nettoyage differe | `A_FAIRE` | G12-A garde le rollback; G12-B nettoie apres fenetre approuvee; trois Auth restent | a renseigner |
-| G13 | charge/cout/IAM/runtime et cloture documentaire | `A_FAIRE` | sandbox migre et durci, runtime futur planifie, docs fusionnees | a renseigner |
+| G5 | Auth callables, OTP et passkeys | `TERMINEE` | Auth complete, parcours sandbox et rollback client | manifestes `functions-gen2-g5-*` |
+| G6 | catalogue admin, devis, newsletter, e-mail et factures | `TERMINEE` | writers/readers et trigger devis sans double effet | `functions-gen2-g6.json` |
+| G7 | Meta et reconciliation Instagram | `TERMINEE` | hold leve par preuves, OAuth/secrets/rollback valides | `functions-gen2-g7.json` |
+| G8 | commerce non financier, lectures et hygiene P1 | `TERMINEE` | stock/prix/KPI/cohortes sans divergence | `functions-gen2-g8.json` |
+| G9 | checkout, Connect, refunds, schedulers et workers | `TERMINEE` | une cible a la fois, owner explicite, Stripe test borne | `functions-gen2-g9.json` |
+| G10 | webhooks Stripe v2 Gen2 | `TERMINEE` | signatures, double endpoint deduplique, zero double effet | `functions-gen2-g10.json` |
+| G11 | maintenance destructrice | `TERMINEE` | AAL2, dry-run, sauvegarde, instance/concurrence 1 | `functions-gen2-g11.json` |
+| G12 | retrait cible Gen1 puis nettoyage differe | `TERMINEE` | toutes les cohortes retirees individuellement; trois Auth restent | `functions-gen2-g12a-remaining.json`, `functions-gen2-g12b-remaining.json`; 140 local / 137 cloud |
+| G13 | charge/cout/IAM/runtime et cloture documentaire | `TERMINEE` | sandbox migre et durci, tuning unique borne, runtime futur planifie | observation, charge et rollback `functions-gen2-g13-*`; ADR canonique |
 
 ## 6. Suivi des risques et ordre corrige
 

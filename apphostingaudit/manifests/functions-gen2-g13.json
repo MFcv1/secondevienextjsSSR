@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "gate": "G13",
+  "status": "CLOSED",
+  "closedAt": "2026-08-23T00:10:25Z",
+  "inventory": {
+    "source": 140,
+    "cloud": 137,
+    "gen1": 3,
+    "gen2": 134,
+    "protectedGen1": [
+      "grantAdminOnAuth",
+      "onRegisteredUserCreated",
+      "onRegisteredUserDeleted"
+    ],
+    "allGen2Active": true
+  },
+  "observation": {
+    "windowStart": "2026-08-15T23:51:21Z",
+    "windowEnd": "2026-08-22T23:51:21Z",
+    "seconds": 604800,
+    "alertPoliciesEnabled": 8,
+    "billingEnabled": true,
+    "exactCostAvailable": false,
+    "costLimitation": "Cloud Billing Budget API is disabled and no billing export is configured; it was not enabled during this gate.",
+    "manifest": "apphostingaudit/manifests/functions-gen2-g13-observation.json"
+  },
+  "capacity": {
+    "target": "getCatalogPublicationStatusGen2",
+    "revision": "getcatalogpublicationstatusgen2-00002-yoq",
+    "state": "ACTIVE",
+    "maxInstances": 2,
+    "decision": "KEEP_BOUNDED_CAPACITY_NO_FURTHER_DEPLOY",
+    "boundedSaturation": {
+      "requests": 30,
+      "successful": 25,
+      "capacityRejected": 5,
+      "applicationErrors": 0
+    },
+    "manifest": "apphostingaudit/manifests/functions-gen2-g13-load.json"
+  },
+  "rollback": {
+    "status": "AVAILABLE_BY_VERSIONED_OBJECT_DIGEST",
+    "source": "gs://gcf-v2-sources-231220287936-europe-west1/getCatalogPublicationStatusGen2/function-source.zip#1787147721443973",
+    "sha256": "dacf4c1eb1257fdd18c94a03889822dfa042642d0835b0dd68b3be8f9b8f46da",
+    "manifest": "apphostingaudit/manifests/functions-gen2-g13-tuning-rollback.json"
+  },
+  "effects": {
+    "realDataWrites": 0,
+    "destructiveInvocations": 0,
+    "stripeCalls": 0,
+    "productionCalls": 0,
+    "appHostingBuilds": 0,
+    "globalDeployments": 0,
+    "targetedFunctionDeployments": 1
+  },
+  "architectureDecision": "_DOCS/architecture/FUNCTIONS_RUNTIME_ADR.md",
+  "prohibitionsRespected": {
+    "productionUntouched": true,
+    "stripeLiveUntouched": true,
+    "authTriggersPreserved": true,
+    "iamSecretsPreserved": true,
+    "noPush": true
+  }
+}

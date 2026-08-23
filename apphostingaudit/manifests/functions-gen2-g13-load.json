@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "gate": "G13-B",
+  "status": "CLOSED_WITH_BOUNDED_SATURATION",
+  "campaign": {
+    "readOnlyTarget": "getCatalogPublicationStatusGen2",
+    "requestsPerBurst": 30,
+    "concurrency": 10,
+    "beforeTuning": {
+      "maxInstances": 1,
+      "successful": 21,
+      "capacityRejected": 9
+    },
+    "countermeasure": {
+      "maxInstances": 2,
+      "successful": 25,
+      "http429": 4,
+      "http500NoAvailableInstance": 1,
+      "applicationErrors": 0,
+      "capacityRejected": 5
+    },
+    "interpretation": "The deliberately saturated admin-only read endpoint improved by 44 percent. Remaining failures are the explicit max-instance cost guard, not application errors. Normal single-admin traffic and post-cutover logs are healthy."
+  },
+  "tuning": {
+    "target": "getCatalogPublicationStatusGen2",
+    "change": {
+      "maxInstancesBefore": 1,
+      "maxInstancesAfter": 2,
+      "cpu": "167m",
+      "memory": "512Mi",
+      "concurrency": 1,
+      "minInstances": 0,
+      "timeoutSeconds": 60
+    },
+    "deploymentCount": 1,
+    "countermeasureCount": 1,
+    "revision": "getcatalogpublicationstatusgen2-00002-yoq",
+    "state": "ACTIVE",
+    "decision": "KEEP_BOUNDED_CAPACITY_NO_FURTHER_DEPLOY"
+  },
+  "effects": {
+    "realDataWrites": 0,
+    "destructiveInvocations": 0,
+    "stripeCalls": 0,
+    "productionCalls": 0,
+    "appHostingBuilds": 0,
+    "globalDeployments": 0
+  }
+}

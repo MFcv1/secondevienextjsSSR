@@ -51,18 +51,11 @@ test('G3 constate zero session et aucun chemin callable depuis AdminForm', () =>
   assert.match(adminForm, /createPublishedProductAdmin/);
 });
 
-test('G3 conserve les protections App Check/admin et le containment finance', () => {
-  const publication = read('functions/src/publication/productPublication.js');
-  const checkoutProof = read('functions/src/commerce/e2eCheckoutProof.js');
-  const hardeningProof = read('functions/src/commerce/e2eStripeHardeningProof.js');
-  assert.match(publication, /runWith\(\{ enforceAppCheck: true/);
-  assert.match(publication, /checkActiveStrongAdmin\(context\)/);
-  for (const source of [checkoutProof, hardeningProof]) {
-    assert.match(source, /getRuntimeProjectId\(\) === 'secondevienextjsssr'/);
-    assert.match(source, /E2E_PROOF_ENABLED/);
-    assert.match(source, /timingSafeEqual/);
-  }
-  assert.match(hardeningProof, /assertLegacyMutationBlocked\(functions, 'legacy-e2e-stripe-hardening'\)/);
+test('G3 conserve les protections historiques dans le manifeste de rollback', () => {
+  const rollback = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g12a-g3-rollback.json'));
+  assert.equal(rollback.sourceArchive.containsAllSixGen1Exports, true);
+  assert.equal(rollback.functions.length, 6);
+  for (const decision of manifest.decisions) assert.ok(decision.protections.length > 0, decision.name);
 });
 
 test('les deux commandes Stripe en quarantaine echouent avant le script historique', () => {
@@ -77,6 +70,6 @@ test('les deux commandes Stripe en quarantaine echouent avant le script historiq
     assert.equal(result.status, 1);
     assert.match(result.stderr, new RegExp(`DO_NOT_RUN:${command.replace(':', '\\:')}`));
   }
-  assert.equal(fs.existsSync(path.join(ROOT, 'scripts/e2e-hosted-stripe-checkout.mjs')), true);
-  assert.equal(fs.existsSync(path.join(ROOT, 'scripts/e2e-refund-latest-stripe-order.mjs')), true);
+  assert.equal(fs.existsSync(path.join(ROOT, 'scripts/e2e-hosted-stripe-checkout.mjs')), false);
+  assert.equal(fs.existsSync(path.join(ROOT, 'scripts/e2e-refund-latest-stripe-order.mjs')), false);
 });

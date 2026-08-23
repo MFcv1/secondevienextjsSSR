@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "cohort": "analytics-g4",
+  "exactNames": [
+    "initLiveSession",
+    "syncSession",
+    "syncSessionBeacon",
+    "trackAdminIP",
+    "updateUserSessions"
+  ],
+  "archive": {
+    "uri": "gs://gcf-v2-sources-231220287936-europe-west1/g11/6ba72b5a9a065d5bf458b6d32826805b4e39e0824248f829989797299a28c2df/function-source.zip",
+    "sha256": "6ba72b5a9a065d5bf458b6d32826805b4e39e0824248f829989797299a28c2df",
+    "generation": "1787410366615461",
+    "size": 389002,
+    "digestVerified": true,
+    "containsAll120Exports": true
+  },
+  "functions": [
+    {
+      "name": "initLiveSession",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "12",
+      "runtime": "nodejs22",
+      "entryPoint": "initLiveSession",
+      "memoryMb": 256,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [],
+      "replacement": "initLiveSessionGen2"
+    },
+    {
+      "name": "syncSession",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "11",
+      "runtime": "nodejs22",
+      "entryPoint": "syncSession",
+      "memoryMb": 256,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [],
+      "replacement": "syncSessionGen2"
+    },
+    {
+      "name": "syncSessionBeacon",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "11",
+      "runtime": "nodejs22",
+      "entryPoint": "syncSessionBeacon",
+      "memoryMb": 256,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [],
+      "replacement": "syncSessionBeaconGen2"
+    },
+    {
+      "name": "trackAdminIP",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "9",
+      "runtime": "nodejs22",
+      "entryPoint": "trackAdminIP",
+      "memoryMb": 256,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [
+        {
+          "key": "SUPER_ADMIN_EMAIL",
+          "secret": "SUPER_ADMIN_EMAIL",
+          "version": "3"
+        }
+      ],
+      "replacement": "trackAdminIPGen2"
+    },
+    {
+      "name": "updateUserSessions",
+      "region": "europe-west1",
+      "generation": 1,
+      "status": "ACTIVE",
+      "versionId": "10",
+      "runtime": "nodejs22",
+      "entryPoint": "updateUserSessions",
+      "memoryMb": 256,
+      "timeoutSeconds": 60,
+      "serviceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+      "ingress": "ALLOW_ALL",
+      "secrets": [
+        {
+          "key": "SUPER_ADMIN_EMAIL",
+          "secret": "SUPER_ADMIN_EMAIL",
+          "version": "3"
+        }
+      ],
+      "replacement": "updateUserSessionsGen2"
+    }
+  ],
+  "rollbackWindow": {
+    "openedAt": "2026-08-22T23:28:58.495Z",
+    "expiresAt": "2026-08-22T23:28:58.495Z",
+    "status": "EXPIRED_IMMEDIATELY_BY_EXPLICIT_USER_AUTHORIZATION"
+  },
+  "restorePolicy": "Individual Gen1 restore only from the pinned digest and recorded runtime configuration; no data mutation.",
+  "prohibited": [
+    "production",
+    "stripe-live",
+    "global-deploy",
+    "data-destruction",
+    "auth-trigger-removal"
+  ]
+}

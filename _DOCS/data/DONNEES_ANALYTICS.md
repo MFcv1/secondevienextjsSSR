@@ -320,6 +320,17 @@ active: confirmation structuree exacte, dry-run par defaut, precondition liee
 a l'`updateTime`, suppression et audit atomiques, operation idempotente et
 reprise par `operationId`. La validation cloud n'a effectue aucune suppression.
 
+G12-A maintenance a ensuite retire les trois anciens endpoints Gen1
+`deleteSession`, `clearAllSessions` et `clearAllAffiliateClicks`. Les deux
+purges globales ne sont plus exposees dans `AdminAnalytics`; la retention passe
+uniquement par l'outil operateur borne. `deleteSessionGen2` reste `ACTIVE` pour
+la suppression ciblee. La quiet-window `2026-08-22T22:05:51Z`--`22:13:16Z`
+compte zero appel legacy et zero erreur Gen2; aucune donnee n'a ete supprimee.
+La fenetre de rollback a expire immediatement sur approbation formelle le
+`2026-08-22T22:45:38Z`. G12-B a retire les trois exports et handlers Gen1 de la
+source; l'archive digestee et les manifestes restent disponibles comme preuve
+forensique. Aucun document analytics n'a ete lu, purge ou modifie.
+
 Les audits securite conservent l'UID brut parce qu'il est la cle
 d'imputabilite, mais e-mail, IP et user-agent y sont hashes. Les sessions
 analytics gardent les donnees minimales necessaires au moteur pendant leur

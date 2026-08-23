@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "environment": "sandbox",
+    "wave": "G12-A:G3",
+    "entryHead": "2c663e4834dcd9b5ee770d9d84001bd4b671b172",
+    "authorizedNames": 6,
+    "status": "G12_A_G3_CLOSED",
+    "closedAt": "2026-08-22T23:06:13Z"
+  },
+  "authorization": {
+    "formalUserApproval": true,
+    "sandboxOnly": true,
+    "exactNames": [
+      "e2eCheckoutProof",
+      "e2eStripeHardeningProof",
+      "getProductPublicationSessionAdmin",
+      "reportProductPublicationClientErrorAdmin",
+      "retryProductPublicationFinalizationAdmin",
+      "startProductPublicationAdmin"
+    ],
+    "g12BAllowed": false,
+    "g13Allowed": false
+  },
+  "preconditions": {
+    "activeApplicationCallers": [],
+    "stripeProofCommands": "DO_NOT_RUN_FAIL_CLOSED",
+    "productPublicationSessionCount": 0,
+    "lastLegacyTrafficAt": "2026-08-11T17:15:17.605563468Z",
+    "quietWindow": { "start": "2026-08-22T22:59:28Z", "end": "2026-08-22T23:04:38Z", "seconds": 310, "entries": 0, "requiredBundleTtlSeconds": 300 },
+    "rollbackArchiveDigestVerified": true,
+    "allGreen": true
+  },
+  "appHosting": {
+    "activeBuild": "build-2026-08-22-003",
+    "activeTrafficPercent": 100,
+    "rollbackBuild": "build-2026-08-22-002",
+    "newBuildCreated": false,
+    "reason": "all application consumers were already unreachable or fail-closed"
+  },
+  "relatedGen2Workers": [
+    { "name": "processProductPublicationImage", "state": "ACTIVE", "trigger": "Storage finalized", "decision": "PRESERVED_OUTSIDE_AUTHORIZATION" },
+    { "name": "cleanupProductPublicationSessions", "state": "ACTIVE", "trigger": "Scheduler every 24 hours", "decision": "PRESERVED_OUTSIDE_AUTHORIZATION" },
+    { "name": "reconcileProductPublicationSessions", "state": "ACTIVE", "trigger": "Scheduler every 15 minutes", "decision": "PRESERVED_OUTSIDE_AUTHORIZATION" }
+  ],
+  "deletions": [
+    { "name": "e2eCheckoutProof", "region": "us-central1", "generation": 1, "result": "DELETED" },
+    { "name": "e2eStripeHardeningProof", "region": "us-central1", "generation": 1, "result": "DELETED" },
+    { "name": "getProductPublicationSessionAdmin", "region": "europe-west1", "generation": 1, "result": "DELETED" },
+    { "name": "reportProductPublicationClientErrorAdmin", "region": "europe-west1", "generation": 1, "result": "DELETED" },
+    { "name": "retryProductPublicationFinalizationAdmin", "region": "europe-west1", "generation": 1, "result": "DELETED" },
+    { "name": "startProductPublicationAdmin", "region": "europe-west1", "generation": 1, "result": "DELETED" }
+  ],
+  "validation": {
+    "finalInventory": { "source": 266, "cloud": 257, "gen1": 123, "gen2": 134 },
+    "retiredNamesStillPresent": [],
+    "authGen1Preserved": ["grantAdminOnAuth", "onRegisteredUserCreated", "onRegisteredUserDeleted"],
+    "monitoringPolicies": { "total": 8, "enabled": 8 },
+    "routes": { "/": 200, "/admin": 200 },
+    "handlerInvocations": 0,
+    "realDataDeletionCount": 0,
+    "iamOrSecretDeletionCount": 0,
+    "status": "PASS"
+  },
+  "rollbackManifest": "apphostingaudit/manifests/functions-gen2-g12a-g3-rollback.json",
+  "next": {
+    "g12B": "CLOSED_BY_APPHOSTINGAUDIT_MANIFEST_FUNCTIONS_GEN2_G12B_G3",
+    "otherG12A": "REQUIRE_EXACT_NAMED_COHORT",
+    "g13": "NOT_OPENED"
+  }
+}

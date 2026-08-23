@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import test from 'node:test';
 
@@ -143,10 +143,6 @@ test('every HTTP Function transport is inventoried with its non-App-Check bounda
   }
   assert.deepEqual(discovered.sort(), [
     'functions/src/analytics/sessions.js',
-    'functions/src/commerce/e2eCheckoutProof.js',
-    'functions/src/commerce/e2eStripeHardeningProof.js',
-    'functions/src/commerce/stripeWebhook.js',
-    'functions/src/commerce/stripeWebhook.js',
     'functions/src/commerce/v2Webhooks.js',
     'functions/src/commerce/v2Webhooks.js',
     'functions/src/integrations/meta.js',
@@ -158,9 +154,7 @@ test('every HTTP Function transport is inventoried with its non-App-Check bounda
   assert.match(beacon, /req\.rawBody\.length > 64 \* 1024/);
   assert.match(beacon, /verifySessionSyncToken/);
 
-  const legacyWebhooks = read('functions/src/commerce/stripeWebhook.js');
   const v2Webhooks = read('functions/src/commerce/v2Webhooks.js');
-  assert.match(legacyWebhooks, /stripe\.webhooks\.constructEvent\(rawBody, sig, endpointSecret\)/);
   assert.match(v2Webhooks, /webhookIngress\.ingest/);
   assert.match(v2Webhooks, /stripe-signature/);
 
@@ -215,13 +209,9 @@ test('admin claim and transactional email logs do not expose account identifiers
   assert.doesNotMatch(orderEmailLogs, /:\s*(?:e|error)\s*\)/);
 });
 
-test('E2E mutation endpoints need both the sandbox project and an explicit enable flag', () => {
+test('retired E2E mutation endpoints are absent after G12-B:G3', () => {
   for (const file of ['functions/src/commerce/e2eCheckoutProof.js', 'functions/src/commerce/e2eStripeHardeningProof.js']) {
-    const source = read(file);
-    const guard = source.match(/function isE2eProofAllowed\(\) \{[\s\S]*?\n\}/)?.[0] || '';
-    assert.match(guard, /secondevienextjsssr/);
-    assert.match(guard, /E2E_PROOF_ENABLED/);
-    assert.match(guard, /&&/);
+    assert.equal(existsSync(join(root, file)), false);
   }
 });
 

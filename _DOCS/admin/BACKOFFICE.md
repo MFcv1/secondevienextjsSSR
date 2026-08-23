@@ -810,6 +810,19 @@ bascule est fermee: `AdminAnalytics` execute d'abord le dry-run
 `deleteSessionGen2`, puis exige son `updateTime` exact pour un commit confirme;
 la probe de qualification n'a supprime aucune donnee.
 
+La cohorte `G12-A:maintenance/destructives-G11` est fermee. Les deux boutons
+globaux de purge analytics et leurs entrees de registre client ont ete retires
+du build actif `build-2026-08-22-003`; la suppression ciblee reste disponible
+via `deleteSessionGen2`. Apres rollback reel vers `build-2026-08-22-002`,
+reactivation et quiet-window de 445 secondes sans appel legacy, les dix Gen1
+G11 ont ete retirees individuellement. Aucun handler destructif n'a ete invoque
+et aucune donnee, IAM, secret ou source serveur n'a ete supprime pendant G12-A.
+La fenetre a expire immediatement sur approbation formelle le
+`2026-08-22T22:45:38Z`. G12-B a ensuite retire les dix exports Gen1 et les
+anciens handlers/modales admin devenus inaccessibles. `deleteSessionGen2` reste
+le seul parcours de suppression de session expose. Aucun IAM ou secret dedie
+n'existait; les identites partagees ont ete preservees.
+
 ## 9. Performance du back-office
 
 - garder les vues lourdes lazy;

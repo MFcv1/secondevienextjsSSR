@@ -7,10 +7,7 @@ const logger = require('firebase-functions/logger');
 const { onObjectFinalized } = require('firebase-functions/v2/storage');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const sharp = require('sharp');
-const { checkActiveStrongAdmin } = require('../../helpers/security');
-const { regionalFunctions } = require('../../helpers/runtime');
-const { commandRepository, mapDomainError } = require('../commerce/v2ProductCommands');
-const { normalizeOffer } = require('../commerce/domain/productCommands');
+const { commandRepository } = require('../commerce/v2ProductCommands');
 const { enqueueMediaCandidates } = require('../catalog/mediaGarbageCollection');
 
 const REGION = 'europe-west1';
@@ -19,10 +16,8 @@ const MEDIA_TRIGGER_REGION = process.env.PRODUCT_MEDIA_REGION || 'us-central1';
 const PRODUCT_PUBLICATION_RUNTIME_SERVICE_ACCOUNT =
     'product-publication-worker@secondevienextjsssr.iam.gserviceaccount.com';
 const SESSION_COLLECTION = 'product_publication_sessions';
-const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const FINALIZATION_LEASE_MS = 5 * 60 * 1000;
 const STALLED_UPLOAD_MS = 15 * 60 * 1000;
-const MAX_PRODUCT_IMAGES = 23;
 const ORIGINAL_PATH_PATTERN = /^furniture\/publication-sessions\/([A-Za-z0-9_-]{8,160})\/originals\/(slot-(\d{2}))\/[^/]+$/;
 
 const VARIANT_SPECS = Object.freeze([
@@ -42,64 +37,9 @@ function publicationError(code, message = 'Publication produit invalide.') {
     return error;
 }
 
-function assertIdentifier(value, field) {
-    const normalized = String(value || '').trim();
-    if (!/^[A-Za-z0-9_-]{8,160}$/.test(normalized)) {
-        throw publicationError('PRODUCT_PUBLICATION_ID_INVALID', `${field} invalide.`);
-    }
-    return normalized;
-}
-
-function assertStartPayload(data = {}) {
-    const sessionId = assertIdentifier(data.sessionId, 'Session');
-    const productId = assertIdentifier(data.productId, 'Produit');
-    const expectedMediaCount = Number(data.expectedMediaCount);
-    const targetStock = Number(data.targetStock);
-    if (!Number.isInteger(expectedMediaCount) || expectedMediaCount < 1 || expectedMediaCount > MAX_PRODUCT_IMAGES) {
-        throw publicationError('PRODUCT_PUBLICATION_MEDIA_COUNT_INVALID', 'Ajoutez entre 1 et 23 photos.');
-    }
-    if (!Number.isInteger(targetStock) || targetStock < 1 || targetStock > 1000) {
-        throw publicationError('PRODUCT_PUBLICATION_STOCK_INVALID', 'Le stock initial doit être compris entre 1 et 1000.');
-    }
-    if (!data.offer || typeof data.offer !== 'object') {
-        throw publicationError('PRODUCT_PUBLICATION_OFFER_INVALID', 'Offre invalide.');
-    }
-    return { sessionId, productId, expectedMediaCount, targetStock, offer: normalizeOffer(data.offer) };
-}
-
 function stableCommandId(sessionId, action) {
     const digest = crypto.createHash('sha256').update(sessionId).digest('hex').slice(0, 12);
     return `${sessionId.slice(0, 120)}-${digest}-${action}`;
-}
-
-function safeSession(session = {}) {
-    const slots = session.slots && typeof session.slots === 'object' ? session.slots : {};
-    const slotStates = Object.fromEntries(Object.entries(slots).map(([slot, value]) => [slot, {
-        status: value?.status || 'pending',
-        error: value?.error || null
-    }]));
-    return {
-        sessionId: session.sessionId,
-        productId: session.productId,
-        status: session.status || 'uploading',
-        expectedMediaCount: Number(session.expectedMediaCount || 0),
-        receivedMediaCount: Object.values(slots).filter((slot) => ['processing', 'ready'].includes(slot?.status)).length,
-        processedMediaCount: Object.values(slots).filter((slot) => slot?.status === 'ready').length,
-        slots: slotStates,
-        lastError: session.lastError || null,
-        attentionRequired: session.clientState === 'attention_required',
-        publishedAt: session.publishedAt || null
-    };
-}
-
-function normalizeClientFailure(data = {}) {
-    const stages = new Set(['local_files', 'storage_upload', 'session_poll', 'version_skew', 'unknown']);
-    const stage = stages.has(data.stage) ? data.stage : 'unknown';
-    const rawCode = String(data.code || 'PRODUCT_PUBLICATION_CLIENT_FAILED').toUpperCase();
-    const code = /^[A-Z0-9_-]{3,100}$/.test(rawCode)
-        ? rawCode
-        : 'PRODUCT_PUBLICATION_CLIENT_FAILED';
-    return { stage, code };
 }
 
 function downloadUrl(bucketName, objectName, token) {
@@ -287,115 +227,6 @@ async function finalizePublicationSession(sessionId) {
         throw error;
     }
 }
-
-const startProductPublicationAdmin = regionalFunctions()
-    .runWith({ enforceAppCheck: true, timeoutSeconds: 120, memory: '512MB' })
-    .https.onCall(async (data, context) => {
-        try {
-            await checkActiveStrongAdmin(context);
-            const { sessionId, productId, expectedMediaCount, targetStock, offer } = assertStartPayload(data);
-            const sessionRef = admin.firestore().collection(SESSION_COLLECTION).doc(sessionId);
-            const existing = await sessionRef.get();
-            if (existing.exists) {
-                if (existing.data()?.ownerUid !== context.auth.uid || existing.data()?.productId !== productId) {
-                    throw publicationError('PRODUCT_PUBLICATION_SESSION_CONFLICT', 'Cette session appartient à une autre publication.');
-                }
-                return safeSession(existing.data());
-            }
-            const actor = { uid: context.auth.uid, role: 'admin', aal2: true };
-            const created = await commandRepository().execute({
-                collectionName: 'furniture', productId,
-                action: 'create_product',
-                command: { commandId: stableCommandId(sessionId, 'create'), expectedVersion: 0 },
-                actor,
-                reason: 'Creation brouillon publication durable',
-                payload: { editorial: data.editorial, media: {} }
-            });
-            const now = new Date();
-            const session = {
-                schemaVersion: 1,
-                sessionId,
-                productId,
-                ownerUid: context.auth.uid,
-                collectionName: 'furniture',
-                status: 'uploading',
-                expectedMediaCount,
-                allowedSlots: Array.from(
-                    { length: expectedMediaCount },
-                    (_, index) => `slot-${String(index).padStart(2, '0')}`
-                ),
-                slots: {},
-                offer,
-                targetStock,
-                draftCommerceVersion: created.commerceVersion,
-                createdAt: now,
-                updatedAt: now,
-                expiresAt: new Date(now.getTime() + SESSION_TTL_MS),
-                lastError: null,
-                clientState: 'active'
-            };
-            await sessionRef.create(session);
-            return safeSession(session);
-        } catch (error) {
-            throw mapDomainError(error);
-        }
-    });
-
-const reportProductPublicationClientErrorAdmin = regionalFunctions()
-    .runWith({ enforceAppCheck: true })
-    .https.onCall(async (data, context) => {
-        await checkActiveStrongAdmin(context);
-        const sessionId = assertIdentifier(data?.sessionId, 'Session');
-        const failure = normalizeClientFailure(data);
-        const ref = admin.firestore().collection(SESSION_COLLECTION).doc(sessionId);
-        await admin.firestore().runTransaction(async (transaction) => {
-            const snapshot = await transaction.get(ref);
-            if (!snapshot.exists || snapshot.data()?.ownerUid !== context.auth.uid) {
-                throw new functions.https.HttpsError('not-found', 'Session de publication introuvable.');
-            }
-            if (snapshot.data()?.status === 'published') return;
-            transaction.set(ref, {
-                clientState: 'attention_required',
-                lastClientError: {
-                    ...failure,
-                    at: admin.firestore.FieldValue.serverTimestamp()
-                },
-                lastError: failure.code,
-                updatedAt: admin.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
-        });
-        return safeSession((await ref.get()).data());
-    });
-
-const getProductPublicationSessionAdmin = regionalFunctions()
-    .runWith({ enforceAppCheck: true })
-    .https.onCall(async (data, context) => {
-        await checkActiveStrongAdmin(context);
-        const sessionId = assertIdentifier(data?.sessionId, 'Session');
-        const snapshot = await admin.firestore().collection(SESSION_COLLECTION).doc(sessionId).get();
-        if (!snapshot.exists || snapshot.data()?.ownerUid !== context.auth.uid) {
-            throw new functions.https.HttpsError('not-found', 'Session de publication introuvable.');
-        }
-        return safeSession(snapshot.data());
-    });
-
-const retryProductPublicationFinalizationAdmin = regionalFunctions()
-    .runWith({ enforceAppCheck: true, timeoutSeconds: 120, memory: '512MB' })
-    .https.onCall(async (data, context) => {
-        await checkActiveStrongAdmin(context);
-        const sessionId = assertIdentifier(data?.sessionId, 'Session');
-        const ref = admin.firestore().collection(SESSION_COLLECTION).doc(sessionId);
-        const snapshot = await ref.get();
-        if (!snapshot.exists || snapshot.data()?.ownerUid !== context.auth.uid) {
-            throw new functions.https.HttpsError('not-found', 'Session de publication introuvable.');
-        }
-        buildMedia(snapshot.data()?.slots || {}, Number(snapshot.data()?.expectedMediaCount));
-        if (snapshot.data()?.status === 'failed') {
-            await ref.set({ status: 'ready', lastError: null, updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
-        }
-        await finalizePublicationSession(sessionId);
-        return safeSession((await ref.get()).data());
-    });
 
 const processProductPublicationImage = onObjectFinalized({
     bucket: MEDIA_BUCKET,
@@ -666,11 +497,6 @@ module.exports = {
     buildMedia,
     cleanupProductPublicationSessions,
     finalizePublicationSession,
-    getProductPublicationSessionAdmin,
     processProductPublicationImage,
-    reconcileProductPublicationSessions,
-    reportProductPublicationClientErrorAdmin,
-    retryProductPublicationFinalizationAdmin,
-    safeSession,
-    startProductPublicationAdmin
+    reconcileProductPublicationSessions
 };
