@@ -4,6 +4,7 @@ import { X, Upload, ShoppingCart, Heart } from 'lucide-react';
 import { PRODUCT_CARD_IMAGE_SIZES, getProductCardImage } from '../../utils/imageUtils';
 import { getProductUrl } from '../../utils/slug';
 import { getPurchaseUnavailableLabel, isPurchasable, shouldRequestQuote } from '../commerce/purchasability';
+import { resolveWishlistCatalogItems } from './publicCatalogWishlist';
 import PageBreadcrumb from './PageBreadcrumb';
 
 const WishlistView = ({
@@ -17,10 +18,10 @@ const WishlistView = ({
     user,
     onShowLogin
 }) => {
-    const enrichedItems = React.useMemo(() => wishlistItems.map(w => {
-        const live = items.find(i => i.id === w.originalId);
-        return live || { id: w.originalId, ...w, images: [w.image] };
-    }), [items, wishlistItems]);
+    const enrichedItems = React.useMemo(
+        () => resolveWishlistCatalogItems(wishlistItems, items),
+        [items, wishlistItems]
+    );
 
     const isLoggedIn = user && !user.isAnonymous;
 

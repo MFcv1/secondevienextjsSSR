@@ -260,6 +260,9 @@ La page complete et l'apercu de l'espace client partagent le meme resoluteur:
 un favori conserve son snapshot d'affichage, puis le catalogue public rafraichit
 son nom, son prix, son visuel et sa disponibilite sans rendre Firestore
 autoritaire pour l'achat.
+Le rapprochement accepte aussi les anciens documents wishlist qui ne portent
+pas encore `originalId`: leur ID Firestore reste l'identifiant produit de
+reference, afin que le snapshot ancien ne masque jamais le stock public actuel.
 
 ## 6. Panier et handoff
 

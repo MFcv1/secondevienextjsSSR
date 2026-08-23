@@ -4,6 +4,7 @@ import test from 'node:test';
 import {
   fetchPublicCatalogProduct,
   mergeCatalogProducts,
+  resolveWishlistCatalogItems,
 } from '../src/kit/marketplace/publicCatalogWishlist.js';
 
 const source = await readFile(new URL('../app/mes-commandes/OrdersPageIsland.jsx', import.meta.url), 'utf8');
@@ -46,4 +47,15 @@ test('account wishlist preview resolves missing products through the public cata
     mergeCatalogProducts([{ id: 'other', name: 'Other' }], [product]).map((item) => item.id),
     ['other', 'buffet-1'],
   );
+});
+
+test('wishlist uses the document id when a historical favorite has no originalId', () => {
+  const [resolved] = resolveWishlistCatalogItems(
+    [{ id: 'buffet-1', image: 'stale.webp' }],
+    [{ id: 'buffet-1', name: 'Buffet', currentPrice: 800, stock: 1, status: 'published' }],
+  );
+
+  assert.equal(resolved.name, 'Buffet');
+  assert.equal(resolved.currentPrice, 800);
+  assert.equal(resolved.stock, 1);
 });

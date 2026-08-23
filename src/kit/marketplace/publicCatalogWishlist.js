@@ -39,3 +39,19 @@ export const mergeCatalogProducts = (currentItems, products) => {
   });
   return Array.from(byId.values());
 };
+
+export const resolveWishlistCatalogItems = (wishlistItems, catalogItems) => (
+  wishlistItems.map((wishlistItem) => {
+    const wishlistId = getWishlistProductId(wishlistItem);
+    const live = catalogItems.find((item) => getWishlistProductId(item) === wishlistId);
+    if (live) return live;
+    return {
+      ...wishlistItem,
+      id: wishlistId,
+      originalId: wishlistId,
+      images: wishlistItem.images?.length
+        ? wishlistItem.images
+        : [wishlistItem.image].filter(Boolean),
+    };
+  })
+);
