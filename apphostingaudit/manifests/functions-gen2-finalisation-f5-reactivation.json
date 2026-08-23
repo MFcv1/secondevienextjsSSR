@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "environment": "sandbox",
+    "codebase": "main",
+    "baselineCommit": "e61c45db13824d3c1668c97cdfb07abdaf4308ed",
+    "gate": "FINALISATION:F5_REACTIVATION",
+    "generatedAt": "2026-08-23T01:43:31Z"
+  },
+  "gates": {
+    "deploymentAllowed": false,
+    "remediationDeploymentAllowed": true
+  },
+  "deploymentPolicy": {
+    "forbiddenTargets": [],
+    "archiveUri": "gs://gcf-v2-sources-231220287936-europe-west1/g13/3ba9c8d5890e7fc678d12117099653f00f33ea48982f20b27097434f1df2dd81/function-source.zip",
+    "archiveSha256": "3ba9c8d5890e7fc678d12117099653f00f33ea48982f20b27097434f1df2dd81",
+    "archiveGeneration": "1787442998284455",
+    "archiveSize": 370918,
+    "temporaryHoldRequired": true,
+    "maxTargets": 1
+  },
+  "functions": [
+    {
+      "name": "getCatalogPublicationStatusGen2",
+      "cloud": {
+        "present": true,
+        "generation": 2,
+        "state": "ACTIVE",
+        "revision": "getcatalogpublicationstatusgen2-00003-mol"
+      },
+      "identities": {
+        "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+        "runtimeServiceAccount": "catalog-builder@secondevienextjsssr.iam.gserviceaccount.com"
+      },
+      "decision": {
+        "classification": "MIGRATION_PARALLEL",
+        "deploymentMaxBatchSize": 1
+      },
+      "expectedAfter": {
+        "runtime": "nodejs22",
+        "memory": "512Mi",
+        "cpu": "167m",
+        "timeoutSeconds": 60,
+        "minInstances": 0,
+        "maxInstances": 2,
+        "concurrency": 1,
+        "allTrafficOnLatestRevision": true
+      }
+    }
+  ]
+}

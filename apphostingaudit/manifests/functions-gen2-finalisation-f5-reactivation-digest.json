@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "algorithm": "sha256",
+  "generatedAt": "2026-08-23T01:43:31Z",
+  "files": {
+    "apphostingaudit/manifests/functions-gen2-finalisation-f5-reactivation.json": "8ed6aef139c5d11e9a7b32d3f463d9f58793f18e74c089c9397206f083c27073"
+  }
+}

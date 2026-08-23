@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "gate": "FINALISATION:F5_ROLLBACK",
+  "generatedAt": "2026-08-23T01:43:31Z",
+  "status": "ROLLBACK_EXERCISED",
+  "target": "getCatalogPublicationStatusGen2",
+  "wrapperCommit": "e61c45db13824d3c1668c97cdfb07abdaf4308ed",
+  "before": {
+    "state": "ACTIVE",
+    "revision": "getcatalogpublicationstatusgen2-00002-yoq",
+    "maxInstances": 2,
+    "updateTime": "2026-08-22T23:58:02.412370505Z"
+  },
+  "after": {
+    "state": "ACTIVE",
+    "revision": "getcatalogpublicationstatusgen2-00003-mol",
+    "maxInstances": 1,
+    "minInstances": 0,
+    "concurrency": 1,
+    "memory": "512Mi",
+    "cpu": "167m",
+    "timeoutSeconds": 60,
+    "trafficPercent": 100,
+    "updateTime": "2026-08-23T01:43:06.999713152Z"
+  },
+  "source": {
+    "uri": "gs://gcf-v2-sources-231220287936-europe-west1/g13-rollback/dacf4c1eb1257fdd18c94a03889822dfa042642d0835b0dd68b3be8f9b8f46da/function-source.zip#1787449114510784",
+    "generation": "1787449114510784",
+    "size": 381285,
+    "sha256": "dacf4c1eb1257fdd18c94a03889822dfa042642d0835b0dd68b3be8f9b8f46da",
+    "temporaryHold": true,
+    "deploymentMode": "verified-bytes-extracted-to-private-temporary-directory"
+  },
+  "failedAttempts": [
+    {
+      "count": 2,
+      "reason": "The canonical Cloud Functions staging generation was held, so gcloud could not replace or clean it.",
+      "cloudFunctionChanged": false,
+      "resolution": "Preserve identical bytes at a digest-addressed held path, then release only the obsolete canonical staging hold."
+    },
+    {
+      "count": 1,
+      "reason": "The wrapper rejected an operator-supplied commit SHA that did not equal HEAD.",
+      "cloudFunctionChanged": false,
+      "resolution": "Read HEAD and rerun with the exact commit."
+    }
+  ],
+  "effects": {
+    "functionDeployments": 1,
+    "targetsChanged": ["getCatalogPublicationStatusGen2"],
+    "appHostingBuilds": 0,
+    "dataWrites": 0,
+    "stripeCalls": 0,
+    "iamChanges": 0,
+    "secretChanges": 0,
+    "schedulerChanges": 0
+  }
+}

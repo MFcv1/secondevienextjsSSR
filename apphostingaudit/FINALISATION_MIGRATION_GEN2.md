@@ -2,7 +2,7 @@
 
 Derniere mise a jour: 2026-08-23
 
-Statut: `F5_AUTORISE - COMMIT_ET_EXERCICE_EN_COURS`
+Statut: `F5_ROLLBACK_PROUVE - REACTIVATION_EN_COURS`
 
 Proprietaire: mainteneur Seconde Vie
 
@@ -68,7 +68,7 @@ conditions suivantes sont vraies en meme temps:
 | F2 | ajouter `test:functions-gen2` couvrant G0 a G13 et le rendre bloquant dans la CI | commande locale verte et workflow reference | `TERMINE_LOCAL` |
 | F3 | ajouter au wrapper un registre G13 exact, un refus de mauvaise revision, la verification generation/taille/hold/SHA et les arguments max 1 | tests locaux du wrapper verts | `TERMINE_LOCAL` |
 | F4 | proteger l'objet rollback exact dans Storage | read-back prouve `temporary_hold=true` ou retention equivalente | `TERMINE_CLOUD` |
-| F5 | exercer le rollback max 2 vers max 1 puis la reactivation max 2 | deux revisions `ACTIVE`, config exacte, aucun autre deploy | `AUTORISE_EN_COURS` |
+| F5 | exercer le rollback max 2 vers max 1 puis la reactivation max 2 | deux revisions `ACTIVE`, config exacte, aucun autre deploy | `ROLLBACK_TERMINE_REACTIVATION_PRETE` |
 | F6 | observer sept jours complets a partir de la revision finale | fenetre post-changement de 604800 s, inventaire frais et logs qualifies | `EN_ATTENTE_F5` |
 | F7 | classifier les erreurs G13 historiques et refaire une quiet-window finale | causes documentees, aucune affirmation `healthy` fondee sur un agregat ambigu | `A_FAIRE_READ_ONLY` |
 | F8 | corriger les contradictions et qualifier les rollbacks G12 expires | bible, map, ADR, infra, exploitation, qualite et centre coherents | `EN_COURS` |
@@ -89,6 +89,9 @@ Preuves locales du 2026-08-23:
   generation `1787449114510784`, taille `381285`, SHA-256 exact et
   `temporary_hold=true`. L'original reste protege jusqu'au dernier preflight;
   preuve initiale `manifests/functions-gen2-finalisation-f4.json`.
+- F5 rollback: revision `getcatalogpublicationstatusgen2-00003-mol`
+  `ACTIVE`, max `1`, concurrence `1`, trafic `100 %`; preuve
+  `manifests/functions-gen2-finalisation-f5-rollback.json`.
 
 ## 4. Rail rollback G13 attendu
 
