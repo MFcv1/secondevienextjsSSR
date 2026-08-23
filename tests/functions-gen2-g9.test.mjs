@@ -38,6 +38,16 @@ const SCHEDULERS = new Set([
 ]);
 const TARGETS = Object.freeze(LOGICAL.map((name) => `${name}Gen2`));
 
+test('G9 preserve le Scheduler outbox HTTP existant pendant une remediation', () => {
+  const target = GCLOUD_GEN2_TARGETS.commerceOutboxDispatcherGen2;
+  assert.equal(target.schedulerUpdateRequired, false);
+  assert.equal(
+    target.expectedSchedulerAudience,
+    'https://commerceoutboxdispatchergen2-evkkvyaaga-ew.a.run.app'
+  );
+  assert.equal(target.schedulerAttemptDeadline, '300s');
+});
+
 function createFakeDb() {
   const documents = new Map();
   let serial = Promise.resolve();

@@ -161,7 +161,9 @@ const g9Http = ({
   memory = '256Mi',
   timeout = '60s',
   secrets = [],
-  schedule = null
+  schedule = null,
+  expectedSchedulerAudience = null,
+  schedulerUpdateRequired = true
 }) => Object.freeze({
   create: true,
   g9: true,
@@ -186,7 +188,9 @@ const g9Http = ({
     timeZone: 'UTC',
     schedulerServiceAccount: runtimeServiceAccount,
     schedulerAttemptDeadline: '300s'
-  } : {})
+  } : {}),
+  ...(expectedSchedulerAudience ? { expectedSchedulerAudience } : {}),
+  schedulerUpdateRequired
 });
 const G9_GEN2_TARGETS = Object.freeze({
   getStripeConnectStatusGen2: g9Http({ name: 'getStripeConnectStatusGen2', secrets: G8_STRIPE_SECRET }),
@@ -217,7 +221,9 @@ const G9_GEN2_TARGETS = Object.freeze({
   commerceOutboxDispatcherGen2: g9Http({
     name: 'commerceOutboxDispatcherGen2', triggerType: 'http-scheduler',
     runtimeServiceAccount: 'commerce-outbox-dispatcher@secondevienextjsssr.iam.gserviceaccount.com',
-    memory: '512Mi', timeout: '300s', schedule: 'every 2 minutes', secrets: G9_OUTBOX_SECRETS
+    memory: '512Mi', timeout: '300s', schedule: 'every 2 minutes', secrets: G9_OUTBOX_SECRETS,
+    expectedSchedulerAudience: 'https://commerceoutboxdispatchergen2-evkkvyaaga-ew.a.run.app',
+    schedulerUpdateRequired: false
   }),
   commerceReservationExpiryDispatcherGen2: g9Http({
     name: 'commerceReservationExpiryDispatcherGen2', triggerType: 'http-scheduler',
@@ -1745,13 +1751,14 @@ function assertSchedulerPreconditions(
   job,
   target,
   expectedAttemptDeadline,
-  expectedServiceAccount = target.schedulerServiceAccount
+  expectedServiceAccount = target.schedulerServiceAccount,
+  expectedAudience = target.expectedSchedulerAudience || target.functionUrl
 ) {
   if (
     job.name?.split('/').at(-1) !== target.schedulerJob || job.state !== 'ENABLED' ||
     job.schedule !== target.schedule || job.timeZone !== target.timeZone ||
     job.httpTarget?.httpMethod !== 'POST' || job.httpTarget?.uri !== target.functionUrl ||
-    job.httpTarget?.oidcToken?.audience !== target.functionUrl ||
+    job.httpTarget?.oidcToken?.audience !== expectedAudience ||
     job.httpTarget?.oidcToken?.serviceAccountEmail !== expectedServiceAccount ||
     job.attemptDeadline !== expectedAttemptDeadline
   ) fail('Etat Cloud Scheduler inattendu avant deploiement');
@@ -1861,8 +1868,9 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
       assertSchedulerPreconditions(
         schedulerBefore,
         target,
-        target.expectedSchedulerAttemptDeadline,
-        target.expectedSchedulerServiceAccount || target.schedulerServiceAccount
+        target.expectedSchedulerAttemptDeadline || target.schedulerAttemptDeadline,
+        target.expectedSchedulerServiceAccount || target.schedulerServiceAccount,
+        target.expectedSchedulerAudience || target.functionUrl
       );
     }
     process.stdout.write(`Projet: ${validation.project}\nCibles: ${validation.selectors.join(',')}\nCommit: ${validation.commit}\nTransport: ${validation.transport}\n`);
