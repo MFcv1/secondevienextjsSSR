@@ -33,7 +33,7 @@ test('la cloture accepte uniquement une preuve de sept jours complete', () => {
   evidence.f6.window.observedSeconds = 604801;
   evidence.f6.checkpoints.push({
     ...evidence.f6.checkpoints.at(-1),
-    checkedAt: '2026-08-30T12:24:20.325Z',
+    checkedAt: '2026-08-30T16:16:55.512Z',
     observedSeconds: 604801,
     request5xx: 0,
     errorSeverityEntries: 0,

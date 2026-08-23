@@ -68,7 +68,7 @@ conditions suivantes sont vraies en meme temps:
 | F3 | ajouter au wrapper un registre G13 exact, un refus de mauvaise revision, la verification generation/taille/hold/SHA et les arguments max 1 | tests locaux du wrapper verts | `TERMINE_LOCAL` |
 | F4 | proteger l'objet rollback exact dans Storage | read-back prouve `temporary_hold=true` ou retention equivalente | `TERMINE_CLOUD` |
 | F5 | exercer le rollback max 2 vers max 1 puis la reactivation max 2 | deux revisions `ACTIVE`, config exacte, aucun autre deploy | `TERMINE_CLOUD` |
-| F6 | observer sept jours complets a partir de la topologie courante | fenetre post-changement de 604800 s, inventaire frais et logs qualifies | `EN_COURS_JUSQU_AU_2026-08-30T12:24:19Z` |
+| F6 | observer sept jours complets a partir de la topologie courante | fenetre post-changement de 604800 s, inventaire frais et logs qualifies | `EN_COURS_JUSQU_AU_2026-08-30T16:16:54Z` |
 | F7 | classifier les erreurs G13 historiques et refaire une quiet-window finale | causes documentees, aucune affirmation `healthy` fondee sur un agregat ambigu | `HISTORIQUE_TERMINE_QUIET_WINDOW_EN_COURS` |
 | F8 | corriger les contradictions et qualifier les rollbacks G12 expires | bible, map, ADR, infra, exploitation, qualite et centre coherents | `TERMINE_DOCUMENTAIRE_A_REVERIFIER_EN_F9` |
 | F9 | fusionner les preuves durables et supprimer ce plan | verificateur `ready` puis `closed`, liens verifies, `git diff --check`, aucune reference morte | `EN_ATTENTE_F6` |
@@ -101,11 +101,11 @@ Preuves locales du 2026-08-23:
   preuve `manifests/functions-gen2-finalisation-f5.json`.
 - F6: la premiere fenetre demarree a `2026-08-23T01:46:24.611705732Z` est
   conservee comme preuve historique mais a ete remplacee apres les quatre
-  deploiements commerce cibles A-025/A-026. La fenetre courante commence apres
-  leur requalification et le rapprochement A-027, le
-  `2026-08-23T12:24:19.325Z`; le heartbeat quotidien reste actif. Le premier
-  checkpoint a qualifie A-028, un 308 d'alias categorie dans la preuve HTML,
-  sans presenter cette erreur comme une quiet-window verte.
+  deploiements commerce cibles A-025/A-026. La deuxieme, demarree apres leur
+  requalification et le rapprochement A-027 a `2026-08-23T12:24:19.325Z`, a
+  revele A-028 puis a ete remplacee par le deploiement cible de
+  `dispatchCatalogRevalidation` et sa requalification. La fenetre courante
+  commence a `2026-08-23T16:16:54.512Z`; le heartbeat quotidien reste actif.
 - F7: les 258 HTTP 500 et 17 HTTP 429 historiques sont tous attribues dans
   `manifests/functions-gen2-finalisation-f7-errors.json`.
 
@@ -130,8 +130,9 @@ differe:
 
 La reactivation a utilise l'archive immutable du code courant et retabli max
 `2` en revision `getcatalogpublicationstatusgen2-00004-hiv`. Cette origine F6
-historique a ensuite ete remplacee par la baseline de topologie du
-`2026-08-23T12:24:19.325Z` apres les remediations commerce ciblees. Aucun
+historique a ensuite ete remplacee par la baseline commerce du
+`2026-08-23T12:24:19.325Z`, elle-meme remplacee apres la correction A-028 par
+la baseline courante du `2026-08-23T16:16:54.512Z`. Aucun
 deploy global ou Stripe live n'a eu lieu.
 
 ## 5. Qualification des observations

@@ -208,9 +208,11 @@ sources max 1 et max 2 dans deux chemins immuables digestes sous hold. F5 a
 prouve le rollback `00003-mol` max 1 puis la reactivation `00004-hiv` max 2,
 `ACTIVE` et a 100 % du trafic; seul ce service a ete mis a jour. Les preuves
 sont `functions-gen2-finalisation-f4.json` et
-`functions-gen2-finalisation-f5.json`. Apres les remediations commerce ciblees,
-la baseline F6 courante est `2026-08-23T12:24:19.325Z` et le soak court
-jusqu'au minimum `2026-08-30T12:24:19.325Z`. La saturation restante du burst admin est acceptee comme plafond
+`functions-gen2-finalisation-f5.json`. Apres les remediations commerce ciblees
+puis le deploiement et la requalification A-028 de
+`dispatchCatalogRevalidation`, la baseline F6 courante est
+`2026-08-23T16:16:54.512Z` et le soak court jusqu'au minimum
+`2026-08-30T16:16:54.512Z`. La saturation restante du burst admin est acceptee comme plafond
 de cout; aucun second tuning, build App Hosting ou deploy global n'a lieu. La
 decision durable est dans `_DOCS/architecture/FUNCTIONS_RUNTIME_ADR.md`.
 G5-A1 ajoute

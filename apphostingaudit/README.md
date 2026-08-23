@@ -112,7 +112,7 @@ Valeurs autorisees:
 | --- | --- | --- | --- |
 | P0 | gates locales Gen2, catalogue, Auth et commerce | `TERMINE_LOCAL` | 162/162 Gen2, 14/14 catalogue, 77/77 Auth, 139/139 commerce unitaire, lint vert |
 | P0 | rollback G13 exploitable | `TERMINE_CLOUD` | max 2 -> max 1 `00003-mol` -> max 2 `00004-hiv`, deux sources sous hold |
-| P0 | observation de l'etat final | `EN_COURS` | 604800 s depuis la baseline courante `2026-08-23T12:24:19.325Z`; l'ancienne fenetre reste historique |
+| P0 | observation de l'etat final | `EN_COURS` | 604800 s depuis la baseline courante `2026-08-23T16:16:54.512Z`; les deux fenetres remplacees restent historiques |
 | P1 | erreurs historiques G13 | `QUALIFIEES` | 258 HTTP 500 et 17 HTTP 429 attribues; zero agregat masque |
 | P1 | cout exact | `NON_PROUVE` | export Billing ou API Budget disponible; aucune estimation presentee comme fait |
 | P2 | archives G12 expirees | `TERMINE_DOCUMENTAIRE` | preuves forensiques distinguees des rollbacks autonomes courants |
@@ -478,7 +478,7 @@ Auth / 134 Gen2 `ACTIVE`. La reprise obligatoire est le plan
 2. F4 et F5 sont terminees: archives sous hold, rollback max 1 puis revision
    finale `getcatalogpublicationstatusgen2-00004-hiv` max 2;
 3. poursuivre F6 en lecture seule jusqu'au minimum
-   `2026-08-30T12:24:19.325Z`;
+   `2026-08-30T16:16:54.512Z`;
 4. fusionner les preuves et supprimer le plan temporaire seulement apres F9.
 
 Le prochain travail cloud est uniquement l'observation read-only F6. Aucun

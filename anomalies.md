@@ -1885,7 +1885,7 @@ de code.
 
 ### A-028 - La preuve HTML catalogue boucle sur un alias categorie en 308
 
-- statut: `CORRIGEE_A_REQUALIFIER`
+- statut: `REQUALIFIEE`
 - severite: `IMPORTANTE`
 - phase: checkpoint final Gen2 et revalidation catalogue 306
 - environnement: sandbox
@@ -1910,11 +1910,25 @@ de code.
   des redirections arbitraires et le controle du hash HTML.
 - regression: test dedie avec un produit archive de categorie `deco`; la sonde
   appelle `/categorie/decorations` et n'appelle jamais `/categorie/deco`.
-- validation locale avant deploy: test catalogue cible vert; deploiement et
-  requalification de la tache existante encore requis.
-- deploiement prevu: uniquement `dispatchCatalogRevalidation` Gen2 sur le
-  sandbox via le wrapper fail-closed; aucun App Hosting, production, Stripe,
-  IAM, secret ou Scheduler.
+- validation locale: `test:functions-gen2` 162/162,
+  `test:catalog:core` 14/14 et `test:catalog:security` 13/13, y compris les
+  emulators; lint Functions et lint complet `--quiet` verts.
+- deploiement: uniquement `dispatchCatalogRevalidation` Gen2 sur le sandbox
+  via le wrapper fail-closed, revision
+  `dispatchcatalogrevalidation-00013-cop`, `ACTIVE`, 100 % du trafic, Node 22,
+  max/concurrence 1, secret HMAC v3 conserve. Le Scheduler catalogue a ete
+  suspendu avec sa configuration relevee, la queue s'est videe naturellement
+  sans suppression de tache, puis le Scheduler a ete retabli `ENABLED` avec la
+  meme cadence et execute une fois pour rejouer exactement le plan 306.
+- requalification active: a `2026-08-23T16:16:54.512Z`, etat catalogue
+  `published`, `desiredRevision=publishedRevision=revalidatedRevision=306`,
+  aucun lease, aucune erreur et zero failure; depuis la nouvelle revision,
+  trois entrees de logs, zero erreur, zero HTTP 5xx, un HTTP 2xx et une
+  revalidation aboutie. `/api/catalog/version`, `/`,
+  `/categorie/decorations` et `/api/catalog` repondent 200; le produit archive
+  repond 404.
+- effets adjacents: aucun App Hosting, deploy global, production, Stripe live,
+  IAM, secret, changement de configuration Scheduler ou suppression de tache.
 
 ## Raccordement codes promotionnels — 2026-08-13
 

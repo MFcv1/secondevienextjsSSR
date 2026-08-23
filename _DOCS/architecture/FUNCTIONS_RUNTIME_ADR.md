@@ -60,9 +60,12 @@ les deux revisions etaient `ACTIVE` et servaient 100 % du trafic. Le wrapper
 refuse une revision, generation, taille, hold ou digest different et extrait
 les octets verifies dans un repertoire prive temporaire pour ne pas confondre
 archive durable et staging Cloud Functions. La premiere fenetre F6 a ete
-remplacee apres quatre remediations commerce sandbox ciblees et qualifiees.
-La fenetre courante de 604800 s court depuis
-`2026-08-23T12:24:19.325Z`; ce suivi operationnel long ne bloque pas la
+remplacee apres quatre remediations commerce sandbox ciblees et qualifiees. La
+suivante a ete remplacee par le deploiement cible A-028 de
+`dispatchCatalogRevalidation`, revision
+`dispatchcatalogrevalidation-00013-cop`, puis sa requalification active. La
+fenetre courante de 604800 s court depuis `2026-08-23T16:16:54.512Z`; ce suivi
+operationnel long ne bloque pas la
 qualification fonctionnelle active et ne doit pas etre presente comme termine
 avant son echeance reelle.
 
