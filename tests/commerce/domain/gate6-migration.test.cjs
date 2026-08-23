@@ -221,6 +221,18 @@ test('Gate 6: le preflight refund.failed reste non mutateur pour le commerce', (
     for (const eventType of ['refund.created', 'refund.updated', 'refund.failed']) {
         assert.match(source, new RegExp(`'${eventType.replace('.', '\\.')}'`));
     }
+    for (const functionName of [
+        'stripeWebhookV2Gen2',
+        'stripeConnectWebhookV2Gen2',
+        'getOrderTimelineAdminV2Gen2'
+    ]) {
+        assert.match(source, new RegExp(`'${functionName}'`));
+    }
+    assert.doesNotMatch(source, /'stripeWebhookV2'/);
+    assert.doesNotMatch(source, /'stripeConnectWebhookV2'/);
+    assert.doesNotMatch(source, /'getOrderTimelineAdminV2'/);
+    assert.match(source, /uri: descriptor\.url/);
+    assert.doesNotMatch(source, /descriptor\.serviceConfig\?\.uri \|\| descriptor\.url/);
     assert.match(source, /invalid-read-only-preflight/);
     assert.match(source, /await main\(\)/);
     assert.doesNotMatch(source, /webhookEndpoints\.update|events\.create|refunds\.create/);

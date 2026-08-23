@@ -8,9 +8,9 @@ const REGION = 'europe-west1';
 const MINIMUM_REFUND_V2_DEPLOYED_AT = Date.parse('2026-07-31T14:03:00.000Z');
 const REQUIRED_EVENTS = ['refund.created', 'refund.updated', 'refund.failed'];
 const FUNCTION_NAMES = [
-  'stripeWebhookV2',
-  'stripeConnectWebhookV2',
-  'getOrderTimelineAdminV2'
+  'stripeWebhookV2Gen2',
+  'stripeConnectWebhookV2Gen2',
+  'getOrderTimelineAdminV2Gen2'
 ];
 const require = createRequire(import.meta.url);
 const Stripe = require('../functions/node_modules/stripe');
@@ -78,7 +78,7 @@ async function main() {
     );
     return {
       name,
-      uri: descriptor.serviceConfig?.uri || descriptor.url,
+      uri: descriptor.url,
       updateTime: descriptor.updateTime,
       state: descriptor.state
     };
@@ -104,10 +104,10 @@ async function main() {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
   const endpoints = await stripe.webhookEndpoints.list({ limit: 100 });
   const platform = endpoints.data.find((endpoint) =>
-    endpoint.url === webhookFunctions.find(({ name }) => name === 'stripeWebhookV2')?.uri
+    endpoint.url === webhookFunctions.find(({ name }) => name === 'stripeWebhookV2Gen2')?.uri
   );
   const connect = endpoints.data.find((endpoint) =>
-    endpoint.url === webhookFunctions.find(({ name }) => name === 'stripeConnectWebhookV2')?.uri
+    endpoint.url === webhookFunctions.find(({ name }) => name === 'stripeConnectWebhookV2Gen2')?.uri
   );
   invariant(
     !platform || endpointSupports(platform),

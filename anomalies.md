@@ -42,6 +42,7 @@ Echeance de fusion et suppression: 2026-08-06
 | A-019 | Session client / checkout | `MINEURE` | `FERMEE` | Le panier et la session etaient charges apres hydratation; la reprise a permis les deux commandes |
 | A-020 | Accès administrateur Google | `BLOQUANTE` | `FERMEE` | Le premier parcours n’achevait pas le sélecteur Google; reprise explicite du compte admin réussie |
 | A-021 | Publication admin | `MAJEURE` | `CORRIGEE_A_REQUALIFIER` | Le renouvellement du jeton démontait le parcours, fermait la progression et réinitialisait la vue sur Créer |
+| A-022 | Gate refund.failed Gen2 | `IMPORTANTE` | `REQUALIFIEE` | Le préflight M12/M13 cible désormais les trois Functions Gen2 finales et leurs URL publiques |
 
 Severites:
 
@@ -1701,6 +1702,40 @@ Code modifié par l'agent de recette: NON. Les corrections ont ete effectuees
 pendant des pauses explicites de recette, validees et deployees sur le sandbox;
 la requalification humaine finale a ensuite repris sans nouvelle modification
 de code.
+
+### A-022 - Le preflight refund.failed cible les anciens noms de Functions
+
+- statut: `REQUALIFIEE`
+- severite: `IMPORTANTE`
+- phase: preflight M12/M13 de la qualification Gen1 vers Gen2
+- environnement: sandbox / Stripe test
+- `runId`: `run_v2all_20260823_gen2q01`
+- attendu: la gate non mutante decrit les deux webhooks Gen2 actifs, verifie
+  leur refus des requetes non signees et recoupe les endpoints Stripe test.
+- observe: `commerce:refund-failed:preflight` echoue sur un 404 en decrivant
+  `stripeWebhookV2`; le script cible aussi `stripeConnectWebhookV2`, alors que
+  les cibles cloud finales sont `stripeWebhookV2Gen2` et
+  `stripeConnectWebhookV2Gen2`.
+- reproductibilite: `1/1` sous Node 22, controle commerce ferme revision 64.
+- impact: faux blocage de M12/M13 et ancien appelant local Gen1/ancien nom
+  encore accessible dans un harnais de qualification; aucun paiement,
+  remboursement, stock ou webhook n'a ete mute.
+- preuve sanitisee: erreur Cloud Functions 404 sur le nom retire; inventaire
+  live separe confirmant 134 Gen2 actives et trois seules Gen1 Auth.
+- cause racine ou hypothese: cause racine confirmee dans
+  `scripts/audit-refund-failed-v2.mjs`; la liste et le rapprochement d'URL
+  n'ont pas ete actualises apres G10/G12.
+- correction appliquee: verrouillage des trois noms cloud Gen2 finaux par
+  test, retrait des noms supprimes et utilisation de l'URL publique
+  `descriptor.url` plutot que de l'URI interne Cloud Run pour le recoupement
+  Stripe et la probe non signee.
+- validations: le test cible a echoue avant chaque correctif puis passe
+  `11/11`; la gate sandbox retourne `READY`, les trois Functions sont
+  `ACTIVE`, les endpoints Platform/Connect sont `enabled` et aucun evenement
+  Stripe n'a ete injecte.
+- deploiement: aucun; script et test locaux uniquement.
+- controles refermes: oui, `v2_fixture`, admin `read_only`, offline `off`,
+  operations `healthy`, compteurs a zero.
 
 ## Raccordement codes promotionnels — 2026-08-13
 
