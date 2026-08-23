@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "codebase": "main",
+    "environment": "sandbox",
+    "gate": "QUALIFICATION_REFUND_G10_20260823",
+    "baselineCommit": "33c888cb9e5079ec66986eabbb013ce2b5c3f312",
+    "status": "READY"
+  },
+  "gates": {
+    "deploymentAllowed": true,
+    "productionAllowed": false,
+    "stripeLiveAllowed": false
+  },
+  "deploymentPolicy": {
+    "transport": "gcloud-gen2-update",
+    "immutableArchiveWave": "g10",
+    "maxTargetsPerDeploy": 1,
+    "forbiddenTargets": [],
+    "archiveUri": "gs://gcf-v2-sources-231220287936-europe-west1/g10/c209fd934a7eaa507c41b7543d80c8db15df991885e214de4974eda6f88cc28f/function-source.zip",
+    "archiveSha256": "c209fd934a7eaa507c41b7543d80c8db15df991885e214de4974eda6f88cc28f",
+    "archiveGeneration": "1787484861320152",
+    "archiveSize": 366155,
+    "uploadCount": 1
+  },
+  "functions": [
+    {
+      "name": "stripeWebhookV2Gen2",
+      "cloud": { "present": true, "generation": 2, "state": "ACTIVE", "revision": "stripewebhookv2gen2-00001-qul" },
+      "identities": {
+        "runtimeServiceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+        "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/231220287936-compute@developer.gserviceaccount.com"
+      },
+      "decision": { "classification": "KEEP_GEN2", "deploymentMaxBatchSize": 1 }
+    },
+    {
+      "name": "stripeConnectWebhookV2Gen2",
+      "cloud": { "present": true, "generation": 2, "state": "ACTIVE", "revision": "stripeconnectwebhookv2gen2-00001-zey" },
+      "identities": {
+        "runtimeServiceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+        "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/231220287936-compute@developer.gserviceaccount.com"
+      },
+      "decision": { "classification": "KEEP_GEN2", "deploymentMaxBatchSize": 1 }
+    }
+  ]
+}
