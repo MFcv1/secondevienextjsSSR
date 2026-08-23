@@ -129,6 +129,18 @@ test('G8 deploy definitions use one immutable archive and exact secrets', () => 
   assert.deepEqual(GCLOUD_GEN2_TARGETS.requestOrderCancellationGen2.secrets, ['STRIPE_SECRET_KEY=STRIPE_SECRET_KEY:4']);
 });
 
+test('G8 targeted remediation uses the committed local source when no archive is supplied', () => {
+  const args = buildGcloudGen2DeployArgs({
+    transport: 'gcloud-gen2',
+    project: 'secondevienextjsssr',
+    allowlist: ['prepareCommerceDocumentDeliveryGen2'],
+    sourceUri: null,
+    commit: 'b'.repeat(40)
+  });
+  assert.ok(args.includes('--source=functions'));
+  assert.equal(args.some((entry) => entry === '--source=null' || entry === '--source=undefined'), false);
+});
+
 test('G8 deploy validation binds URI, digest, generation and size to the manifest', () => {
   const manifest = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g8.json'));
   const target = manifest.functions[0].name;

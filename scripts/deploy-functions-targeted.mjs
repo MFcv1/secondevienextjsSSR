@@ -1576,7 +1576,7 @@ export function buildGcloudGen2DeployArgs(validation, options = {}) {
     `--region=${target.region}`,
     '--gen2',
     `--runtime=${target.runtime}`,
-    `--source=${options.sourceDir || (target.g6 || target.g7 || target.g8 || target.g9 || target.g10 || target.g11 ? validation.sourceUri : 'functions')}`,
+    `--source=${options.sourceDir || validation.sourceUri || 'functions'}`,
     `--entry-point=${target.entryPoint}`,
     ...triggerArgs,
     `--run-service-account=${target.runtimeServiceAccount}`,
