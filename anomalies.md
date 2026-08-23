@@ -1940,7 +1940,7 @@ de code.
   les actions ouvrir, enregistrer et partager.
 - observe: deux recus historiques distincts affichent reproductiblement
   `Document indisponible`; aucun fichier incomplet n'est telecharge.
-- preuve active: Auth et App Check sont `VALID`, mais
+- preuve active initiale: Auth et App Check sont `VALID`, mais
   `prepareCommerceDocumentDeliveryGen2` revision
   `preparecommercedocumentdeliverygen2-00001-xes` retourne HTTP 500. Les logs
   montrent `storage/invalid-argument` a l'appel
@@ -1948,14 +1948,14 @@ de code.
   par defaut.
 - impact: les commandes et metadonnees restent lisibles, mais aucun des 31
   documents client ne peut etre ouvert pendant une demonstration.
-- cause racine: le handler dependait implicitement de
+- premiere cause racine: le handler dependait implicitement de
   `admin.app().options.storageBucket`, absent de la configuration de cette
   revision Gen2, alors que le bucket prive du projet existe.
-- correction appliquee: resolution fail-closed du bucket dans l'ordre
+- premiere correction appliquee: resolution fail-closed du bucket dans l'ordre
   `FUNCTIONS_STORAGE_BUCKET`, `FIREBASE_CONFIG.storageBucket`, puis
   `<projectId>.firebasestorage.app` derive des variables Google Cloud. Aucun
   nom de bucket production n'est cable dans le domaine commerce.
-- regression: le resolver couvre le bucket explicite, Firebase config, les
+- regression initiale: le resolver couvre le bucket explicite, Firebase config, les
   trois variables projet, la config malformee avec fallback et l'absence
   totale de projet.
 - validation locale avant deploy: suite document `5/5`, lint Functions strict
@@ -1968,6 +1968,24 @@ de code.
   automatiquement sa copie a l'adresse enregistree sur la commande; cet effet
   externe necessite l'autorisation explicite de l'utilisateur au moment du
   clic.
+- requalification du premier correctif: apres autorisation, Safari reproduit
+  encore `Document indisponible` sur la revision `00002-riw`. L'invocation est
+  bien authentifiee, mais retourne HTTP 500 avec
+  `COMMERCE_DOCUMENT_STORAGE_BUCKET_UNAVAILABLE`: cette revision n'expose ni
+  `FUNCTIONS_STORAGE_BUCKET`, ni `FIREBASE_CONFIG.storageBucket`, ni l'une des
+  trois variables projet attendues.
+- cause racine complete: le projet reste pourtant resoluble par le credential
+  Application Default du SDK Admin. Le resolver s'arretait avant d'interroger
+  `admin.app().options.credential.getProjectId()`.
+- correction complete locale: apres les sources synchrones existantes, le
+  resolver accepte `admin.app().options.storageBucket`, `projectId`, puis le
+  project ID asynchrone du credential ADC. Le bucket demeure derive du projet
+  courant et echoue ferme si aucune de ces sources n'est disponible;
+  `bucketFactory` attend maintenant explicitement cette resolution.
+- regression complete: le test reproduit l'absence totale de variables Gen2,
+  prouve d'abord l'echec, puis couvre la resolution ADC et l'absence complete
+  d'identite. Suite document `5/5`, lint cible et `git diff --check` verts;
+  deploiement cible et nouvelle requalification Safari requis.
 
 ### A-030 - Un favori historique masque sa disponibilite catalogue
 

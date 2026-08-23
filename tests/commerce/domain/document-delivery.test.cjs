@@ -115,28 +115,34 @@ test('document delivery: le stockage immuable est réutilisé sans réécriture'
     assert.equal(artifactRecord.sourceContentHash, input.document.contentHash);
 });
 
-test('document delivery: le bucket Gen2 est explicite ou dérivé du projet', () => {
+test('document delivery: le bucket Gen2 est explicite ou dérivé du projet', async () => {
     assert.equal(
-        resolveStorageBucketName({ FUNCTIONS_STORAGE_BUCKET: 'documents.example.test' }),
+        await resolveStorageBucketName({ FUNCTIONS_STORAGE_BUCKET: 'documents.example.test' }),
         'documents.example.test'
     );
     assert.equal(
-        resolveStorageBucketName({
+        await resolveStorageBucketName({
             FIREBASE_CONFIG: JSON.stringify({ storageBucket: 'configured.example.test' }),
             GCLOUD_PROJECT: 'ignored-project'
         }),
         'configured.example.test'
     );
     assert.equal(
-        resolveStorageBucketName({ GOOGLE_CLOUD_PROJECT: 'sandbox-project' }),
+        await resolveStorageBucketName({ GOOGLE_CLOUD_PROJECT: 'sandbox-project' }),
         'sandbox-project.firebasestorage.app'
     );
     assert.equal(
-        resolveStorageBucketName({ FIREBASE_CONFIG: '{invalid', GCP_PROJECT: 'fallback-project' }),
+        await resolveStorageBucketName({ FIREBASE_CONFIG: '{invalid', GCP_PROJECT: 'fallback-project' }),
         'fallback-project.firebasestorage.app'
     );
-    assert.throws(
-        () => resolveStorageBucketName({}),
+    assert.equal(
+        await resolveStorageBucketName({}, {
+            credential: { getProjectId: async () => 'adc-project' }
+        }),
+        'adc-project.firebasestorage.app'
+    );
+    await assert.rejects(
+        () => resolveStorageBucketName({}, {}),
         /COMMERCE_DOCUMENT_STORAGE_BUCKET_UNAVAILABLE/
     );
 });

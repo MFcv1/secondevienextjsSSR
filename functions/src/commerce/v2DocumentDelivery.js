@@ -17,7 +17,7 @@ const {
 const EMAIL_DEDUPE_MS = 10 * 60 * 1000;
 const MAX_EMAILS_PER_DAY = 24;
 
-function resolveStorageBucketName(env = process.env) {
+async function resolveStorageBucketName(env = process.env, appOptions = null) {
     const explicitBucket = String(env.FUNCTIONS_STORAGE_BUCKET || '').trim();
     if (explicitBucket) return explicitBucket;
 
@@ -31,9 +31,22 @@ function resolveStorageBucketName(env = process.env) {
         }
     }
 
-    const projectId = String(
+    let projectId = String(
         env.GCLOUD_PROJECT || env.GOOGLE_CLOUD_PROJECT || env.GCP_PROJECT || ''
     ).trim();
+    if (!projectId) {
+        const options = appOptions || admin.app().options || {};
+        const adminBucket = String(options.storageBucket || '').trim();
+        if (adminBucket) return adminBucket;
+        projectId = String(options.projectId || '').trim();
+        if (!projectId && typeof options.credential?.getProjectId === 'function') {
+            try {
+                projectId = String(await options.credential.getProjectId() || '').trim();
+            } catch {
+                // Keep one fail-closed domain error instead of leaking credential details.
+            }
+        }
+    }
     if (!projectId) throw new Error('COMMERCE_DOCUMENT_STORAGE_BUCKET_UNAVAILABLE');
     return `${projectId}.firebasestorage.app`;
 }
@@ -148,7 +161,7 @@ async function queueDeliveryEmail({ db, order, document, recipient, ownerUid, no
 
 function createPrepareCommerceDocumentHandler({
     dbFactory = () => admin.firestore(),
-    bucketFactory = () => admin.storage().bucket(resolveStorageBucketName()),
+    bucketFactory = async () => admin.storage().bucket(await resolveStorageBucketName()),
     nowMillis = () => Date.now()
 } = {}) {
     return async (data, context) => {
@@ -180,7 +193,7 @@ function createPrepareCommerceDocumentHandler({
         }
 
         const artifact = await materializeCommerceDocumentArtifact({
-            bucket: bucketFactory(),
+            bucket: await bucketFactory(),
             artifactRef: documentRef.collection('artifacts').doc('current'),
             order,
             document

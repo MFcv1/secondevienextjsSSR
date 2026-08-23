@@ -200,11 +200,12 @@ a iPhone, Android ou ordinateur. Elle annonce `Telechargement lance`, jamais
 une fin de telechargement que le navigateur ne permet pas d'observer.
 
 La callable Gen2 ne depend pas d'un bucket par defaut implicite: elle resout le
-bucket prive depuis une configuration explicite, puis `FIREBASE_CONFIG`, puis
-le projet Google Cloud courant. L'absence de toute identite projet echoue avant
-la materialisation. Ce contrat evite qu'une revision Gen2 sans
-`storageBucket` dans ses options transforme toutes les actions `Ouvrir` en
-HTTP 500.
+bucket prive depuis une configuration explicite, puis `FIREBASE_CONFIG`, les
+variables projet Google Cloud, les options du SDK Admin et enfin le project ID
+asynchrone du credential Application Default. L'absence de toute identite
+projet echoue avant la materialisation. Ce contrat couvre aussi une revision
+Gen2 qui n'expose ni `storageBucket` ni variable projet tout en conservant un
+credential ADC valide.
 
 Dettes UX restantes observees sur ces donnees reelles:
 
