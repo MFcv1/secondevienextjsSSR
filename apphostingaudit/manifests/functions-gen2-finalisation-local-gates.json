@@ -3,14 +3,14 @@
   "project": "secondevienextjsssr",
   "environment": "local-only",
   "gate": "FINALISATION:F1_F3_AND_REGRESSION",
-  "generatedAt": "2026-08-23T02:03:50Z",
+  "generatedAt": "2026-08-23T02:19:49Z",
   "status": "GREEN",
   "node": "v22.23.2",
   "commands": [
     {
       "command": "npm run test:functions-gen2",
       "result": "PASS",
-      "tests": 157,
+      "tests": 161,
       "failures": 0,
       "cloudAccess": false
     },

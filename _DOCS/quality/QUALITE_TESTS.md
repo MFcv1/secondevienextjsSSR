@@ -98,6 +98,14 @@ le seul sandbox en lecture seule et n'est jamais lance par la CI. Pendant F6,
 il verifie la revision finale, l'inventaire, le trafic, les holds et les logs
 Gen2/Auth Gen1; son contrat pur reste couvert par `test:functions-gen2`.
 
+La cloture F9 est verrouillee localement par
+`npm run functions:gen2:final-closeout`. Le mode `--preflight` accepte une F6
+encore ouverte mais controle deja les gates locales, les preuves F4/F5/F7, la
+CI et les references du plan. `--require-ready` exige 604800 secondes et une
+acceptation F6 complete avant fusion; `--require-closed` exige ensuite le plan
+absent, zero reference morte et le heartbeat consigne `DISABLED`. Cette
+commande ne contacte aucun service externe.
+
 G8 est ferme par `npm run test:functions-g8`: les tests Node et les cinq
 controles Firestore rules couvrent les 37 wrappers commerce,
 le registre client et les contrats unit/property/fault directement touches.

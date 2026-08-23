@@ -907,6 +907,12 @@ finale, les 137 Functions, le trafic Cloud Run, les deux holds Storage et les
 429/5xx/erreurs Gen2 et Auth Gen1 depuis l'origine F6 sans recopier les
 messages sensibles.
 
+Le verrou local `scripts/functions-gen2-final-closeout.mjs`, expose par
+`npm run functions:gen2:final-closeout`, recoupe les manifestes F1 a F7, la
+gate CI et les references Markdown. Ses modes `preflight`, `ready` et `closed`
+empechent respectivement une preuve incomplete, une fermeture avant 604800 s
+et la conservation du plan ou de references mortes apres F9.
+
 G1 est `TERMINEE_G2_A_LOCAL_ONLY`: protections Firestore, backup,
 restore reconcilie et deux canaux Monitoring testes sont actifs. Le reconciler Gen1 est en version
 12 sur une identite runtime dediee minimale verifiee.

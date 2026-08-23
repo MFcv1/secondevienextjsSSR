@@ -71,13 +71,13 @@ conditions suivantes sont vraies en meme temps:
 | F6 | observer sept jours complets a partir de la revision finale | fenetre post-changement de 604800 s, inventaire frais et logs qualifies | `EN_COURS_JUSQU_AU_2026-08-30T01:46:24Z` |
 | F7 | classifier les erreurs G13 historiques et refaire une quiet-window finale | causes documentees, aucune affirmation `healthy` fondee sur un agregat ambigu | `HISTORIQUE_TERMINE_QUIET_WINDOW_EN_COURS` |
 | F8 | corriger les contradictions et qualifier les rollbacks G12 expires | bible, map, ADR, infra, exploitation, qualite et centre coherents | `TERMINE_DOCUMENTAIRE_A_REVERIFIER_EN_F9` |
-| F9 | fusionner les preuves durables et supprimer ce plan | liens verifies, `git diff --check`, aucune reference morte | `EN_ATTENTE_F6` |
+| F9 | fusionner les preuves durables et supprimer ce plan | verificateur `ready` puis `closed`, liens verifies, `git diff --check`, aucune reference morte | `EN_ATTENTE_F6` |
 
 Preuves locales du 2026-08-23:
 
 - `test:catalog:core`: 13/13;
 - `test:functions-g2a`: 26/26;
-- `test:functions-gen2`: 157/157;
+- `test:functions-gen2`: 161/161;
 - test cible G13: 6/6;
 - `test:auth`: 77/77;
 - `test:commerce:unit`: 136/136 avec reseau bloque par le harnais;
@@ -158,6 +158,7 @@ npm run test:auth
 npm run test:commerce:unit
 npm run lint:functions
 npm run lint
+npm run functions:gen2:final-closeout -- --preflight
 git diff --check
 git status --short
 ```
@@ -167,6 +168,12 @@ Checkpoint cloud read-only du seul sandbox, hors CI:
 ```bash
 npm run functions:gen2:final-observe
 ```
+
+Le dernier jour, `npm run functions:gen2:final-closeout -- --require-ready`
+doit passer avant la fusion. Apres suppression du plan, retrait de toutes ses
+references et consignation du heartbeat `DISABLED`, le mode
+`--require-closed` doit passer. Ces deux modes echouent tant que la duree F6,
+les preuves F4/F5/F7 ou l'etat documentaire ne sont pas exacts.
 
 Les tests Stripe heberges, remboursements reels, navigateur, E2E externe,
 purges et emulateurs non necessaires restent hors de cette passe.

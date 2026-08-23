@@ -110,7 +110,7 @@ Valeurs autorisees:
 
 | Niveau | Action | Statut courant | Gate exacte |
 | --- | --- | --- | --- |
-| P0 | gates locales Gen2, catalogue, Auth et commerce | `TERMINE_LOCAL` | 157/157 Gen2, 13/13 catalogue, 77/77 Auth, 136/136 commerce unitaire, lint vert |
+| P0 | gates locales Gen2, catalogue, Auth et commerce | `TERMINE_LOCAL` | 161/161 Gen2, 13/13 catalogue, 77/77 Auth, 136/136 commerce unitaire, lint vert |
 | P0 | rollback G13 exploitable | `TERMINE_CLOUD` | max 2 -> max 1 `00003-mol` -> max 2 `00004-hiv`, deux sources sous hold |
 | P0 | observation de l'etat final | `EN_COURS` | 604800 s depuis `2026-08-23T01:46:24.611705732Z` |
 | P1 | erreurs historiques G13 | `QUALIFIEES` | 258 HTTP 500 et 17 HTTP 429 attribues; zero agregat masque |
