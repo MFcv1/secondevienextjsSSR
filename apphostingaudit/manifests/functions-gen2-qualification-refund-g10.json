@@ -6,7 +6,7 @@
     "environment": "sandbox",
     "gate": "QUALIFICATION_REFUND_G10_20260823",
     "baselineCommit": "4d89dcb63d6be8102b0c8b3c6bb184bf9b20d45b",
-    "status": "READY"
+    "status": "CLOSED"
   },
   "gates": {
     "deploymentAllowed": true,
@@ -23,6 +23,8 @@
     "archiveGeneration": "1787486117719842",
     "archiveSize": 363420,
     "uploadCount": 1,
+    "successfulDeployCount": 2,
+    "failedNoTrafficDeployCount": 1,
     "sourceAdapter": {
       "purpose": "Expose the two retained G10 entry points without restoring retired Gen1 exports to the active local inventory.",
       "exports": ["stripeWebhookV2", "stripeConnectWebhookV2"],
@@ -36,10 +38,10 @@
         "present": true,
         "generation": 2,
         "state": "ACTIVE",
-        "revision": "stripewebhookv2gen2-00002-pid",
-        "latestReadyRevision": "stripewebhookv2gen2-00001-qul",
+        "revision": "stripewebhookv2gen2-00003-naj",
+        "latestReadyRevision": "stripewebhookv2gen2-00003-naj",
         "trafficOnLatestReadyPercent": 100,
-        "failedRevisionReason": "Missing deploy-only G10 entry point; zero traffic shifted."
+        "supersededFailedRevision": "stripewebhookv2gen2-00002-pid"
       },
       "identities": {
         "runtimeServiceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
@@ -49,7 +51,14 @@
     },
     {
       "name": "stripeConnectWebhookV2Gen2",
-      "cloud": { "present": true, "generation": 2, "state": "ACTIVE", "revision": "stripeconnectwebhookv2gen2-00001-zey" },
+      "cloud": {
+        "present": true,
+        "generation": 2,
+        "state": "ACTIVE",
+        "revision": "stripeconnectwebhookv2gen2-00002-reb",
+        "latestReadyRevision": "stripeconnectwebhookv2gen2-00002-reb",
+        "trafficOnLatestReadyPercent": 100
+      },
       "identities": {
         "runtimeServiceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
         "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/231220287936-compute@developer.gserviceaccount.com"

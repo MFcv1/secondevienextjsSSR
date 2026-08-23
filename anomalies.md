@@ -1739,7 +1739,7 @@ de code.
 
 ### A-023 - Le rapprochement post-campagne exige exactement trois commandes
 
-- statut: `CORRIGEE_A_REQUALIFIER`
+- statut: `REQUALIFIEE`
 - severite: `MINEURE`
 - phase: rapprochement final de la qualification Gen1 vers Gen2
 - environnement: sandbox / Stripe test
@@ -1760,6 +1760,95 @@ de code.
   commandes distinctes, controle revision 66 ferme, panier vide, trois unites
   engagees, zero restock, Stripe test uniquement et webhooks traites.
 - deploiement: aucun; harnais local uniquement.
+
+### A-024 - L'apercu de publication presente un slug seul comme URL produit
+
+- statut: `REQUALIFIEE`
+- severite: `MINEURE`
+- phase: publication et archivage du smoke Gen2
+- environnement: sandbox
+- `runId`: `run_v2all_20260823_gen2q01`
+- attendu: l'apercu ne doit afficher comme URL valide que la route canonique
+  `<slug>-<id>` acceptee par `/produit/[slugOrId]`.
+- observe: avant creation de l'ID, la barre d'adresse simule
+  `/produit/<slug>`; cette route renvoie 404, tandis que la route par ID du
+  produit smoke repond 200 avant archivage.
+- impact: information trompeuse dans l'apercu admin, sans perte catalogue ni
+  effet SEO public.
+- cause racine: `SitePublicationPreview.jsx` construisait localement un slug
+  seul alors que le contrat public exige l'ID comme valeur directe ou suffixe.
+- correction appliquee: pour une creation, suffixe explicite
+  `id-apres-publication`; pour une edition, passage de l'ID et reutilisation de
+  `getProductUrl`. Test catalogue de regression ajoute.
+- validation sandbox deja acquise sur le cycle metier: produit
+  `product-90f942d4-9d3e-483d-a3e9-76ac3dce8de2` publie en revision 305,
+  archive en revision 306, absent de `/api/catalog` et route finale 404.
+- requalification: test catalogue `14/14`, build Next.js 16.3 distant reussi,
+  rollout cible du seul backend `secondevie-next-sandbox` termine et routes
+  `/` puis `/api/catalog/version` en HTTP 200. Le code servi construit
+  desormais l'URL canonique avec l'ID en edition et affiche explicitement
+  `id-apres-publication` avant creation; aucune nouvelle publication n'a ete
+  necessaire.
+- deploiement: App Hosting sandbox uniquement; aucune production.
+
+### A-025 - Un refund renverse envoie aussi des confirmations devenues fausses
+
+- statut: `REQUALIFIEE`
+- severite: `IMPORTANTE`
+- phase: M10-M13, remboursement asynchrone Stripe test
+- environnement: sandbox / Stripe test
+- `runId`: `run_v2all_20260823_gen2q01`
+- attendu: la commande au remboursement finalement `failed` envoie seulement
+  M12/M13; M10/M11 restent reserves au remboursement durablement reussi.
+- observe: Gmail contient d'abord les confirmations client/admin de
+  `CMD-ORD_7B2DC5`, puis les deux alertes d'echec a la meme minute. L'etat
+  autoritaire final reste correct: `needs_review`, capture 55 000, rembourse
+  0 centime, stock engage 1 et restock 0.
+- reproductibilite: `1/1` avec la carte de test Stripe de refund asynchrone;
+  M10/M11 obsoletes et M12/M13 sont tous presents dans les boites exactes.
+- impact: communication client et back-office contradictoire, sans divergence
+  financiere ni double remboursement.
+- cause racine: le domaine compensait deja `succeeded -> failed`, mais les
+  intentions e-mail de succes devenaient immediatement eligibles et le
+  dispatcher ne relisait pas la tentative avant Gmail.
+- correction appliquee: ajout du `refundRequestId` au payload, fenetre de
+  stabilisation de cinq minutes pour M10/M11, puis relecture autoritaire de la
+  tentative au moment de l'envoi. Un succes entre-temps renverse devient
+  `suppressed_stale`; les e-mails d'echec restent immediats et idempotents.
+- validations finales: tests refund/outbox cibles `32/32`; domaine Firestore
+  `20/20`, `114` assertions; commerce `139/139`; Functions Gen2 `162/162`;
+  preflight distant `READY`, endpoints Platform et Connect `enabled`, refus
+  non signe 400 et etat financier final de la commande echec inchange. Le
+  replay est idempotent et non mutateur: aucune nouvelle commande, aucun
+  nouveau remboursement et aucun nouvel e-mail n'ont ete crees.
+- deploiement: uniquement `commerceOutboxDispatcherGen2`,
+  `requestRefundAdminGen2`, `stripeWebhookV2Gen2` et
+  `stripeConnectWebhookV2Gen2` sur le sandbox, un export a la fois depuis des
+  archives immuables; aucun deploy global, Stripe live ou production.
+
+### A-026 - L'archive de qualification G10 ne contient plus les entry points deploy-only
+
+- statut: `REQUALIFIEE`
+- severite: `MINEURE`
+- phase: deploiement cible de la correction refund
+- environnement: sandbox / Stripe test
+- attendu: mettre a jour les deux owners webhook Gen2 depuis une archive
+  immuable sans recreer les exports Gen1 retires en G12.
+- observe: le premier build `stripeWebhookV2Gen2` reussit, mais la revision
+  `00002-pid` ne demarre pas avec `Function 'stripeWebhookV2' is not defined`.
+  Elle ne recoit aucun trafic; `00001-qul` conserve 100 % du trafic.
+- cause racine: l'archive etait un `git archive` du code final G12, alors que
+  l'archive G10 historique ajoutait les deux entry points deploy-only vers les
+  handlers partages encore actifs.
+- correction appliquee: archive G10 reconstruite depuis le commit borne avec
+  un adaptateur limite a `stripeWebhookV2` et `stripeConnectWebhookV2`, SHA-256
+  `f72cb7b18849cbb4623cc8cdac5315ecf89068d0c1d91e89d3d18f53244407fb`,
+  generation Storage `1787486117719842`; manifeste et digest commites.
+- validations: Platform `00003-naj` et Connect `00002-reb` `ACTIVE`, 100 %
+  du trafic sur leur derniere revision, secrets Stripe test conserves,
+  preflight distant `READY` et `test:functions-g10` `39/39`.
+- impact: aucun appel fournisseur perdu, aucune interruption de l'ancien
+  endpoint actif, aucune donnee ou configuration Stripe live touchee.
 
 ## Raccordement codes promotionnels — 2026-08-13
 
