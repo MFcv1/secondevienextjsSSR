@@ -592,7 +592,7 @@ Dupliquer cette section pour chaque anomalie et remplacer `A-000`.
 
 ### A-015 - Meuble de smoke test non archive apres la recette
 
-- statut: `OUVERTE`
+- statut: `REQUALIFIEE`
 - severite: `MINEURE`
 - phase: nettoyage de recette
 - environnement: sandbox / Stripe test
@@ -617,8 +617,10 @@ Dupliquer cette section pour chaque anomalie et remplacer `A-000`.
 - fichiers/Functions touches: aucun.
 - validations lancees: controle ferme, operations `healthy`, produit relu par
   son identifiant exact.
-- resultat de requalification: en attente de l'archivage et de sa disparition
-  du catalogue public.
+- resultat de requalification: controle public du 2026-08-23 sur la revision
+  catalogue 306: l'identifiant exact est absent de `/api/catalog`. Le nouveau
+  smoke de campagne a lui aussi ete archive par l'interface normale et sa
+  route produit finale repond 404; aucun residu public dangereux ne subsiste.
 - documentation canonique a mettre a jour: aucune apres nettoyage.
 
 ### A-016 - Documents des nouvelles commandes absents au controle immediat
@@ -767,7 +769,7 @@ Dupliquer cette section pour chaque anomalie et remplacer `A-000`.
 
 ### A-019 - Validation OTP client en erreur reseau persistante
 
-- statut: `CORRIGEE_A_REQUALIFIER`
+- statut: `REQUALIFIEE`
 - severite: `MAJEURE`
 - phase: M01 avant ouverture de la fenetre commerce; classe a tort en P0 par
   la campagne initiale
@@ -812,8 +814,10 @@ Dupliquer cette section pour chaque anomalie et remplacer `A-000`.
 - resultat de requalification: 61/61 tests Auth, lint cible sans erreur et
   build sandbox verts. App Hosting `build-2026-07-31-003` a termine son rollout
   `SUCCEEDED` le 2026-07-31 a 19:14:46 Europe/Paris; `/galerie` repond HTTP 200
-  et le chunk public contient la metrique et le message de reprise. M01 reste
-  a rejouer fonctionnellement par Terra.
+  et le chunk public contient la metrique et le message de reprise. La campagne
+  active du 2026-08-23 a ensuite rejoue M01 avec le compte client exact: OTP
+  recu, validation et session Firebase reussies; le client est reste sans
+  acces admin. Suite Auth finale `77/77`.
 - documentation canonique a mettre a jour:
   `_DOCS/security/AUTHENTIFICATION.md`,
   `_DOCS/email/RECETTE_EMAILS_LUNA.md`, `map.md`.
@@ -875,7 +879,7 @@ Dupliquer cette section pour chaque anomalie et remplacer `A-000`.
 
 ### A-021 - Confirmation de publication fermee avant le changement de vue
 
-- statut: `CORRIGEE_A_REQUALIFIER`
+- statut: `REQUALIFIEE`
 - severite: `MAJEURE`
 - phase: publication admin reelle depuis App Hosting
 - environnement: sandbox / App Hosting
@@ -905,8 +909,12 @@ Dupliquer cette section pour chaque anomalie et remplacer `A-000`.
   relecture.
 - fichiers/Functions touches: `app/admin/AdminAppIsland.jsx`, contrat Auth et
   chapitre canonique du back-office; aucune Function ni donnee catalogue.
-- resultat de requalification: correction locale en attente de deploiement et
-  d'un nouveau parcours humain complet.
+- resultat de requalification: campagne active du 2026-08-23 avec le compte
+  admin Google/AAL2 exact: publication durable du meuble
+  `product-90f942d4-9d3e-483d-a3e9-76ac3dce8de2`, confirmation conservee,
+  presence publique en revision 305 puis archivage normal en revision 306.
+  Les deux anciens identifiants smoke A-015/A-021 sont absents de
+  `/api/catalog`; aucune Function ou production touchee par cette correction.
 
 ## Journal de campagne
 
