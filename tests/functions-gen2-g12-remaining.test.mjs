@@ -39,7 +39,7 @@ test('chaque cible possede une configuration de rollback et un owner explicite',
   }
 });
 
-test('G12-A restant est ferme par cohorte avec rollback exact et trois Auth Gen1 preservees', () => {
+test('G12-A restant est ferme par cohorte avec archive bornee et trois Auth Gen1 preservees', () => {
   const aggregate = JSON.parse(fs.readFileSync(path.join(ROOT, 'apphostingaudit/manifests/functions-gen2-g12a-remaining.json'), 'utf8'));
   assert.equal(aggregate.status, 'CLOSED');
   assert.equal(aggregate.cohorts.length, 9);

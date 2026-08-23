@@ -1,7 +1,7 @@
 # ADR - Architecture Firebase Functions apres migration Gen2
 
 Derniere mise a jour: 2026-08-23
-Statut: `ACCEPTE - SANDBOX_GEN2_MIGRATED_AND_HARDENED`
+Statut: `ACCEPTE - TOPOLOGIE_COMPLETE - FINALISATION_POST_AUDIT_EN_COURS`
 
 ## Decision
 
@@ -18,8 +18,10 @@ L'etat autoritaire est:
 - exactement trois Gen1 Auth conservees:
   `grantAdminOnAuth`, `onRegisteredUserCreated` et
   `onRegisteredUserDeleted`;
-- cinq exports Instagram locaux et leurs Gen2 restent expliques par l'ecart
-  local/cloud historique; aucun deploiement global n'est permis;
+- cinq exports Instagram legacy restent uniquement locaux; deux webhooks v2
+  restent uniquement cloud avec leur source et leur entree de deploiement
+  dediees. L'ecart net local/cloud est donc `135 communs + 5 / + 2`; aucun
+  deploiement global n'est permis;
 - App Hosting sert `build-2026-08-22-003`; son rollback prouve est
   `build-2026-08-22-002`.
 
@@ -29,8 +31,13 @@ restent interdits sans decision distincte.
 
 ## Observation et capacite
 
-La fenetre G13 de sept jours confirme les 134 Gen2 actives, huit alertes
-Monitoring actives et un dashboard. Aucun depassement de quota n'est remonte.
+La fenetre historique G13 couvre sept jours de metriques et confirme, a sa fin,
+les 134 Gen2 actives, huit alertes Monitoring actives et un dashboard. G12-A
+s'est toutefois terminee environ douze minutes avant la fin de cette fenetre et
+le tuning est posterieur: cette preuve n'est pas un soak de sept jours de la
+topologie finale. Un soak final reste requis par le plan temporaire
+`apphostingaudit/FINALISATION_MIGRATION_GEN2.md`. Aucun depassement de quota
+n'est remonte.
 L'API Cloud Billing Budget est desactivee: le projet est facture, mais aucun
 budget n'a pu etre prouve et aucun cout exact n'est affirme sans export
 Billing. Artifact Registry occupe environ 12,36 Go sur trois repositories;
@@ -44,9 +51,13 @@ Cloud Run sans instance disponible, sans erreur applicative. Ce plafond est
 accepte comme garde-fou de cout pour une surface reservee a un administrateur;
 aucun second tuning ni build App Hosting n'est justifie.
 
-Le rollback exact du tuning utilise l'objet Storage versionne, sa generation
-et son SHA-256 consignes dans
-`apphostingaudit/manifests/functions-gen2-g13-tuning-rollback.json`.
+L'objet de rollback du tuning, sa generation et son SHA-256 sont consignes dans
+`apphostingaudit/manifests/functions-gen2-g13-tuning-rollback.json`. Le wrapper
+local porte desormais le rail cible et refuse une revision ou un digest
+different. La generation Storage exacte porte desormais le hold prouve dans
+`apphostingaudit/manifests/functions-gen2-finalisation-f4.json`. L'exercice
+rollback/reactivation reste interdit tant que le wrapper et ses preuves ne sont
+pas commites et que son preflight n'est pas vert.
 
 ## Horizon Node.js
 

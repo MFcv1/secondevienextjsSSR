@@ -877,19 +877,26 @@ Etat final apres G12-A/B et G13 au 2026-08-23: `functions/index.js` contient
 `grantAdminOnAuth`, `onRegisteredUserCreated` et `onRegisteredUserDeleted`.
 Toutes les autres cibles cloud conservees sont Gen2 `ACTIVE`; les quatre
 owners Scheduler commerce sont `ENABLED` et les endpoints Stripe test pointent
-uniquement vers les owners Gen2. Les cinq exports Instagram locaux expliquent
-l'ecart source/cloud et restent explicitement hors deploy global.
+uniquement vers les owners Gen2. L'ecart exact est 135 noms communs, cinq
+exports Instagram legacy uniquement locaux et deux webhooks v2 uniquement
+cloud (`stripeWebhookV2Gen2`, `stripeConnectWebhookV2Gen2`) avec source et
+entree de deploiement dediees. Les cinq legacy Instagram restent explicitement
+hors deploy global.
 
 Les dix retraits maintenance, les six G3 et les neuf cohortes restantes ont
 ete supprimes individuellement apres appelants, trafic, quiet-windows et
-rollbacks exacts. Leurs manifests sont indexes par
+archives de rollback digestees. Les fenetres G12 ont expire et ces archives ne
+constituent plus des rollbacks autonomes. Leurs manifests sont indexes par
 `apphostingaudit/manifests/functions-gen2-g12a-remaining.json`; le nettoyage
 source est prouve par `functions-gen2-g12b-remaining.json`. Aucun IAM partage,
 secret, donnee ou trigger Auth n'a ete retire.
 
 G13 conserve un seul tuning cible du statut catalogue:
-`getcatalogpublicationstatusgen2-00002-yoq`, max instances 2 et rollback
-digeste. App Hosting sert `build-2026-08-22-003`, rollback prouve
+`getcatalogpublicationstatusgen2-00002-yoq`, max instances 2 et objet rollback
+digeste. Le wrapper local refuse toute autre revision/generation/digest et F4
+a prouve le hold Storage exact; l'exercice F5 et le soak final restent dans
+`apphostingaudit/FINALISATION_MIGRATION_GEN2.md`. App Hosting sert
+`build-2026-08-22-003`, rollback prouve
 `build-2026-08-22-002`. L'ADR canonique est
 `_DOCS/architecture/FUNCTIONS_RUNTIME_ADR.md`.
 

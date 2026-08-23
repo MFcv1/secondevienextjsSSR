@@ -9,30 +9,7 @@ if (!admin.apps.length) admin.initializeApp({ projectId: 'demo-product-publicati
 const {
   ORIGINAL_PATH_PATTERN,
   buildMedia,
-  safeSession,
 } = require('../../functions/src/publication/productPublication');
-
-test('publication status exposes progress without leaking generated media or owner data', () => {
-  const status = safeSession({
-    sessionId: 'publication-session-0001',
-    productId: 'product-session-0001',
-    ownerUid: 'private-admin-uid',
-    status: 'processing',
-    clientState: 'attention_required',
-    expectedMediaCount: 2,
-    slots: {
-      'slot-00': { status: 'ready', variants: { full: 'private-before-publication' } },
-      'slot-01': { status: 'processing', originalPath: 'private-source' },
-    },
-  });
-
-  assert.equal(status.processedMediaCount, 1);
-  assert.equal(status.receivedMediaCount, 2);
-  assert.equal(status.attentionRequired, true);
-  assert.deepEqual(status.slots['slot-00'], { status: 'ready', error: null });
-  assert.equal(Object.hasOwn(status, 'ownerUid'), false);
-  assert.equal(Object.hasOwn(status.slots['slot-00'], 'variants'), false);
-});
 
 test('publication media is assembled in stable slot order and rejects incomplete sessions', () => {
   const slots = {

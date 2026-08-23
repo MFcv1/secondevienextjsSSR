@@ -33,6 +33,7 @@ jobs:
       - run: pnpm security:audit
       - run: pnpm lint
       - run: pnpm lint:functions
+      - run: pnpm test:functions-gen2
       - run: pnpm test:commerce
       - run: pnpm test:catalog
       - run: pnpm test:auth

@@ -25,7 +25,7 @@ test('G12-A:G3 ferme exactement les six Gen1 autorisees', () => {
   assert.equal(EXPECTED_CURRENT_CLOUD_COUNT, 137);
 });
 
-test('G12-A:G3 conserve les workers Gen2 et un rollback exact', () => {
+test('G12-A:G3 conserve les workers Gen2 et une archive rollback digestee', () => {
   const manifest = readJson('apphostingaudit/manifests/functions-gen2-g12a-g3.json');
   const rollback = readJson('apphostingaudit/manifests/functions-gen2-g12a-g3-rollback.json');
   assert.equal(manifest.relatedGen2Workers.length, 3);

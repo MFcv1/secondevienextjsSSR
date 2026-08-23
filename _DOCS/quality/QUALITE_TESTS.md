@@ -25,19 +25,21 @@ Toujours annoncer ce qui a ete lance et ce qui ne l'a pas ete.
    les dependances racine/production Functions au seuil modere;
 3. lint application puis `lint:functions`, strict sur `functions/index.js`,
    tous les helpers et tous les domaines `functions/src`;
-4. agregat bloquant `test:commerce`;
-5. suites catalogue coeur, resilience et Rules Emulator;
-6. tests Auth;
-7. devis, newsletter, analytics, retention, onboarding facturation, factures
+4. agregat local bloquant `test:functions-gen2`, couvrant les contrats G0 a
+   G13 sans acces cloud;
+5. agregat bloquant `test:commerce`;
+6. suites catalogue coeur, resilience et Rules Emulator;
+7. tests Auth;
+8. devis, newsletter, analytics, retention, onboarding facturation, factures
    manuelles, cache admin et Meta OAuth;
-8. audit de l'initialisation App Check cote navigateur;
-9. contrat de coherence des versions de deploiement et du cache ISR;
-10. contrat SEO public;
-11. build Next;
-12. scan du build contre les valeurs sensibles locales et les source maps
+9. audit de l'initialisation App Check cote navigateur;
+10. contrat de coherence des versions de deploiement et du cache ISR;
+11. contrat SEO public;
+12. build Next;
+13. scan du build contre les valeurs sensibles locales et les source maps
     publiques avec `security:audit:bundle`;
-13. classification des routes;
-14. budget performance en rapport non bloquant.
+14. classification des routes;
+15. budget performance en rapport non bloquant.
 
 Une CI verte ne remplace pas les E2E Firebase/Stripe ni une recette visuelle.
 Chromium est installe explicitement avant `test:commerce`, dont quatre contrats
@@ -63,10 +65,12 @@ ainsi que l'absence de message d'erreur provider brut dans les reponses
 ### 2.2 Garde Functions Gen1 -> Gen2
 
 ```bash
-npm run test:functions-g0
+npm run test:functions-gen2
 ```
 
-Cette suite verrouille l'inventaire G0 a 157 exports/152 cibles cloud, les
+Cet agregat local couvre les contrats G0 a G13 et bloque la CI sans appeler le
+cloud. La sous-suite `test:functions-g0` verrouille l'inventaire G0 a 157
+exports/152 cibles cloud, les
 classifications par nom, les 13 Gen2, 8 schedulers, 2 queues et 7 triggers
 Eventarc. Elle interdit un nouveau trigger Auth Gen1 hors
 `grantAdminOnAuth`, `onRegisteredUserCreated` et

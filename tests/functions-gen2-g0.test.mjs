@@ -22,6 +22,7 @@ import {
   buildGcloudGen2DeployArgs,
   buildGcloudGen2RollbackArgs,
   buildGcloudSchedulerUpdateArgs,
+  assertGen2RollbackObject,
   assertTaskQueuePreconditions,
   parseDeployArgs,
   validateDeploymentRequest
@@ -544,10 +545,14 @@ test('le rollback G2-B est borne a la revision et a l archive source preservee',
     '--concurrency=80', '--max-instances=20', '--no-retry',
     '--update-labels=deployment-tool=codex-targeted,migration-rollback-source=onorderstatswrite-00025-nac'
   ]) assert.ok(args.includes(expected), expected);
-  assert.match(
-    fs.readFileSync(path.join(ROOT, 'scripts/deploy-functions-targeted.mjs'), 'utf8'),
-    /rollbackObject\.temporary_hold\s*!==\s*true/
-  );
+  assert.throws(() => assertGen2RollbackObject({
+    metadata: { generation: '1', size: '2', temporary_hold: false },
+    rollback: {
+      sourceGeneration: '1', sourceSize: '2', sourceSha256: 'a'.repeat(64),
+      temporaryHoldRequired: true
+    },
+    actualSha256: 'a'.repeat(64)
+  }), /Objet source rollback Gen2 inattendu/);
   assert.throws(() => validate({
     ...validationArgs({
       allowlist: 'onOrderStatsWrite', transport: 'gcloud-gen2-rollback',

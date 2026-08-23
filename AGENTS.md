@@ -148,8 +148,10 @@ durables et preuves de qualification sont fusionnees dans les chapitres
 canoniques commerce, admin, client, qualite, infrastructure et exploitation.
 Git conserve l'audit et la roadmap retires.
 
-La migration Firebase Functions Gen1 vers Gen2 est fermee sur le sandbox avec
-le statut `SANDBOX_GEN2_MIGRATED_AND_HARDENED`. L'architecture durable est
+La topologie Firebase Functions Gen1 vers Gen2 est complete sur le sandbox:
+140 exports locaux, 137 Functions cloud, 134 Gen2 `ACTIVE` et trois triggers
+Auth Gen1. La cloture definitive des preuves reste en finalisation post-audit
+selon `apphostingaudit/FINALISATION_MIGRATION_GEN2.md`. L'architecture durable est
 dans [FUNCTIONS_RUNTIME_ADR.md](_DOCS/architecture/FUNCTIONS_RUNTIME_ADR.md):
 140 exports locaux, 137 Functions cloud, 134 Gen2 `ACTIVE` et uniquement les
 trois triggers Auth limites par Firebase encore en Gen1. Les quatre owners
@@ -161,15 +163,23 @@ Les retraits G12-A ont ete individuels, allowlistes, precedes d'appelants,
 trafic, quiet-windows et rollbacks digestes. G12-B a retire le code exclusif
 sans destruction de donnee, IAM partage, secret ou trigger Auth. Les preuves
 finales sont `apphostingaudit/manifests/functions-gen2-g12a-remaining.json` et
-`functions-gen2-g12b-remaining.json`. G13 a observe sept jours et deploye une
-seule remediation ciblee: `getCatalogPublicationStatusGen2` revision
+`functions-gen2-g12b-remaining.json`. La fenetre historique G13 couvre sept
+jours mais seulement environ douze minutes de la topologie finale G12; elle ne
+constitue donc pas le soak final requis. G13 a deploye une seule remediation
+ciblee: `getCatalogPublicationStatusGen2` revision
 `getcatalogpublicationstatusgen2-00002-yoq`, max instances 2, avec rollback
 Storage versionne. Aucun build App Hosting, deploy global, production ou Stripe
 live n'a ete utilise en G13. Le budget Billing reste non prouve car l'API Budget
-est desactivee. Ne pas recreer de plan de migration; rouvrir uniquement une
-operation ciblee depuis l'ADR et les manifestes si un drift concret apparait.
+est desactivee. Le rollback G13 est protege dans Storage par le hold F4; il doit
+encore etre exerce via le wrapper puis suivi d'une observation finale de sept
+jours. Ne pas recreer
+de plan de migration au-dela du plan temporaire explicitement demande.
 
 Plans temporaires de reprise encore actifs:
+- [FINALISATION_MIGRATION_GEN2.md](apphostingaudit/FINALISATION_MIGRATION_GEN2.md):
+  cloture contradictoire bornee des gates locales, du rollback G13, de la
+  qualification des erreurs et du soak final; aucune ecriture cloud implicite;
+  fusion canonique et suppression au plus tard le 2026-09-01.
 - [STABILISATION_SECURITE_SANDBOX.md](_DOCS/security/STABILISATION_SECURITE_SANDBOX.md):
   campagne finale bornee S0 a S4 fermee sur le socle `05f4830`, statut
   `SANDBOX_SECURITY_STABILIZED`; production, domaine, Resend, Stripe live et

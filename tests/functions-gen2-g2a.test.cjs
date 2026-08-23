@@ -507,10 +507,17 @@ test('G2-A e-mail: Gmail ambigu devient delivery_unknown et les deux runtimes so
 
     const source = fs.readFileSync(path.join(ROOT, 'functions/src/email/orderEmails.js'), 'utf8');
     const rules = fs.readFileSync(path.join(ROOT, 'firestore.rules'), 'utf8');
+    const legacyTriggerRuntimes = [
+        source.match(/exports\.onOrderCreated = onDocumentCreated\(\s*\{([\s\S]*?)\}\s*,\s*async/),
+        source.match(/exports\.onOrderUpdated = onDocumentUpdated\(\s*\{([\s\S]*?)\}\s*,\s*async/)
+    ].map((match) => match?.[1] || '');
     assert.equal((source.match(/serviceAccount:\s*LEGACY_ORDER_EMAIL_RUNTIME_SERVICE_ACCOUNT/g) || []).length, 2);
-    assert.equal((source.match(/concurrency:\s*1/g) || []).length, 2);
-    assert.equal((source.match(/maxInstances:\s*1/g) || []).length, 2);
-    assert.equal((source.match(/retry:\s*true/g) || []).length, 2);
+    assert.equal(legacyTriggerRuntimes.length, 2);
+    for (const runtime of legacyTriggerRuntimes) {
+        assert.match(runtime, /concurrency:\s*1/);
+        assert.match(runtime, /maxInstances:\s*1/);
+        assert.match(runtime, /retry:\s*true/);
+    }
     assert.match(source, /legacy-order-email-worker@secondevienextjsssr\.iam\.gserviceaccount\.com/);
     assert.match(source, /createLegacyOrderEmailDelivery/);
     assert.doesNotMatch(source, /TRIGGERED! ID|commande \$\{orderId\}/);

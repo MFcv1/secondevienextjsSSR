@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "gate": "FINALISATION:F4",
+  "generatedAt": "2026-08-23T01:25:44Z",
+  "status": "ROLLBACK_OBJECT_PROTECTED",
+  "target": "getCatalogPublicationStatusGen2",
+  "preflight": {
+    "state": "ACTIVE",
+    "revision": "getcatalogpublicationstatusgen2-00002-yoq",
+    "runtime": "nodejs22",
+    "region": "europe-west1",
+    "maxInstances": 2,
+    "minInstances": 0,
+    "concurrency": 1,
+    "timeoutSeconds": 60
+  },
+  "rollbackObject": {
+    "uri": "gs://gcf-v2-sources-231220287936-europe-west1/getCatalogPublicationStatusGen2/function-source.zip#1787147721443973",
+    "generation": "1787147721443973",
+    "size": 381285,
+    "sha256": "dacf4c1eb1257fdd18c94a03889822dfa042642d0835b0dd68b3be8f9b8f46da",
+    "temporaryHold": true,
+    "readBackVerified": true
+  },
+  "effects": {
+    "functionDeployments": 0,
+    "appHostingBuilds": 0,
+    "dataWrites": 0,
+    "stripeCalls": 0,
+    "iamChanges": 0,
+    "secretChanges": 0,
+    "schedulerChanges": 0
+  },
+  "nextGate": {
+    "id": "F5",
+    "requiresCommittedWrapper": true,
+    "requiresSeparateDeployPreflight": true
+  }
+}

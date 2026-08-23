@@ -188,8 +188,9 @@ expire immediatement sur approbation le `2026-08-22T23:10:40Z`; G12-B:G3 a
 retire le code exclusif sans mutation cloud. Inventaire final: 260 local / 257
 cloud / 123 Gen1 / 134 Gen2. Les secrets et identites partages restent intacts.
 
-La migration Gen2 sandbox est fermee le 2026-08-23 avec le statut
-`SANDBOX_GEN2_MIGRATED_AND_HARDENED`. Les neuf cohortes G12-A restantes ont
+La topologie Gen2 sandbox est complete le 2026-08-23. Sa cloture probatoire
+reste en finalisation post-audit selon
+`apphostingaudit/FINALISATION_MIGRATION_GEN2.md`. Les neuf cohortes G12-A restantes ont
 retire individuellement 120 Gen1 et leurs fenetres de rollback ont expire sur
 l'autorisation utilisateur. G12-B a retire leurs exports et les trois modules
 commerce exclusivement legacy, sans retirer IAM, secret, donnee ou trigger
@@ -197,12 +198,17 @@ Auth. L'inventaire final vaut 140 exports locaux / 137 Functions cloud / 3
 Gen1 / 134 Gen2. Les trois seules Gen1 sont `grantAdminOnAuth`,
 `onRegisteredUserCreated` et `onRegisteredUserDeleted`.
 
-G13 observe sept jours, huit policies Monitoring actives, un dashboard et
+La fenetre historique G13 couvre sept jours mais seulement environ douze
+minutes apres la fin de G12-A; elle ne prouve pas sept jours de la revision
+finale. Elle inventorie huit policies Monitoring actives, un dashboard et
 aucun depassement quota. Le budget Billing reste non verifiable car l'API
 Budget est desactivee; aucun cout exact n'est affirme. Un seul tuning cible
 porte `getCatalogPublicationStatusGen2` de max 1 a max 2 en revision
-`getcatalogpublicationstatusgen2-00002-yoq`, avec rollback Storage versionne
-et digeste. La saturation restante du burst admin est acceptee comme plafond
+`getcatalogpublicationstatusgen2-00002-yoq`, avec objet rollback Storage
+versionne et digeste. Le rail local exige maintenant revision, generation,
+taille, SHA et hold. F4 a pose et relu le hold sur la generation exacte sans
+autre mutation; la preuve est `functions-gen2-finalisation-f4.json`. Le deploy
+F5 attend un wrapper commite et un nouveau preflight. La saturation restante du burst admin est acceptee comme plafond
 de cout; aucun second tuning, build App Hosting ou deploy global n'a lieu. La
 decision durable est dans `_DOCS/architecture/FUNCTIONS_RUNTIME_ADR.md`.
 G5-A1 ajoute

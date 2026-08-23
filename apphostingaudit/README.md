@@ -2,7 +2,7 @@
 
 Derniere mise a jour: 2026-08-23
 
-Statut: `MIGRATION_GEN2_FERMEE - PREUVES_CONSERVEES`
+Statut: `TOPOLOGIE_GEN2_COMPLETE - FINALISATION_POST_AUDIT_EN_COURS`
 
 Proprietaire: mainteneur Seconde Vie et agent d'execution des phases validees
 
@@ -18,6 +18,7 @@ Ce dossier est l'unique point d'entree du chantier:
 | --- | --- |
 | [AUDIT_ARCHITECTURE_APP_HOSTING.md](AUDIT_ARCHITECTURE_APP_HOSTING.md) | photographie read-only de l'architecture Firestore, App Hosting, donnees, fiabilite et risques |
 | `README.md` | tableau de bord vivant, journal des executions et point de reprise obligatoire |
+| [FINALISATION_MIGRATION_GEN2.md](FINALISATION_MIGRATION_GEN2.md) | plan temporaire demande apres audit contradictoire; gates locales, rollback G13, soak final et fusion canonique |
 
 Le plan temporaire Gen2 a ete fusionne dans les chapitres canoniques et
 `_DOCS/architecture/FUNCTIONS_RUNTIME_ADR.md`, puis retire a la fermeture G13.
@@ -103,28 +104,23 @@ Valeurs autorisees:
 | G10 | webhooks Stripe v2 Gen2 | `TERMINEE` | signatures, double endpoint deduplique, zero double effet | `functions-gen2-g10.json` |
 | G11 | maintenance destructrice | `TERMINEE` | AAL2, dry-run, sauvegarde, instance/concurrence 1 | `functions-gen2-g11.json` |
 | G12 | retrait cible Gen1 puis nettoyage differe | `TERMINEE` | toutes les cohortes retirees individuellement; trois Auth restent | `functions-gen2-g12a-remaining.json`, `functions-gen2-g12b-remaining.json`; 140 local / 137 cloud |
-| G13 | charge/cout/IAM/runtime et cloture documentaire | `TERMINEE` | sandbox migre et durci, tuning unique borne, runtime futur planifie | observation, charge et rollback `functions-gen2-g13-*`; ADR canonique |
+| G13 | charge/cout/IAM/runtime et cloture documentaire | `EN_COURS` | topologie complete; rollback protege et exerce, puis sept jours de soak final | observation historique, plan `FINALISATION_MIGRATION_GEN2.md`, ADR canonique |
 
-## 6. Suivi des risques et ordre corrige
+## 6. Suivi des reserves post-audit
 
 | Niveau | Action | Statut courant | Gate exacte |
 | --- | --- | --- | --- |
-| P0 | baseline projet/manifeste et deploiement fail-closed | `TERMINEE` | projet explicite, 152/157 reconcilies, wrapper allowlist teste |
-| P0 | alertes, canaux, dashboard et runbooks | `TERMINEE` | ouverture, notification, acquittement et retour testes |
-| P0 | PITR, protection, backups et restauration | `TERMINEE` | backup `READY`, base nommee, RPO/RTO et DR cross-service prouves |
-| P0 | `terminal_refund_conflict` et faux `healthy` | `TERMINEE` | `healthy -> stop -> healthy`, resolution auditee sans replay/refund/restock |
-| P0 | dispatcher et contrat des workers | `TERMINEE` | expiration Stripe test, effet unique et replay scheduler sans effet |
-| P1 | 10 produits, 26 commandes, KPI et reconciler borne | `A_FAIRE` | dry-run/backup/preconditions, cohortes, pagination/`truncated` |
-| P1 | budgets, quota, charge et cout | `A_FAIRE` (budget non verifie) | operateur Billing, alertes quota, charge sandbox mesuree |
-| P2 | analytics historiques | `A_FAIRE` (classification partielle) | export/quarantaine puis decision de retention post-cutover |
+| P0 | gates locales Gen2 et catalogue | `TERMINE_LOCAL` | 153/153 Gen2, 13/13 catalogue, lint vert; execution CI encore attendue |
+| P0 | rollback G13 exploitable | `OBJET_PROTEGE - EXERCICE_EN_ATTENTE` | wrapper exact vert et hold F4 prouve; commit local requis avant rollback/reactivation F5 |
+| P0 | observation de l'etat final | `EN_ATTENTE_ROLLBACK` | sept jours complets apres la derniere revision finale |
+| P1 | erreurs historiques G13 | `A_QUALIFIER_READ_ONLY` | attribution temporelle et causale des 500/429 et Cloud Tasks |
+| P1 | cout exact | `NON_PROUVE` | export Billing ou API Budget disponible; aucune estimation presentee comme fait |
+| P2 | archives G12 expirees | `A_REFORMULER` | distinguer preuve forensique et rollback autonome courant |
 
-Les P0 bloquent les paiements reels et les vagues Gen2 cloud. Ils ne bloquent
-pas une presentation cliente du sandbox en Stripe test, bornee et surveillee.
-Les P1/P2 ne doivent pas retarder la demo par eux-memes.
-
-Un statut partiel dans cette section ne signifie pas qu'une phase ulterieure a
-commence: seul le journal d'execution fait foi. G1, G2 et G3 sont fermees; la
-prochaine phase est G4 analytics.
+Ces reserves ne prouvent pas une panne du sandbox. Elles interdisent en
+revanche de qualifier G13 et le plan complet de definitivement fermes. Le plan
+borne et sa condition de suppression sont dans
+`FINALISATION_MIGRATION_GEN2.md`.
 
 ## 7. Fiche obligatoire pour chaque vague
 
@@ -474,20 +470,17 @@ Arreter la vague au premier:
 
 ## 10. Point de reprise
 
-G5-A1 a G5-A5 sont fermees. `getUserStatsGen2` est ACTIVE en revision
-`getuserstatsgen2-00001-niv`; `logUserConnectionGen2` est ACTIVE en revision
-`loguserconnectiongen2-00001-fab`; `ensureAdminAccessRegistryGen2` est ACTIVE en revision
-`ensureadminaccessregistrygen2-00001-lak`; `sendGuestCheckoutOtpGen2` est ACTIVE
-en revision `sendguestcheckoutotpgen2-00001-neh`; `g5-a4-cutover-20260818-001`
-sert build `003`. Ancien onglet `002`, routes 200, compteur 34, unique envoi OTP
-sandbox sans lecture du code, zero erreur et zero appel Gen1 sont conformes.
-`verifyGuestCheckoutOtpGen2` est ACTIVE en revision
-`verifyguestcheckoutotpgen2-00001-wim`; `build-2026-08-18-004` est servi apres
-un cutover, un rollback reel vers `003` et une reactivation finale tous verts.
-La verification OTP bornee a utilise RSA-OAEP en memoire sans afficher ni
-persister le code ou le jeton checkout; quiet-window sans erreur, appel Gen1
-ou mutation. Rollback exact `003`; prochaine cible unique
-`sendCustomerLoginOtpGen2`. Le harnais injecte App Check sur Firebase
-Auth et Functions; Custom Token et App Check restent uniquement en memoire.
-Inventaire courant: 167 exports locaux, 162 cloud, 139 Gen1, 23 Gen2,
-8 schedulers, 2 queues et 7 Eventarc. Les six retraits G3 restent differes a G12-A.
+La topologie courante reste 140 exports locaux / 137 Functions cloud / 3 Gen1
+Auth / 134 Gen2 `ACTIVE`. La reprise obligatoire est le plan
+`FINALISATION_MIGRATION_GEN2.md`:
+
+1. F1 a F3 sont termines localement; conserver leurs gates vertes;
+2. F4 est terminee avec hold et read-back; la prochaine gate est F5, bloquee
+   tant que le wrapper et ses preuves ne sont pas commites localement;
+3. apres la revision finale de F5, demarrer la fenetre F6 de sept jours;
+4. fusionner les preuves et supprimer le plan temporaire seulement apres F9.
+
+Le prochain changement cloud est l'exercice F5 rollback/reactivation deja
+autorise, mais le wrapper refuse le worktree Functions/manifeste non commite.
+Aucun contournement manuel n'est permis. Un commit local sans push doit etre
+autorise avant de poursuivre.

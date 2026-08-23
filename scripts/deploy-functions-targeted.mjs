@@ -1222,6 +1222,37 @@ const G2B_ROLLBACKS = Object.freeze({
     retry: false
   })
 });
+export const G13_ROLLBACKS = Object.freeze({
+  getCatalogPublicationStatusGen2: Object.freeze({
+    approval: 'G13_ROLLBACK_GET_CATALOG_PUBLICATION_STATUS',
+    expectedRevision: 'getcatalogpublicationstatusgen2-00002-yoq',
+    sourceRevision: 'getcatalogpublicationstatusgen2-00001-qix',
+    source: 'gs://gcf-v2-sources-231220287936-europe-west1/getCatalogPublicationStatusGen2/function-source.zip#1787147721443973',
+    sourceGeneration: '1787147721443973',
+    sourceSize: '381285',
+    sourceSha256: 'dacf4c1eb1257fdd18c94a03889822dfa042642d0835b0dd68b3be8f9b8f46da',
+    runtimeServiceAccount: 'catalog-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    memory: '512Mi',
+    timeout: '60s',
+    concurrency: '1',
+    maxInstances: '1',
+    retry: false,
+    temporaryHoldRequired: true
+  })
+});
+export const G13_REACTIVATION = Object.freeze({
+  target: 'getCatalogPublicationStatusGen2',
+  gate: 'FINALISATION:F5_REACTIVATION',
+  source: 'gs://gcf-v2-sources-231220287936-europe-west1/g13/3ba9c8d5890e7fc678d12117099653f00f33ea48982f20b27097434f1df2dd81/function-source.zip',
+  sourceGeneration: '1787442998284455',
+  sourceSize: '370918',
+  sourceSha256: '3ba9c8d5890e7fc678d12117099653f00f33ea48982f20b27097434f1df2dd81',
+  temporaryHoldRequired: true
+});
+const GEN2_ROLLBACKS = Object.freeze({
+  ...G2B_ROLLBACKS,
+  ...G13_ROLLBACKS
+});
 
 function fail(message) {
   throw new Error(message);
@@ -1337,6 +1368,7 @@ export function validateDeploymentRequest({
   const commit = required(args, 'commit');
   const allowlist = parseAllowlist(required(args, 'allowlist'));
   const transport = args.transport || 'firebase';
+  let sourceTemporaryHoldRequired = false;
   if (project !== EXPECTED_PROJECT) fail(`Projet interdit: ${project}`);
   if (codebase !== EXPECTED_CODEBASE) fail(`Codebase interdite: ${codebase}`);
   if (!['firebase', 'gcloud-gen1', 'gcloud-gen2', 'gcloud-gen2-create', 'gcloud-gen2-update', 'gcloud-gen2-rollback'].includes(transport)) fail(`Transport interdit: ${transport}`);
@@ -1430,18 +1462,37 @@ export function validateDeploymentRequest({
       if (entries[0].cloud?.present !== true || entries[0].decision?.classification !== 'MIGRATION_PARALLEL') {
         fail('Remediation Gen2 exige une cible parallele active dans le cloud');
       }
+      if (manifest.metadata?.gate === G13_REACTIVATION.gate) {
+        const sourceUri = required(args, 'source-uri');
+        const sourceSha256 = required(args, 'source-sha256');
+        const sourceGeneration = required(args, 'source-generation');
+        if (allowlist[0] !== G13_REACTIVATION.target) fail('Reactivation G13 limitee a la cible approuvee');
+        if (
+          sourceUri !== G13_REACTIVATION.source ||
+          sourceSha256 !== G13_REACTIVATION.sourceSha256 ||
+          sourceGeneration !== G13_REACTIVATION.sourceGeneration ||
+          manifest.deploymentPolicy?.archiveUri !== sourceUri ||
+          manifest.deploymentPolicy?.archiveSha256 !== sourceSha256 ||
+          String(manifest.deploymentPolicy?.archiveGeneration || '') !== sourceGeneration ||
+          String(manifest.deploymentPolicy?.archiveSize || '') !== G13_REACTIVATION.sourceSize
+        ) fail('Archive source de reactivation G13 differente du registre approuve');
+        sourceTemporaryHoldRequired = G13_REACTIVATION.temporaryHoldRequired;
+      }
     }
   }
   if (transport === 'gcloud-gen2-rollback') {
-    const rollback = allowlist.length === 1 ? G2B_ROLLBACKS[allowlist[0]] : null;
-    if (!rollback) fail('Rollback gcloud Gen2 limite aux cibles G2-B approuvees');
-    if (args.approval !== rollback.approval) fail('Approbation rollback G2-B invalide');
+    const rollback = allowlist.length === 1 ? GEN2_ROLLBACKS[allowlist[0]] : null;
+    if (!rollback) fail('Rollback gcloud Gen2 limite aux cibles approuvees');
+    if (args.approval !== rollback.approval) fail('Approbation rollback Gen2 invalide');
     const revisionPrefix = allowlist[0].toLowerCase();
+    if (rollback.expectedRevision && args['expected-revision'] !== rollback.expectedRevision) {
+      fail('Revision Gen2 courante differente de la revision rollback approuvee');
+    }
     if (!new RegExp(`^${revisionPrefix}-[0-9]{5}-[a-z0-9]{3}$`).test(args['expected-revision'] || '')) {
       fail('Revision Gen2 courante obligatoire pour rollback');
     }
     if (args['rollback-source-sha256'] !== rollback.sourceSha256) {
-      fail('Digest source rollback G2-B invalide');
+      fail('Digest source rollback Gen2 invalide');
     }
   }
   return {
@@ -1455,7 +1506,8 @@ export function validateDeploymentRequest({
     sourceUri: args['source-uri'] || null,
     sourceSha256: args['source-sha256'] || null,
     sourceGeneration: args['source-generation'] || null,
-    sourceSize: manifest.deploymentPolicy?.archiveSize || null
+    sourceSize: manifest.deploymentPolicy?.archiveSize || null,
+    sourceTemporaryHoldRequired
   };
 }
 
@@ -1549,7 +1601,7 @@ export function buildGcloudSchedulerUpdateArgs(validation, options = {}) {
   if (validation.transport !== expectedTransport || target?.triggerType !== 'http-scheduler') {
     fail('Mise a jour Scheduler Gen2 non autorisee');
   }
-  const rollback = options.rollback ? G2B_ROLLBACKS[validation.allowlist[0]] : null;
+  const rollback = options.rollback ? GEN2_ROLLBACKS[validation.allowlist[0]] : null;
   return [
     'scheduler', 'jobs', 'update', 'http', target.schedulerJob,
     `--project=${validation.project}`,
@@ -1569,11 +1621,11 @@ export function buildGcloudSchedulerUpdateArgs(validation, options = {}) {
 export function buildGcloudGen2RollbackArgs(validation) {
   const name = validation.allowlist[0];
   const target = GCLOUD_GEN2_TARGETS[name];
-  const rollback = G2B_ROLLBACKS[name];
+  const rollback = GEN2_ROLLBACKS[name];
   if (validation.transport !== 'gcloud-gen2-rollback' || !target || !rollback) {
     fail('Rollback gcloud Gen2 non autorise');
   }
-  const httpTrigger = ['http-scheduler', 'http-task'].includes(target.triggerType);
+  const httpTrigger = ['http-callable', 'http-public', 'http-scheduler', 'http-task'].includes(target.triggerType);
   const triggerArgs = httpTrigger
     ? ['--trigger-http']
     : [
@@ -1597,7 +1649,7 @@ export function buildGcloudGen2RollbackArgs(validation) {
     `--concurrency=${rollback.concurrency}`, '--min-instances=0',
     `--max-instances=${rollback.maxInstances}`,
     `--ingress-settings=${target.ingressSettings}`,
-    '--no-allow-unauthenticated',
+    ['http-callable', 'http-public'].includes(target.triggerType) ? '--allow-unauthenticated' : '--no-allow-unauthenticated',
     `--update-labels=deployment-tool=codex-targeted,migration-rollback-source=${rollback.sourceRevision}${target.triggerType === 'http-task' ? ',deployment-taskqueue=true' : ''}`,
     '--quiet'
   ];
@@ -1606,6 +1658,17 @@ export function buildGcloudGen2RollbackArgs(validation) {
   }
   if (target.secrets?.length) args.push(`--set-secrets=${target.secrets.join(',')}`);
   return args;
+}
+
+export function assertGen2RollbackObject({ metadata, rollback, actualSha256 }) {
+  if (
+    String(metadata?.generation || '') !== rollback.sourceGeneration ||
+    String(metadata?.size || '') !== rollback.sourceSize ||
+    (rollback.temporaryHoldRequired !== false && metadata?.temporary_hold !== true)
+  ) fail('Objet source rollback Gen2 inattendu');
+  if (actualSha256 !== rollback.sourceSha256) {
+    fail('SHA-256 archive source rollback Gen2 different du registre');
+  }
 }
 
 function assertGcloudGen2Preconditions(before, validation) {
@@ -1741,22 +1804,23 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
       '--format=json'
     ], { cwd: rootDir }));
     assertGcloudGen2Preconditions(before, validation);
-    if (target.g10) {
+    if (validation.sourceUri) {
       const sourceObject = JSON.parse(run('gcloud', [
         'storage', 'objects', 'describe', validation.sourceUri,
         `--project=${validation.project}`, '--format=json'
       ], { cwd: rootDir }));
       if (
         String(sourceObject.generation || '') !== validation.sourceGeneration ||
-        Number(sourceObject.size) !== Number(validation.sourceSize)
-      ) fail('Objet source G10 different du manifeste approuve');
+        Number(sourceObject.size) !== Number(validation.sourceSize) ||
+        (validation.sourceTemporaryHoldRequired && sourceObject.temporary_hold !== true)
+      ) fail('Objet source Gen2 different du manifeste approuve');
       const sourceBytes = spawnSync('gcloud', [
         'storage', 'cat', validation.sourceUri,
         `--project=${validation.project}`
       ], { cwd: rootDir, env: process.env, encoding: null, maxBuffer: 25 * 1024 * 1024 });
-      if (sourceBytes.error || sourceBytes.status !== 0) fail('Lecture archive source G10 impossible');
+      if (sourceBytes.error || sourceBytes.status !== 0) fail('Lecture archive source Gen2 impossible');
       const actualSourceSha256 = crypto.createHash('sha256').update(sourceBytes.stdout || Buffer.alloc(0)).digest('hex');
-      if (actualSourceSha256 !== validation.sourceSha256) fail('SHA-256 archive source G10 different du manifeste approuve');
+      if (actualSourceSha256 !== validation.sourceSha256) fail('SHA-256 archive source Gen2 different du manifeste approuve');
     }
     if (target.triggerType === 'http-task') {
       const queueBefore = JSON.parse(run('gcloud', [
@@ -1841,7 +1905,7 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
   if (validation.transport === 'gcloud-gen2-rollback') {
     const name = validation.allowlist[0];
     const target = GCLOUD_GEN2_TARGETS[name];
-    const rollback = G2B_ROLLBACKS[name];
+    const rollback = GEN2_ROLLBACKS[name];
     const before = JSON.parse(run('gcloud', [
       'functions', 'describe', name, '--gen2',
       `--region=${target.region}`, `--project=${validation.project}`, '--format=json'
@@ -1851,25 +1915,31 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
       before.serviceConfig?.serviceAccountEmail !== target.runtimeServiceAccount ||
       before.buildConfig?.serviceAccount !== target.buildServiceAccount
     ) fail('Etat cloud Gen2 inattendu avant rollback');
+    const httpTrigger = ['http-callable', 'http-public', 'http-scheduler', 'http-task'].includes(target.triggerType);
     if (target.triggerType === 'http-scheduler') {
       const schedulerBefore = JSON.parse(run('gcloud', [
         'scheduler', 'jobs', 'describe', target.schedulerJob,
         `--location=${target.region}`, `--project=${validation.project}`, '--format=json'
       ], { cwd: rootDir }));
       assertSchedulerPreconditions(schedulerBefore, target, target.schedulerAttemptDeadline);
-    } else if (
+    } else if (!httpTrigger && (
       before.eventTrigger?.serviceAccountEmail !== target.triggerServiceAccount ||
       before.eventTrigger?.retryPolicy !== 'RETRY_POLICY_RETRY'
-    ) fail('Trigger cloud Gen2 inattendu avant rollback');
+    )) fail('Trigger cloud Gen2 inattendu avant rollback');
     const rollbackObject = JSON.parse(run('gcloud', [
       'storage', 'objects', 'describe', rollback.source,
       `--project=${validation.project}`, '--format=json'
     ], { cwd: rootDir }));
-    if (
-      String(rollbackObject.generation) !== rollback.sourceGeneration ||
-      String(rollbackObject.size) !== rollback.sourceSize ||
-      rollbackObject.temporary_hold !== true
-    ) fail('Objet source rollback G2-B inattendu');
+    const rollbackSourceBytes = spawnSync('gcloud', [
+      'storage', 'cat', rollback.source, `--project=${validation.project}`
+    ], { cwd: rootDir, env: process.env, encoding: null, maxBuffer: 25 * 1024 * 1024 });
+    if (rollbackSourceBytes.error || rollbackSourceBytes.status !== 0) fail('Lecture archive source rollback Gen2 impossible');
+    const rollbackSourceSha256 = crypto.createHash('sha256').update(rollbackSourceBytes.stdout || Buffer.alloc(0)).digest('hex');
+    assertGen2RollbackObject({
+      metadata: rollbackObject,
+      rollback,
+      actualSha256: rollbackSourceSha256
+    });
     process.stdout.write(`Projet: ${validation.project}\nCible: functions:main:${name}\nCommit wrapper: ${validation.commit}\nRevision remplacee: ${args['expected-revision']}\nTransport: gcloud-gen2-rollback\n`);
     const result = spawnSync('gcloud', buildGcloudGen2RollbackArgs(validation), {
       cwd: rootDir,
