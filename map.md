@@ -332,6 +332,10 @@ scripts/cleanup-paid-order-cart-v2.mjs
 scripts/inspect-commerce-orders-v2.mjs
 scripts/audit-commerce-orders-v2.mjs
   -> lecture bornee des commandes, Stripe, stocks, mouvements, outbox et faits
+
+scripts/reconcile-commerce-outbox-delivery.mjs
+  -> rapprochement sandbox fail-closed d'un `delivery_unknown` observe dans
+     Gmail; dry-run, confirmation exacte, audit et aucun renvoi
 ```
 
 Le scope `fixture_gate6_20260728` ne reference que les produits

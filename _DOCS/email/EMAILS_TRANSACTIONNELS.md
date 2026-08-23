@@ -365,6 +365,10 @@ Regles:
 - la copie de document est idempotente dans sa fenetre et ne conditionne
   jamais l'acces au PDF;
 - Gmail ambigu devient `delivery_unknown` sans retry automatique;
+- apres observation du message exact dans la boite de recette, l'operateur
+  peut utiliser `scripts/reconcile-commerce-outbox-delivery.mjs`: dry-run par
+  defaut, cible sandbox/outbox/commande stricte, confirmation explicite et
+  passage a `sent` avec preuve `gmail_admin_m11_observed`, sans aucun renvoi;
 - un succes de remboursement devenu obsolete est `suppressed_stale` avant
   tout appel Gmail;
 - les identifiants techniques servent a l'idempotence sans exposer de secret.
