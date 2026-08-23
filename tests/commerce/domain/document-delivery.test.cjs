@@ -11,7 +11,8 @@ const {
 const {
     EMAIL_DEDUPE_MS,
     createDeliveryIntent,
-    maskEmail
+    maskEmail,
+    resolveStorageBucketName
 } = require('../../../functions/src/commerce/v2DocumentDelivery');
 
 const repositoryRoot = path.resolve(__dirname, '..', '..', '..');
@@ -112,6 +113,32 @@ test('document delivery: le stockage immuable est réutilisé sans réécriture'
     assert.equal(first.buffer.equals(second.buffer), true);
     assert.match(artifactRecord.storagePath, /^commerce-documents\/v2\//);
     assert.equal(artifactRecord.sourceContentHash, input.document.contentHash);
+});
+
+test('document delivery: le bucket Gen2 est explicite ou dérivé du projet', () => {
+    assert.equal(
+        resolveStorageBucketName({ FUNCTIONS_STORAGE_BUCKET: 'documents.example.test' }),
+        'documents.example.test'
+    );
+    assert.equal(
+        resolveStorageBucketName({
+            FIREBASE_CONFIG: JSON.stringify({ storageBucket: 'configured.example.test' }),
+            GCLOUD_PROJECT: 'ignored-project'
+        }),
+        'configured.example.test'
+    );
+    assert.equal(
+        resolveStorageBucketName({ GOOGLE_CLOUD_PROJECT: 'sandbox-project' }),
+        'sandbox-project.firebasestorage.app'
+    );
+    assert.equal(
+        resolveStorageBucketName({ FIREBASE_CONFIG: '{invalid', GCP_PROJECT: 'fallback-project' }),
+        'fallback-project.firebasestorage.app'
+    );
+    assert.throws(
+        () => resolveStorageBucketName({}),
+        /COMMERCE_DOCUMENT_STORAGE_BUCKET_UNAVAILABLE/
+    );
 });
 
 test('document delivery: l’email est dédupliqué par fenêtre sans exposer le destinataire', () => {

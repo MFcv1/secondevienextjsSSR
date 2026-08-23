@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "codebase": "main",
+    "environment": "sandbox",
+    "gate": "QUALIFICATION_DOCUMENT_DELIVERY_20260823",
+    "baselineCommit": "a4e080a9f85a7b15513edb65ade32e311bbbb697",
+    "status": "READY"
+  },
+  "gates": {
+    "remediationDeploymentAllowed": true,
+    "productionAllowed": false,
+    "globalFunctionsDeployAllowed": false,
+    "paymentOrRefundAllowed": false
+  },
+  "deploymentPolicy": {
+    "transport": "gcloud-gen2",
+    "maxTargetsPerDeploy": 1,
+    "forbiddenTargets": []
+  },
+  "functions": [
+    {
+      "name": "prepareCommerceDocumentDeliveryGen2",
+      "cloud": {
+        "present": true,
+        "state": "ACTIVE",
+        "generation": 2,
+        "revision": "preparecommercedocumentdeliverygen2-00001-xes"
+      },
+      "identities": {
+        "runtimeServiceAccount": "secondevienextjsssr@appspot.gserviceaccount.com",
+        "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      }
+    }
+  ]
+}

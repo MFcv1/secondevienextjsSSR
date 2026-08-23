@@ -17,6 +17,27 @@ const {
 const EMAIL_DEDUPE_MS = 10 * 60 * 1000;
 const MAX_EMAILS_PER_DAY = 24;
 
+function resolveStorageBucketName(env = process.env) {
+    const explicitBucket = String(env.FUNCTIONS_STORAGE_BUCKET || '').trim();
+    if (explicitBucket) return explicitBucket;
+
+    const firebaseConfig = String(env.FIREBASE_CONFIG || '').trim();
+    if (firebaseConfig) {
+        try {
+            const configuredBucket = String(JSON.parse(firebaseConfig)?.storageBucket || '').trim();
+            if (configuredBucket) return configuredBucket;
+        } catch {
+            // A malformed optional config must not hide the project-derived fallback.
+        }
+    }
+
+    const projectId = String(
+        env.GCLOUD_PROJECT || env.GOOGLE_CLOUD_PROJECT || env.GCP_PROJECT || ''
+    ).trim();
+    if (!projectId) throw new Error('COMMERCE_DOCUMENT_STORAGE_BUCKET_UNAVAILABLE');
+    return `${projectId}.firebasestorage.app`;
+}
+
 function deliveryError(code, message = code) {
     const error = new functions.https.HttpsError(code, message);
     error.domainCode = message;
@@ -127,7 +148,7 @@ async function queueDeliveryEmail({ db, order, document, recipient, ownerUid, no
 
 function createPrepareCommerceDocumentHandler({
     dbFactory = () => admin.firestore(),
-    bucketFactory = () => admin.storage().bucket(),
+    bucketFactory = () => admin.storage().bucket(resolveStorageBucketName()),
     nowMillis = () => Date.now()
 } = {}) {
     return async (data, context) => {
@@ -225,5 +246,6 @@ module.exports = {
     createPrepareCommerceDocumentHandler,
     maskEmail,
     prepareCommerceDocumentDelivery,
-    queueDeliveryEmail
+    queueDeliveryEmail,
+    resolveStorageBucketName
 };

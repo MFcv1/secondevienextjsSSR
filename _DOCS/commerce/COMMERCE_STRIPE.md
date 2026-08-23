@@ -626,6 +626,10 @@ programme la meme copie en piece jointe vers l'adresse de commande. Une panne
 ou une limite e-mail ne modifie ni le paiement, ni le document, ni son acces.
 Ce rail est deploye sur le sandbox depuis le 2026-08-01; son acces client reste
 soumis aux controles et proprietes v2 existants.
+Le bucket Storage est toujours passe explicitement au SDK Admin: configuration
+dediee, `FIREBASE_CONFIG.storageBucket` ou derivee du projet Google Cloud. Le
+runtime ne suppose jamais que `admin.initializeApp()` a injecte un bucket par
+defaut dans une revision Gen2.
 
 Gate 8 a execute la matrice client/admin complete sur fixtures sandbox. Un
 defaut reel du contrat d'annulation client (`cancellationRequestId` au lieu de

@@ -1930,6 +1930,41 @@ de code.
 - effets adjacents: aucun App Hosting, deploy global, production, Stripe live,
   IAM, secret, changement de configuration Scheduler ou suppression de tache.
 
+### A-029 - Les documents client echouent sans bucket Storage Gen2
+
+- statut: `CORRIGEE_A_REQUALIFIER`
+- severite: `IMPORTANTE`
+- phase: espace client, onglet Documents
+- environnement: sandbox / Safari / compte client de recette
+- attendu: l'action `Ouvrir` materialise le PDF prive non fiscal, puis affiche
+  les actions ouvrir, enregistrer et partager.
+- observe: deux recus historiques distincts affichent reproductiblement
+  `Document indisponible`; aucun fichier incomplet n'est telecharge.
+- preuve active: Auth et App Check sont `VALID`, mais
+  `prepareCommerceDocumentDeliveryGen2` revision
+  `preparecommercedocumentdeliverygen2-00001-xes` retourne HTTP 500. Les logs
+  montrent `storage/invalid-argument` a l'appel
+  `admin.storage().bucket()` parce que la revision Gen2 ne porte aucun bucket
+  par defaut.
+- impact: les commandes et metadonnees restent lisibles, mais aucun des 31
+  documents client ne peut etre ouvert pendant une demonstration.
+- cause racine: le handler dependait implicitement de
+  `admin.app().options.storageBucket`, absent de la configuration de cette
+  revision Gen2, alors que le bucket prive du projet existe.
+- correction appliquee: resolution fail-closed du bucket dans l'ordre
+  `FUNCTIONS_STORAGE_BUCKET`, `FIREBASE_CONFIG.storageBucket`, puis
+  `<projectId>.firebasestorage.app` derive des variables Google Cloud. Aucun
+  nom de bucket production n'est cable dans le domaine commerce.
+- regression: le resolver couvre le bucket explicite, Firebase config, les
+  trois variables projet, la config malformee avec fallback et l'absence
+  totale de projet.
+- validation locale avant deploy: suite document `5/5`, lint Functions strict
+  et `git diff --check` verts; deploiement et requalification Safari encore
+  requis.
+- deploiement prevu: uniquement `prepareCommerceDocumentDeliveryGen2` sur le
+  sandbox via le wrapper fail-closed; aucun App Hosting, autre Function,
+  production, Stripe, IAM, secret ou ecriture financiere.
+
 ## Raccordement codes promotionnels — 2026-08-13
 
 Statut courant: `FERMEE_APRES_REQUALIFICATION_STRIPE_SANDBOX`.

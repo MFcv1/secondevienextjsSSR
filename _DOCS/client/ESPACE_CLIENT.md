@@ -199,6 +199,13 @@ propose ensuite `Ouvrir le PDF`, `Enregistrer`, le partage natif lorsque
 a iPhone, Android ou ordinateur. Elle annonce `Telechargement lance`, jamais
 une fin de telechargement que le navigateur ne permet pas d'observer.
 
+La callable Gen2 ne depend pas d'un bucket par defaut implicite: elle resout le
+bucket prive depuis une configuration explicite, puis `FIREBASE_CONFIG`, puis
+le projet Google Cloud courant. L'absence de toute identite projet echoue avant
+la materialisation. Ce contrat evite qu'une revision Gen2 sans
+`storageBucket` dans ses options transforme toutes les actions `Ouvrir` en
+HTTP 500.
+
 Dettes UX restantes observees sur ces donnees reelles:
 
 - les snapshots d'item n'alimentent pas l'image attendue par `getItemImage`,
