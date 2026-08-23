@@ -66,6 +66,7 @@ ainsi que l'absence de message d'erreur provider brut dans les reponses
 
 ```bash
 npm run test:functions-gen2
+npm run functions:gen2:final-observe
 ```
 
 Cet agregat local couvre les contrats G0 a G13 et bloque la CI sans appeler le

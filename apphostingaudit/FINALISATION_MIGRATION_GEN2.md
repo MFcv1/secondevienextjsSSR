@@ -77,7 +77,7 @@ Preuves locales du 2026-08-23:
 
 - `test:catalog:core`: 13/13;
 - `test:functions-g2a`: 26/26;
-- `test:functions-gen2`: 154/154;
+- `test:functions-gen2`: 157/157;
 - test cible G13: 6/6;
 - `lint:functions`: vert sans avertissement;
 - lint complet en mode `--quiet`: zero erreur;
@@ -148,6 +148,7 @@ peut pas etre masquee par un total agrege.
 
 ```bash
 npm run test:functions-gen2
+npm run functions:gen2:final-observe
 npm run test:catalog:core
 npm run test:auth
 npm run test:commerce:unit
