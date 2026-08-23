@@ -3,7 +3,7 @@
   "project": "secondevienextjsssr",
   "environment": "sandbox",
   "gate": "FINALISATION:F6",
-  "generatedAt": "2026-08-23T18:39:28.313Z",
+  "generatedAt": "2026-08-23T20:36:17.694Z",
   "status": "IN_PROGRESS",
   "reference": {
     "function": "getCatalogPublicationStatusGen2",
@@ -18,7 +18,7 @@
     "start": "2026-08-23T18:36:21.000Z",
     "minimumEnd": "2026-08-30T18:36:21.000Z",
     "requiredSeconds": 604800,
-    "observedSeconds": 187,
+    "observedSeconds": 7196,
     "reason": "Fenetre recalee apres le deploiement cible A-029 de prepareCommerceDocumentDeliveryGen2. La qualification fonctionnelle reste non bloquee; les 604800 secondes ne sont pas acquises."
   },
   "supersededWindows": [
@@ -48,6 +48,27 @@
     {
       "checkedAt": "2026-08-23T18:39:28.313Z",
       "observedSeconds": 187,
+      "collectorNode": "v22.23.2",
+      "revisionUnchanged": true,
+      "configUnchanged": true,
+      "trafficPercent": 100,
+      "cloudFunctions": 137,
+      "gen2Active": 134,
+      "gen1AuthActive": 3,
+      "functionsUpdatedSinceStart": [],
+      "rollbackSourceHeld": true,
+      "reactivationSourceHeld": true,
+      "request429": 0,
+      "request5xx": 0,
+      "errorSeverityEntries": 0,
+      "unqualifiedErrors": 0,
+      "logResourceTypes": ["cloud_run_revision", "cloud_function"],
+      "qualification": "NODE22_POST_A029_TOPOLOGY_QUIET",
+      "runtimeQuiet": true
+    },
+    {
+      "checkedAt": "2026-08-23T20:36:17.694Z",
+      "observedSeconds": 7196,
       "collectorNode": "v22.23.2",
       "revisionUnchanged": true,
       "configUnchanged": true,
