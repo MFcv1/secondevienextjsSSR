@@ -17,6 +17,10 @@ Les deux routes personnelles sont dynamiques et non indexables:
 - `/wishlist`: liste de souhaits complete.
 
 `OrdersPageIsland` et `WishlistPageIsland` attendent la resolution Auth avant d'afficher les donnees personnelles. Un utilisateur non connecte est dirige vers le workflow de connexion commun.
+Le shell de connexion de `/mes-commandes` reste dans le chunk initial leger;
+le workspace `MyOrdersView` est charge separement seulement apres identification
+d'un utilisateur connecte. La route deconnectee ne doit donc jamais attendre
+le bundle complet des commandes pour proposer la connexion.
 Les actions `connectez-vous` et `inscrivez-vous` de `/wishlist` ouvrent la
 modale Auth publique commune via `sv:open-login`; elles ne redirigent jamais
 vers `/admin`.

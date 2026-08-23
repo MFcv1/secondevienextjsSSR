@@ -479,7 +479,7 @@ app/
 |-- mes-commandes/
 |   |-- page.jsx ...................... route dynamique
 |   |-- loading.jsx ................... loading coherent du compte
-|   `-- OrdersPageIsland.jsx .......... auth, orders et wishlist
+|   `-- OrdersPageIsland.jsx .......... shell Auth leger; MyOrdersView lazy apres connexion
 |-- admin/
 |   |-- layout.jsx .................... layout admin
 |   |-- page.jsx ...................... route dynamique

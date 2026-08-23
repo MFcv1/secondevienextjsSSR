@@ -570,6 +570,7 @@ L'audit structurel reproductible se lance avec:
 
 ```bash
 npm run audit:usage
+npm run test:account-route
 ```
 
 Il construit le graphe des imports Next/Functions, distingue les modules
@@ -578,6 +579,11 @@ signale scripts, assets publics et dependances seulement candidats au
 nettoyage. Son resultat n'autorise aucune suppression automatique: conventions
 framework, entrees provider, plans temporaires actifs et references stockees en
 base doivent etre controles manuellement.
+
+`test:account-route` verrouille la separation entre le shell de connexion de
+`/mes-commandes` et le workspace commandes reserve a un utilisateur
+authentifie. Il couvre la regression Safari ou la route deconnectee restait sur
+son squelette de chargement.
 
 Pour une restructuration comme celle-ci:
 

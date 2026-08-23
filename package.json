@@ -121,6 +121,7 @@
     "test:support-privacy": "node --test tests/support-chat-privacy.test.mjs",
     "test:release-contract": "node --test tests/public-release-contract.test.mjs",
     "test:a11y": "node --test tests/public-keyboard-accessibility.test.mjs",
+    "test:account-route": "node --test tests/account-route-contract.test.mjs",
     "test:e2e": "playwright test",
     "seo:check": "node scripts/with-env.mjs .env.sandbox node scripts/check-product-ssr.mjs",
     "seo:surface": "node scripts/check-seo-indexability.cjs",

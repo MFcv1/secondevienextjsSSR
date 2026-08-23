@@ -2,10 +2,14 @@
 
 import { useEffect, useLayoutEffect, useState } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
-import MyOrdersView from '../../src/kit/commerce/MyOrdersView';
 import { useAuth } from '../../src/kit/contexts/AuthContext';
 import { readWishlistIds, subscribeWishlistItems } from '../../src/kit/marketplace/wishlistState';
+
+const MyOrdersView = dynamic(() => import('../../src/kit/commerce/MyOrdersView'), {
+  loading: () => <AccountDashboardFallback />,
+});
 
 const readCachedAuthUser = () => (
   typeof window === 'undefined' ? null : window.__svAuthUser || null
