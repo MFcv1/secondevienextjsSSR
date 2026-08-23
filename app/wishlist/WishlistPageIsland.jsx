@@ -12,39 +12,10 @@ import {
   setWishlistItem,
   subscribeWishlistItems,
 } from '../../src/kit/marketplace/wishlistState';
-
-const getPublicCatalogProductUrl = (id) => (
-  `/api/catalog?id=${encodeURIComponent(id)}`
-);
-
-const normalizePublicCatalogProduct = (product, fallbackId) => {
-  if (!product) return null;
-  const id = String(product.id || fallbackId || '').trim();
-  if (!id) return null;
-  return {
-    ...product,
-    id,
-    originalId: id,
-    collectionName: product.collectionName || 'furniture',
-  };
-};
-
-const fetchPublicCatalogProduct = async (id) => {
-  const productId = String(id || '').trim();
-  if (!productId) return null;
-  return fetch(getPublicCatalogProductUrl(productId), {
-    cache: 'no-store',
-    headers: { accept: 'application/json' },
-  })
-    .then((response) => (response.ok ? response.json() : null))
-    .then((payload) => {
-      const product = payload?.product
-        || (payload?.collections?.furniture || []).find((item) => item.id === productId);
-      return normalizePublicCatalogProduct(product, productId);
-    })
-    .catch(() => null);
-
-};
+import {
+  fetchPublicCatalogProduct,
+  mergeCatalogProducts,
+} from '../../src/kit/marketplace/publicCatalogWishlist';
 
 function WishlistPageContent({ initialItems = [] }) {
   const router = useRouter();
@@ -90,13 +61,7 @@ function WishlistPageContent({ initialItems = [] }) {
         if (cancelled) return;
         const nextProducts = products.filter(Boolean);
         if (!nextProducts.length) return;
-        setCatalogItems((currentItems) => {
-          const byId = new Map(currentItems.map((item) => [getWishlistProductId(item), item]));
-          nextProducts.forEach((product) => {
-            byId.set(getWishlistProductId(product), product);
-          });
-          return Array.from(byId.values());
-        });
+        setCatalogItems((currentItems) => mergeCatalogProducts(currentItems, nextProducts));
       });
 
     return () => {

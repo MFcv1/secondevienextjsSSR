@@ -46,7 +46,7 @@ depuis le 2026-08-02 avec les controls `v2_all/v2` et Stripe test.
 | Mes avantages | `listMyNewsletterRewards` après vérification Auth/e-mail | dernier code immédiatement visible, copie et historique borné |
 | Suivi de livraison | `shipmentTracking` derive par le reader v2 | transporteur, numero copiable, lien officiel allowliste ou repli sans suivi |
 | Documents | snapshots de commande + PDF serveur prive | ouvrir, enregistrer, partager et recevoir par e-mail les seuls documents sandbox admissibles |
-| Liste de souhaits | `users/{uid}/wishlist` | apercu et lien vers `/wishlist` |
+| Liste de souhaits | `users/{uid}/wishlist` + `/api/catalog` | apercu enrichi par le catalogue public et lien vers `/wishlist` |
 | Adresse | derniere commande | affichage livraison/facturation |
 | Profil | Firebase Auth + derniere commande | affichage nom, email, telephone |
 | Support | configuration metier | contact et aide |
@@ -236,6 +236,7 @@ Jusqu'a la gate documentaire/comptable du noyau:
 La wishlist utilise:
 
 - `src/kit/marketplace/wishlistState.js` pour le modele et les abonnements;
+- `src/kit/marketplace/publicCatalogWishlist.js` pour resoudre les produits absents du rendu initial via l'API publique same-origin;
 - `users/{uid}/wishlist/{item}` pour l'utilisateur connecte;
 - un etat local borne pour la continuite visiteur;
 - le catalogue courant pour rafraichir disponibilite et visuel.
@@ -248,6 +249,10 @@ Le premier rendu de `WishlistPageIsland` reste identique entre serveur et
 navigateur. La liste locale est chargee uniquement par
 `subscribeWishlistItems` apres montage afin d'eviter toute divergence
 d'hydratation avec `localStorage`.
+La page complete et l'apercu de l'espace client partagent le meme resoluteur:
+un favori conserve son snapshot d'affichage, puis le catalogue public rafraichit
+son nom, son prix, son visuel et sa disponibilite sans rendre Firestore
+autoritaire pour l'achat.
 
 ## 6. Panier et handoff
 

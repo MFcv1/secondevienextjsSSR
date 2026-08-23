@@ -1,11 +1,19 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../src/kit/contexts/AuthContext';
-import { readWishlistIds, subscribeWishlistItems } from '../../src/kit/marketplace/wishlistState';
+import {
+  getWishlistProductId,
+  readWishlistIds,
+  subscribeWishlistItems,
+} from '../../src/kit/marketplace/wishlistState';
+import {
+  fetchPublicCatalogProduct,
+  mergeCatalogProducts,
+} from '../../src/kit/marketplace/publicCatalogWishlist';
 
 const MyOrdersView = dynamic(() => import('../../src/kit/commerce/MyOrdersView'), {
   loading: () => <AccountDashboardFallback />,
@@ -111,7 +119,11 @@ function OrdersPageContent({ initialItems = [] }) {
   const [wishlistItems, setWishlistItems] = useState(() => (
     readWishlistIds().map((id) => ({ id, originalId: id }))
   ));
+  const [catalogItems, setCatalogItems] = useState(initialItems);
   const effectiveUser = user || cachedUser;
+  const wishlistIds = useMemo(() => (
+    Array.from(new Set(wishlistItems.map(getWishlistProductId).filter(Boolean)))
+  ), [wishlistItems]);
 
   useLayoutEffect(() => {
     setHasMounted(true);
@@ -150,6 +162,25 @@ function OrdersPageContent({ initialItems = [] }) {
     );
   }, [effectiveUser]);
 
+  useEffect(() => {
+    if (!wishlistIds.length) return undefined;
+
+    const knownIds = new Set(catalogItems.map(getWishlistProductId));
+    const missingIds = wishlistIds.filter((id) => !knownIds.has(id));
+    if (!missingIds.length) return undefined;
+
+    let cancelled = false;
+    Promise.all(missingIds.map((id) => fetchPublicCatalogProduct(id)))
+      .then((products) => {
+        if (cancelled || !products.some(Boolean)) return;
+        setCatalogItems((currentItems) => mergeCatalogProducts(currentItems, products));
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [catalogItems, wishlistIds]);
+
   if (!hasMounted || (loading && !effectiveUser)) return <AccountDashboardFallback darkMode={darkMode} />;
   if (!effectiveUser || effectiveUser.isAnonymous) {
     return <AccountDashboardFallback darkMode={darkMode} isSignedOut />;
@@ -162,7 +193,7 @@ function OrdersPageContent({ initialItems = [] }) {
       darkMode={darkMode}
       activeDesignId="architectural"
       wishlistItems={wishlistItems}
-      items={initialItems}
+      items={catalogItems}
       onOpenWishlist={() => { router.push('/wishlist'); }}
       onLogout={logout}
     />

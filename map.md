@@ -572,6 +572,7 @@ src/kit/marketplace/
 |-- WishlistToggleIsland.jsx .......... action wishlist
 |-- WishlistView.jsx .................. vue wishlist
 |-- wishlistState.js .................. persistence/abonnement wishlist
+|-- publicCatalogWishlist.js .......... enrichissement catalogue des favoris
 |-- CartPanelIsland.jsx ............... panneau panier
 |-- LazyCartPanelIsland.jsx ........... chargement differe panier
 |-- DarkModeToggleIsland.jsx .......... theme
