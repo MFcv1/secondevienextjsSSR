@@ -3,7 +3,7 @@
   "project": "secondevienextjsssr",
   "environment": "sandbox",
   "gate": "FINALISATION:F6",
-  "generatedAt": "2026-08-23T16:22:41.173Z",
+  "generatedAt": "2026-08-23T18:39:28.313Z",
   "status": "IN_PROGRESS",
   "reference": {
     "function": "getCatalogPublicationStatusGen2",
@@ -15,11 +15,11 @@
     "updateTime": "2026-08-23T01:46:24.611705732Z"
   },
   "window": {
-    "start": "2026-08-23T16:16:54.512Z",
-    "minimumEnd": "2026-08-30T16:16:54.512Z",
+    "start": "2026-08-23T18:36:21.000Z",
+    "minimumEnd": "2026-08-30T18:36:21.000Z",
     "requiredSeconds": 604800,
-    "observedSeconds": 346,
-    "reason": "Fenetre recalee apres le deploiement cible et la requalification active A-028 de dispatchCatalogRevalidation. La qualification fonctionnelle reste non bloquee; les 604800 secondes ne sont pas acquises."
+    "observedSeconds": 187,
+    "reason": "Fenetre recalee apres le deploiement cible A-029 de prepareCommerceDocumentDeliveryGen2. La qualification fonctionnelle reste non bloquee; les 604800 secondes ne sont pas acquises."
   },
   "supersededWindows": [
     {
@@ -35,12 +35,19 @@
       "lastCheckpointAt": "2026-08-23T15:42:26.948Z",
       "observedSeconds": 11887,
       "reason": "A-028 a revele la boucle 308 de preuve HTML, puis dispatchCatalogRevalidation a ete corrige et deploye seul; cette fenetre ne prouve donc pas la topologie courante."
+    },
+    {
+      "start": "2026-08-23T16:16:54.512Z",
+      "minimumEnd": "2026-08-30T16:16:54.512Z",
+      "lastCheckpointAt": "2026-08-23T16:22:41.173Z",
+      "observedSeconds": 346,
+      "reason": "A-029 a exige le deploiement cible de prepareCommerceDocumentDeliveryGen2 en revision 00002-riw; cette fenetre ne prouve donc pas la topologie courante."
     }
   ],
   "checkpoints": [
     {
-      "checkedAt": "2026-08-23T16:22:41.173Z",
-      "observedSeconds": 346,
+      "checkedAt": "2026-08-23T18:39:28.313Z",
+      "observedSeconds": 187,
       "collectorNode": "v22.23.2",
       "revisionUnchanged": true,
       "configUnchanged": true,
@@ -56,7 +63,7 @@
       "errorSeverityEntries": 0,
       "unqualifiedErrors": 0,
       "logResourceTypes": ["cloud_run_revision", "cloud_function"],
-      "qualification": "NODE22_POST_A028_TOPOLOGY_QUIET",
+      "qualification": "NODE22_POST_A029_TOPOLOGY_QUIET",
       "runtimeQuiet": true
     }
   ],

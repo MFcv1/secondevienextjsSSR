@@ -64,7 +64,10 @@ remplacee apres quatre remediations commerce sandbox ciblees et qualifiees. La
 suivante a ete remplacee par le deploiement cible A-028 de
 `dispatchCatalogRevalidation`, revision
 `dispatchcatalogrevalidation-00013-cop`, puis sa requalification active. La
-fenetre courante de 604800 s court depuis `2026-08-23T16:16:54.512Z`; ce suivi
+troisieme a ete remplacee apres la correction cible A-029 de
+`prepareCommerceDocumentDeliveryGen2`, revision
+`preparecommercedocumentdeliverygen2-00002-riw`. La fenetre courante de
+604800 s court depuis `2026-08-23T18:36:21.000Z`; ce suivi
 operationnel long ne bloque pas la
 qualification fonctionnelle active et ne doit pas etre presente comme termine
 avant son echeance reelle.

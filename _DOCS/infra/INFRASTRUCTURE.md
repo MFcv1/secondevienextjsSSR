@@ -211,8 +211,10 @@ sont `functions-gen2-finalisation-f4.json` et
 `functions-gen2-finalisation-f5.json`. Apres les remediations commerce ciblees
 puis le deploiement et la requalification A-028 de
 `dispatchCatalogRevalidation`, la baseline F6 courante est
-`2026-08-23T16:16:54.512Z` et le soak court jusqu'au minimum
-`2026-08-30T16:16:54.512Z`. La saturation restante du burst admin est acceptee comme plafond
+recalee une nouvelle fois apres le deploiement cible A-029 de
+`prepareCommerceDocumentDeliveryGen2`: elle court de
+`2026-08-23T18:36:21.000Z` jusqu'au minimum
+`2026-08-30T18:36:21.000Z`. La saturation restante du burst admin est acceptee comme plafond
 de cout; aucun second tuning, build App Hosting ou deploy global n'a lieu. La
 decision durable est dans `_DOCS/architecture/FUNCTIONS_RUNTIME_ADR.md`.
 G5-A1 ajoute

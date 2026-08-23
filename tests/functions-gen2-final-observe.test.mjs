@@ -103,11 +103,12 @@ test('le collecteur F6 classe les erreurs sans recopier leur contenu', () => {
 });
 
 test('le checkpoint F6 ne ferme pas la fenetre avant 604800 secondes', () => {
+  const minimumEnd = Date.parse(FINAL_OBSERVATION.minimumEnd);
   const before = buildCheckpoint({
-    now: new Date('2026-08-30T16:16:53.512Z'), functionRow, inventoryRows, service, sourceRows, logRows: []
+    now: new Date(minimumEnd - 1000), functionRow, inventoryRows, service, sourceRows, logRows: []
   });
   const after = buildCheckpoint({
-    now: new Date('2026-08-30T16:16:55.512Z'), functionRow, inventoryRows, service, sourceRows, logRows: []
+    now: new Date(minimumEnd + 1000), functionRow, inventoryRows, service, sourceRows, logRows: []
   });
   assert.equal(before.fullDurationReached, false);
   assert.equal(after.fullDurationReached, true);

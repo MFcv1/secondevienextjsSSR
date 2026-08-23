@@ -174,9 +174,10 @@ digestees et sous hold. Aucun build App Hosting, deploy global, production ou St
 live n'a ete utilise en G13. Le budget Billing reste non prouve car l'API Budget
 est desactivee. La premiere fenetre F6 a ete remplacee apres quatre
 remediations commerce ciblees et qualifiees; la suivante a ete remplacee par
-le deploiement cible et la requalification A-028. La fenetre de la topologie
-courante court du `2026-08-23T16:16:54.512Z` au minimum au
-`2026-08-30T16:16:54.512Z`; les erreurs historiques sont
+le deploiement cible et la requalification A-028; la troisieme a ete remplacee
+apres la correction cible A-029 de `prepareCommerceDocumentDeliveryGen2`. La
+fenetre de la topologie courante court du `2026-08-23T18:36:21.000Z` au minimum
+au `2026-08-30T18:36:21.000Z`; les erreurs historiques sont
 qualifiees separement et ne prouvent pas la sante de cette revision. Ne pas recreer
 de plan de migration au-dela du plan temporaire explicitement demande.
 

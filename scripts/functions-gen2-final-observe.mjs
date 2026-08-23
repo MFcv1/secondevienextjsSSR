@@ -12,15 +12,16 @@ export const FINAL_OBSERVATION = Object.freeze({
   functionName: 'getCatalogPublicationStatusGen2',
   serviceName: 'getcatalogpublicationstatusgen2',
   revision: 'getcatalogpublicationstatusgen2-00004-hiv',
-  start: '2026-08-23T16:16:54.512Z',
-  minimumEnd: '2026-08-30T16:16:54.512Z',
+  start: '2026-08-23T18:36:21.000Z',
+  minimumEnd: '2026-08-30T18:36:21.000Z',
   requiredSeconds: 604800,
   qualifiedDeploymentsBeforeWindow: Object.freeze([
     Object.freeze({ name: 'commerceOutboxDispatcherGen2', revision: 'commerceoutboxdispatchergen2-00002-hap', updateTime: '2026-08-23T11:47:31.577480581Z' }),
     Object.freeze({ name: 'requestRefundAdminGen2', revision: 'requestrefundadmingen2-00002-yoq', updateTime: '2026-08-23T11:48:52.946408813Z' }),
     Object.freeze({ name: 'stripeWebhookV2Gen2', revision: 'stripewebhookv2gen2-00003-naj', updateTime: '2026-08-23T11:59:31.923590434Z' }),
     Object.freeze({ name: 'stripeConnectWebhookV2Gen2', revision: 'stripeconnectwebhookv2gen2-00002-reb', updateTime: '2026-08-23T12:00:57.788363999Z' }),
-    Object.freeze({ name: 'dispatchCatalogRevalidation', revision: 'dispatchcatalogrevalidation-00013-cop', updateTime: '2026-08-23T16:15:36.467940650Z' })
+    Object.freeze({ name: 'dispatchCatalogRevalidation', revision: 'dispatchcatalogrevalidation-00013-cop', updateTime: '2026-08-23T16:15:36.467940650Z' }),
+    Object.freeze({ name: 'prepareCommerceDocumentDeliveryGen2', revision: 'preparecommercedocumentdeliverygen2-00002-riw', updateTime: '2026-08-23T17:45:36.781215797Z' })
   ]),
   config: Object.freeze({
     runtime: 'nodejs22',
