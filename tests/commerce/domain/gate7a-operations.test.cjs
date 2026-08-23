@@ -32,7 +32,8 @@ if (!admin.apps.length) {
     admin.initializeApp({ projectId: 'secondevienextjsssr' });
 }
 const {
-    messageFor
+    messageFor,
+    refundSuccessOutboxIsCurrent
 } = require('../../../functions/src/commerce/v2Operations');
 
 const repositoryRoot = path.resolve(__dirname, '..', '..', '..');
@@ -462,6 +463,56 @@ test('Gate 7A: accuse provider marque sent avec idempotency key outbox', async (
     await worker.process(outboxEntry().outboxId);
     assert.equal(idempotencyKey, outboxEntry().outboxId);
     assert.equal(repository.state.calls[0].type, 'sent');
+});
+
+test('Gate 7A: un succes refund devenu obsolete est supprime avant Gmail', async () => {
+    const repository = outboxRepository({
+        ...outboxEntry(),
+        template: 'order-refunded',
+        payloadSnapshot: {
+            orderId: 'order-gate7a-0001',
+            refundRequestId: 'refund-request-gate7a-0001',
+            refundId: 're_gate7a_reversed'
+        }
+    });
+    const worker = createOutboxWorker({
+        repository,
+        send: async () => ({
+            suppressed: true,
+            reason: 'refund_no_longer_succeeded'
+        }),
+        ids: { leaseToken: () => 'lease-gate7a-stale' },
+        clock: workerClock()
+    });
+    await worker.process(repository.state.entry.outboxId);
+    assert.equal(repository.state.calls[0].type, 'suppressed_test');
+    assert.equal(
+        repository.state.calls[0].input.reason,
+        'refund_no_longer_succeeded'
+    );
+    assert.equal(repository.state.calls.some((call) => call.type === 'sent'), false);
+});
+
+test('Gate 7A: la garde refund refuse une tentative renversee avant rendu e-mail', () => {
+    const entry = {
+        template: 'order-refunded',
+        payload: {
+            refundRequestId: 'refund-request-gate7a-0001',
+            refundId: 're_gate7a_reversed',
+            amountCents: 12000
+        }
+    };
+    const order = { amounts: { refundedCents: 0 } };
+    assert.equal(refundSuccessOutboxIsCurrent({
+        entry,
+        order,
+        attempt: { status: 'failed', refundId: 're_gate7a_reversed' }
+    }), false);
+    assert.equal(refundSuccessOutboxIsCurrent({
+        entry,
+        order,
+        attempt: { status: 'succeeded', refundId: 're_gate7a_reversed' }
+    }), true);
 });
 
 test('Gate 7A: une outbox de fixture est neutralisee sans appel fournisseur', async () => {

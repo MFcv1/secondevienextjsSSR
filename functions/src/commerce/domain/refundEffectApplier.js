@@ -20,6 +20,15 @@ const {
     shouldCreateImmutableDocument
 } = require('./commerceDocuments');
 
+const REFUND_SUCCESS_EMAIL_STABILIZATION_MS = 5 * 60 * 1000;
+
+function refundSuccessEmailNotBefore(clock) {
+    const nowMillis = typeof clock.nowMillis === 'function'
+        ? clock.nowMillis()
+        : Date.parse(clock.now());
+    return nowMillis + REFUND_SUCCESS_EMAIL_STABILIZATION_MS;
+}
+
 function applierError(code, detail = null) {
     const error = new Error(detail ? `${code}:${detail}` : code);
     error.code = code;
@@ -238,6 +247,7 @@ function createRefundEffectApplier({
         ]);
         const payloadSnapshot = {
             orderId,
+            refundRequestId,
             refundId: refund.id,
             amountCents: nextAttempt.amountCents,
             currency: nextAttempt.currency
@@ -255,7 +265,10 @@ function createRefundEffectApplier({
                     ownerUid: order.userId
                 }),
                 payloadSnapshot,
-                clock
+                clock,
+                notBeforeMillis: outcome === 'succeeded'
+                    ? refundSuccessEmailNotBefore(clock)
+                    : null
             }),
             buildOutboxIntent({
                 effectId: emailEffectId,
@@ -266,7 +279,10 @@ function createRefundEffectApplier({
                 recipientRole: 'admin',
                 recipientHash: hashPayload({ role: 'admin', channel: 'transactional-sender' }),
                 payloadSnapshot,
-                clock
+                clock,
+                notBeforeMillis: outcome === 'succeeded'
+                    ? refundSuccessEmailNotBefore(clock)
+                    : null
             })
         ].map((intent) => order.testContext
             ? { ...intent, testContext: { ...order.testContext } }

@@ -55,6 +55,16 @@ function createOutboxWorker({
                 recipientRole: entry.recipientRole,
                 payload: entry.payloadSnapshot
             });
+            if (response?.suppressed === true) {
+                const nowMillis = clock.nowMillis();
+                return repository.markSuppressed(outboxId, {
+                    leaseToken,
+                    nowMillis,
+                    suppressedAt: clock.now(),
+                    purgeAt: new Date(nowMillis + retentionMs).toISOString(),
+                    reason: response.reason || 'stale_effect'
+                });
+            }
             if (!response || typeof response.providerMessageId !== 'string') {
                 throw workerError('COMMERCE_OUTBOX_PROVIDER_RESPONSE_INVALID');
             }

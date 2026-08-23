@@ -65,7 +65,8 @@ function buildOutboxIntent({
     recipientRole,
     recipientHash,
     payloadSnapshot,
-    clock
+    clock,
+    notBeforeMillis = null
 }) {
     if (!clock || typeof clock.now !== 'function') throw effectError('COMMERCE_CLOCK_REQUIRED');
     const now = clock.now();
@@ -73,6 +74,12 @@ function buildOutboxIntent({
         ? clock.nowMillis()
         : Date.parse(now);
     if (!Number.isSafeInteger(nowMillis)) throw effectError('COMMERCE_CLOCK_REQUIRED');
+    if (
+        notBeforeMillis !== null &&
+        (!Number.isSafeInteger(notBeforeMillis) || notBeforeMillis < nowMillis)
+    ) {
+        throw effectError('COMMERCE_OUTBOX_NOT_BEFORE_INVALID');
+    }
     const outboxId = deterministicEffectId([effectId, template, recipientRole, 'email']);
     return {
         schemaVersion: 2,
@@ -92,7 +99,7 @@ function buildOutboxIntent({
         leaseToken: null,
         processingUntil: null,
         attemptCount: 0,
-        nextAttemptAt: nowMillis,
+        nextAttemptAt: notBeforeMillis ?? nowMillis,
         providerMessageId: null,
         lastError: null,
         createdAt: now,

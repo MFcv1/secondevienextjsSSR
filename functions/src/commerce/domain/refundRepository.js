@@ -19,6 +19,15 @@ const {
     shouldCreateImmutableDocument
 } = require('./commerceDocuments');
 
+const REFUND_SUCCESS_EMAIL_STABILIZATION_MS = 5 * 60 * 1000;
+
+function refundSuccessEmailNotBefore(clock) {
+    const nowMillis = typeof clock.nowMillis === 'function'
+        ? clock.nowMillis()
+        : Date.parse(clock.now());
+    return nowMillis + REFUND_SUCCESS_EMAIL_STABILIZATION_MS;
+}
+
 function repositoryError(code) {
     const error = new Error(code);
     error.code = code;
@@ -234,6 +243,7 @@ function createRefundRepository({
             : 'order-refund-failed-admin';
         const payloadSnapshot = {
             orderId: order.id,
+            refundRequestId: nextAttempt.refundRequestId,
             refundId: refund.id || null,
             amountCents: nextAttempt.amountCents,
             currency: nextAttempt.currency
@@ -251,7 +261,10 @@ function createRefundRepository({
                     ownerUid: order.userId
                 }),
                 payloadSnapshot,
-                clock
+                clock,
+                notBeforeMillis: outcome === 'succeeded'
+                    ? refundSuccessEmailNotBefore(clock)
+                    : null
             }),
             buildOutboxIntent({
                 effectId: emailEffectId,
@@ -265,7 +278,10 @@ function createRefundRepository({
                     channel: 'transactional-sender'
                 }),
                 payloadSnapshot,
-                clock
+                clock,
+                notBeforeMillis: outcome === 'succeeded'
+                    ? refundSuccessEmailNotBefore(clock)
+                    : null
             })
         ];
         const outboxes = baseOutboxes.map((intent) => (

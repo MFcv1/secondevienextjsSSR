@@ -1548,6 +1548,18 @@ const scenarios = {
             ],
             'customer and admin receive the asynchronous failure alerts once'
         );
+        const refundOutboxes = outboxes.docs
+            .map((document) => document.data())
+            .filter((entry) => ['order-refunded', 'order-refunded-admin'].includes(entry.template));
+        context.equal(refundOutboxes.length, 2, 'success notices stay uniquely addressable');
+        context.equal(
+            refundOutboxes.every((entry) => (
+                entry.payloadSnapshot.refundRequestId === refundRequestId &&
+                entry.nextAttemptAt === effectClock.nowMillis() + (5 * 60 * 1000)
+            )),
+            true,
+            'success notices wait for the asynchronous reversal window'
+        );
     }),
 
     'gate4-concurrent-returns-and-partial-dispositions-conserve-quantities': async (context) => withBackend(async (firestore) => {

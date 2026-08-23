@@ -379,6 +379,16 @@ function ambiguousGmailError(error, provider) {
     );
 }
 
+function refundSuccessOutboxIsCurrent({ entry, order, attempt = null }) {
+    if (!['order-refunded', 'order-refunded-admin'].includes(entry?.template)) return true;
+    if (entry?.payload?.refundRequestId) {
+        return attempt?.status === 'succeeded' &&
+            attempt?.refundId === entry.payload?.refundId;
+    }
+    return Number(order?.amounts?.refundedCents || 0) >=
+        Number(entry?.payload?.amountCents || 0);
+}
+
 function createOutboxRuntime() {
     const clock = createClock();
     const sender = createEmailSender();
@@ -399,6 +409,26 @@ function createOutboxRuntime() {
             if (!orderSnapshot.exists) throw operationsError('COMMERCE_OUTBOX_ORDER_MISSING');
             try {
                 const order = { id: orderId, ...orderSnapshot.data() };
+                if (['order-refunded', 'order-refunded-admin'].includes(entry.template)) {
+                    const refundRequestId = entry.payload?.refundRequestId;
+                    let attempt = null;
+                    if (refundRequestId) {
+                        const normalizedRefundRequestId = normalizeFirestoreId(
+                            refundRequestId,
+                            'Tentative remboursement outbox'
+                        );
+                        const attemptSnapshot = await db.doc(
+                            `orders/${orderId}/refunds/${normalizedRefundRequestId}`
+                        ).get();
+                        attempt = attemptSnapshot.exists ? attemptSnapshot.data() : null;
+                    }
+                    if (!refundSuccessOutboxIsCurrent({ entry, order, attempt })) {
+                        return {
+                            suppressed: true,
+                            reason: 'refund_no_longer_succeeded'
+                        };
+                    }
+                }
                 const message = messageFor(
                     {
                         template: entry.template,
@@ -981,6 +1011,7 @@ module.exports = {
     commerceOutboxDispatcher,
     getCommerceOperationsStatusAdmin,
     messageFor,
+    refundSuccessOutboxIsCurrent,
     rebuildCommerceOperationsAdmin,
     persistFinancialRollups,
     runOperationsRebuild,

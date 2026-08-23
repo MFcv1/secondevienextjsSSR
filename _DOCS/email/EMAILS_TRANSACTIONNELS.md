@@ -216,6 +216,16 @@ de l'objet Refund dans son compte Connect. Les deux intentions d'echec sont
 creees avec la transition durable; aucun montant echoue n'est comptabilise
 comme un remboursement financier reussi.
 
+Stripe peut exceptionnellement invalider de facon asynchrone un Refund d'abord
+observe `succeeded`. Les intentions `order-refunded` et
+`order-refunded-admin` attendent donc cinq minutes avant de devenir eligibles.
+Au moment exact de l'envoi, le dispatcher relit la tentative
+`orders/{orderId}/refunds/{refundRequestId}` et exige encore le meme Refund en
+`succeeded`. Une tentative entre-temps passee `failed` supprime l'intention
+obsolete en `suppressed_stale`; seuls M12/M13 partent. Les faits et documents
+historiques restent append-only et l'etat financier autoritaire n'est pas
+modifie par cette garde de communication.
+
 Le remboursement financier ne remet jamais automatiquement le meuble en stock.
 La remise en vente reste conditionnee a une disposition physique admissible.
 
@@ -355,6 +365,8 @@ Regles:
 - la copie de document est idempotente dans sa fenetre et ne conditionne
   jamais l'acces au PDF;
 - Gmail ambigu devient `delivery_unknown` sans retry automatique;
+- un succes de remboursement devenu obsolete est `suppressed_stale` avant
+  tout appel Gmail;
 - les identifiants techniques servent a l'idempotence sans exposer de secret.
 
 Les deux triggers legacy `onOrderCreated` et `onOrderUpdated` restent separes

@@ -94,7 +94,8 @@ function createOutboxRepository({ db, refs }) {
             leaseToken,
             nowMillis,
             suppressedAt,
-            purgeAt
+            purgeAt,
+            reason = 'fixture'
         }) {
             const ref = refs.outbox(outboxId);
             return db.runTransaction(async (transaction) => {
@@ -104,12 +105,13 @@ function createOutboxRepository({ db, refs }) {
                 assertFence(entry, leaseToken, nowMillis);
                 const next = {
                     ...entry,
-                    status: 'suppressed_test',
+                    status: reason === 'fixture' ? 'suppressed_test' : 'suppressed_stale',
                     leaseToken: null,
                     processingUntil: null,
                     nextAttemptAt: null,
                     providerMessageId: null,
                     lastError: null,
+                    suppressedReason: reason,
                     suppressedAt,
                     purgeAt
                 };
