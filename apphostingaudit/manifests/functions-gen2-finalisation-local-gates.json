@@ -3,21 +3,21 @@
   "project": "secondevienextjsssr",
   "environment": "local-only",
   "gate": "FINALISATION:F1_F3_AND_REGRESSION",
-  "generatedAt": "2026-08-23T02:19:49Z",
+  "generatedAt": "2026-08-23T15:41:40Z",
   "status": "GREEN",
   "node": "v22.23.2",
   "commands": [
     {
       "command": "npm run test:functions-gen2",
       "result": "PASS",
-      "tests": 161,
+      "tests": 162,
       "failures": 0,
       "cloudAccess": false
     },
     {
       "command": "npm run test:catalog:core",
       "result": "PASS",
-      "tests": 13,
+      "tests": 14,
       "failures": 0,
       "cloudAccess": false
     },
@@ -31,7 +31,7 @@
     {
       "command": "npm run test:commerce:unit",
       "result": "PASS",
-      "tests": 136,
+      "tests": 139,
       "failures": 0,
       "networkBlockedByHarness": true
     },

@@ -10,8 +10,8 @@ const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_ROOT = path.resolve(SCRIPT_DIR, '..');
 const PLAN_PATH = 'apphostingaudit/FINALISATION_MIGRATION_GEN2.md';
 const REQUIRED_SECONDS = 604800;
-const OBSERVATION_START = '2026-08-23T01:46:24.611705732Z';
-const OBSERVATION_END = '2026-08-30T01:46:24.611705732Z';
+const OBSERVATION_START = '2026-08-23T12:24:19.325Z';
+const OBSERVATION_END = '2026-08-30T12:24:19.325Z';
 const FINAL_REVISION = 'getcatalogpublicationstatusgen2-00004-hiv';
 const TARGET = 'getCatalogPublicationStatusGen2';
 const AUTH_GEN1 = [
@@ -139,7 +139,7 @@ function validateCheckpoint(checkpoint, index) {
     `Inventaire incoherent au checkpoint ${index}`
   );
   if (checkpoint.functionsUpdatedSinceStart) {
-    requireValue(checkpoint.functionsUpdatedSinceStart.join(',') === TARGET, `Deploy inattendu au checkpoint ${index}`);
+    requireValue(checkpoint.functionsUpdatedSinceStart.length === 0, `Deploy inattendu au checkpoint ${index}`);
   }
   if ('rollbackSourceHeld' in checkpoint) {
     requireValue(

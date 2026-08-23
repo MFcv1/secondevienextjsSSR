@@ -12,9 +12,15 @@ export const FINAL_OBSERVATION = Object.freeze({
   functionName: 'getCatalogPublicationStatusGen2',
   serviceName: 'getcatalogpublicationstatusgen2',
   revision: 'getcatalogpublicationstatusgen2-00004-hiv',
-  start: '2026-08-23T01:46:24.611705732Z',
-  minimumEnd: '2026-08-30T01:46:24.611705732Z',
+  start: '2026-08-23T12:24:19.325Z',
+  minimumEnd: '2026-08-30T12:24:19.325Z',
   requiredSeconds: 604800,
+  qualifiedDeploymentsBeforeWindow: Object.freeze([
+    Object.freeze({ name: 'commerceOutboxDispatcherGen2', revision: 'commerceoutboxdispatchergen2-00002-hap', updateTime: '2026-08-23T11:47:31.577480581Z' }),
+    Object.freeze({ name: 'requestRefundAdminGen2', revision: 'requestrefundadmingen2-00002-yoq', updateTime: '2026-08-23T11:48:52.946408813Z' }),
+    Object.freeze({ name: 'stripeWebhookV2Gen2', revision: 'stripewebhookv2gen2-00003-naj', updateTime: '2026-08-23T11:59:31.923590434Z' }),
+    Object.freeze({ name: 'stripeConnectWebhookV2Gen2', revision: 'stripeconnectwebhookv2gen2-00002-reb', updateTime: '2026-08-23T12:00:57.788363999Z' })
+  ]),
   config: Object.freeze({
     runtime: 'nodejs22',
     buildServiceAccount: 'projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com',
@@ -108,7 +114,7 @@ export function validateInventory(rows, expected = FINAL_OBSERVATION) {
     gen2.some((row) => row.state !== 'ACTIVE') ||
     gen1Names.join(',') !== [...GEN1_AUTH].sort().join(',') ||
     gen1.some((row) => row.status !== 'ACTIVE') ||
-    updatedSinceStart.join(',') !== expected.functionName
+    updatedSinceStart.length !== 0
   ) fail(`Derive inventaire final: ${rows.length}/${gen1.length}/${gen2.length}/${updatedSinceStart.join(',')}`);
   return {
     cloudFunctions: rows.length,

@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "codebase": "main",
+    "environment": "sandbox",
+    "gate": "QUALIFICATION_CATALOG_REVALIDATION_20260823",
+    "baselineCommit": "81cece26451ec8c583ce9d3cf29c166706486c3e",
+    "status": "READY"
+  },
+  "gates": {
+    "remediationDeploymentAllowed": true,
+    "productionAllowed": false,
+    "globalFunctionsDeployAllowed": false
+  },
+  "deploymentPolicy": {
+    "transport": "gcloud-gen2",
+    "maxTargetsPerDeploy": 1,
+    "forbiddenTargets": []
+  },
+  "functions": [
+    {
+      "name": "dispatchCatalogRevalidation",
+      "cloud": {
+        "present": true,
+        "state": "ACTIVE",
+        "generation": 2,
+        "revision": "dispatchcatalogrevalidation-00012-zer"
+      },
+      "identities": {
+        "runtimeServiceAccount": "catalog-builder@secondevienextjsssr.iam.gserviceaccount.com",
+        "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      }
+    }
+  ]
+}

@@ -21,7 +21,7 @@ const gen2Rows = Array.from({ length: 134 }, (_, index) => ({
 gen2Rows[0] = {
   ...gen2Rows[0],
   name: `projects/p/locations/europe-west1/functions/${FINAL_OBSERVATION.functionName}`,
-  updateTime: FINAL_OBSERVATION.start
+  updateTime: '2026-08-23T01:46:24.611705732Z'
 };
 const inventoryRows = [
   ...gen2Rows,
@@ -104,10 +104,10 @@ test('le collecteur F6 classe les erreurs sans recopier leur contenu', () => {
 
 test('le checkpoint F6 ne ferme pas la fenetre avant 604800 secondes', () => {
   const before = buildCheckpoint({
-    now: new Date('2026-08-30T01:46:23.611Z'), functionRow, inventoryRows, service, sourceRows, logRows: []
+    now: new Date('2026-08-30T12:24:18.325Z'), functionRow, inventoryRows, service, sourceRows, logRows: []
   });
   const after = buildCheckpoint({
-    now: new Date('2026-08-30T01:46:25.611Z'), functionRow, inventoryRows, service, sourceRows, logRows: []
+    now: new Date('2026-08-30T12:24:20.325Z'), functionRow, inventoryRows, service, sourceRows, logRows: []
   });
   assert.equal(before.fullDurationReached, false);
   assert.equal(after.fullDurationReached, true);

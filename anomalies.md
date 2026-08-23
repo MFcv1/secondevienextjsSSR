@@ -1883,6 +1883,39 @@ de code.
 - effets adjacents: aucun nouvel e-mail, paiement, remboursement ou mouvement
   de stock; Scheduler toujours `ENABLED` sur sa cadence horaire.
 
+### A-028 - La preuve HTML catalogue boucle sur un alias categorie en 308
+
+- statut: `CORRIGEE_A_REQUALIFIER`
+- severite: `IMPORTANTE`
+- phase: checkpoint final Gen2 et revalidation catalogue 306
+- environnement: sandbox
+- attendu: apres l'archivage du meuble smoke, la revision 306 doit converger
+  vers `revalidatedRevision=306` et `servedState=observed` sans retry Cloud
+  Tasks ni HTTP 500.
+- observe: `dispatchCatalogRevalidation` revision
+  `dispatchcatalogrevalidation-00012-zer` rejoue la meme tache et produit
+  `CATALOG_SERVED_ROUTE_HTTP_308`; le controle alterne entre
+  `verifying_served_html` et `degraded`, avec revision publiee 306 mais
+  revision revalidee 304. Le catalogue public et `/api/catalog/version`
+  servent bien la revision 306.
+- impact: la demonstration publique reste lisible, mais la preuve durable de
+  publication ne converge pas et genere des 5xx repetes; le sandbox ne peut
+  pas etre declare totalement fiable dans cet etat.
+- cause racine: le plan d'impact signe contient l'alias historique
+  `/categorie/deco` et sa categorie canonique `/categorie/decorations`.
+  `verifyServedCatalog` choisissait le premier chemin trie, donc l'alias que
+  Next redirige volontairement en 308, alors qu'il exigeait un statut 200.
+- correction appliquee: selectionner directement une categorie canonique du
+  plan signe en utilisant le registre d'alias catalogue; conserver le refus
+  des redirections arbitraires et le controle du hash HTML.
+- regression: test dedie avec un produit archive de categorie `deco`; la sonde
+  appelle `/categorie/decorations` et n'appelle jamais `/categorie/deco`.
+- validation locale avant deploy: test catalogue cible vert; deploiement et
+  requalification de la tache existante encore requis.
+- deploiement prevu: uniquement `dispatchCatalogRevalidation` Gen2 sur le
+  sandbox via le wrapper fail-closed; aucun App Hosting, production, Stripe,
+  IAM, secret ou Scheduler.
+
 ## Raccordement codes promotionnels — 2026-08-13
 
 Statut courant: `FERMEE_APRES_REQUALIFICATION_STRIPE_SANDBOX`.

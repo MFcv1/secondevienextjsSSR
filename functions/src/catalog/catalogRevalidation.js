@@ -6,6 +6,7 @@ const { CONTROL_DOCUMENT, catalogIdentityMatches, cleanError, nextStateVersion }
 const { validateImpactPlan } = require('./impactPlan');
 const { catalogLog } = require('./structuredLog');
 const { CATALOG_BUILDER_SERVICE_ACCOUNT, CATALOG_REVALIDATION_URL } = require('./catalogConfig');
+const { CATEGORY_ALIASES } = require('./catalogRoutes');
 
 const CATALOG_REVALIDATION_HMAC_SECRET = defineSecret('CATALOG_REVALIDATION_HMAC_SECRET');
 const REVALIDATION_REGION = 'europe-west1';
@@ -88,7 +89,15 @@ async function verifyServedCatalog(fetchImpl, endpoint, identity, impactPlan, de
                 : null
         ].filter(Boolean)
         : [];
-    const categoryPath = (impactPlan.paths || []).find((path) => path.startsWith('/categorie/'));
+    const categoryPaths = (impactPlan.paths || []).filter((path) => path.startsWith('/categorie/'));
+    const categoryPath = categoryPaths.find((path) => {
+        try {
+            const categoryId = decodeURIComponent(path.slice('/categorie/'.length));
+            return !CATEGORY_ALIASES[categoryId];
+        } catch {
+            return false;
+        }
+    }) || categoryPaths[0];
     const routeExpectations = [
         impactPlan.affectsGallery ? { path: '/', expectedStatus: 200 } : null,
         ...productRoutes,

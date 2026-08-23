@@ -291,6 +291,43 @@ test('archivage accepte la disparition 404 de l ancienne fiche et verifie les su
   assert.ok(fetchedPaths.includes('/categorie/commodes'));
 });
 
+test('preuve HTML verifie la categorie canonique plutot que son alias redirige', async () => {
+  const before = [{
+    id: 'decor-archive', name: 'Decoration archivee', category: 'deco',
+    status: 'published', stock: 0, currentPrice: 25,
+  }];
+  const aggregateSha256 = sha256([]);
+  const impactPlan = buildImpactPlan({
+    beforeProducts: before,
+    afterProducts: [],
+    revision: 9,
+    aggregateSha256,
+  });
+  const fetchedPaths = [];
+  const fetchImpl = async (url) => {
+    const path = new URL(String(url)).pathname;
+    fetchedPaths.push(path);
+    if (path === '/api/catalog/version') {
+      return response({ json: { revision: 9, aggregateSha256 } });
+    }
+    if (path.startsWith('/produit/')) {
+      return response({ status: 404, contentType: 'text/html', text: 'Not found' });
+    }
+    return response({
+      contentType: 'text/html',
+      text: `<main data-catalog-version="${aggregateSha256}"></main>`,
+    });
+  };
+
+  await assert.doesNotReject(verifyServedCatalog(fetchImpl, 'https://example.test/api/revalidate-catalog', {
+    revision: 9,
+    manifestSha256: 'a'.repeat(64),
+    aggregateSha256,
+  }, impactPlan, async () => {}));
+  assert.ok(fetchedPaths.includes('/categorie/decorations'));
+  assert.equal(fetchedPaths.includes('/categorie/deco'), false);
+});
+
 test('aucun moteur catalogue legacy ne subsiste dans le code executable', () => {
   const executable = [
     read('app/api/catalog/route.js'),

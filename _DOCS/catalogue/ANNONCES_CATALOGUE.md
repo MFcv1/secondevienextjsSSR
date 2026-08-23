@@ -229,6 +229,9 @@ La passe de synchronisation locale du 2026-07-19 a ferme les ecarts suivants dan
 - la resolution d'une fiche compare l'ID direct puis le suffixe canonique contre les IDs reels du snapshot; un ID Firestore contenant des tirets n'est jamais tronque au dernier tiret;
 - `stateVersion`, le token/TTL du lease et l'operation de rollback proprietaire ferment les ecritures tardives; un CAS `current` reussi mais une finalisation Firestore interrompue reste dans un etat reparable par le reconciler;
 - la revalidation HMAC couvre le corps exact, le projet, l'audience et les quatre identites revision/manifeste/agregat/plan; elle invalide les chemins du plan et le seul tag mutable `catalog:api-pointer`, jamais le cache des releases immuables;
+- la preuve HTML choisit une categorie canonique du plan signe; un alias tel
+  que `/categorie/deco` peut etre invalide mais ne doit pas servir de sonde 200
+  puisqu'il redirige vers `/categorie/decorations`;
 - `integrityState`, `sourceLagState`, `invalidationState` et `servedState` remplacent tout booleen sain ambigu; une version n'est marquee servie qu'apres lecture concordante de `/api/catalog/version` et d'un echantillon HTML;
 - les pages ISR lisent le pointeur Storage frais a chaque regeneration; les API utilisent un cache pointeur de 15 secondes explicitement invalide et des releases immuables; ISR 300 reste l'unique filet temporel de page;
 - apres acceptation de l'invalidation et preuve exacte de `/api/catalog/version`, le backend remplace le document minimal `sys_catalog_live/current`, avant le controle HTML; il ne contient ni prix, ni stock, ni image et n'est jamais autoritaire pour le commerce;

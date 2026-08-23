@@ -59,8 +59,12 @@ reactivation max 2 en revision finale `getcatalogpublicationstatusgen2-00004-hiv
 les deux revisions etaient `ACTIVE` et servaient 100 % du trafic. Le wrapper
 refuse une revision, generation, taille, hold ou digest different et extrait
 les octets verifies dans un repertoire prive temporaire pour ne pas confondre
-archive durable et staging Cloud Functions. La fenetre finale de 604800 s
-court depuis `2026-08-23T01:46:24.611705732Z`.
+archive durable et staging Cloud Functions. La premiere fenetre F6 a ete
+remplacee apres quatre remediations commerce sandbox ciblees et qualifiees.
+La fenetre courante de 604800 s court depuis
+`2026-08-23T12:24:19.325Z`; ce suivi operationnel long ne bloque pas la
+qualification fonctionnelle active et ne doit pas etre presente comme termine
+avant son echeance reelle.
 
 ## Horizon Node.js
 
