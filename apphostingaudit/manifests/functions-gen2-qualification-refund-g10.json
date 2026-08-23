@@ -5,7 +5,7 @@
     "codebase": "main",
     "environment": "sandbox",
     "gate": "QUALIFICATION_REFUND_G10_20260823",
-    "baselineCommit": "33c888cb9e5079ec66986eabbb013ce2b5c3f312",
+    "baselineCommit": "4d89dcb63d6be8102b0c8b3c6bb184bf9b20d45b",
     "status": "READY"
   },
   "gates": {
@@ -18,11 +18,16 @@
     "immutableArchiveWave": "g10",
     "maxTargetsPerDeploy": 1,
     "forbiddenTargets": [],
-    "archiveUri": "gs://gcf-v2-sources-231220287936-europe-west1/g10/c209fd934a7eaa507c41b7543d80c8db15df991885e214de4974eda6f88cc28f/function-source.zip",
-    "archiveSha256": "c209fd934a7eaa507c41b7543d80c8db15df991885e214de4974eda6f88cc28f",
-    "archiveGeneration": "1787484861320152",
-    "archiveSize": 366155,
-    "uploadCount": 1
+    "archiveUri": "gs://gcf-v2-sources-231220287936-europe-west1/g10/f72cb7b18849cbb4623cc8cdac5315ecf89068d0c1d91e89d3d18f53244407fb/function-source.zip",
+    "archiveSha256": "f72cb7b18849cbb4623cc8cdac5315ecf89068d0c1d91e89d3d18f53244407fb",
+    "archiveGeneration": "1787486117719842",
+    "archiveSize": 363420,
+    "uploadCount": 1,
+    "sourceAdapter": {
+      "purpose": "Expose the two retained G10 entry points without restoring retired Gen1 exports to the active local inventory.",
+      "exports": ["stripeWebhookV2", "stripeConnectWebhookV2"],
+      "base": "git archive 4d89dcb63d6be8102b0c8b3c6bb184bf9b20d45b:functions"
+    }
   },
   "functions": [
     {
