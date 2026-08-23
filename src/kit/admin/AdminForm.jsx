@@ -212,6 +212,10 @@ const AdminForm = ({
 
   // Unified state for images
   const [galleryItems, setGalleryItems] = useState([]);
+  const galleryItemsRef = useRef([]);
+  useEffect(() => {
+    galleryItemsRef.current = galleryItems;
+  }, [galleryItems]);
   const [uploading, setUploading] = useState(false);
   const [preparingImages, setPreparingImages] = useState(false);
   const [msg, setMsg] = useState("");
@@ -312,7 +316,34 @@ const AdminForm = ({
         metadata: initialMetadata[idx] || null,
         isExisting: true
       })));
-    } else { resetForm(); }
+    } else {
+      setFormData({
+        name: '',
+        description: '',
+        startingPrice: 0,
+        stock: 1,
+        material: '',
+        color: '',
+        dimensions: '',
+        width: '',
+        depth: '',
+        height: '',
+        category: '',
+        style: '',
+        priceOnRequest: false
+      });
+      galleryItemsRef.current.forEach(item => {
+        if (item.preview && !item.isExisting) URL.revokeObjectURL(item.preview);
+      });
+      setGalleryItems([]);
+      setIsCustomMaterial(false);
+      setCategoryError(false);
+      setStep('compose');
+      setProgress(0);
+      setInstagramHashtags('#secondevie #mobilierancien #artisanat');
+      setSocialTargets({ instagram: false, facebook: false });
+      setSocialPublication(null);
+    }
   }, [editData]);
 
   useEffect(() => {
@@ -340,33 +371,6 @@ const AdminForm = ({
       window.removeEventListener('drop', preventBrowserDrop);
     };
   }, []);
-
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      description: '',
-      startingPrice: 0,
-      stock: 1,
-      material: '',
-      color: '',
-      dimensions: '',
-      width: '',
-      depth: '',
-      height: '',
-      category: '',
-      style: '',
-      priceOnRequest: false
-    });
-    galleryItems.forEach(item => { if (item.preview && !item.isExisting) URL.revokeObjectURL(item.preview); });
-    setGalleryItems([]);
-    setIsCustomMaterial(false);
-    setCategoryError(false);
-    setStep('compose');
-    setProgress(0);
-    setInstagramHashtags('#secondevie #mobilierancien #artisanat');
-    setSocialTargets({ instagram: false, facebook: false });
-    setSocialPublication(null);
-  };
 
   // Le compte Meta pilote ce qui reste selectionnable : on aligne les cibles dessus.
   const handleMetaConnectionChange = React.useCallback((connection) => {

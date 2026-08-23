@@ -270,7 +270,7 @@ export default function ProductDetailShellIsland({
   const imageDragStateRef = useRef({ pointerId: null, startX: 0, startY: 0, dx: 0, dy: 0, axis: null, lastX: 0, lastT: 0, velocity: 0, width: 1 });
   const suppressImageClickRef = useRef(false);
 
-  const safeImages = images?.length ? images : [];
+  const safeImages = useMemo(() => (images?.length ? images : []), [images]);
   const activeImage = safeImages[Math.min(activeImg, Math.max(0, safeImages.length - 1))] || {};
   const activeImageRatio = activeImage.metadata?.ratio || activeImage.ratio || DEFAULT_PRODUCT_IMAGE_RATIO;
   const activeImageFitMode = getProductImageFitMode(activeImageRatio);
@@ -447,7 +447,7 @@ export default function ProductDetailShellIsland({
 
     finish();
     return true;
-  }, [clampImageIndex, commitImageIndex, preloadDetailImageAtIndex, safeImages.length]);
+  }, [clampImageIndex, commitImageIndex, getDetailImageSrcAtIndex, preloadDetailImageAtIndex, safeImages.length]);
 
   const goToIndex = useCallback((index) => {
     const viewport = typeof window !== 'undefined' && window.innerWidth < 1024 ? 'mobile' : 'desktop';

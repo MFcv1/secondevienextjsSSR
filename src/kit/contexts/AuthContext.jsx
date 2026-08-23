@@ -186,7 +186,7 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
         }
     };
 
-    const loginWithEmail = async (email, password) => {
+    const loginWithEmail = React.useCallback(async (email, password) => {
         const { auth, authModule } = await getAuthRuntime();
         const result = await authModule.signInWithEmailAndPassword(auth, email, password);
         getCallableFunction('updateUserSessions')
@@ -194,7 +194,7 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
             .catch(err => console.error('Failed to clean sessions after login:', err));
         syncAuthStoreUser(result.user, { lastAuthMethod: 'password' });
         return result;
-    };
+    }, []);
 
     useEffect(() => {
         if (typeof window === 'undefined') return undefined;
@@ -214,7 +214,7 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
         return () => {
             delete window.__svE2ELoginWithEmail;
         };
-    }, []);
+    }, [loginWithEmail]);
 
     const signupWithEmail = async (email, password) => {
         const { auth, authModule } = await getAuthRuntime();
@@ -222,7 +222,7 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
         return syncSignedInUser(result);
     };
 
-    const loginWithCustomToken = async (token, method = 'custom_token') => {
+    const loginWithCustomToken = React.useCallback(async (token, method = 'custom_token') => {
         const { auth, authModule } = await getAuthRuntime();
         const result = await signInWithCustomTokenResilient({ authModule, auth, token });
         getCallableFunction('updateUserSessions')
@@ -230,7 +230,7 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
             .catch(err => console.error('Failed to clean sessions after login:', err));
         syncAuthStoreUser(result.user, { lastAuthMethod: method });
         return result;
-    };
+    }, []);
 
     useEffect(() => {
         if (typeof window === 'undefined') return undefined;
@@ -254,7 +254,7 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
         return () => {
             delete window.__svE2ELoginWithCustomToken;
         };
-    }, []);
+    }, [loginWithCustomToken]);
 
     const logout = async () => {
         const { auth, authModule } = await getAuthRuntime();

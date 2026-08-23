@@ -972,14 +972,14 @@ const BoutiqueAnalytics = ({ darkMode, sessions = [], onRefreshSessions, session
         return m;
     }, [sessions]);
 
-    const formatSessionLocation = (sessionId) => {
+    const formatSessionLocation = useCallback((sessionId) => {
         const geo = sessionGeoMap.get(sessionId);
         if (geo?.city && geo.city !== 'Unknown') {
             const region = geo.region && geo.region !== 'Unknown' ? `, ${geo.region}` : '';
             return `${geo.city}${region}`;
         }
         return null;
-    };
+    }, [sessionGeoMap]);
 
     const loadClicks = useCallback(async () => {
         setLoadingClicks(true);
@@ -1158,7 +1158,7 @@ const BoutiqueAnalytics = ({ darkMode, sessions = [], onRefreshSessions, session
                 sessions: group.sessions.sort((a, b) => b.firstAt - a.firstAt)
             }))
             .sort((a, b) => b.timestamp - a.timestamp);
-    }, [comptoirSessions, clicksBySession, boutiqueNow]);
+    }, [comptoirSessions, clicksBySession, boutiqueNow, formatSessionLocation]);
 
     const topProducts = useMemo(() => {
         const counts = {};
@@ -1238,25 +1238,25 @@ const BoutiqueAnalytics = ({ darkMode, sessions = [], onRefreshSessions, session
         })).sort((a, b) => b.timestamp - a.timestamp);
     }, [filteredClicks, boutiqueNow]);
 
+    const firstSessionDayKey = sessionsByDay[0]?.key || null;
     useEffect(() => {
-        if (sessionsByDay.length > 0) {
-            const firstKey = sessionsByDay[0].key;
+        if (firstSessionDayKey) {
             setOpenDays(prev => {
-                if (Object.keys(prev).length === 0) return { [firstKey]: true };
+                if (Object.keys(prev).length === 0) return { [firstSessionDayKey]: true };
                 return prev;
             });
         }
-    }, [sessionsByDay.length]);
+    }, [firstSessionDayKey]);
 
+    const firstJourneyDayKey = comptoirJourneyGroups[0]?.key || null;
     useEffect(() => {
-        if (comptoirJourneyGroups.length > 0) {
-            const firstKey = comptoirJourneyGroups[0].key;
+        if (firstJourneyDayKey) {
             setOpenJourneyDays(prev => {
-                if (Object.keys(prev).length === 0) return { [firstKey]: true };
+                if (Object.keys(prev).length === 0) return { [firstJourneyDayKey]: true };
                 return prev;
             });
         }
-    }, [comptoirJourneyGroups.length]);
+    }, [firstJourneyDayKey]);
 
     const kpis = useMemo(() => {
         const peak = clickChartData.length > 0 ? clickChartData.reduce((best, d) => d.visites > best.visites ? d : best, clickChartData[0]) : null;
@@ -1864,18 +1864,18 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
     const [openDays, setOpenDays] = useState({});
 
     // Ouvrir par défaut le premier jour (Aujourd'hui)
+    const firstTrafficDayKey = groupedByDay[0]?.key || null;
     useEffect(() => {
-        if (groupedByDay.length > 0) {
-            const firstKey = groupedByDay[0].key;
+        if (firstTrafficDayKey) {
             setOpenDays(prev => {
                 // Si on n'a encore rien d'ouvert, on ouvre le premier jour
                 if (Object.keys(prev).length === 0) {
-                    return { [firstKey]: true };
+                    return { [firstTrafficDayKey]: true };
                 }
                 return prev;
             });
         }
-    }, [groupedByDay.length]);
+    }, [firstTrafficDayKey]);
 
     const loadSessions = useCallback(async () => {
         setLoading(true);

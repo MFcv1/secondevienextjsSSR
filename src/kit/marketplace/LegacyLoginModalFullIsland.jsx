@@ -399,8 +399,9 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
     };
   }, [emailValue, open, showPasskeyFirst]);
 
+  const passkeyUserId = passkeyUser?.uid || null;
   useEffect(() => {
-    if (!open || !passkeyUser) {
+    if (!open || !passkeyUserId) {
       setPreparedPasskeyRegistration(null);
       setPasskeyRegistrationPrepareStatus('idle');
       return undefined;
@@ -426,7 +427,7 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
     return () => {
       cancelled = true;
     };
-  }, [open, passkeyUser?.uid]);
+  }, [open, passkeyUserId]);
 
   useEffect(() => {
     if (!open || resendAfter <= 0) return undefined;

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { httpsCallable } from 'firebase/functions';
 import { functions, functionsRegion } from '../config/firebase';
 import { getFunctionTarget } from '../config/functionTargets';
@@ -144,7 +144,7 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
         lastActionTimeRef.current = Date.now();
     };
 
-    const recordCurrentView = ({ allowPartialDetail = false } = {}) => {
+    const recordCurrentView = useCallback(({ allowPartialDetail = false } = {}) => {
         if (!sessionIdRef.current || isAdmin) return false;
 
         const current = latestViewRef.current;
@@ -187,7 +187,7 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
         lastActionTimeRef.current = actionTime;
         hasRecordedJourneyRef.current = true;
         return true;
-    };
+    }, [isAdmin]);
 
     const clearHeartbeatTimer = () => {
         if (!heartbeatTimerRef.current) return;
@@ -329,14 +329,14 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
             isMounted = false;
             clearTimeout(timeout);
         };
-    }, [user, isAdmin]);
+    }, [user, isAdmin, recordCurrentView]);
 
     useEffect(() => {
         if (recordCurrentView({ allowPartialDetail: true })) scheduleRouteSync();
         return () => {
             if (routeSyncTimerRef.current) clearTimeout(routeSyncTimerRef.current);
         };
-    }, [view, selectedItemId, selectedItemName, selectedItemPrice, selectedItemContext]);
+    }, [view, selectedItemId, selectedItemName, selectedItemPrice, selectedItemContext, recordCurrentView]);
 
     useEffect(() => {
         armHeartbeatRef.current();
@@ -452,7 +452,7 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
             window.removeEventListener('beforeunload', handleBeforeUnloadEvent);
             window.removeEventListener('pagehide', handlePageHide);
         };
-    }, [isAdmin]);
+    }, [isAdmin, recordCurrentView]);
 
     return null;
 };
