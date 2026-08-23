@@ -263,6 +263,9 @@ autoritaire pour l'achat.
 Le rapprochement accepte aussi les anciens documents wishlist qui ne portent
 pas encore `originalId`: leur ID Firestore reste l'identifiant produit de
 reference, afin que le snapshot ancien ne masque jamais le stock public actuel.
+Les chargements unitaires sont appeles avec un callback unaire explicite: le
+second argument de `fetchPublicCatalogProduct` est reserve a l'injection d'un
+`fetch` de test et ne doit jamais recevoir l'index implicite de `Array.map`.
 
 ## 6. Panier et handoff
 

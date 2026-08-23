@@ -56,7 +56,7 @@ function WishlistPageContent({ initialItems = [] }) {
     if (!missingIds.length) return undefined;
 
     let cancelled = false;
-    Promise.all(missingIds.map(fetchPublicCatalogProduct))
+    Promise.all(missingIds.map((id) => fetchPublicCatalogProduct(id)))
       .then((products) => {
         if (cancelled) return;
         const nextProducts = products.filter(Boolean);

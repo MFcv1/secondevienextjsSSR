@@ -1977,18 +1977,21 @@ de code.
   desactive, alors que sa fiche et `/api/catalog?id=...` le donnent publie,
   non vendu, a 800 EUR et stock 1. Deux autres favoris a stock 0 sont, eux,
   correctement non achetables.
-- preuve active: Safari emet bien les trois requetes `/api/catalog?id=...` et
-  App Hosting repond trois fois HTTP 200; pourtant les trois cartes conservent
-  leur snapshot sans nom ni prix.
-- cause racine: les anciens documents wishlist ne portent pas `originalId`.
-  Le chargement utilisait correctement leur ID Firestore pour appeler l'API,
-  mais `WishlistView` cherchait ensuite le produit live exclusivement avec
-  `wishlistItem.originalId`, donc ne pouvait jamais appliquer la reponse.
+- preuve active: le catalogue 306 repond HTTP 200 avec le Buffet publie,
+  non vendu, a 800 EUR et stock 1; pourtant les trois cartes conservent leur
+  snapshot sans nom ni prix sur le rollout `c578f65`.
+- causes racines: les anciens documents wishlist ne portent pas `originalId`.
+  Le premier correctif a bien rapproche `originalId || id`, mais la page
+  passait directement `fetchPublicCatalogProduct` a `Array.map`. L'index fourni
+  par `map` devenait alors le second argument `fetchImpl` et faisait echouer le
+  chargement avant tout appel reseau exploitable.
 - correction appliquee: un resoluteur partage normalise l'identifiant avec
   `originalId || id`, prefere le produit catalogue live et ne conserve le
   snapshot que si le catalogue ne repond pas.
 - regression: un favori historique limite a `{ id, image }` doit recuperer du
-  catalogue son nom, son prix et son stock achetable.
+  catalogue son nom, son prix et son stock achetable; la page doit appeler le
+  chargeur avec une fonction unaire explicite `(id) => ...`, jamais directement
+  comme callback de `Array.map`.
 - deploiement prevu: uniquement App Hosting sandbox, puis requalification
   Safari; aucune Function, donnee, production, Stripe live ou commande.
 

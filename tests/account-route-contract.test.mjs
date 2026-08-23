@@ -8,6 +8,7 @@ import {
 } from '../src/kit/marketplace/publicCatalogWishlist.js';
 
 const source = await readFile(new URL('../app/mes-commandes/OrdersPageIsland.jsx', import.meta.url), 'utf8');
+const wishlistSource = await readFile(new URL('../app/wishlist/WishlistPageIsland.jsx', import.meta.url), 'utf8');
 
 test('signed-out account route does not wait for the full orders workspace bundle', () => {
   assert.doesNotMatch(source, /import MyOrdersView from/);
@@ -50,6 +51,9 @@ test('account wishlist preview resolves missing products through the public cata
 });
 
 test('wishlist uses the document id when a historical favorite has no originalId', () => {
+  assert.match(wishlistSource, /missingIds\.map\(\(id\) => fetchPublicCatalogProduct\(id\)\)/);
+  assert.doesNotMatch(wishlistSource, /missingIds\.map\(fetchPublicCatalogProduct\)/);
+
   const [resolved] = resolveWishlistCatalogItems(
     [{ id: 'buffet-1', image: 'stale.webp' }],
     [{ id: 'buffet-1', name: 'Buffet', currentPrice: 800, stock: 1, status: 'published' }],
