@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { ShoppingBag } from 'lucide-react';
+import CartSidebar from '../commerce/CartSidebar';
 import { getDb, getFirebaseAuth, loadFirestoreModule } from '../config/firebaseLazy';
 import { useAuthState } from '../contexts/AuthContext';
 import {
@@ -18,11 +19,6 @@ import {
   writeCheckoutCartHandoff,
 } from '../commerce/guestCart';
 import { isPurchasable } from '../commerce/purchasability';
-
-const CartSidebar = dynamic(() => import('../commerce/CartSidebar'), {
-  ssr: false,
-  loading: () => null,
-});
 
 function CartHeaderIcon({ darkMode = false } = {}) {
   const iconTone = darkMode

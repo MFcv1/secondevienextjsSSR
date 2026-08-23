@@ -1,6 +1,6 @@
 # Interface, navigation et contrats UX
 
-Derniere mise a jour: 2026-07-31
+Derniere mise a jour: 2026-08-23
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Intention
@@ -20,6 +20,12 @@ Le shell est compose de:
 - `RouteTransitionIsland` pour les transitions de navigation.
 
 Les donnees personnalisees ne doivent jamais bloquer l'affichage du header, l'ouverture du menu ou un lien public.
+
+Le panier utilise une seule frontiere asynchrone: `LazyCartPanelIsland` charge
+`CartPanelIsland`, qui embarque directement son `CartSidebar`. Le shell
+instantane reste visible pendant ce chargement puis cede la place a un panneau
+deja executable; ne pas remettre une seconde importation dynamique autour de
+`CartSidebar`, qui recreerait un intervalle sans panneau notamment sur Safari.
 
 ## 3. Mega menu desktop
 
@@ -175,7 +181,9 @@ src/kit/marketplace/ArchitecturalHeaderServer.jsx
 src/kit/marketplace/GlobalMenuTriggerIsland.jsx
 src/kit/marketplace/PremiumMegaMenuIsland.jsx
 src/kit/marketplace/HeaderAccountIsland.jsx
+src/kit/marketplace/LazyCartPanelIsland.jsx
 src/kit/marketplace/CartPanelIsland.jsx
+src/kit/commerce/CartSidebar.jsx
 src/kit/marketplace/ProductDetailShellIsland.jsx
 app/GalleryMobileShellIsland.jsx
 app/ViewportHeightSyncIsland.jsx
