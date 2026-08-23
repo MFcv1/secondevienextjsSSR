@@ -1850,6 +1850,31 @@ de code.
 - impact: aucun appel fournisseur perdu, aucune interruption de l'ancien
   endpoint actif, aucune donnee ou configuration Stripe live touchee.
 
+### A-027 - Un e-mail Gmail observe reste en delivery_unknown et maintient la sante a STOP
+
+- statut: `REQUALIFIEE`
+- severite: `IMPORTANTE`
+- phase: fermeture finale de la fenetre commerce
+- environnement: sandbox / Gmail de recette
+- attendu: une livraison Gmail ambigue mais ensuite observee dans la boite
+  exacte doit pouvoir etre rapprochee sans renvoyer le message.
+- observe: M11 de `CMD-ORD_712D89` est visible dans Gmail admin, mais son
+  outbox reste `delivery_unknown`; la sante commerce affiche `stop` avec ce
+  seul compteur a 1, tous les compteurs financiers et stock restant a zero.
+- cause racine: le choix fail-closed interdisait correctement le retry, mais
+  aucun outil borne ne permettait d'enregistrer la preuve humaine ulterieure.
+- correction appliquee: ajout de
+  `scripts/reconcile-commerce-outbox-delivery.mjs`, dry-run par defaut,
+  preconditions sandbox/outbox/commande/template/role/attempt strictes,
+  confirmation exacte, transaction et audit `noResend: true`.
+- validations: test cible `2/2`, ESLint cible vert, dry-run `resend:false`,
+  application sur l'unique outbox correlee, puis execution manuelle unique du
+  Scheduler existant `commerceOperationsReconcilerGen2` sans changement de
+  configuration. Etat final `healthy`, evaluation
+  `2026-08-23T12:24:19.325Z` et neuf compteurs a zero.
+- effets adjacents: aucun nouvel e-mail, paiement, remboursement ou mouvement
+  de stock; Scheduler toujours `ENABLED` sur sa cadence horaire.
+
 ## Raccordement codes promotionnels — 2026-08-13
 
 Statut courant: `FERMEE_APRES_REQUALIFICATION_STRIPE_SANDBOX`.
