@@ -85,6 +85,8 @@ Preuves locales du 2026-08-23:
 - lint complet en mode `--quiet`: zero erreur;
 - `git diff --check`: vert.
 - preuve agregee: `manifests/functions-gen2-finalisation-local-gates.json`.
+  Cette preuve relie explicitement les tests verts aux retraits maintenance,
+  aux harnais Stripe mis en quarantaine et au ciblage `deleteSessionGen2`.
 - F4: la generation canonique `1787147721443973` a d'abord ete protegee et
   verifiee. Comme ce hold bloque le staging interne de Cloud Functions, les
   memes octets ont ete recopies dans le chemin immuable `g13-rollback/<sha>`,

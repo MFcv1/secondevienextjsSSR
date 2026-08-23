@@ -50,6 +50,52 @@
       "result": "PASS"
     }
   ],
+  "sensitiveRetirementCoverage": [
+    {
+      "requirement": "Quarantined hosted Stripe and refund harnesses are not executable.",
+      "result": "PASS",
+      "tests": ["tests/functions-gen2-g3.test.mjs"],
+      "evidence": [
+        "package scripts route e2e:hosted-stripe and e2e:refund-stripe to refuse-quarantined-commerce-e2e.mjs",
+        "the historical executable scripts are absent"
+      ]
+    },
+    {
+      "requirement": "Legacy destructive maintenance exports and UI purge callers are removed.",
+      "result": "PASS",
+      "tests": [
+        "tests/functions-gen2-g11.test.mjs",
+        "tests/functions-gen2-g12a-maintenance.test.mjs",
+        "tests/functions-gen2-g12-remaining.test.mjs"
+      ],
+      "evidence": [
+        "the ten legacy maintenance exports are absent",
+        "AdminDashboard contains no callable for resetAllOrders, runGarbageCollector, resetAllUsers, purgeAnonymousUsers or purgeAllProducts"
+      ]
+    },
+    {
+      "requirement": "The logical deleteSession action targets only deleteSessionGen2.",
+      "result": "PASS",
+      "tests": [
+        "tests/functions-gen2-g11.test.mjs",
+        "tests/functions-gen2-g12a-maintenance.test.mjs"
+      ],
+      "evidence": [
+        "src/kit/config/functionTargets.js maps deleteSession to deleteSessionGen2",
+        "functions/index.js exports deleteSessionGen2 and no legacy deleteSession export"
+      ]
+    },
+    {
+      "requirement": "No unowned Gen1 function remains outside the three Auth exceptions.",
+      "result": "PASS",
+      "tests": [
+        "tests/functions-gen2-g0.test.mjs",
+        "tests/functions-gen2-g12-remaining.test.mjs",
+        "tests/functions-gen2-g13.test.mjs"
+      ],
+      "evidence": "140 local exports, 137 cloud functions, 134 Gen2 and exactly three Auth Gen1"
+    }
+  ],
   "notRun": [
     "hosted Stripe tests",
     "refund Stripe tests",
