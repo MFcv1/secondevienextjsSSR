@@ -1,6 +1,6 @@
 # Qualite, tests et gates
 
-Derniere mise a jour: 2026-08-12
+Derniere mise a jour: 2026-08-23
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Principe de proportion
@@ -66,7 +66,6 @@ ainsi que l'absence de message d'erreur provider brut dans les reponses
 
 ```bash
 npm run test:functions-gen2
-npm run functions:gen2:final-observe
 ```
 
 Cet agregat local couvre les contrats G0 a G13 et bloque la CI sans appeler le
@@ -93,6 +92,11 @@ Check, compte dedie et cible unique du wrapper. Apres le deploy, elle exige la
 revision cloud attendue et la preservation de la Gen1. Apres rollback d'une
 gate Auth, elle exige aussi le registre client Gen1 et la preuve du build exact.
 La suite locale ne contacte pas le cloud.
+
+Le collecteur `npm run functions:gen2:final-observe` est distinct: il contacte
+le seul sandbox en lecture seule et n'est jamais lance par la CI. Pendant F6,
+il verifie la revision finale, l'inventaire, le trafic, les holds et les logs
+Gen2/Auth Gen1; son contrat pur reste couvert par `test:functions-gen2`.
 
 G8 est ferme par `npm run test:functions-g8`: les tests Node et les cinq
 controles Firestore rules couvrent les 37 wrappers commerce,

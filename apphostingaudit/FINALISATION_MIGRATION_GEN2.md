@@ -79,9 +79,12 @@ Preuves locales du 2026-08-23:
 - `test:functions-g2a`: 26/26;
 - `test:functions-gen2`: 157/157;
 - test cible G13: 6/6;
+- `test:auth`: 77/77;
+- `test:commerce:unit`: 136/136 avec reseau bloque par le harnais;
 - `lint:functions`: vert sans avertissement;
 - lint complet en mode `--quiet`: zero erreur;
 - `git diff --check`: vert.
+- preuve agregee: `manifests/functions-gen2-finalisation-local-gates.json`.
 - F4: la generation canonique `1787147721443973` a d'abord ete protegee et
   verifiee. Comme ce hold bloque le staging interne de Cloud Functions, les
   memes octets ont ete recopies dans le chemin immuable `g13-rollback/<sha>`,
@@ -144,11 +147,10 @@ Une erreur historique expliquee n'impose pas un correctif applicatif si la
 revision finale et sa quiet-window sont saines. Une erreur non expliquee ne
 peut pas etre masquee par un total agrege.
 
-## 6. Commandes locales autorisees
+## 6. Commandes autorisees
 
 ```bash
 npm run test:functions-gen2
-npm run functions:gen2:final-observe
 npm run test:catalog:core
 npm run test:auth
 npm run test:commerce:unit
@@ -156,6 +158,12 @@ npm run lint:functions
 npm run lint
 git diff --check
 git status --short
+```
+
+Checkpoint cloud read-only du seul sandbox, hors CI:
+
+```bash
+npm run functions:gen2:final-observe
 ```
 
 Les tests Stripe heberges, remboursements reels, navigateur, E2E externe,

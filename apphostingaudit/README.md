@@ -104,13 +104,13 @@ Valeurs autorisees:
 | G10 | webhooks Stripe v2 Gen2 | `TERMINEE` | signatures, double endpoint deduplique, zero double effet | `functions-gen2-g10.json` |
 | G11 | maintenance destructrice | `TERMINEE` | AAL2, dry-run, sauvegarde, instance/concurrence 1 | `functions-gen2-g11.json` |
 | G12 | retrait cible Gen1 puis nettoyage differe | `TERMINEE` | toutes les cohortes retirees individuellement; trois Auth restent | `functions-gen2-g12a-remaining.json`, `functions-gen2-g12b-remaining.json`; 140 local / 137 cloud |
-| G13 | charge/cout/IAM/runtime et cloture documentaire | `EN_COURS` | topologie complete; rollback protege et exerce, puis sept jours de soak final | observation historique, plan `FINALISATION_MIGRATION_GEN2.md`, ADR canonique |
+| G13 | charge/cout/IAM/runtime et cloture documentaire | `EN_COURS` | topologie complete; rollback protege et exerce, puis sept jours de soak final | `functions-gen2-finalisation-f4.json`, `functions-gen2-finalisation-f5.json`, `functions-gen2-finalisation-f6-observation.json`, `functions-gen2-finalisation-f7-errors.json`, ADR canonique |
 
 ## 6. Suivi des reserves post-audit
 
 | Niveau | Action | Statut courant | Gate exacte |
 | --- | --- | --- | --- |
-| P0 | gates locales Gen2 et catalogue | `TERMINE_LOCAL` | 157/157 Gen2, 13/13 catalogue, lint vert; execution CI encore attendue |
+| P0 | gates locales Gen2, catalogue, Auth et commerce | `TERMINE_LOCAL` | 157/157 Gen2, 13/13 catalogue, 77/77 Auth, 136/136 commerce unitaire, lint vert |
 | P0 | rollback G13 exploitable | `TERMINE_CLOUD` | max 2 -> max 1 `00003-mol` -> max 2 `00004-hiv`, deux sources sous hold |
 | P0 | observation de l'etat final | `EN_COURS` | 604800 s depuis `2026-08-23T01:46:24.611705732Z` |
 | P1 | erreurs historiques G13 | `QUALIFIEES` | 258 HTTP 500 et 17 HTTP 429 attribues; zero agregat masque |

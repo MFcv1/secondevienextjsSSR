@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "environment": "local-only",
+  "gate": "FINALISATION:F1_F3_AND_REGRESSION",
+  "generatedAt": "2026-08-23T02:03:50Z",
+  "status": "GREEN",
+  "node": "v22.23.2",
+  "commands": [
+    {
+      "command": "npm run test:functions-gen2",
+      "result": "PASS",
+      "tests": 157,
+      "failures": 0,
+      "cloudAccess": false
+    },
+    {
+      "command": "npm run test:catalog:core",
+      "result": "PASS",
+      "tests": 13,
+      "failures": 0,
+      "cloudAccess": false
+    },
+    {
+      "command": "npm run test:auth",
+      "result": "PASS",
+      "tests": 77,
+      "failures": 0,
+      "cloudAccess": false
+    },
+    {
+      "command": "npm run test:commerce:unit",
+      "result": "PASS",
+      "tests": 136,
+      "failures": 0,
+      "networkBlockedByHarness": true
+    },
+    {
+      "command": "npm run lint:functions",
+      "result": "PASS",
+      "warnings": 0
+    },
+    {
+      "command": "npm run lint -- --quiet",
+      "result": "PASS",
+      "errors": 0
+    },
+    {
+      "command": "git diff --check",
+      "result": "PASS"
+    }
+  ],
+  "notRun": [
+    "hosted Stripe tests",
+    "refund Stripe tests",
+    "browser or visual tests",
+    "external E2E",
+    "destructive maintenance tests"
+  ],
+  "effects": {
+    "cloudWrites": 0,
+    "stripeCalls": 0,
+    "browserSessions": 0
+  }
+}
