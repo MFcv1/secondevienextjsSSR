@@ -2,6 +2,7 @@
 
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
 import { spawnSync } from 'node:child_process';
@@ -1618,7 +1619,7 @@ export function buildGcloudSchedulerUpdateArgs(validation, options = {}) {
   ];
 }
 
-export function buildGcloudGen2RollbackArgs(validation) {
+export function buildGcloudGen2RollbackArgs(validation, options = {}) {
   const name = validation.allowlist[0];
   const target = GCLOUD_GEN2_TARGETS[name];
   const rollback = GEN2_ROLLBACKS[name];
@@ -1640,7 +1641,7 @@ export function buildGcloudGen2RollbackArgs(validation) {
     `--region=${target.region}`,
     '--gen2',
     `--runtime=${target.runtime}`,
-    `--source=${rollback.source}`,
+    `--source=${options.sourceDir || rollback.source}`,
     `--entry-point=${target.entryPoint}`,
     ...triggerArgs,
     `--run-service-account=${rollback.runtimeServiceAccount || target.runtimeServiceAccount}`,
@@ -1669,6 +1670,23 @@ export function assertGen2RollbackObject({ metadata, rollback, actualSha256 }) {
   if (actualSha256 !== rollback.sourceSha256) {
     fail('SHA-256 archive source rollback Gen2 different du registre');
   }
+}
+
+function extractVerifiedRollbackSource(archiveBytes, functionName) {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), `secondevie-${functionName}-rollback-`));
+  const archivePath = path.join(tempRoot, 'function-source.zip');
+  const sourceDir = path.join(tempRoot, 'source');
+  fs.mkdirSync(sourceDir);
+  fs.writeFileSync(archivePath, archiveBytes, { mode: 0o600 });
+  const extracted = spawnSync('unzip', ['-q', archivePath, '-d', sourceDir], {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe']
+  });
+  if (extracted.error || extracted.status !== 0 || !fs.existsSync(path.join(sourceDir, 'package.json'))) {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+    fail(`Extraction archive source rollback Gen2 impossible: ${String(extracted.stderr || extracted.error?.message || '').trim()}`);
+  }
+  return { sourceDir, tempRoot };
 }
 
 function assertGcloudGen2Preconditions(before, validation) {
@@ -1941,11 +1959,19 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
       actualSha256: rollbackSourceSha256
     });
     process.stdout.write(`Projet: ${validation.project}\nCible: functions:main:${name}\nCommit wrapper: ${validation.commit}\nRevision remplacee: ${args['expected-revision']}\nTransport: gcloud-gen2-rollback\n`);
-    const result = spawnSync('gcloud', buildGcloudGen2RollbackArgs(validation), {
-      cwd: rootDir,
-      env: process.env,
-      stdio: 'inherit'
-    });
+    const extractedSource = extractVerifiedRollbackSource(rollbackSourceBytes.stdout || Buffer.alloc(0), name);
+    let result;
+    try {
+      result = spawnSync('gcloud', buildGcloudGen2RollbackArgs(validation, {
+        sourceDir: extractedSource.sourceDir
+      }), {
+        cwd: rootDir,
+        env: process.env,
+        stdio: 'inherit'
+      });
+    } finally {
+      fs.rmSync(extractedSource.tempRoot, { recursive: true, force: true });
+    }
     if (result.error) fail(result.error.message);
     if (result.status !== 0) {
       process.exitCode = result.status || 1;

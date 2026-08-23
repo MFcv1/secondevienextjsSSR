@@ -88,10 +88,12 @@ test('G13-B expose un rollback fail-closed via le wrapper cible', () => {
     currentCommit: manifest.metadata.baselineCommit,
     activeFirebaseProject: 'secondevienextjsssr'
   });
-  const deployArgs = buildGcloudGen2RollbackArgs(validation);
+  const deployArgs = buildGcloudGen2RollbackArgs(validation, {
+    sourceDir: '/private/tmp/verified-g13-rollback-source'
+  });
 
   for (const expected of [
-    `--source=${rollback.source}`,
+    '--source=/private/tmp/verified-g13-rollback-source',
     '--trigger-http',
     '--allow-unauthenticated',
     '--run-service-account=catalog-builder@secondevienextjsssr.iam.gserviceaccount.com',
@@ -102,6 +104,7 @@ test('G13-B expose un rollback fail-closed via le wrapper cible', () => {
     '--min-instances=0',
     '--max-instances=1'
   ]) assert.ok(deployArgs.includes(expected), expected);
+  assert.equal(deployArgs.includes(`--source=${rollback.source}`), false);
   assert.equal(deployArgs.includes('--max-instances=2'), false);
 
   assert.throws(() => assertGen2RollbackObject({
