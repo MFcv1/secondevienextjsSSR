@@ -633,6 +633,11 @@ runtime ne suppose jamais que `admin.initializeApp()` a injecte un bucket par
 defaut dans une revision Gen2. Le meme resolver est partage par la callable
 client et le dispatcher outbox qui joint le PDF; aucun des deux rails ne peut
 revenir a `admin.storage().bucket()` sans nom.
+Le compte runtime du dispatcher ne possede que `roles/storage.objectViewer`
+sur ce bucket prive. Sa definition de deploiement fixe aussi le `SITE_URL`
+sandbox afin que les liens des e-mails reviennent sur `/mes-commandes` et ne
+puissent pas atteindre le fallback localhost lorsque les variables projet ne
+sont pas exposees par Gen2.
 
 Gate 8 a execute la matrice client/admin complete sur fixtures sandbox. Un
 defaut reel du contrat d'annulation client (`cancellationRequestId` au lieu de

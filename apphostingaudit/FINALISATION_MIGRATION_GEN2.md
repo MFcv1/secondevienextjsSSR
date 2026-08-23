@@ -106,8 +106,9 @@ Preuves locales du 2026-08-23:
   revele A-028 puis a ete remplacee par le deploiement cible de
   `dispatchCatalogRevalidation` et sa requalification. La troisieme a ete
   remplacee apres la correction cible A-029 de
-  `prepareCommerceDocumentDeliveryGen2`. La fenetre courante commence a
-  `2026-08-23T18:36:21.000Z`; le heartbeat quotidien reste actif.
+  `prepareCommerceDocumentDeliveryGen2`. La quatrieme a ete remplacee par les
+  corrections A-031/A-032 du dispatcher de copie PDF. La fenetre courante
+  commence a `2026-08-23T21:13:00.000Z`; le heartbeat quotidien reste actif.
 - F7: les 258 HTTP 500 et 17 HTTP 429 historiques sont tous attribues dans
   `manifests/functions-gen2-finalisation-f7-errors.json`.
 
@@ -134,8 +135,9 @@ La reactivation a utilise l'archive immutable du code courant et retabli max
 `2` en revision `getcatalogpublicationstatusgen2-00004-hiv`. Cette origine F6
 historique a ensuite ete remplacee par la baseline commerce du
 `2026-08-23T12:24:19.325Z`, elle-meme remplacee apres la correction A-028 par
-la baseline du `2026-08-23T16:16:54.512Z`, puis apres A-029 par la baseline
-courante du `2026-08-23T18:36:21.000Z`. Aucun
+la baseline du `2026-08-23T16:16:54.512Z`, apres A-029 par celle du
+`2026-08-23T18:36:21.000Z`, puis apres A-031/A-032 par la baseline courante du
+`2026-08-23T21:13:00.000Z`. Aucun
 deploy global ou Stripe live n'a eu lieu.
 
 ## 5. Qualification des observations

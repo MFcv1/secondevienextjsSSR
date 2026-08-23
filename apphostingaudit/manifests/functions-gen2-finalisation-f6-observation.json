@@ -3,7 +3,7 @@
   "project": "secondevienextjsssr",
   "environment": "sandbox",
   "gate": "FINALISATION:F6",
-  "generatedAt": "2026-08-23T20:36:17.694Z",
+  "generatedAt": "2026-08-23T21:19:35.833Z",
   "status": "IN_PROGRESS",
   "reference": {
     "function": "getCatalogPublicationStatusGen2",
@@ -15,11 +15,11 @@
     "updateTime": "2026-08-23T01:46:24.611705732Z"
   },
   "window": {
-    "start": "2026-08-23T18:36:21.000Z",
-    "minimumEnd": "2026-08-30T18:36:21.000Z",
+    "start": "2026-08-23T21:13:00.000Z",
+    "minimumEnd": "2026-08-30T21:13:00.000Z",
     "requiredSeconds": 604800,
-    "observedSeconds": 7196,
-    "reason": "Fenetre recalee apres le deploiement cible A-029 de prepareCommerceDocumentDeliveryGen2. La qualification fonctionnelle reste non bloquee; les 604800 secondes ne sont pas acquises."
+    "observedSeconds": 395,
+    "reason": "Fenetre recalee apres les corrections A-031/A-032 du dispatcher de copie PDF. La qualification fonctionnelle reste non bloquee; les 604800 secondes ne sont pas acquises."
   },
   "supersededWindows": [
     {
@@ -42,12 +42,19 @@
       "lastCheckpointAt": "2026-08-23T16:22:41.173Z",
       "observedSeconds": 346,
       "reason": "A-029 a exige le deploiement cible de prepareCommerceDocumentDeliveryGen2 en revision 00002-riw; cette fenetre ne prouve donc pas la topologie courante."
+    },
+    {
+      "start": "2026-08-23T18:36:21.000Z",
+      "minimumEnd": "2026-08-30T18:36:21.000Z",
+      "lastCheckpointAt": "2026-08-23T20:36:17.694Z",
+      "observedSeconds": 7196,
+      "reason": "A-029 a necessite une seconde revision pour la resolution ADC, puis A-031/A-032 ont corrige la lecture Storage et le SITE_URL du dispatcher; cette fenetre ne prouve donc pas la topologie courante."
     }
   ],
   "checkpoints": [
     {
-      "checkedAt": "2026-08-23T18:39:28.313Z",
-      "observedSeconds": 187,
+      "checkedAt": "2026-08-23T21:19:35.833Z",
+      "observedSeconds": 395,
       "collectorNode": "v22.23.2",
       "revisionUnchanged": true,
       "configUnchanged": true,
@@ -63,28 +70,7 @@
       "errorSeverityEntries": 0,
       "unqualifiedErrors": 0,
       "logResourceTypes": ["cloud_run_revision", "cloud_function"],
-      "qualification": "NODE22_POST_A029_TOPOLOGY_QUIET",
-      "runtimeQuiet": true
-    },
-    {
-      "checkedAt": "2026-08-23T20:36:17.694Z",
-      "observedSeconds": 7196,
-      "collectorNode": "v22.23.2",
-      "revisionUnchanged": true,
-      "configUnchanged": true,
-      "trafficPercent": 100,
-      "cloudFunctions": 137,
-      "gen2Active": 134,
-      "gen1AuthActive": 3,
-      "functionsUpdatedSinceStart": [],
-      "rollbackSourceHeld": true,
-      "reactivationSourceHeld": true,
-      "request429": 0,
-      "request5xx": 0,
-      "errorSeverityEntries": 0,
-      "unqualifiedErrors": 0,
-      "logResourceTypes": ["cloud_run_revision", "cloud_function"],
-      "qualification": "NODE22_POST_A029_TOPOLOGY_QUIET",
+      "qualification": "NODE22_POST_A032_TOPOLOGY_QUIET",
       "runtimeQuiet": true
     }
   ],

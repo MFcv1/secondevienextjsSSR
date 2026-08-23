@@ -65,9 +65,11 @@ suivante a ete remplacee par le deploiement cible A-028 de
 `dispatchCatalogRevalidation`, revision
 `dispatchcatalogrevalidation-00013-cop`, puis sa requalification active. La
 troisieme a ete remplacee apres la correction cible A-029 de
-`prepareCommerceDocumentDeliveryGen2`, revision
-`preparecommercedocumentdeliverygen2-00002-riw`. La fenetre courante de
-604800 s court depuis `2026-08-23T18:36:21.000Z`; ce suivi
+`prepareCommerceDocumentDeliveryGen2`, finalement qualifiee en revision
+`preparecommercedocumentdeliverygen2-00003-qag`. La fenetre suivante a ete
+remplacee apres A-031/A-032 par les revisions outbox `00003-qug` puis
+`00004-saf`, cette derniere fixant explicitement le `SITE_URL` sandbox. La
+fenetre courante de 604800 s court depuis `2026-08-23T21:13:00.000Z`; ce suivi
 operationnel long ne bloque pas la
 qualification fonctionnelle active et ne doit pas etre presente comme termine
 avant son echeance reelle.

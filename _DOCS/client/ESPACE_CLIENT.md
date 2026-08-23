@@ -329,6 +329,7 @@ src/kit/commerce/guestCart.js
 src/utils/shippingAddress.js
 functions/src/commerce/v2DocumentDelivery.js
 functions/src/commerce/domain/commerceDocumentArtifact.js
+functions/src/commerce/domain/commerceDocumentStorage.js
 src/kit/marketplace/newsletterRewardClient.js
 functions/src/newsletter/newsletterRewards.js
 ```
@@ -355,9 +356,11 @@ Smoke recommande pour une passe compte non transactionnelle:
 6. la modale document ouvre le PDF, lance l'enregistrement, propose le partage
    seulement lorsque le navigateur l'autorise et affiche l'e-mail masque;
 7. un double clic ne cree pas deux intentions e-mail dans la meme fenetre;
-8. wishlist puis ajout panier d'un produit disponible;
-9. deconnexion et protection des routes.
-10. un code gagné avec la même adresse apparaît dans `Mes avantages` et peut être copié.
+8. la copie recue contient le PDF et son bouton revient vers le
+   `SITE_URL` sandbox puis `/mes-commandes`, jamais vers localhost;
+9. wishlist puis ajout panier d'un produit disponible;
+10. deconnexion et protection des routes.
+11. un code gagné avec la même adresse apparaît dans `Mes avantages` et peut être copié.
 
 Ce smoke reste une verification UI. Il ne qualifie pas la coherence Stripe/commande/stock et ne remplace pas les gates commerce.
 

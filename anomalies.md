@@ -1993,9 +1993,32 @@ de code.
   confirme le marquage sandbox non fiscal. Aucun paiement, remboursement ou
   nouvelle commande n'a ete cree.
 
+### A-032 - Le lien Documents de la copie PDF pointe vers localhost
+
+- statut: `REQUALIFIEE`
+- severite: `IMPORTANTE`
+- phase: espace client, copie e-mail d'un document
+- environnement: sandbox / Safari / Gmail de recette
+- attendu: le bouton `Retrouver mes documents` ouvre `/mes-commandes` sur le
+  sandbox actif.
+- observe: le premier e-mail effectivement recu avec sa piece jointe porte un
+  lien `localhost:3000/mes-commandes`, inutilisable pendant une demonstration.
+- cause racine: le dispatcher Gen2 ne recevait aucun `SITE_URL`; les variables
+  projet ne sont pas exposees sur cette revision et `getSiteUrl()` atteignait
+  donc son fallback local.
+- correction: la definition de deploiement ciblee G9 fixe le `SITE_URL` exact
+  du sandbox pour `commerceOutboxDispatcherGen2`. Une regression verifie a la
+  fois la definition et l'argument `--set-env-vars` produit par le wrapper.
+- deploiement: seule la Function `commerceOutboxDispatcherGen2`, revision
+  `commerceoutboxdispatchergen2-00004-saf`, avec 100 % du trafic; aucun
+  scheduler, secret, Stripe, App Hosting ou environnement production touche.
+- requalification Safari/Gmail: une nouvelle copie autorisee a ete programmee,
+  envoyee en une tentative durable, recue avec le PDF joint, puis depliee dans
+  Gmail. Le bouton cible exactement le sandbox actif et `/mes-commandes`.
+
 ### A-031 - La copie e-mail du PDF utilise encore un bucket implicite
 
-- statut: `CORRIGEE_A_REQUALIFIER`
+- statut: `REQUALIFIEE`
 - severite: `IMPORTANTE`
 - phase: espace client, copie e-mail d'un document
 - environnement: sandbox / Safari / Gmail de recette
@@ -2017,10 +2040,16 @@ de code.
 - regression: le test source echoue tant que le dispatcher conserve
   `bucket()` implicite, puis couvre l'appel au resolver partage. Suites document
   et Gate 7A `30/30`, lint cible et `git diff --check` verts.
-- reprise: l'outbox existante reste retryable et doit etre reprise par le
-  Scheduler apres le seul deploiement cible de
-  `commerceOutboxDispatcherGen2`; verifier ensuite le statut `sent` et la
-  reception Gmail avant de passer l'anomalie a `REQUALIFIEE`.
+- deploiement et IAM cible: seule la Function
+  `commerceOutboxDispatcherGen2` a ete deployee en revision
+  `commerceoutboxdispatchergen2-00003-qug`. Apres autorisation explicite, son
+  compte runtime a recu uniquement `roles/storage.objectViewer` sur le bucket
+  document du sandbox; aucun role projet, ecriture Storage, secret ou
+  environnement production n'a ete ajoute.
+- requalification: l'outbox existante est passee durablement a `sent`; Gmail
+  Safari a recu le message, affiche son contenu et reconnu le PDF joint. Une
+  seconde copie apres A-032 est partie en une tentative, ce qui confirme le
+  chemin nominal sans retry.
 
 ### A-030 - Un favori historique masque sa disponibilite catalogue
 
