@@ -110,12 +110,12 @@ Valeurs autorisees:
 
 | Niveau | Action | Statut courant | Gate exacte |
 | --- | --- | --- | --- |
-| P0 | gates locales Gen2 et catalogue | `TERMINE_LOCAL` | 153/153 Gen2, 13/13 catalogue, lint vert; execution CI encore attendue |
-| P0 | rollback G13 exploitable | `OBJET_PROTEGE - EXERCICE_EN_ATTENTE` | wrapper exact vert et hold F4 prouve; commit local requis avant rollback/reactivation F5 |
-| P0 | observation de l'etat final | `EN_ATTENTE_ROLLBACK` | sept jours complets apres la derniere revision finale |
-| P1 | erreurs historiques G13 | `A_QUALIFIER_READ_ONLY` | attribution temporelle et causale des 500/429 et Cloud Tasks |
+| P0 | gates locales Gen2 et catalogue | `TERMINE_LOCAL` | 154/154 Gen2, 13/13 catalogue, lint vert; execution CI encore attendue |
+| P0 | rollback G13 exploitable | `TERMINE_CLOUD` | max 2 -> max 1 `00003-mol` -> max 2 `00004-hiv`, deux sources sous hold |
+| P0 | observation de l'etat final | `EN_COURS` | 604800 s depuis `2026-08-23T01:46:24.611705732Z` |
+| P1 | erreurs historiques G13 | `QUALIFIEES` | 258 HTTP 500 et 17 HTTP 429 attribues; zero agregat masque |
 | P1 | cout exact | `NON_PROUVE` | export Billing ou API Budget disponible; aucune estimation presentee comme fait |
-| P2 | archives G12 expirees | `A_REFORMULER` | distinguer preuve forensique et rollback autonome courant |
+| P2 | archives G12 expirees | `TERMINE_DOCUMENTAIRE` | preuves forensiques distinguees des rollbacks autonomes courants |
 
 Ces reserves ne prouvent pas une panne du sandbox. Elles interdisent en
 revanche de qualifier G13 et le plan complet de definitivement fermes. Le plan
@@ -475,12 +475,12 @@ Auth / 134 Gen2 `ACTIVE`. La reprise obligatoire est le plan
 `FINALISATION_MIGRATION_GEN2.md`:
 
 1. F1 a F3 sont termines localement; conserver leurs gates vertes;
-2. F4 est terminee avec hold et read-back; la prochaine gate est F5, bloquee
-   tant que le wrapper et ses preuves ne sont pas commites localement;
-3. apres la revision finale de F5, demarrer la fenetre F6 de sept jours;
+2. F4 et F5 sont terminees: archives sous hold, rollback max 1 puis revision
+   finale `getcatalogpublicationstatusgen2-00004-hiv` max 2;
+3. poursuivre F6 en lecture seule jusqu'au minimum
+   `2026-08-30T01:46:24.611705732Z`;
 4. fusionner les preuves et supprimer le plan temporaire seulement apres F9.
 
-Le prochain changement cloud est l'exercice F5 rollback/reactivation deja
-autorise, mais le wrapper refuse le worktree Functions/manifeste non commite.
-Aucun contournement manuel n'est permis. Un commit local sans push doit etre
-autorise avant de poursuivre.
+Le prochain travail cloud est uniquement l'observation read-only F6. Aucun
+nouveau deploiement, contournement manuel ou changement de capacite n'est
+necessaire.

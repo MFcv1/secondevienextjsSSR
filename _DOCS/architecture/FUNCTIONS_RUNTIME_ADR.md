@@ -52,12 +52,15 @@ accepte comme garde-fou de cout pour une surface reservee a un administrateur;
 aucun second tuning ni build App Hosting n'est justifie.
 
 L'objet de rollback du tuning, sa generation et son SHA-256 sont consignes dans
-`apphostingaudit/manifests/functions-gen2-g13-tuning-rollback.json`. Le wrapper
-local porte desormais le rail cible et refuse une revision ou un digest
-different. La generation Storage exacte porte desormais le hold prouve dans
-`apphostingaudit/manifests/functions-gen2-finalisation-f4.json`. L'exercice
-rollback/reactivation reste interdit tant que le wrapper et ses preuves ne sont
-pas commites et que son preflight n'est pas vert.
+`apphostingaudit/manifests/functions-gen2-g13-tuning-rollback.json`. F4 a
+preserve les octets max 1 dans un chemin immuable sous hold. F5 a exerce le
+rollback en revision `getcatalogpublicationstatusgen2-00003-mol`, puis la
+reactivation max 2 en revision finale `getcatalogpublicationstatusgen2-00004-hiv`;
+les deux revisions etaient `ACTIVE` et servaient 100 % du trafic. Le wrapper
+refuse une revision, generation, taille, hold ou digest different et extrait
+les octets verifies dans un repertoire prive temporaire pour ne pas confondre
+archive durable et staging Cloud Functions. La fenetre finale de 604800 s
+court depuis `2026-08-23T01:46:24.611705732Z`.
 
 ## Horizon Node.js
 

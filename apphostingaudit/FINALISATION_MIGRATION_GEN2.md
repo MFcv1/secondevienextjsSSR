@@ -2,7 +2,7 @@
 
 Derniere mise a jour: 2026-08-23
 
-Statut: `F5_ROLLBACK_PROUVE - REACTIVATION_EN_COURS`
+Statut: `F5_TERMINE - F6_OBSERVATION_EN_COURS`
 
 Proprietaire: mainteneur Seconde Vie
 
@@ -30,8 +30,7 @@ La topologie est donc complete. Au debut de cette reprise, la cloture restait
 bloquee par un rollback G13 non operationnel, deux gates locales rouges,
 l'absence de soak de sept jours de l'etat final et des erreurs historiques non
 qualifiees. Les gates locales et le rail logiciel sont maintenant corriges;
-l'exercice cloud et le soak restent ouverts; la protection Storage F4 est
-desormais prouvee.
+l'exercice cloud est ferme; seul le soak final reste ouvert.
 
 ## 2. Definition de done fermee
 
@@ -68,10 +67,10 @@ conditions suivantes sont vraies en meme temps:
 | F2 | ajouter `test:functions-gen2` couvrant G0 a G13 et le rendre bloquant dans la CI | commande locale verte et workflow reference | `TERMINE_LOCAL` |
 | F3 | ajouter au wrapper un registre G13 exact, un refus de mauvaise revision, la verification generation/taille/hold/SHA et les arguments max 1 | tests locaux du wrapper verts | `TERMINE_LOCAL` |
 | F4 | proteger l'objet rollback exact dans Storage | read-back prouve `temporary_hold=true` ou retention equivalente | `TERMINE_CLOUD` |
-| F5 | exercer le rollback max 2 vers max 1 puis la reactivation max 2 | deux revisions `ACTIVE`, config exacte, aucun autre deploy | `ROLLBACK_TERMINE_REACTIVATION_PRETE` |
-| F6 | observer sept jours complets a partir de la revision finale | fenetre post-changement de 604800 s, inventaire frais et logs qualifies | `EN_ATTENTE_F5` |
-| F7 | classifier les erreurs G13 historiques et refaire une quiet-window finale | causes documentees, aucune affirmation `healthy` fondee sur un agregat ambigu | `A_FAIRE_READ_ONLY` |
-| F8 | corriger les contradictions et qualifier les rollbacks G12 expires | bible, map, ADR, infra, exploitation, qualite et centre coherents | `EN_COURS` |
+| F5 | exercer le rollback max 2 vers max 1 puis la reactivation max 2 | deux revisions `ACTIVE`, config exacte, aucun autre deploy | `TERMINE_CLOUD` |
+| F6 | observer sept jours complets a partir de la revision finale | fenetre post-changement de 604800 s, inventaire frais et logs qualifies | `EN_COURS_JUSQU_AU_2026-08-30T01:46:24Z` |
+| F7 | classifier les erreurs G13 historiques et refaire une quiet-window finale | causes documentees, aucune affirmation `healthy` fondee sur un agregat ambigu | `HISTORIQUE_TERMINE_QUIET_WINDOW_EN_COURS` |
+| F8 | corriger les contradictions et qualifier les rollbacks G12 expires | bible, map, ADR, infra, exploitation, qualite et centre coherents | `TERMINE_DOCUMENTAIRE_A_REVERIFIER_EN_F9` |
 | F9 | fusionner les preuves durables et supprimer ce plan | liens verifies, `git diff --check`, aucune reference morte | `EN_ATTENTE_F6` |
 
 Preuves locales du 2026-08-23:
@@ -92,17 +91,23 @@ Preuves locales du 2026-08-23:
 - F5 rollback: revision `getcatalogpublicationstatusgen2-00003-mol`
   `ACTIVE`, max `1`, concurrence `1`, trafic `100 %`; preuve
   `manifests/functions-gen2-finalisation-f5-rollback.json`.
+- F5 reactivation: revision finale `getcatalogpublicationstatusgen2-00004-hiv`
+  `ACTIVE`, max `2`, concurrence `1`, trafic `100 %`; seul service modifie;
+  preuve `manifests/functions-gen2-finalisation-f5.json`.
+- F6: fenetre demarree le `2026-08-23T01:46:24.611705732Z`, premier releve
+  sans 429, 5xx ni entree de severite erreur; heartbeat quotidien actif.
+- F7: les 258 HTTP 500 et 17 HTTP 429 historiques sont tous attribues dans
+  `manifests/functions-gen2-finalisation-f7-errors.json`.
 
-## 4. Rail rollback G13 attendu
+## 4. Rail rollback G13 prouve
 
 La cible unique est `getCatalogPublicationStatusGen2` dans
 `europe-west1`. Le wrapper doit refuser toute execution si une seule valeur
 differe:
 
 - projet `secondevienextjsssr` et codebase `main`;
-- revision courante attendue
-  `getcatalogpublicationstatusgen2-00002-yoq` tant qu'aucune reactivation ne
-  l'a remplacee;
+- revision de depart `getcatalogpublicationstatusgen2-00002-yoq` et revision
+  rollback observee `getcatalogpublicationstatusgen2-00003-mol`;
 - source immuable versionnee generation `1787449114510784`;
 - taille `381285` octets;
 - SHA-256
@@ -113,9 +118,10 @@ differe:
 - objet protege contre le lifecycle avant tout deploy;
 - une approbation litterale specifique G13.
 
-La reactivation doit utiliser l'archive immutable du code courant,
-retablir max `2` et enregistrer la nouvelle revision comme origine de la
-fenetre F6. Aucun deploy global ou build App Hosting n'est autorise.
+La reactivation a utilise l'archive immutable du code courant, retabli max `2`
+en revision `getcatalogpublicationstatusgen2-00004-hiv` et fixe l'origine de
+F6 au `2026-08-23T01:46:24.611705732Z`. Aucun deploy global ou build App
+Hosting n'a eu lieu.
 
 ## 5. Qualification des observations
 

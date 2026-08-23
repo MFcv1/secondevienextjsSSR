@@ -203,12 +203,13 @@ minutes apres la fin de G12-A; elle ne prouve pas sept jours de la revision
 finale. Elle inventorie huit policies Monitoring actives, un dashboard et
 aucun depassement quota. Le budget Billing reste non verifiable car l'API
 Budget est desactivee; aucun cout exact n'est affirme. Un seul tuning cible
-porte `getCatalogPublicationStatusGen2` de max 1 a max 2 en revision
-`getcatalogpublicationstatusgen2-00002-yoq`, avec objet rollback Storage
-versionne et digeste. Le rail local exige maintenant revision, generation,
-taille, SHA et hold. F4 a pose et relu le hold sur la generation exacte sans
-autre mutation; la preuve est `functions-gen2-finalisation-f4.json`. Le deploy
-F5 attend un wrapper commite et un nouveau preflight. La saturation restante du burst admin est acceptee comme plafond
+porte `getCatalogPublicationStatusGen2` de max 1 a max 2. F4 a preserve les
+sources max 1 et max 2 dans deux chemins immuables digestes sous hold. F5 a
+prouve le rollback `00003-mol` max 1 puis la reactivation `00004-hiv` max 2,
+`ACTIVE` et a 100 % du trafic; seul ce service a ete mis a jour. Les preuves
+sont `functions-gen2-finalisation-f4.json` et
+`functions-gen2-finalisation-f5.json`. Le soak final court jusqu'au minimum
+`2026-08-30T01:46:24.611705732Z`. La saturation restante du burst admin est acceptee comme plafond
 de cout; aucun second tuning, build App Hosting ou deploy global n'a lieu. La
 decision durable est dans `_DOCS/architecture/FUNCTIONS_RUNTIME_ADR.md`.
 G5-A1 ajoute

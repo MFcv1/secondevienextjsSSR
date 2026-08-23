@@ -150,8 +150,9 @@ Git conserve l'audit et la roadmap retires.
 
 La topologie Firebase Functions Gen1 vers Gen2 est complete sur le sandbox:
 140 exports locaux, 137 Functions cloud, 134 Gen2 `ACTIVE` et trois triggers
-Auth Gen1. La cloture definitive des preuves reste en finalisation post-audit
-selon `apphostingaudit/FINALISATION_MIGRATION_GEN2.md`. L'architecture durable est
+Auth Gen1. L'exercice rollback/reactivation est ferme et la cloture definitive
+observe maintenant la revision finale pendant sept jours selon
+`apphostingaudit/FINALISATION_MIGRATION_GEN2.md`. L'architecture durable est
 dans [FUNCTIONS_RUNTIME_ADR.md](_DOCS/architecture/FUNCTIONS_RUNTIME_ADR.md):
 140 exports locaux, 137 Functions cloud, 134 Gen2 `ACTIVE` et uniquement les
 trois triggers Auth limites par Firebase encore en Gen1. Les quatre owners
@@ -166,13 +167,14 @@ finales sont `apphostingaudit/manifests/functions-gen2-g12a-remaining.json` et
 `functions-gen2-g12b-remaining.json`. La fenetre historique G13 couvre sept
 jours mais seulement environ douze minutes de la topologie finale G12; elle ne
 constitue donc pas le soak final requis. G13 a deploye une seule remediation
-ciblee: `getCatalogPublicationStatusGen2` revision
-`getcatalogpublicationstatusgen2-00002-yoq`, max instances 2, avec rollback
-Storage versionne. Aucun build App Hosting, deploy global, production ou Stripe
+ciblee: `getCatalogPublicationStatusGen2`, puis l'exercice F5 a prouve max 2
+vers max 1 en `00003-mol` et la reactivation max 2 en revision finale
+`getcatalogpublicationstatusgen2-00004-hiv`. Les sources max 1 et max 2 sont
+digestees et sous hold. Aucun build App Hosting, deploy global, production ou Stripe
 live n'a ete utilise en G13. Le budget Billing reste non prouve car l'API Budget
-est desactivee. Le rollback G13 est protege dans Storage par le hold F4; il doit
-encore etre exerce via le wrapper puis suivi d'une observation finale de sept
-jours. Ne pas recreer
+est desactivee. La fenetre finale court du `2026-08-23T01:46:24.611705732Z` au
+minimum au `2026-08-30T01:46:24.611705732Z`; les erreurs historiques sont
+qualifiees separement et ne prouvent pas la sante de cette revision. Ne pas recreer
 de plan de migration au-dela du plan temporaire explicitement demande.
 
 Plans temporaires de reprise encore actifs:

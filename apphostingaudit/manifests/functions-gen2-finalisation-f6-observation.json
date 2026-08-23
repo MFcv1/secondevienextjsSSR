@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "gate": "FINALISATION:F6",
+  "generatedAt": "2026-08-23T01:52:00Z",
+  "status": "IN_PROGRESS",
+  "reference": {
+    "function": "getCatalogPublicationStatusGen2",
+    "revision": "getcatalogpublicationstatusgen2-00004-hiv",
+    "state": "ACTIVE",
+    "maxInstances": 2,
+    "concurrency": 1,
+    "trafficPercent": 100,
+    "updateTime": "2026-08-23T01:46:24.611705732Z"
+  },
+  "window": {
+    "start": "2026-08-23T01:46:24.611705732Z",
+    "minimumEnd": "2026-08-30T01:46:24.611705732Z",
+    "requiredSeconds": 604800,
+    "observedSeconds": 335
+  },
+  "checkpoints": [
+    {
+      "checkedAt": "2026-08-23T01:52:00Z",
+      "revisionUnchanged": true,
+      "configUnchanged": true,
+      "trafficPercent": 100,
+      "cloudFunctions": 137,
+      "gen2Active": 134,
+      "gen1AuthActive": 3,
+      "request429": 0,
+      "request5xx": 0,
+      "errorSeverityEntries": 0,
+      "qualification": "INITIAL_QUIET_WINDOW"
+    }
+  ],
+  "automation": {
+    "id": "observation-finale-gen2-sandbox",
+    "kind": "thread-heartbeat",
+    "cadence": "daily",
+    "status": "ACTIVE"
+  },
+  "acceptance": {
+    "fullDurationReached": false,
+    "revisionUnchanged": true,
+    "configUnchanged": true,
+    "allErrorsQualified": false,
+    "readyToClose": false
+  }
+}

@@ -891,10 +891,11 @@ constituent plus des rollbacks autonomes. Leurs manifests sont indexes par
 source est prouve par `functions-gen2-g12b-remaining.json`. Aucun IAM partage,
 secret, donnee ou trigger Auth n'a ete retire.
 
-G13 conserve un seul tuning cible du statut catalogue:
-`getcatalogpublicationstatusgen2-00002-yoq`, max instances 2 et objet rollback
-digeste. Le wrapper local refuse toute autre revision/generation/digest et F4
-a prouve le hold Storage exact; l'exercice F5 et le soak final restent dans
+G13 conserve un seul tuning cible du statut catalogue. F5 a exerce le rollback
+max 1 en `getcatalogpublicationstatusgen2-00003-mol`, puis la reactivation max
+2 en revision finale `getcatalogpublicationstatusgen2-00004-hiv`, avec deux
+sources immuables digestees et sous hold. Le wrapper local refuse toute autre
+revision/generation/digest; le soak final en cours reste dans
 `apphostingaudit/FINALISATION_MIGRATION_GEN2.md`. App Hosting sert
 `build-2026-08-22-003`, rollback prouve
 `build-2026-08-22-002`. L'ADR canonique est

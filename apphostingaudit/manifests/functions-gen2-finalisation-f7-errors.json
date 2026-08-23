@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "gate": "FINALISATION:F7",
+  "generatedAt": "2026-08-23T01:52:00Z",
+  "status": "HISTORICAL_ERRORS_QUALIFIED",
+  "historicalWindow": {
+    "start": "2026-08-15T23:51:21Z",
+    "end": "2026-08-22T23:51:21Z",
+    "http500": 258,
+    "http429": 17,
+    "http403QuoteTrigger": 49
+  },
+  "classifications": [
+    {
+      "service": "dispatchCatalogRevalidation",
+      "revision": "dispatchcatalogrevalidation-00012-zer",
+      "http500": 208,
+      "first": "2026-08-19T14:33:34.097722Z",
+      "last": "2026-08-19T21:08:51.612847Z",
+      "cause": "CATALOG_SERVED_VERSION_STALE emitted by the fail-closed version verification while Cloud Tasks retried revalidation.",
+      "recoveryEvidence": "The same revision later returned ten HTTP 204 responses in the audited window.",
+      "classification": "HISTORICAL_RETRYABLE_VERSION_LAG"
+    },
+    {
+      "service": "onQuoteRequestSubmittedGen2",
+      "revision": "onquoterequestsubmittedgen2-00001-ded",
+      "http403": 49,
+      "http500": 44,
+      "http429": 15,
+      "first": "2026-08-19T15:20:28.511674Z",
+      "last": "2026-08-19T16:04:43.231616Z",
+      "causes": [
+        "Initial Eventarc invocations lacked run.routes.invoke during the first deployment window.",
+        "The first revision raised a TypeError while reading event.data.before in sendQuoteReceiptEmail.",
+        "Bounded capacity produced no-available-instance 429 responses during the qualification load."
+      ],
+      "recoveryEvidence": "Revision 00002-nix removed the TypeError; no further 500 was observed and only one bounded 429 remained at 2026-08-19T16:11:49.634843Z.",
+      "classification": "HISTORICAL_FIRST_REVISION_AND_LOAD"
+    },
+    {
+      "service": "onOrderStatsWrite",
+      "revision": "onorderstatswrite-00026-cec",
+      "http500": 4,
+      "first": "2026-08-16T12:46:15.813350Z",
+      "last": "2026-08-19T15:09:46.196861Z",
+      "causes": [
+        "Two explicit synthetic probe payloads were invalid: missing datacontenttype and an invalid probe resource name.",
+        "Two qualification events intentionally failed closed with ORDER_STATS_PROJECTION_BASELINE_MISSING."
+      ],
+      "recoveryEvidence": "Successful HTTP 204 projection events immediately followed both probe sequences.",
+      "classification": "HISTORICAL_SYNTHETIC_PROBE_AND_FAIL_CLOSED"
+    },
+    {
+      "service": "onArtifactUpdated",
+      "revision": "onartifactupdated-00024-cuj",
+      "http500": 1,
+      "at": "2026-08-16T14:37:15.236475Z",
+      "cause": "Synthetic CloudEvent probe omitted datacontenttype and could not be parsed by the Firebase event wrapper.",
+      "classification": "HISTORICAL_SYNTHETIC_PROBE"
+    },
+    {
+      "service": "sendManualInvoiceAdminGen2",
+      "revision": "sendmanualinvoiceadmingen2-00001-hut",
+      "http500": 1,
+      "at": "2026-08-19T15:04:25.619886Z",
+      "cause": "The qualification call failed with storage/invalid-argument.",
+      "recoveryEvidence": "The audited metric contains one later HTTP 200 for the same revision.",
+      "classification": "HISTORICAL_FIXTURE_ARGUMENT"
+    },
+    {
+      "service": "reconcileProductPublicationSessions",
+      "revision": "reconcileproductpublicationsessions-00004-pip",
+      "http429": 1,
+      "at": "2026-08-21T08:02:28.924446Z",
+      "cause": "Cloud Run reported no available instance under bounded capacity.",
+      "classification": "HISTORICAL_BOUNDED_SATURATION"
+    },
+    {
+      "service": "onQuoteRequestSubmittedGen2",
+      "revision": "onquoterequestsubmittedgen2-00002-nix",
+      "http429": 1,
+      "at": "2026-08-19T16:11:49.634843Z",
+      "cause": "Cloud Run reported no available instance during the bounded qualification load.",
+      "classification": "HISTORICAL_BOUNDED_SATURATION"
+    }
+  ],
+  "metricCollectionError": {
+    "metric": "firestore.googleapis.com/document/write_conflict_count",
+    "result": "404_METRIC_NOT_FOUND",
+    "classification": "INVALID_OR_UNAVAILABLE_METRIC_NAME_NOT_A_RUNTIME_FAILURE"
+  },
+  "reconciliation": {
+    "http500Classified": 258,
+    "http500Unclassified": 0,
+    "http429Classified": 17,
+    "http429Unclassified": 0,
+    "historicalAggregateCanProveFinalHealth": false
+  },
+  "finalWindowInitialRead": {
+    "start": "2026-08-23T01:46:24.611705732Z",
+    "checkedAt": "2026-08-23T01:52:00Z",
+    "http429": 0,
+    "http5xx": 0,
+    "errorSeverityEntries": 0
+  }
+}
