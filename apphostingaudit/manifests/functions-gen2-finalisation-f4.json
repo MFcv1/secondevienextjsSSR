@@ -4,6 +4,7 @@
   "environment": "sandbox",
   "gate": "FINALISATION:F4",
   "generatedAt": "2026-08-23T01:25:44Z",
+  "updatedAt": "2026-08-23T01:40:53Z",
   "status": "ROLLBACK_OBJECT_PROTECTED",
   "target": "getCatalogPublicationStatusGen2",
   "preflight": {
@@ -24,6 +25,15 @@
     "temporaryHold": true,
     "readBackVerified": true
   },
+  "immutableRollbackObject": {
+    "uri": "gs://gcf-v2-sources-231220287936-europe-west1/g13-rollback/dacf4c1eb1257fdd18c94a03889822dfa042642d0835b0dd68b3be8f9b8f46da/function-source.zip#1787449114510784",
+    "generation": "1787449114510784",
+    "size": 381285,
+    "sha256": "dacf4c1eb1257fdd18c94a03889822dfa042642d0835b0dd68b3be8f9b8f46da",
+    "temporaryHold": true,
+    "readBackVerified": true,
+    "reason": "The canonical Cloud Functions staging path cannot remain held during deployment; the exact bytes are durably protected at this immutable digest path."
+  },
   "effects": {
     "functionDeployments": 0,
     "appHostingBuilds": 0,
@@ -31,7 +41,9 @@
     "stripeCalls": 0,
     "iamChanges": 0,
     "secretChanges": 0,
-    "schedulerChanges": 0
+    "schedulerChanges": 0,
+    "storageObjectCopies": 1,
+    "storageTemporaryHoldsAdded": 2
   },
   "nextGate": {
     "id": "F5",

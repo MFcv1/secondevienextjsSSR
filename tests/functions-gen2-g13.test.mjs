@@ -7,6 +7,7 @@ import {
   G13_REACTIVATION,
   G13_ROLLBACKS,
   assertGen2RollbackObject,
+  buildGcloudGen2DeployArgs,
   buildGcloudGen2RollbackArgs,
   validateDeploymentRequest
 } from '../scripts/deploy-functions-targeted.mjs';
@@ -57,9 +58,10 @@ test('G13-B expose un rollback fail-closed via le wrapper cible', () => {
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
   const target = 'getCatalogPublicationStatusGen2';
   const rollback = G13_ROLLBACKS[target];
-  assert.equal(rollback.sourceGeneration, '1787147721443973');
+  assert.equal(rollback.sourceGeneration, '1787449114510784');
   assert.equal(rollback.sourceSize, '381285');
   assert.equal(rollback.temporaryHoldRequired, true);
+  assert.match(rollback.source, new RegExp(`/g13-rollback/${rollback.sourceSha256}/function-source\\.zip#${rollback.sourceGeneration}$`));
   assertGen2RollbackObject({
     metadata: {
       generation: rollback.sourceGeneration,
@@ -154,6 +156,15 @@ test('G13-B verrouille aussi la source immuable de reactivation max 2', () => {
   assert.equal(G13_REACTIVATION.temporaryHoldRequired, true);
   assert.equal(G13_REACTIVATION.sourceSha256, '3ba9c8d5890e7fc678d12117099653f00f33ea48982f20b27097434f1df2dd81');
   assert.match(G13_REACTIVATION.source, new RegExp(`/g13/${G13_REACTIVATION.sourceSha256}/function-source\\.zip$`));
+  const deployArgs = buildGcloudGen2DeployArgs({
+    transport: 'gcloud-gen2-update',
+    allowlist: [G13_REACTIVATION.target],
+    commit: 'a'.repeat(40),
+    sourceUri: G13_REACTIVATION.source
+  }, { sourceDir: '/private/tmp/verified-g13-reactivation-source' });
+  assert.ok(deployArgs.includes('--source=/private/tmp/verified-g13-reactivation-source'));
+  assert.equal(deployArgs.includes(`--source=${G13_REACTIVATION.source}`), false);
+  assert.ok(deployArgs.includes('--max-instances=2'));
 });
 
 test('G13-C rend l attente Stripe livemode dependante de l environnement sans ouvrir le live', () => {

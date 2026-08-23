@@ -83,9 +83,12 @@ Preuves locales du 2026-08-23:
 - `lint:functions`: vert sans avertissement;
 - lint complet en mode `--quiet`: zero erreur;
 - `git diff --check`: vert.
-- F4: generation `1787147721443973`, taille `381285`, SHA-256 exact et
-  `temporary_hold=true` verifies par read-back; preuve
-  `manifests/functions-gen2-finalisation-f4.json`.
+- F4: la generation canonique `1787147721443973` a d'abord ete protegee et
+  verifiee. Comme ce hold bloque le staging interne de Cloud Functions, les
+  memes octets ont ete recopies dans le chemin immuable `g13-rollback/<sha>`,
+  generation `1787449114510784`, taille `381285`, SHA-256 exact et
+  `temporary_hold=true`. L'original reste protege jusqu'au dernier preflight;
+  preuve initiale `manifests/functions-gen2-finalisation-f4.json`.
 
 ## 4. Rail rollback G13 attendu
 
@@ -97,7 +100,7 @@ differe:
 - revision courante attendue
   `getcatalogpublicationstatusgen2-00002-yoq` tant qu'aucune reactivation ne
   l'a remplacee;
-- source versionnee generation `1787147721443973`;
+- source immuable versionnee generation `1787449114510784`;
 - taille `381285` octets;
 - SHA-256
   `dacf4c1eb1257fdd18c94a03889822dfa042642d0835b0dd68b3be8f9b8f46da`;
