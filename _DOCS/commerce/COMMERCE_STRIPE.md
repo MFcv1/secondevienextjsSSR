@@ -630,7 +630,9 @@ Le bucket Storage est toujours passe explicitement au SDK Admin: configuration
 dediee, `FIREBASE_CONFIG.storageBucket`, variables projet Google Cloud, options
 du SDK Admin ou project ID resolu par le credential Application Default. Le
 runtime ne suppose jamais que `admin.initializeApp()` a injecte un bucket par
-defaut dans une revision Gen2.
+defaut dans une revision Gen2. Le meme resolver est partage par la callable
+client et le dispatcher outbox qui joint le PDF; aucun des deux rails ne peut
+revenir a `admin.storage().bucket()` sans nom.
 
 Gate 8 a execute la matrice client/admin complete sur fixtures sandbox. Un
 defaut reel du contrat d'annulation client (`cancellationRequestId` au lieu de

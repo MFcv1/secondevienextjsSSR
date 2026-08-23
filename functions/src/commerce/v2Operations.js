@@ -30,6 +30,9 @@ const {
     materializeCommerceDocumentArtifact
 } = require('./domain/commerceDocumentArtifact');
 const {
+    resolveStorageBucketName
+} = require('./domain/commerceDocumentStorage');
+const {
     buildFinancialProjection
 } = require('./domain/financialProjection');
 const {
@@ -450,7 +453,9 @@ function createOutboxRuntime() {
                         throw operationsError('COMMERCE_OUTBOX_DOCUMENT_MISSING');
                     }
                     const artifact = await materializeCommerceDocumentArtifact({
-                        bucket: admin.storage().bucket(),
+                        bucket: admin.storage().bucket(
+                            await resolveStorageBucketName(process.env, admin.app().options)
+                        ),
                         artifactRef: documentRef.collection('artifacts').doc('current'),
                         order,
                         document: documentSnapshot.data()

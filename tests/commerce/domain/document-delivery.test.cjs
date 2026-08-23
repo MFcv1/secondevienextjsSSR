@@ -147,6 +147,16 @@ test('document delivery: le bucket Gen2 est explicite ou dérivé du projet', as
     );
 });
 
+test('document delivery: la copie e-mail reutilise le resolver Storage Gen2', () => {
+    const operationsSource = source('functions/src/commerce/v2Operations.js');
+    assert.match(operationsSource, /resolveStorageBucketName/);
+    assert.match(
+        operationsSource,
+        /admin\.storage\(\)\.bucket\(\s*await resolveStorageBucketName\(process\.env, admin\.app\(\)\.options\)\s*\)/
+    );
+    assert.doesNotMatch(operationsSource, /admin\.storage\(\)\.bucket\(\)/);
+});
+
 test('document delivery: l’email est dédupliqué par fenêtre sans exposer le destinataire', () => {
     const { order, document } = fixtures();
     const recipient = 'client@example.test';

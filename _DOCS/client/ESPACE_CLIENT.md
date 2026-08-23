@@ -206,6 +206,10 @@ asynchrone du credential Application Default. L'absence de toute identite
 projet echoue avant la materialisation. Ce contrat couvre aussi une revision
 Gen2 qui n'expose ni `storageBucket` ni variable projet tout en conservant un
 credential ADC valide.
+Le dispatcher de copie e-mail reutilise exactement ce resolver pour relire
+l'artefact et construire la piece jointe; la confirmation `Copie e-mail
+programmee` ne constitue qu'une mise en file, la livraison effective restant
+prouvee par l'outbox `sent` et la reception provider.
 
 Dettes UX restantes observees sur ces donnees reelles:
 

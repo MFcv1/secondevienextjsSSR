@@ -781,6 +781,7 @@ functions/
     |   |   |-- financialRollup.js ....... deltas total/jour atomiques et idempotents
     |   |   |-- commerceDocuments.js ..... recus sandbox non fiscaux
     |   |   |-- commerceDocumentArtifact.js  PDF Node deterministe + Storage prive
+    |   |   |-- commerceDocumentStorage.js .. resolver bucket Gen2 partage callable/outbox via config ou ADC
     |   |   |-- operationsHealth.js ...... incidents, seuils et sante Gate 7A
     |   |   |-- fixtureScope.js / fixtureCleanup.js ... autorisation et cleanup run-scoped
     |   |   |-- checkoutAccessToken*.js ... token backend opaque rotatif

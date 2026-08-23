@@ -1932,7 +1932,7 @@ de code.
 
 ### A-029 - Les documents client echouent sans bucket Storage Gen2
 
-- statut: `CORRIGEE_A_REQUALIFIER`
+- statut: `REQUALIFIEE`
 - severite: `IMPORTANTE`
 - phase: espace client, onglet Documents
 - environnement: sandbox / Safari / compte client de recette
@@ -1985,7 +1985,42 @@ de code.
 - regression complete: le test reproduit l'absence totale de variables Gen2,
   prouve d'abord l'echec, puis couvre la resolution ADC et l'absence complete
   d'identite. Suite document `5/5`, lint cible et `git diff --check` verts;
-  deploiement cible et nouvelle requalification Safari requis.
+  deploiement cible effectue en revision
+  `preparecommercedocumentdeliverygen2-00003-qag` depuis `ec64b5c`.
+- requalification finale PDF: le meme bouton `Reessayer` affiche `Votre
+  document est pret`, les actions `Ouvrir le PDF`, `Enregistrer`, `Partager`
+  et `Renvoyer la copie e-mail`; Safari ouvre le blob PDF, lit son contenu et
+  confirme le marquage sandbox non fiscal. Aucun paiement, remboursement ou
+  nouvelle commande n'a ete cree.
+
+### A-031 - La copie e-mail du PDF utilise encore un bucket implicite
+
+- statut: `CORRIGEE_A_REQUALIFIER`
+- severite: `IMPORTANTE`
+- phase: espace client, copie e-mail d'un document
+- environnement: sandbox / Safari / Gmail de recette
+- attendu: apres materialisation du PDF, l'outbox dedupliquee joint le meme
+  artefact et livre la copie a l'adresse de commande.
+- observe: l'interface confirme `Copie e-mail programmee`, mais Gmail ne recoit
+  rien. L'outbox creee par le test passe en `failed`, deux tentatives, avec
+  `storage/invalid-argument`; le Scheduler termine `incomplete` sans autre
+  message traite.
+- impact: le PDF reste disponible et les faits financiers sont intacts, mais
+  la promesse de copie e-mail est fausse pendant une demonstration.
+- cause racine: `v2Operations` materialisait la piece jointe avec
+  `admin.storage().bucket()` sans nom, alors que le dispatcher Gen2 ne porte
+  pas davantage de bucket par defaut que la callable A-029.
+- correction locale: le resolver Storage Gen2 devient un module domaine
+  partage. La callable et le dispatcher passent tous deux le bucket resolu
+  depuis configuration, options Admin ou credential ADC; aucun bucket de
+  production n'est cable.
+- regression: le test source echoue tant que le dispatcher conserve
+  `bucket()` implicite, puis couvre l'appel au resolver partage. Suites document
+  et Gate 7A `30/30`, lint cible et `git diff --check` verts.
+- reprise: l'outbox existante reste retryable et doit etre reprise par le
+  Scheduler apres le seul deploiement cible de
+  `commerceOutboxDispatcherGen2`; verifier ensuite le statut `sent` et la
+  reception Gmail avant de passer l'anomalie a `REQUALIFIEE`.
 
 ### A-030 - Un favori historique masque sa disponibilite catalogue
 

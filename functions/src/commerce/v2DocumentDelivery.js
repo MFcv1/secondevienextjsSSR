@@ -13,43 +13,12 @@ const {
     MAX_PDF_BYTES,
     materializeCommerceDocumentArtifact
 } = require('./domain/commerceDocumentArtifact');
+const {
+    resolveStorageBucketName
+} = require('./domain/commerceDocumentStorage');
 
 const EMAIL_DEDUPE_MS = 10 * 60 * 1000;
 const MAX_EMAILS_PER_DAY = 24;
-
-async function resolveStorageBucketName(env = process.env, appOptions = null) {
-    const explicitBucket = String(env.FUNCTIONS_STORAGE_BUCKET || '').trim();
-    if (explicitBucket) return explicitBucket;
-
-    const firebaseConfig = String(env.FIREBASE_CONFIG || '').trim();
-    if (firebaseConfig) {
-        try {
-            const configuredBucket = String(JSON.parse(firebaseConfig)?.storageBucket || '').trim();
-            if (configuredBucket) return configuredBucket;
-        } catch {
-            // A malformed optional config must not hide the project-derived fallback.
-        }
-    }
-
-    let projectId = String(
-        env.GCLOUD_PROJECT || env.GOOGLE_CLOUD_PROJECT || env.GCP_PROJECT || ''
-    ).trim();
-    if (!projectId) {
-        const options = appOptions || admin.app().options || {};
-        const adminBucket = String(options.storageBucket || '').trim();
-        if (adminBucket) return adminBucket;
-        projectId = String(options.projectId || '').trim();
-        if (!projectId && typeof options.credential?.getProjectId === 'function') {
-            try {
-                projectId = String(await options.credential.getProjectId() || '').trim();
-            } catch {
-                // Keep one fail-closed domain error instead of leaking credential details.
-            }
-        }
-    }
-    if (!projectId) throw new Error('COMMERCE_DOCUMENT_STORAGE_BUCKET_UNAVAILABLE');
-    return `${projectId}.firebasestorage.app`;
-}
 
 function deliveryError(code, message = code) {
     const error = new functions.https.HttpsError(code, message);
@@ -161,7 +130,9 @@ async function queueDeliveryEmail({ db, order, document, recipient, ownerUid, no
 
 function createPrepareCommerceDocumentHandler({
     dbFactory = () => admin.firestore(),
-    bucketFactory = async () => admin.storage().bucket(await resolveStorageBucketName()),
+    bucketFactory = async () => admin.storage().bucket(
+        await resolveStorageBucketName(process.env, admin.app().options)
+    ),
     nowMillis = () => Date.now()
 } = {}) {
     return async (data, context) => {
