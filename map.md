@@ -721,8 +721,6 @@ src/lib/seo/
 
 src/utils/
 |-- imageUtils.js ..................... variantes/metadata/images
-|-- generateCommerceDocument.js ....... ancien renderer PDF client, non appele
-|-- generateInvoice.js ................ generateur PDF legacy non fiscal et masque
 |-- shippingAddress.js ................ format adresse
 |-- slug.js ........................... slugs
 `-- time.js ........................... temps/dates
@@ -821,7 +819,7 @@ functions/
     |   |-- orderStats.js ................. projection legacy transactionnelle et ledger idempotent G2-A
     |   `-- legacyContainment.js .......... barriere de compatibilite sans export legacy
     |-- email/
-    |   |-- emailDesignSystem.js .......... shell HTML/texte premium partage
+    |   |-- emailDesignSystem.js .......... shell HTML/texte systeme epure partage
     |   |-- commerceEmailTemplates.js ..... paiement, fulfillment, refund et document v2
     |   |-- otpEmailTemplates.js .......... OTP connexion/checkout unifies
     |   |-- legacyOrderEmailDelivery.js ... claim/lease e-mail legacy backend-only
@@ -831,6 +829,7 @@ functions/
     |-- invoicing/
     |   |-- manualInvoiceDomain.js .... validation, montants entiers, hash et numerotation
     |   |-- manualInvoicePdf.js ....... rendu PDF deterministe facture/brouillon
+    |   |-- manualInvoiceEmailTemplate.js . rendu e-mail facture partage et testable
     |   `-- manualInvoices.js ......... callables admin, persistance privee et envoi e-mail
     |-- quotes/
     |   |-- quoteRequestDomain.js ..... validation, statuts et estimation autoritaire

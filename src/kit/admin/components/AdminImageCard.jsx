@@ -1,4 +1,3 @@
-import React from 'react';
 import { Upload, X, Loader, Image as ImageIcon, Download, Type } from 'lucide-react';
 
 const AdminImageCard = ({

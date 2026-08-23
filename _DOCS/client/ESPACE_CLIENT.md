@@ -1,6 +1,6 @@
 # Espace client
 
-Derniere mise a jour: 2026-08-13
+Derniere mise a jour: 2026-08-23
 Statut: `PREPROD_READY`
 
 Restriction active:
@@ -194,8 +194,6 @@ une fin de telechargement que le navigateur ne permet pas d'observer.
 
 Dettes UX restantes observees sur ces donnees reelles:
 
-- le contrat d'entree v2 ne conserve pas le telephone saisi au checkout, donc
-  le profil affiche encore `A completer`;
 - les snapshots d'item n'alimentent pas l'image attendue par `getItemImage`,
   donc plusieurs dossiers affichent la meme image de repli;
 - ces projections ne doivent jamais masquer le statut durable ni le
@@ -203,12 +201,12 @@ Dettes UX restantes observees sur ces donnees reelles:
 
 ## 4. Factures et avoirs
 
-Les generateurs PDF client legacy restent en source mais ne sont plus
-appelables depuis `MyOrdersView`. Le lecteur client joint au plus 20 documents
-immuables par commande et n'expose que leurs metadonnees utiles. Le renderer
-Node `commerceDocumentArtifact.js` produit le PDF prive correspondant avec une
-mention visible `sandbox - non fiscal`; le meme artefact exact sert a
-l'ouverture, l'enregistrement, au partage et a la piece jointe e-mail.
+Les generateurs PDF client legacy ont ete retires. Le lecteur client joint au
+plus 20 documents immuables par commande et n'expose que leurs metadonnees
+utiles. Le renderer Node `commerceDocumentArtifact.js` produit le PDF prive
+correspondant avec une mention visible `sandbox - non fiscal`; le meme artefact
+exact sert a l'ouverture, l'enregistrement, au partage et a la piece jointe
+e-mail.
 
 Le stockage utilise `commerce-documents/v2/...` sous un identifiant
 proprietaire hashe. Les Rules refusent toute lecture ou ecriture directe de ce
@@ -299,8 +297,6 @@ src/kit/commerce/shippingCarriers.js
 src/kit/marketplace/WishlistView.jsx
 src/kit/marketplace/wishlistState.js
 src/kit/commerce/guestCart.js
-src/utils/generateCommerceDocument.js
-src/utils/generateInvoice.js
 src/utils/shippingAddress.js
 functions/src/commerce/v2DocumentDelivery.js
 functions/src/commerce/domain/commerceDocumentArtifact.js

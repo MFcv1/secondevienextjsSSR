@@ -72,7 +72,7 @@ test('G8 inventory rebuild accepts the final 137 cloud targets and assigns the r
     .map(({ name }) => name)
     .filter((name) => !HOLD_META_RECONCILIATION.has(name))
     .concat([...CLOUD_ONLY_PARALLEL_TARGETS]);
-  const firebaseRows = cloudNames.map((id, index) => ({
+  const firebaseRows = cloudNames.map((id) => ({
     id,
     state: 'ACTIVE',
     project: 'secondevienextjsssr',

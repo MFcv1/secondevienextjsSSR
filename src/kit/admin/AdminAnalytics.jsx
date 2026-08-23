@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
     Users, Clock, Activity, Smartphone, Monitor, Globe, Trash2, AlertCircle, ChevronDown, ChevronRight,
     TrendingUp, MousePointerClick, ShoppingBag, RefreshCw
@@ -1614,7 +1614,7 @@ const BoutiqueAnalytics = ({ darkMode, sessions = [], onRefreshSessions, session
                             <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-[#161616] border-white/5' : 'bg-white border-stone-100 shadow-sm'}`}>
                                 <p className={`text-[9px] font-black uppercase tracking-widest mb-4 ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>Meubles Générateurs</p>
                                 <div className="space-y-3">
-                                    {byParent.slice(0, 5).map(({ name, count }, i) => {
+                                    {byParent.slice(0, 5).map(({ name, count }) => {
                                         const pct = Math.round((count / maxParent) * 100);
                                         return (
                                             <div key={name}>

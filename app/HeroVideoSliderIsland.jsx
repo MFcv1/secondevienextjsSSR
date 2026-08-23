@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 const VIDEOS = [
   '/video/hero/1-wood-buffet.mp4',

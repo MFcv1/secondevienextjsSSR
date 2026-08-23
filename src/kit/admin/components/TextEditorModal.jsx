@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Save, Type } from 'lucide-react';
 
 const TextEditorModal = ({ isOpen, onClose, onSave, itemKey, initialData, fields, darkMode }) => {

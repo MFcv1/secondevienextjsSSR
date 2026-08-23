@@ -143,7 +143,7 @@ export const CATEGORY_SEO_COPY = {
     }
 };
 
-export const getCategorySeoCopy = (categoryId, fallbackLabel = 'Pièces restaurées') => {
+export const getCategorySeoCopy = (categoryId, _fallbackLabel = 'Pièces restaurées') => {
     const copy = CATEGORY_SEO_COPY[categoryId] || {};
     return {
         intro: copy.intro || DEFAULT_CATEGORY_COPY.intro,

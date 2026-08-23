@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useLiveTheme } from '../config/theme';
@@ -130,4 +130,3 @@ const AdminStudio = ({ darkMode }) => {
 };
 
 export default AdminStudio;
-

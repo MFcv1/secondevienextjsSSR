@@ -1,6 +1,6 @@
 # Images produit et medias
 
-Derniere mise a jour: 2026-08-07
+Derniere mise a jour: 2026-08-23
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Architecture
@@ -10,6 +10,14 @@ Les images produit sont preparees au moment de l'upload admin, stockees dans Fir
 Les assets de marque, hero, categories, avant/apres et vitrine vivent dans `public/images`, `public/video` ou `src/assets` selon leur mode d'import.
 
 Les illustrations de parcours analytics vivent dans `public/images/analytics`. Elles sont des WebP 320x400 dedies aux miniatures du panneau Data: les categories parentes `meubles`, `assises`, `eclairage`, `decorations` et les visuels editoriaux differencies de Galerie, A propos et Devis. Elles ne remplacent ni les images produit, ni les images des categories publiques.
+
+Le 2026-08-23, l'audit statique complete par la lecture des documents sandbox
+`sys_metadata/homepage_images` et `sys_metadata/gallery_app` a permis de
+retirer 49 anciennes variantes locales sans appelant: anciens PNG des blocs A
+propos, heroes et footer, anciens rails categorie, essais analytics/newsletter,
+anciens visuels Marseille et variantes hero remplacees. Les WebP/presets
+actifs, les images configurees dans Storage et tous les medias produit ont ete
+conserves. Cette preuve ne vaut jamais autorisation de nettoyer Storage.
 
 ## 2. Modele image produit
 
@@ -132,6 +140,11 @@ Avant toute suppression:
 6. prevoir restauration ou regeneration.
 
 Une absence de reference textuelle dans le code ne prouve pas qu'un fichier Storage est inutilise: son URL peut etre stockee en base.
+
+Pour les assets Git sous `public`, `npm run audit:usage` fournit une liste de
+candidats. Une suppression exige encore une recherche exacte, la verification
+des documents de personnalisation sandbox et des alternatives actives, puis
+les gates visuelles/build du perimetre.
 
 Le catalogue materialise ajoute une contrainte: une URL reste protegee tant qu'elle apparait dans `current`, `previous`, `last-known-good` ou une release retenue. `onArtifactUpdated` et `onArtifactDeleted` placent les candidats en quarantaine. `catalogMediaGarbageCollector` ne peut supprimer un media apres 90 jours que s'il n'est plus reference par Firestore ni par une release retenue et si sa generation Storage n'a pas change. Le contre-audit G2-B4 a constate que la variable `CATALOG_MEDIA_GC_COMMIT` n'etait pas presente sur le runtime sandbox malgre l'ancienne mention d'activation; cette mention est donc remplacee. Le meme kill-switch couvre desormais les medias et les anciennes releases et reste fail-closed (`false`) sur le sandbox. Toute activation destructive exige backup READY, restore drill, dry-run scelle, candidats et generations manifestes, rollback et approbation explicite.
 

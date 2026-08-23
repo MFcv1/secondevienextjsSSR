@@ -334,6 +334,7 @@ Les anciennes gates de micro-cache `public/meta` ont ete retirees avec `publicCa
 | A propos | `perf:about-direct` |
 | devis | `perf:quote-direct` |
 | réception devis + admin | `test:quotes`, lint cible, build; envoi Gmail réel uniquement sur demande explicite; contrôle hébergé admin avec `node scripts/with-env.mjs .env.sandbox node scripts/e2e-sandbox-role-session.mjs --role=admin --expect-quote=<reference>` |
+| e-mails transactionnels | `test:email-design`, `test:auth`, tests métier touchés, lint cible; génération locale `node scripts/render-email-previews.cjs`; envoi Gmail réel uniquement sur demande explicite |
 | newsletter + avantages client | `test:newsletter`, lint cible, build; recette Gmail et espace client uniquement sur demande explicite |
 | codes promo checkout/admin | `test:commerce:unit`, `test:commerce:firebase`, `test:commerce:rules`, lint, build; creation admin et application Stripe test sur sandbox uniquement sur demande explicite |
 | menu/header | `perf:menu-desktop`, `perf:menu-mobile`, `mobile:contract` |
@@ -564,6 +565,19 @@ Un changement est termine quand:
 - le compte rendu distingue code, validation et deploiement.
 
 ## 10. Validation documentaire
+
+L'audit structurel reproductible se lance avec:
+
+```bash
+npm run audit:usage
+```
+
+Il construit le graphe des imports Next/Functions, distingue les modules
+runtime des helpers de tests/migrations, controle les imports relatifs et
+signale scripts, assets publics et dependances seulement candidats au
+nettoyage. Son resultat n'autorise aucune suppression automatique: conventions
+framework, entrees provider, plans temporaires actifs et references stockees en
+base doivent etre controles manuellement.
 
 Pour une restructuration comme celle-ci:
 

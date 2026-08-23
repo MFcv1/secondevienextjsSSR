@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { motion, MotionConfig } from 'framer-motion';
 import {
     Armchair,

@@ -1,4 +1,3 @@
-import React from 'react';
 import { getProductCardImage, getProductImageItems } from '../../utils/imageUtils';
 import { getProductPriceAmount, getProductStockAmount, getPurchaseUnavailableLabel, isPurchasable, shouldRequestQuote } from '../commerce/purchasability';
 import ProductDetailActionsIsland from './ProductDetailActionsIsland';

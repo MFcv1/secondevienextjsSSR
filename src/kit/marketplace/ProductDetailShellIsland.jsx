@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import {
@@ -604,7 +604,9 @@ export default function ProductDetailShellIsland({
     setShowSwipeExitHint(false);
     try {
       window.localStorage.setItem(PRODUCT_SWIPE_EXIT_HINT_STORAGE_KEY, 'done');
-    } catch {}
+    } catch {
+      // The hint is optional when Safari blocks localStorage.
+    }
   }, []);
 
   useEffect(() => {

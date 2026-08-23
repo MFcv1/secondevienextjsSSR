@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import GlobalMenuDesktop from './GlobalMenuDesktop';
 import GlobalMenuMobile from './GlobalMenuMobile';
