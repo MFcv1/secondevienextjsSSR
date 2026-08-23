@@ -723,7 +723,7 @@ Dupliquer cette section pour chaque anomalie et remplacer `A-000`.
 
 ### A-018 - Etat de preparation non rafraichi dans le back-office
 
-- statut: `CORRIGEE_A_REQUALIFIER`
+- statut: `REQUALIFIEE`
 - severite: `MAJEURE`
 - phase: fulfillment livraison admin
 - environnement: sandbox / Stripe test
@@ -1736,6 +1736,30 @@ de code.
 - deploiement: aucun; script et test locaux uniquement.
 - controles refermes: oui, `v2_fixture`, admin `read_only`, offline `off`,
   operations `healthy`, compteurs a zero.
+
+### A-023 - Le rapprochement post-campagne exige exactement trois commandes
+
+- statut: `CORRIGEE_A_REQUALIFIER`
+- severite: `MINEURE`
+- phase: rapprochement final de la qualification Gen1 vers Gen2
+- environnement: sandbox / Stripe test
+- `runId`: `run_v2all_20260823_gen2q01`
+- attendu: auditer les deux commandes distinctes autorisees par la campagne
+  actuelle sans creer une troisieme commande payee.
+- observe: `audit-commerce-orders-v2.mjs` refuse toute liste dont la longueur
+  n'est pas exactement trois, valeur heritee d'une ancienne campagne.
+- reproductibilite: `1/1` par inspection et validation d'entree sous Node 22.
+- impact: le rapprochement final commandes/Stripe/stock ne peut pas etre lance
+  avec le perimetre autorise; aucun etat cloud n'est modifie.
+- cause racine: cardinalite historique codee en dur sans invariant metier qui
+  l'impose; les campagnes qualifiantes actuelles utilisent deux commandes.
+- correction appliquee: accepter deux ou trois IDs distincts et valides, sans
+  autoriser une campagne plus large; test de regression et chapitre canonique
+  mis a jour.
+- validations: test cible `12/12`; audit sandbox reussi avec exactement deux
+  commandes distinctes, controle revision 66 ferme, panier vide, trois unites
+  engagees, zero restock, Stripe test uniquement et webhooks traites.
+- deploiement: aucun; harnais local uniquement.
 
 ## Raccordement codes promotionnels — 2026-08-13
 

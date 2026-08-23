@@ -493,6 +493,11 @@ les trois abonnements Stripe test `refund.created|updated|failed`. Elle ne
 cree aucun evenement, paiement ou remboursement; ses deux requetes non signees
 creent seulement des invocations rejetees et leurs logs techniques.
 
+Le rapprochement post-campagne `audit-commerce-orders-v2.mjs` accepte deux ou
+trois commandes distinctes: deux pour la matrice M01-M13 actuelle, trois pour
+les campagnes historiques encore auditables. Il refuse toute liste vide,
+dupliquee ou plus large.
+
 Gate 6 ajoute `classify-legacy-commerce.mjs`,
 `prepare-commerce-fixtures.mjs`, les contrats purs
 `legacyClassification.js`/`fixtureScope.js` et 9 tests dedies. Le dry-run final

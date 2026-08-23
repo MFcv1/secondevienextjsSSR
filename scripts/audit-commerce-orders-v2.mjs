@@ -67,7 +67,13 @@ const productIds = String(args.get('product-ids') || '')
 
 invariant(projectId === PROJECT_ID && environment === ENVIRONMENT, 'AUDIT_V2_TARGET_INVALID');
 invariant(/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(buyerEmail), 'AUDIT_V2_BUYER_EMAIL_INVALID');
-invariant(orderIds.length === 3 && orderIds.every((id) => /^ord_[A-Za-z0-9_-]+$/.test(id)), 'AUDIT_V2_ORDER_IDS_INVALID');
+invariant(
+  orderIds.length >= 2 &&
+    orderIds.length <= 3 &&
+    new Set(orderIds).size === orderIds.length &&
+    orderIds.every((id) => /^ord_[A-Za-z0-9_-]+$/.test(id)),
+  'AUDIT_V2_ORDER_IDS_INVALID'
+);
 invariant(productIds.length === 5, 'AUDIT_V2_PRODUCT_IDS_INVALID');
 invariant(process.env.FIREBASE_SERVICE_ACCOUNT_JSON, 'AUDIT_V2_SERVICE_ACCOUNT_MISSING');
 invariant(process.env.STRIPE_SECRET_KEY, 'AUDIT_V2_STRIPE_SECRET_MISSING');

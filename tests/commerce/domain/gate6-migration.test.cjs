@@ -237,3 +237,14 @@ test('Gate 6: le preflight refund.failed reste non mutateur pour le commerce', (
     assert.match(source, /await main\(\)/);
     assert.doesNotMatch(source, /webhookEndpoints\.update|events\.create|refunds\.create/);
 });
+
+test('Gate 6: le rapprochement final accepte les campagnes bornees a deux ou trois commandes', () => {
+    const source = fs.readFileSync(
+        path.resolve('scripts/audit-commerce-orders-v2.mjs'),
+        'utf8'
+    );
+    assert.match(source, /orderIds\.length >= 2/);
+    assert.match(source, /orderIds\.length <= 3/);
+    assert.match(source, /new Set\(orderIds\)\.size === orderIds\.length/);
+    assert.doesNotMatch(source, /orderIds\.length === 3/);
+});
