@@ -715,8 +715,11 @@ est `enabled`, en mode test. Aucun parametre public, variable `NEXT_PUBLIC_*`
 ou configuration de production ne peut activer ces pannes.
 
 Le control plane final est `v2_fixture/read_only` revision 76, policy et scope
-fixture alignes, operations `healthy`. RC-006 reste une mesure de cold start
-separee: elle ne remet pas en cause les preuves fonctionnelles D4.
+fixture alignes, operations `healthy`. RC-006 est ferme le 2026-08-24 par
+quatre cold starts Cloud Run confirmes: minimum 3,731 s, mediane 4,331 s,
+moyenne 4,351 s et maximum 5,013 s cote serveur. La probe courante a mesure
+4,972 s cote client pour 4,226 s cote serveur, puis 731/294 ms cote client et
+182/158 ms cote serveur a chaud. Aucun changement de capacite n'est retenu.
 
 ## 13. Conditions production
 

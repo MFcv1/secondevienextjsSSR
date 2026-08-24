@@ -300,8 +300,10 @@ sandbox a cree quatre PaymentIntent test au total, deux payes et deux annules,
 sans refund ni e-mail. R07 a ete prouve par un failpoint strictement local au
 runner; R10 par une pause de cinq secondes du seul endpoint webhook Stripe
 test, restaure `enabled` dans le `finally`. Aucun failpoint public ou deploye
-n'existe. La mesure RC-006 de cold start reste une mesure de performance
-separee et non bloquante.
+n'existe. RC-006 est ferme par quatre episodes froids confirmes dans Cloud Run:
+3,731 s a 5,013 s cote serveur, mediane 4,331 s. Le signal initial proche de
+8,6 s n'est pas reproduit; `minInstances: 0` est conserve et aucun changement
+de capacite n'est justifie sur le sandbox.
 
 | Besoin | Source |
 | --- | --- |

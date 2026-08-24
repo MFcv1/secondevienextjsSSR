@@ -496,6 +496,7 @@ dix commandes et une timeline limitee aux 100 evenements les plus recents. Les
 inbox historiques ne sont relues que par identifiants provider autoritaires et
 les recherches invalides s'arretent apres audit hashe, sans lecture metier. La
 suite Emulator prouve la troncature avec 101 evenements et le cleanup par
-`runId`. RC-006 reste la mesure separee du cold start de la callable: elle ne
-doit pas etre confondue avec un cout Firestore non borne ni bloquer la cloture
-fonctionnelle.
+`runId`. RC-006 est ferme le 2026-08-24 par quatre cold starts confirmes,
+minimum 3,731 s, mediane 4,331 s, moyenne 4,351 s et maximum 5,013 s cote
+serveur. La mesure ne revele pas de cout Firestore non borne; `minInstances: 0`
+est conserve pour eviter un cout fixe sandbox sans trafic representatif.

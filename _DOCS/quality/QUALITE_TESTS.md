@@ -611,8 +611,9 @@ Firestore Emulator, avec fixtures `run_d3_*` nettoyees. Le game day D4 du
 2026-08-24 a ferme R00, R05, R07, R10 et R18 sur quatre PaymentIntent Stripe
 test, sans refund, e-mail ni deploiement. Ses runners transactionnels ont ete
 retires a la cloture D5; les tests D2/D3 restent dans `test:commerce`. RC-006
-reste une mesure cold start separee, a executer comme preuve de performance et
-non comme prerequis fonctionnel de ces suites.
+est ferme par quatre episodes froids Cloud Run, entre 3,731 s et 5,013 s cote
+serveur, mediane 4,331 s. Cette preuve hebergee reste une mesure de performance
+separee et non un prerequis fonctionnel des suites locales.
 
 Pour une restructuration comme celle-ci:
 

@@ -49,6 +49,15 @@ les preuves R07 et R10 apparaissent dans la timeline avec leurs correlations et
 leurs etats durables, sans exposer payload Stripe, e-mail, adresse, telephone,
 IP, token ou secret.
 
+RC-006 mesure quatre demarrages froids confirmes entre 3,731 s et 5,013 s cote
+serveur, avec une mediane de 4,331 s. Les deux appels chauds de controle sont a
+182 ms et 158 ms. L'interface affiche deja `Recherche…`, bloque une seconde
+soumission pendant l'attente et conserve l'erreur explicite; aucune instance
+chaude permanente ni correction UI n'est retenue pour le sandbox. La probe
+courante utilise un identifiant opaque inexistant, retourne zero commande et
+cree exactement trois audits `observability.timeline_viewed`; seule la valeur
+hachee est conservee, sans donnee personnelle.
+
 L'interface commune de connexion est conservee. L'acces admin repose sur
 Firebase Auth, claims, registre `sys_admin_access` et assurance AAL2 Google ou
 passkey. La session valide autorise lectures et mutations sans minuterie de
