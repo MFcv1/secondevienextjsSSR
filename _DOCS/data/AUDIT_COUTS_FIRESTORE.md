@@ -488,3 +488,14 @@ Une seconde fenetre Data Access a accompagne la recette navigateur sur le sandbo
 | pointeurs apres nettoyage | `current=45`, `previous=44`, LKG `43`, tous sains et fondes sur l'etat restaure |
 
 `DATA_READ` et `DATA_WRITE` ont ete retires apres la mesure; la politique finale ne contient aucun `auditConfigs`. Aucun OTP, secret, payload Data Access brut ou ETag n'est conserve dans Git.
+
+### 10.4 Cout borne de la console Incidents
+
+La campagne resilience close le 2026-08-24 verrouille une recherche limitee a
+dix commandes et une timeline limitee aux 100 evenements les plus recents. Les
+inbox historiques ne sont relues que par identifiants provider autoritaires et
+les recherches invalides s'arretent apres audit hashe, sans lecture metier. La
+suite Emulator prouve la troncature avec 101 evenements et le cleanup par
+`runId`. RC-006 reste la mesure separee du cold start de la callable: elle ne
+doit pas etre confondue avec un cout Firestore non borne ni bloquer la cloture
+fonctionnelle.

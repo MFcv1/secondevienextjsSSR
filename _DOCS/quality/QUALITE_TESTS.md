@@ -253,14 +253,6 @@ Etat `CODE_READY`:
 - `test:commerce:resilience:emulator` execute les fixtures jetables `run_d3_*`
   de resilience: rollback, stock 1 concurrent, webhook duplique, deux inbox
   desordonnees, timeline 101+ bornee et preuve de nettoyage avant teardown;
-- `commerce:resilience:d4` est un game day externe fail-closed: sandbox exact,
-  Stripe test obligatoire, confirmation et budget de deux PI, scope fixture,
-  outbox neutralisee, cleanup sans suppression et rollback du controle. Il ne
-  doit jamais etre lance en CI ou sans autorisation L4 explicite;
-- `commerce:resilience:d4:close` ferme R07/R10 avec deux PI test: failpoint
-  memoire runner non public, pause endpoint Connect exactement 5 s, restauration
-  dans `finally`, controle revisionne, cleanup et zero e-mail/refund. Meme
-  interdiction CI et meme autorisation L4 explicite;
 - `test:commerce:rules` ferme explicitement sous-collections et collections v2;
 - `commerce:legacy:classify` produit le manifeste Gate 6 read-only avec
   pagination, checkpoint, hashes et relecture Stripe;
@@ -607,13 +599,20 @@ test:functions-gen2`. Ces gates verifient la pseudonymisation, les lectures
 bornees, le journal append-only, les TTL declares, les rollups HLL et les dix
 exports actifs. Les tests restent locaux et ne mutent aucune ressource cloud.
 
-La campagne de resilience checkout ajoute
+La couverture durable de resilience checkout comprend
 `tests/commerce/resilience/checkout-boundaries.test.cjs`,
 `worker-outbox.test.cjs`, `incident-console.test.cjs` et le harness local
 `tests/commerce/browser/checkout-resilience.spec.mjs`. D2 couvre 36 tests
 deterministes sous garde anti-reseau, dont recherche `CMD-*`, inbox webhook
 historique, audit timeline fail-closed, audit hashe des refus et projection de
 `attemptCount`; aucun de ces tests ne contacte Stripe, Firebase ou l'e-mail.
+La suite D3 `resilience-emulator.cjs` ajoute 6 scenarios et 28 assertions sur
+Firestore Emulator, avec fixtures `run_d3_*` nettoyees. Le game day D4 du
+2026-08-24 a ferme R00, R05, R07, R10 et R18 sur quatre PaymentIntent Stripe
+test, sans refund, e-mail ni deploiement. Ses runners transactionnels ont ete
+retires a la cloture D5; les tests D2/D3 restent dans `test:commerce`. RC-006
+reste une mesure cold start separee, a executer comme preuve de performance et
+non comme prerequis fonctionnel de ces suites.
 
 Pour une restructuration comme celle-ci:
 

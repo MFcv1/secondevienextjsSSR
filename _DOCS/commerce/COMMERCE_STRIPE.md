@@ -10,9 +10,10 @@ Etat actif:
 > annulation provider-first, concurrence stock, commandes client, fulfillment,
 > refund, retour/restock, suspension de policy, e-mails, documents et
 > rapprochement. Le statut `PREPROD_TRANSACTIONAL_READY` reste strictement
-> borne au sandbox. Depuis le 2026-08-02, `v2_all` et les mutations admin sont
-> actifs pour les tests fonctionnels publication/achat. Le paiement offline
-> reste `off`; Stripe live et le rail production ne sont pas autorises.
+> borne au sandbox. La fenetre `v2_all/v2` ouverte le 2026-08-02 est refermee
+> depuis le game day du 2026-08-24. Le controle courant est
+> `v2_fixture/read_only` revision 76; le paiement offline reste `off`. Stripe
+> live et le rail production ne sont pas autorises.
 
 ## 1. Perimetre
 
@@ -591,9 +592,9 @@ portent `cartLineId/cartRevision`; le succes exige
 lignes achetees demeurees identiques. `MyOrdersView` utilise le reader UID et
 sa pagination; les readers commandes et retours admin sont egalement actifs,
 avec un adaptateur v1 historique explicitement read-only. Les transports Gate 5
-restent exportes. Le controle serveur sandbox est `newCheckoutMode=v2_all`,
-les commandes publiques et admin sont actives, et le paiement offline reste
-`off`.
+restent exportes. Le controle serveur sandbox courant est
+`newCheckoutMode=v2_fixture`, les mutations admin sont `read_only` et le
+paiement offline reste `off`.
 
 Gate 7A ajoute les projections financieres absolues, les recus sandbox
 explicitement non fiscaux, l'outbox avec leases/dead-letter et statut
@@ -693,6 +694,29 @@ Etat au 2026-08-02: code, tests unitaires, route, onglet, index, secret HMAC et
 Functions deployes sur le sandbox. Les smokes HTTP et App Check sont verts. Les
 controls sont `v2_all/v2`, le paiement offline est `off` et Stripe reste en
 mode test; aucune transaction live n'est autorisee.
+
+### 12.2 Qualification de resilience du 2026-08-24
+
+La campagne D0-D5 a confirme l'unicite logique commande/tentative/PaymentIntent,
+la monotonie des transitions, la deduplication inbox/effects, les leases avec
+fence des workers, la separation paiement/stock et l'absence de renvoi e-mail
+apres accuse provider ambigu. Les tests D2 et D3 restent dans le depot comme
+regressions locales; les runners transactionnels D4 ont ete retires apres
+cloture.
+
+Le game day autorise a produit quatre PaymentIntent Stripe test: deux ont
+converge vers `succeeded` et deux ont ete annules provider-first. Aucun refund,
+aucun e-mail et aucun deploiement n'ont eu lieu. Le scenario R07 a injecte
+l'interruption uniquement dans la memoire du runner apres la reponse Stripe;
+le retry a retrouve le meme PaymentIntent. R10 a desactive exactement cinq
+secondes le seul endpoint Connect test, puis l'a restaure avant d'envoyer un
+webhook signe; la commande a converge durablement en 136 ms. L'endpoint final
+est `enabled`, en mode test. Aucun parametre public, variable `NEXT_PUBLIC_*`
+ou configuration de production ne peut activer ces pannes.
+
+Le control plane final est `v2_fixture/read_only` revision 76, policy et scope
+fixture alignes, operations `healthy`. RC-006 reste une mesure de cold start
+separee: elle ne remet pas en cause les preuves fonctionnelles D4.
 
 ## 13. Conditions production
 

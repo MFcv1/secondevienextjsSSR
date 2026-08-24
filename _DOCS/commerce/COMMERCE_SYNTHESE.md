@@ -1,6 +1,6 @@
 # Synthese du noyau commerce
 
-Derniere mise a jour: 2026-08-19
+Derniere mise a jour: 2026-08-24
 Statut: `POINT_ENTREE_COMMERCE`
 Qualification actuelle: `PREPROD_TRANSACTIONAL_READY`
 
@@ -53,8 +53,9 @@ Elle ne constitue pas:
 
 Le rail admin de liens de paiement sans compte est deploye sur le sandbox
 depuis le 2026-08-01. Il reutilise les orders, reservations, PaymentIntent,
-webhooks et outboxes v2. Depuis le 2026-08-02, le sandbox est active en
-`v2_all` avec mutations admin `v2` pour une batterie de tests fonctionnels;
+webhooks et outboxes v2. La fenetre fonctionnelle `v2_all/v2` ouverte le
+2026-08-02 a ete refermee apres le game day du 2026-08-24. Le controle courant
+est `v2_fixture/read_only` revision 76, avec scope et policy fixture alignes;
 Stripe reste exclusivement en mode test.
 
 La migration Functions G8 du 2026-08-19 duplique en Gen2 les 35 callables
@@ -182,12 +183,12 @@ Release fonctionnel Gate 8:
 
 ## 6. Etat fonctionnel du sandbox
 
-Depuis la decision du 2026-08-02:
+Etat courant apres la fermeture du 2026-08-24:
 
 - le checkout v2 est toujours expose dans le build sandbox;
-- `adminMutationMode=v2`;
+- `adminMutationMode=read_only`;
 - `offlinePaymentMode=off`;
-- `newCheckoutMode=v2_all`;
+- `newCheckoutMode=v2_fixture`, revision 76, scope et policy alignes;
 - les produits de test restent `e2eOnly` et exclus du catalogue public;
 - Stripe est exclusivement en mode test et aucun secret live n'est attendu;
 - l'endpoint Connect sandbox qualifie est
@@ -290,6 +291,17 @@ transaction que la creation via `sys_counters/orders`. Les 131 commandes
 sandbox existantes ont ete numerotees chronologiquement; la prochaine valeur
 est 132. L'UI et les e-mails affichent `CMD-<numero>` et conservent l'ancien ID
 opaque comme identifiant technique et fallback, sans le remplacer en base.
+
+La campagne de resilience checkout D0 a D5 est close le 2026-08-24. Les suites
+locales deterministes couvrent les frontieres navigateur/Functions/Stripe,
+l'idempotence, les workers/outbox et la timeline incidents; la suite Emulator
+couvre concurrence, doublons, desordre et cleanup par `runId`. Le game day
+sandbox a cree quatre PaymentIntent test au total, deux payes et deux annules,
+sans refund ni e-mail. R07 a ete prouve par un failpoint strictement local au
+runner; R10 par une pause de cinq secondes du seul endpoint webhook Stripe
+test, restaure `enabled` dans le `finally`. Aucun failpoint public ou deploye
+n'existe. La mesure RC-006 de cold start reste une mesure de performance
+separee et non bloquante.
 
 | Besoin | Source |
 | --- | --- |

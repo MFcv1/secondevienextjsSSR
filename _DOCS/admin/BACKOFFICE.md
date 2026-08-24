@@ -1,12 +1,13 @@
 # Back-office
 
-Derniere mise a jour: 2026-08-12
+Derniere mise a jour: 2026-08-24
 Statut: `PREPROD_READY`
 
 Etat actif:
 
-> Le sandbox est fonctionnel en `v2_all` avec mutations admin actives pour les
-> tests publication, commandes, fulfillment, remboursements et retours.
+> La fenetre sandbox `v2_all/v2` de tests publication, commandes, fulfillment,
+> remboursements et retours est refermee. Le controle courant est
+> `v2_fixture/read_only` revision 76.
 > App Check, registre admin, AAL2, idempotence et audit restent obligatoires.
 > Stripe live et la production ne sont pas actifs.
 
@@ -39,6 +40,14 @@ historiques retrouvees par identifiants provider autoritaires bornes, sans
 renvoyer leur payload, et affiche le nombre de tentatives worker lorsqu'il est
 connu. Aucun bouton de reprise financiere directe n'est expose dans cette
 console.
+
+La qualification resilience D2-D4 a verrouille par tests la recherche
+`CMD-<numero>`, les inbox webhook historiques, l'audit fail-closed, le hash des
+recherches invalides, la projection `attemptCount`, la troncature a 100
+evenements et l'expurgation des donnees sensibles. Le game day a confirme que
+les preuves R07 et R10 apparaissent dans la timeline avec leurs correlations et
+leurs etats durables, sans exposer payload Stripe, e-mail, adresse, telephone,
+IP, token ou secret.
 
 L'interface commune de connexion est conservee. L'acces admin repose sur
 Firebase Auth, claims, registre `sys_admin_access` et assurance AAL2 Google ou
@@ -629,7 +638,8 @@ Le serveur relit les produits Firestore, le prix, le stock, la policy et le
 compte Connect avant de creer atomiquement l'order v2 et ses reservations. Les
 actions exigent App Check, registre admin actif, AAL2 Google ou passkey,
 `newCheckoutMode=v2_all` et `adminMutationMode=v2`. Ces conditions sont actives
-sur le sandbox depuis le 2026-08-02.
+uniquement pendant une fenetre transactionnelle autorisee; elles sont
+actuellement refermees en `v2_fixture/read_only`.
 
 Un lien actif peut etre prolonge sans depasser 24 heures restantes. Son URL ne
 peut etre changee que tant qu'aucun PaymentIntent n'a ete remis au client;
@@ -641,8 +651,9 @@ reste `needs_review` et ne propose aucune duplication aveugle.
 
 Ce rail, son index Firestore, ses Functions et le secret
 `PAYMENT_LINK_HMAC_SECRET@1` sont deployes sur le sandbox depuis le 2026-08-01.
-Les controls `v2_all/v2` rendent ce rail utilisable sur le sandbox depuis le
-2026-08-02 avec Stripe test.
+Les controls `v2_all/v2` ont rendu ce rail utilisable sur le sandbox avec
+Stripe test. Le retour a `v2_fixture/read_only` du 2026-08-24 le referme sans
+retirer son code ni ses preuves.
 
 ## 6. Utilisateurs et securite
 

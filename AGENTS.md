@@ -82,12 +82,12 @@ Le noyau commerce a ferme les Gates 0A a 8 le 2026-07-28 et porte le statut
 `PREPROD_TRANSACTIONAL_READY`. La qualification initiale sur fixtures a ete
 completee le 2026-07-29 par une fenetre `v2_all` autorisee, bornee a cinq
 meubles reels et Stripe test, puis refermee sans divergence backend. Les flags
-UI transactionnels et les mutations admin sont actifs sur le sandbox depuis la
-decision explicite du 2026-08-02 afin de permettre les tests fonctionnels
-publication/achat en conditions proches de la production. Le sandbox utilise
-`v2_all`, Stripe test et conserve le paiement offline `off`; tout rail Stripe
-live et toute production demeurent differes. Ce statut n'est pas un GO
-production.
+UI transactionnels et les mutations admin ont ensuite ete actifs sur le
+sandbox pour les tests fonctionnels. Apres le game day resilience du
+2026-08-24, le controle courant est revenu a `v2_fixture/read_only` revision
+76, avec scope et policy fixture alignes; Stripe reste en test et le paiement
+offline reste `off`. Tout rail Stripe live et toute production demeurent
+differes. Ce statut n'est pas un GO production.
 
 ## 4. Environnement de reference
 
@@ -206,13 +206,6 @@ Plans temporaires de reprise encore actifs:
   et corrections de projection/reprise; aucune activation `v2_all`
   permanente, live ou production implicite; revue au plus tard le
   2026-10-31, puis fusion canonique et suppression avec [TODO.md](TODO.md).
-- [RESILIENCE_CHECKOUT_INCIDENTS.md](_DOCS/commerce/RESILIENCE_CHECKOUT_INCIDENTS.md):
-  campagne temporaire explicitement demandee de fault injection checkout et
-  qualification de la console `Admin > Incidents`; branche isolee depuis le
-  checkpoint `53aa224`, Gate D0 documentaire, aucune panne ni ecriture cloud
-  implicite; L4 sandbox transactionnel, Stripe test, e-mail et deploiement
-  exigent une autorisation distincte; revue au plus tard le 2026-10-31, puis
-  fusion canonique et suppression.
 - [RECETTE_EMAILS_LUNA.md](_DOCS/email/RECETTE_EMAILS_LUNA.md): reproduction
   humaine des 13 e-mails sur sandbox par Luna; diagnostic et preuves
   uniquement, aucune correction de code; anomalies remises a GPT-5.6-sol;
@@ -320,11 +313,11 @@ Interdictions:
 - snapshot de commande conserve l'historique;
 - Stripe sandbox et live strictement separes.
 
-La qualification et l'activation fonctionnelle actuelles restent bornees au
-sandbox et a Stripe test. `v2_all` y est actif par decision explicite du
-2026-08-02 pour les tests de publication et d'achat. Stripe live ou production
-exigent toujours une decision distincte, une fenetre d'observation et les
-gates live correspondantes; aucune preuve sandbox ne suffit a les autoriser.
+La qualification fonctionnelle reste bornee au sandbox et a Stripe test. La
+fenetre `v2_all` ouverte le 2026-08-02 a ete refermee: le controle courant est
+`v2_fixture/read_only` revision 76. Stripe live ou production exigent toujours
+une decision distincte, une fenetre d'observation et les gates live
+correspondantes; aucune preuve sandbox ne suffit a les autoriser.
 
 ### 7.6 Admin et securite
 

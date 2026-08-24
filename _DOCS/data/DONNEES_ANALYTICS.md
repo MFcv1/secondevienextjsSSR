@@ -414,3 +414,14 @@ Il n'existe pas encore de migration vers un rail production definitif. Lorsque c
 - rollback.
 
 Ce chapitre remplace les anciens plans de migration et constitue la seule reference active pour une future copie de donnees.
+
+## 12. Preuves de resilience checkout
+
+La qualification D2-D4 du 2026-08-24 n'a change aucune politique de retention.
+La console Incidents fusionne des sources autoritaires bornees et retourne au
+maximum 100 evenements, avec `truncated=true` au-dela; elle ne renvoie jamais
+les payloads inbox/outbox ni les donnees personnelles completes. Les fixtures
+Emulator sont prefixees par `runId` et supprimees avant teardown. Dans le
+sandbox, les commandes, tentatives, faits financiers, mouvements et audits du
+game day sont conserves; seuls trois auxiliaires ont ete quarantaines et aucune
+suppression metier n'a ete executee.

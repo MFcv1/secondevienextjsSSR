@@ -377,3 +377,12 @@ bucket d'archive europeen interdit l'acces public; seule l'identite runtime
 analytics peut y ecrire. Les archives ne contiennent ni adresse, ni e-mail, ni
 IP, ni user-agent brut et suivent un cycle Coldline a 30 jours puis suppression
 a 730 jours.
+
+La qualification resilience close le 2026-08-24 confirme que les mecanismes de
+panne n'existent ni dans les Functions deployees, ni dans un parametre public,
+ni dans une variable `NEXT_PUBLIC_*`. R07 etait un failpoint en memoire du seul
+runner local; R10 une suspension de cinq secondes du seul endpoint webhook
+Stripe test, restaure `enabled` dans un `finally`. Les runners ont ete retires
+en D5. Toute future injection serveur doit rester interdite en production par
+projet exact, mode Stripe test, allowlist de scenario, confirmation explicite,
+echeance et restauration fail-closed.

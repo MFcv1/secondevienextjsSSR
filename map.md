@@ -286,11 +286,11 @@ politique/control backend fail-closed
   -> UI client/admin via commandes serveur
 ```
 
-Gates 0A a 8 sont fermees en sandbox depuis le 2026-07-28. Par decision
-explicite du 2026-08-02, checkout et workers v2 sont actifs en `v2_all` pour
-les tests fonctionnels publication/achat; lecteurs UID/admin et exploitation
-restent actifs. Les mutations admin sont `v2`, Stripe reste en mode test et le
-paiement offline reste `off`.
+Gates 0A a 8 sont fermees en sandbox depuis le 2026-07-28. La fenetre
+fonctionnelle `v2_all/v2` ouverte le 2026-08-02 a ete refermee apres le game
+day resilience du 2026-08-24. Le controle courant est
+`v2_fixture/read_only` revision 76, avec scope et policy fixture alignes;
+Stripe reste en mode test et le paiement offline reste `off`.
 
 Gate 6 ajoute un rail de migration sans writer:
 
@@ -316,8 +316,6 @@ scripts/activate-commerce-fixture.mjs
 
 scripts/commerce-v2-all-window.mjs
 scripts/configure-commerce-sandbox.mjs
-scripts/checkout-resilience-game-day-d4.mjs ... game day D4 fail-closed, 2 PI test max, outbox neutralisee, cleanup et rollback
-scripts/checkout-resilience-game-day-d4-close.mjs ... closeout R07/R10, failpoint runner local, pause endpoint Stripe test 5 s, restauration finally
   -> statut recuperable, decouverte read-only, preflight, ouverture et fermeture
      auditee `v2_all` sur cinq produits exacts
   -> policy UI sandbox epinglee puis policy precedente restauree
@@ -1407,15 +1405,6 @@ tests/commerce/runner-self-test.cjs
 tests/commerce/run-rules-containment.cjs
 ```
 
-La campagne temporaire
-`_DOCS/commerce/RESILIENCE_CHECKOUT_INCIDENTS.md` gouverne les futurs tests de
-fault injection du checkout et la qualification de `Admin > Incidents`. Elle
-part du checkpoint `53aa224`, interdit toute panne aleatoire sur `main` et
-separe les niveaux locaux/emulateur du game day sandbox soumis a autorisation.
-Le document porte la matrice R00-R19, les abort conditions, le registre des
-donnees et le journal des preuves; il doit etre fusionne dans les chapitres
-canoniques puis supprime au plus tard le 2026-10-31.
-
 Gate 0A fournit le runner anti-faux-vert, `test:commerce:containment`,
 `test:commerce:rules:containment`, l'agregat et `lint:functions`. Gate 0B ajoute
 les preuves hard-stop et Rules Firestore/Storage. Gate 1 fournit les suites
@@ -1427,8 +1416,8 @@ ce seul scope, les workers bornes, projections, documents sandbox,
 exploitation et cleanup audite sur un manifeste immutable. Gate 7B execute le
 runner `scripts/e2e-commerce-core-gate7b.mjs` deux fois sur le meme SHA/release
 avec Stripe Connect, 3DS, OTP Gmail et drain final. Les trois lecteurs Gate 5
-restent actifs; depuis le 2026-08-02, l'UI publique et les mutations admin sont
-ouvertes sur le sandbox en `v2_all/v2`, Stripe test uniquement.
+restent actifs. La fenetre `v2_all/v2` du 2026-08-02 est maintenant refermee;
+le sandbox est revenu a `v2_fixture/read_only`, Stripe test uniquement.
 
 ## 12. Matrice d'impact rapide
 
@@ -1441,7 +1430,7 @@ ouvertes sur le sandbox en `v2_all/v2`, Stripe test uniquement.
 | Auth | `AUTHENTIFICATION.md` | authStore, AuthContext, modal, auth Functions | `test:auth` + smoke |
 | securite/rules | `SECURITE_GLOBALE.md` | rules, helpers security, Functions | tests negatifs + sandbox cible |
 | espace client | `ESPACE_CLIENT.md` | routes compte, MyOrders, wishlist | smoke compte |
-| paiement/refund | `COMMERCE_SYNTHESE.md`, puis `COMMERCE_STRIPE.md` | commerce client/Functions/admin | Gates 0A a 8 fermees; `PREPROD_TRANSACTIONAL_READY` sandbox; checkout `v2_all` et mutations admin `v2` actifs pour tests, Stripe test uniquement, offline et live fermes |
+| paiement/refund | `COMMERCE_SYNTHESE.md`, puis `COMMERCE_STRIPE.md` | commerce client/Functions/admin | Gates 0A a 8 fermees; `PREPROD_TRANSACTIONAL_READY` sandbox; controle courant `v2_fixture/read_only`, Stripe test uniquement, offline et live fermes |
 | admin | `BACKOFFICE.md` | AdminAppIsland, tabs, Functions | smoke tabs + action cible |
 | infra | `INFRASTRUCTURE.md` | yaml/json/env/runtime | audits read-only + build |
 | donnees | `DONNEES_ANALYTICS.md` + `AUDIT_COUTS_FIRESTORE.md` | rules/indexes/scripts/Functions | dry-run/comptage/rollback + mesure avant/apres |
