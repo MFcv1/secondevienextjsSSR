@@ -615,6 +615,15 @@ est ferme par quatre episodes froids Cloud Run, entre 3,731 s et 5,013 s cote
 serveur, mediane 4,331 s. Cette preuve hebergee reste une mesure de performance
 separee et non un prerequis fonctionnel des suites locales.
 
+Avant le rollout officiel du 2026-08-25, la branche a passe sous Node 22 le
+lint complet sans erreur, `test:commerce` complet, 78 tests Auth, les contrats
+observabilite/retention, `test:admin-cache`, `test:deployment-cache`, les audits
+infra, le build Next 16.3, `seo:surface`, `next:routes` et `mobile:contract`.
+Le test `admin-navigation-contract.test.mjs` verrouille `Incidents` comme
+dernier item du menu lateral. Apres rollout, le bundle servi prouve le meme
+ordre, les routes publiques ciblees retournent 200 et la callable revision
+`00002-val` resout `CMD-111` avec une timeline bornee.
+
 Pour une restructuration comme celle-ci:
 
 ```powershell

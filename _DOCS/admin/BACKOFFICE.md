@@ -58,6 +58,15 @@ courante utilise un identifiant opaque inexistant, retourne zero commande et
 cree exactement trois audits `observability.timeline_viewed`; seule la valeur
 hachee est conservee, sans donnee personnelle.
 
+Le rollout officiel sandbox du 2026-08-25 sert la console corrigee dans le
+deployment App Hosting `sv-mt7vweks-863c363c7563`. `Incidents` est le dernier
+item du dernier groupe `Administration`, sur desktop comme dans le tiroir
+mobile. La callable ciblee est active en revision
+`getdiagnostictimelineadmingen2-00002-val`; une probe AAL2/App Check a retrouve
+`CMD-111`, retourne une timeline bornee et ecrit son audit sans afficher de
+donnee personnelle. Le controle commerce est reste `v2_fixture/read_only`,
+revision 76, avec operations `healthy`.
+
 L'interface commune de connexion est conservee. L'acces admin repose sur
 Firebase Auth, claims, registre `sys_admin_access` et assurance AAL2 Google ou
 passkey. La session valide autorise lectures et mutations sans minuterie de
