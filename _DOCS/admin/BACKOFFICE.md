@@ -73,7 +73,7 @@ La navigation visible utilise un panneau lateral persistant sur desktop et un ti
 - `Catalogue`: Publication, Vue Globale, Studio;
 - `Ventes`: Ventes, Devis, Liens de paiement, Factures, Retours, Livraison, Paiement;
 - `Communication`: Personnalisation, Infos, SEO;
-- `Administration`: Mon compte, Clients, Securite, Maintenance.
+- `Administration`: Mon compte, Clients, puis Incidents en derniere position.
 
 Le regroupement est porte par `ADMIN_NAV_GROUPS` dans `AdminAppIsland`; `AdminSidebar` ne modifie ni le routing interne ni le lazy loading des vues.
 
@@ -98,6 +98,7 @@ Le regroupement est porte par `ADMIN_NAV_GROUPS` dans `AdminAppIsland`; `AdminSi
 | `payment_settings` | Paiement | `AdminPaymentSettings` | Stripe Connect et activation carte |
 | `account` | Mon compte | `AdminAccount`, `BillingOnboardingOperator` | identite admin et pilotage de l'onboarding facturation |
 | `maintenance` | Maintenance | `AdminMaintenance` | outils destructifs controles |
+| `incidents` | Incidents | `AdminIncidentConsole` | timeline expurgee, correlations et verdict de reprise |
 
 Les labels peuvent evoluer; les ID sont des contrats de navigation et ne doivent pas etre renommes sans migration.
 

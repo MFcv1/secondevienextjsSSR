@@ -117,7 +117,6 @@ export const KIT_CONFIG = {
   adminTabs: [
     { id: 'dashboard',        label: 'Stats'       },
     { id: 'analytics',        label: 'Data'        },
-    { id: 'incidents',        label: 'Incidents'   },
     { id: 'furniture',        label: 'Publication' },  // ✅ Fusionné, label changé (id 'furniture' pour le routing)
     { id: 'inventory',        label: 'Vue Globale' },
     { id: 'studio',           label: 'Studio'      },
@@ -134,6 +133,7 @@ export const KIT_CONFIG = {
     { id: 'newsletter',       label: 'Infos'       },
     { id: 'payment_settings', label: 'Paiement'    },
     { id: 'account',          label: 'Mon compte'  },
+    { id: 'incidents',        label: 'Incidents'   },
   ],
 
   // ── FEATURE FLAGS ─────────────────────────────────────────

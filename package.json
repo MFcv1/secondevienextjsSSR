@@ -107,7 +107,7 @@
     "test:email-design": "node --test tests/email-visual-system.test.cjs",
     "test:quotes": "node --test tests/quote-requests.test.cjs",
     "test:newsletter": "node --test tests/newsletter-rewards.test.cjs",
-    "test:admin-cache": "node --test tests/admin-data-cache-contract.test.mjs",
+    "test:admin-cache": "node --test tests/admin-data-cache-contract.test.mjs tests/admin-navigation-contract.test.mjs",
     "test:meta": "node --test tests/meta-oauth-contract.test.cjs",
     "test:catalog": "pnpm run test:catalog:core && pnpm run test:catalog:resilience && pnpm run test:catalog:security",
     "test:catalog:core": "node --test tests/catalog/core.test.cjs tests/catalog/product-publication.test.cjs",
