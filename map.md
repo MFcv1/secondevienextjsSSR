@@ -1401,6 +1401,15 @@ tests/commerce/runner-self-test.cjs
 tests/commerce/run-rules-containment.cjs
 ```
 
+La campagne temporaire
+`_DOCS/commerce/RESILIENCE_CHECKOUT_INCIDENTS.md` gouverne les futurs tests de
+fault injection du checkout et la qualification de `Admin > Incidents`. Elle
+part du checkpoint `53aa224`, interdit toute panne aleatoire sur `main` et
+separe les niveaux locaux/emulateur du game day sandbox soumis a autorisation.
+Le document porte la matrice R00-R19, les abort conditions, le registre des
+donnees et le journal des preuves; il doit etre fusionne dans les chapitres
+canoniques puis supprime au plus tard le 2026-10-31.
+
 Gate 0A fournit le runner anti-faux-vert, `test:commerce:containment`,
 `test:commerce:rules:containment`, l'agregat et `lint:functions`. Gate 0B ajoute
 les preuves hard-stop et Rules Firestore/Storage. Gate 1 fournit les suites

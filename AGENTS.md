@@ -206,6 +206,13 @@ Plans temporaires de reprise encore actifs:
   et corrections de projection/reprise; aucune activation `v2_all`
   permanente, live ou production implicite; revue au plus tard le
   2026-10-31, puis fusion canonique et suppression avec [TODO.md](TODO.md).
+- [RESILIENCE_CHECKOUT_INCIDENTS.md](_DOCS/commerce/RESILIENCE_CHECKOUT_INCIDENTS.md):
+  campagne temporaire explicitement demandee de fault injection checkout et
+  qualification de la console `Admin > Incidents`; branche isolee depuis le
+  checkpoint `53aa224`, Gate D0 documentaire, aucune panne ni ecriture cloud
+  implicite; L4 sandbox transactionnel, Stripe test, e-mail et deploiement
+  exigent une autorisation distincte; revue au plus tard le 2026-10-31, puis
+  fusion canonique et suppression.
 - [RECETTE_EMAILS_LUNA.md](_DOCS/email/RECETTE_EMAILS_LUNA.md): reproduction
   humaine des 13 e-mails sur sandbox par Luna; diagnostic et preuves
   uniquement, aucune correction de code; anomalies remises a GPT-5.6-sol;
