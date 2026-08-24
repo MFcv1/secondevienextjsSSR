@@ -22,10 +22,14 @@ const MONITORING_VIOLATION_LOGS = Object.freeze([
 
 function applicationLogFilter(message) {
   return [
-    'resource.type="cloud_function"',
+    '(resource.type="cloud_run_revision" OR resource.type="cloud_function")',
     ...MONITORING_VIOLATION_LOGS.map((logName) => `logName!="${logName}"`),
     `(jsonPayload.message="${message}" OR textPayload:"${message}")`
   ].join(' ');
+}
+
+function functionResourceFilter(legacyName, gen2ServiceName) {
+  return `((resource.type="cloud_run_revision" resource.labels.service_name="${gen2ServiceName}") OR (resource.type="cloud_function" resource.labels.function_name="${legacyName}"))`;
 }
 
 const LOG_METRICS = Object.freeze([
@@ -42,17 +46,17 @@ const LOG_METRICS = Object.freeze([
   {
     name: 'secondevie_reservation_expiry_completed',
     description: 'Heartbeat du dispatcher expiration reservations',
-    filter: 'resource.type="cloud_function" resource.labels.function_name="commerceReservationExpiryDispatcher" "commerce_worker_completed"'
+    filter: `${functionResourceFilter('commerceReservationExpiryDispatcher', 'commercereservationexpirydispatchergen2')} "commerce_worker_completed"`
   },
   {
     name: 'secondevie_outbox_completed',
     description: 'Heartbeat du dispatcher outbox commerce',
-    filter: 'resource.type="cloud_function" resource.labels.function_name="commerceOutboxDispatcher" "commerce_worker_completed"'
+    filter: `${functionResourceFilter('commerceOutboxDispatcher', 'commerceoutboxdispatchergen2')} "commerce_worker_completed"`
   },
   {
     name: 'secondevie_payment_link_expiry_completed',
     description: 'Heartbeat expiration liens de paiement',
-    filter: 'resource.type="cloud_function" resource.labels.function_name="expireAdminPaymentLinks" "commerce_worker_completed"'
+    filter: `${functionResourceFilter('expireAdminPaymentLinks', 'expireadminpaymentlinksgen2')} "commerce_worker_completed"`
   }
 ]);
 
@@ -97,9 +101,15 @@ const POLICIES = Object.freeze([
     severity: 'WARNING'
   },
   {
+    displayName: 'G1 Sandbox - Analytics maintenance failed',
+    conditionName: 'Archivage ou rollup analytics en echec',
+    logMatchFilter: applicationLogFilter('analytics_maintenance_failed'),
+    severity: 'ERROR'
+  },
+  {
     displayName: 'G1 Sandbox - Reservation expiry heartbeat absent',
     conditionName: 'Aucune completion depuis 6 minutes',
-    filter: 'metric.type="logging.googleapis.com/user/secondevie_reservation_expiry_completed" AND resource.type="cloud_function"',
+    filter: 'metric.type="logging.googleapis.com/user/secondevie_reservation_expiry_completed" AND resource.type="cloud_run_revision"',
     duration: '360s',
     predicate: 'absent',
     aggregation: { alignmentPeriod: '60s', perSeriesAligner: 'ALIGN_RATE' },
@@ -108,7 +118,7 @@ const POLICIES = Object.freeze([
   {
     displayName: 'G1 Sandbox - Outbox heartbeat absent',
     conditionName: 'Aucune completion depuis 6 minutes',
-    filter: 'metric.type="logging.googleapis.com/user/secondevie_outbox_completed" AND resource.type="cloud_function"',
+    filter: 'metric.type="logging.googleapis.com/user/secondevie_outbox_completed" AND resource.type="cloud_run_revision"',
     duration: '360s',
     predicate: 'absent',
     aggregation: { alignmentPeriod: '60s', perSeriesAligner: 'ALIGN_RATE' },
@@ -117,7 +127,7 @@ const POLICIES = Object.freeze([
   {
     displayName: 'G1 Sandbox - Payment links heartbeat absent',
     conditionName: 'Aucune completion depuis 12 minutes',
-    filter: 'metric.type="logging.googleapis.com/user/secondevie_payment_link_expiry_completed" AND resource.type="cloud_function"',
+    filter: 'metric.type="logging.googleapis.com/user/secondevie_payment_link_expiry_completed" AND resource.type="cloud_run_revision"',
     duration: '720s',
     predicate: 'absent',
     aggregation: { alignmentPeriod: '60s', perSeriesAligner: 'ALIGN_RATE' },

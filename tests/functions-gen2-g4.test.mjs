@@ -176,7 +176,7 @@ test('initLiveSession Gen2 partage le handler Gen1 et autorise une seule cible',
 test('updateUserSessions Gen2 partage exactement le handler Gen1 et borne son runtime', () => {
   const source = read('functions/src/analytics/updateUserSessions.js');
   for (const expected of [
-    /const updateUserSessionsHandler = async \(_data, context\) =>/,
+    /const updateUserSessionsHandler = async \(data = \{\}, context\) =>/,
     /exports\.updateUserSessions = regionalFunctions\(\)/,
     /\.https\.onCall\(updateUserSessionsHandler\)/,
     /exports\.updateUserSessionsGen2 = onCall\(/,
@@ -235,7 +235,7 @@ test('updateUserSessions Gen2 est active et son cutover accelere est ferme', () 
   assert.equal(prepared.rollback.functionAction, 'none; preserve updateUserSessions and updateUserSessionsGen2');
 });
 
-test('trackAdminIP Gen2 conserve App Check/admin et serialise la carte IP', () => {
+test('trackAdminIP Gen2 conserve App Check/admin mais ne stocke plus aucune IP', () => {
   const source = read('functions/src/analytics/adminIP.js');
   for (const expected of [
     /cpu:\s*'gcf_gen1'/,
@@ -247,9 +247,9 @@ test('trackAdminIP Gen2 conserve App Check/admin et serialise la carte IP', () =
     /serviceAccount:\s*ANALYTICS_RUNTIME_SERVICE_ACCOUNT/,
     /enforceAppCheck:\s*true/,
     /checkActiveStrongAdmin\(context\)/,
-    /db\.runTransaction/,
-    /transaction\.set\(adminIpsRef, \{ ips: currentIps \}, \{ merge: true \}\)/
+    /disabled:\s*true/
   ]) assert.match(source, expected);
+  assert.doesNotMatch(source, /adminEmail|admin_ips|db\.runTransaction|transaction\.set/);
   assert.doesNotMatch(source, /trackAdminIPGen2[\s\S]*appspot\.gserviceaccount\.com/);
 });
 

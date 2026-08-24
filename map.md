@@ -49,7 +49,7 @@ Seconde Vie
 |-- /checkout ........................ Tunnel panier/paiement dynamique
 |-- /payer/[orderId]/[token] ......... Paiement prive sans compte, lien admin signe
 |-- /mes-commandes ................... Espace client dynamique
-|-- /admin ........................... Back-office dynamique
+|-- /admin ........................... Back-office dynamique, invisible avant claim admin
 |-- /api/search ...................... Recherche catalogue serveur
 |-- /api/catalog ..................... Snapshot public same-origin non persistant
 |-- /api/catalog/version ............. Identite publique minimale ETag/304
@@ -73,7 +73,7 @@ Seconde Vie
 | `/checkout` | `[C]` tunnel | DYN | noindex/nofollow | `app/checkout/page.jsx` | `CheckoutPageIsland` |
 | `/payer/[orderId]/[token]` | `[C]` tunnel prive | DYN | noindex/nofollow, no-referrer | route dynamique | `PaymentLinkPageIsland` |
 | `/mes-commandes` | `[C]` tunnel | DYN | noindex/nofollow | `app/mes-commandes/page.jsx` | `OrdersPageIsland` |
-| `/admin` | `[C]` tunnel | DYN | noindex/nofollow | `app/admin/page.jsx` | `AdminAppIsland` |
+| `/admin` | `[C]` tunnel | DYN | noindex/nofollow | `app/admin/page.jsx` | `AdminAppIsland`; visiteur, anonyme ou client renvoye silencieusement vers `/` |
 | `/api/search` | `[API]` | reponse non persistante | non indexable | `route.js` | recherche serveur |
 | `/api/catalog` | `[API]` | reponse non persistante | non indexable | `route.js` | catalogue materialise |
 | `/api/catalog/version` | `[API]` | ETag/304 revalide | non indexable | `route.js` | revision + aggregateSha256 |
@@ -159,7 +159,11 @@ header/menu/route privee
   `-- passkey -> 4 callables WebAuthn [F] -> users/{uid}/passkeys [DB]
   -> loginWithCustomToken (retry reseau borne, meme token garde en memoire)
   -> etat partage header/menu/espace client
+  -> client: session publique, aucune entree admin visible
   -> admin: claim + registre actif + AAL2 Google ou passkey
+     -> redirection post-connexion vers /admin
+     -> lien Admin visible dans le header
+  -> /admin direct sans claim admin -> retour silencieux vers /
   -> meme session pour lectures et mutations, sans step-up temporel
 ```
 
@@ -365,9 +369,10 @@ AnalyticsCollectorIsland + AuthProvider anonyme [C]
   -> AnalyticsProvider [C]
   -> heartbeat adaptatif + raisons init/route/visible/beacon [C]
   -> initLiveSession/syncSession/beacon + cache borne du hash de jeton [F]
-  -> analytics_sessions/{sessionId} avec journey et compteurs de raisons embarques [DB]
+  -> analytics_sessions/{sessionId} sans e-mail/IP/user-agent, journey recent borne a 25 et compteurs de raisons [DB]
   -> AdminDashboard: intentions/tendances 30 jours + miniatures du snapshot public court [C]
   -> AdminAnalytics: historique borne, cache IndexedDB, listener live et frise illustree [C]
+  -> AdminIncidentConsole: recherche support et timeline expurgee via callable AAL2 [C/F]
   -> UID/IP, courbe, bandeau live cumulatif, visiteurs et parcours [C]
 ```
 
@@ -646,7 +651,8 @@ src/kit/admin/
 |-- AdminDashboard.jsx ................ pilotage commerce, devis/tendances analytics bornes, miniatures du snapshot public, exports et maintenance rapide
 |-- AdminQuotes.jsx ................... réception et suivi des demandes de restauration
 |-- quoteAdminClient.js ............... cache court et callables protégées Devis
-|-- AdminAnalytics.jsx ................ moteur Data canonique: UID/IP, live, parcours illustres, courbes
+|-- AdminAnalytics.jsx ................ moteur Data canonique: UID pseudonyme, live, parcours bornes, courbes
+|-- AdminIncidentConsole.jsx .......... console incidents, recherche, timeline et verdict de reprise
 |-- AdminForm.jsx ..................... creation/edition annonces
 |   |-- productPublicationClient.js ... nettoyage local de reprise obsolete + attente de la release publique exacte
 |   |-- components/InstagramPublicationPreview.jsx .. apercu prive Instagram iPhone 17 Pro
@@ -675,7 +681,7 @@ src/kit/admin/
 |-- AdminLivraison.jsx ................ configuration livraison
 |-- AdminUsers.jsx .................... comptes/acces admin
 |-- AdminIPManager.jsx ................ configuration IP complementaire
-|-- AdminIPTracker.jsx ................ collecte signal IP admin
+|-- AdminIPTracker.jsx ................ compatibilite historique, non montee
 |-- AdminSEO.jsx ...................... outils SEO
 |-- AdminNewsletter.jsx ............... abonnes/informations
 |-- AdminPaymentSettings.jsx .......... Stripe Connect/carte
@@ -776,21 +782,21 @@ functions/
     |   |   |-- paymentEffectApplier.js ... order/inventaire/fait/recu/outbox atomiques
     |   |   |-- refundEffectApplier.js .... refund webhook, tentative/audit/document/outbox atomiques
     |   |   |-- commerceEffects.js ....... faits financiers/outbox deterministes
-    |   |   |-- outboxRepository.js / outboxWorker.js ... lease, dead-letter et delivery_unknown
+    |   |   |-- outboxRepository.js / outboxWorker.js ... lease, dead-letter immediat si non reprenable et delivery_unknown
     |   |   |-- financialProjection.js .. projection financiere absolue
     |   |   |-- financialRollup.js ....... deltas total/jour atomiques et idempotents
     |   |   |-- commerceDocuments.js ..... recus sandbox non fiscaux
     |   |   |-- commerceDocumentArtifact.js  PDF Node deterministe + Storage prive
     |   |   |-- commerceDocumentStorage.js .. resolver bucket Gen2 partage callable/outbox via config ou ADC
-    |   |   |-- operationsHealth.js ...... incidents, seuils et sante Gate 7A
+    |   |   |-- operationsHealth.js ...... incidents, failed/dead-letter et sante Gate 7A
     |   |   |-- fixtureScope.js / fixtureCleanup.js ... autorisation et cleanup run-scoped
     |   |   |-- checkoutAccessToken*.js ... token backend opaque rotatif
     |   |   |-- guestCheckoutCoordinator.js
     |   |   |-- boundedWorkerSweeper.js / firestoreWorkerQueries.js
     |   |   |-- reservationExpiryWorker.js
-    |   |   |-- allowedActions.js ......... actions client/admin derivees serveur
+    |   |   |-- allowedActions.js ......... actions client/admin derivees serveur, aucune apres archive
     |   |   |-- returnCase.js ............. retours/dispositions quantitatifs Gate 4
-    |   |   |-- orderCommandRepository.js . fulfillment idempotent + audit
+    |   |   |-- orderCommandRepository.js . fulfillment/archive idempotents + audit
     |   |   |-- cancellationCoordinator.js / cancellationAuditRepository.js
     |   |   |-- refundSaga*.js ............ refund Stripe reprenable et epingle
     |   |   |-- refundRepository.js ....... cumul/fait/document/outbox atomiques, sans stock
@@ -843,10 +849,14 @@ functions/
     |-- analytics/
     |   |-- constants.js
     |   |-- sessionAuthorizationCache.js ... cache borne/TTL du hash de jeton
-    |   |-- sessions.js ................. collecte active et suppression ciblee Gen2
+    |   |-- sessions.js ................. collecte pseudonymisee, parcours borne et suppression ciblee Gen2
     |   |-- sessionMaintenance.js ....... contrat G11 dry-run/precondition/audit/reprise ciblee
     |   |-- updateUserSessions.js
-    |   `-- adminIP.js
+    |   |-- adminIP.js
+    |   `-- rollups.js .................. agregats jour/mois/annee, HLL, archive Storage et callable admin
+    |-- observability/
+    |   |-- businessEvents.js ........... projection append-only des transitions critiques
+    |   `-- diagnosticTimeline.js ....... recherche admin AAL2, timeline expurgee et audit
     |-- onboarding/
     |   |-- billingGuide.js ........... callables, modes, etat backend-only
     |   `-- billingGuideContract.js ... modes, etapes, UID cible et format Billing
@@ -875,13 +885,13 @@ functions/
 
 ## 9. Exports Cloud Functions
 
-Etat final apres G12-A/B et G13 au 2026-08-23: `functions/index.js` contient
-140 exports uniques; 137 Functions sont deployees dans le sandbox (3 Gen1,
-134 Gen2). Les trois seules Gen1 sont les triggers Auth
+Etat courant au 2026-08-24: `functions/index.js` contient 150 exports uniques
+locaux; 147 Functions sont deployees dans le sandbox (3 Gen1, 144 Gen2).
+Les trois seules Gen1 sont les triggers Auth
 `grantAdminOnAuth`, `onRegisteredUserCreated` et `onRegisteredUserDeleted`.
 Toutes les autres cibles cloud conservees sont Gen2 `ACTIVE`; les quatre
 owners Scheduler commerce sont `ENABLED` et les endpoints Stripe test pointent
-uniquement vers les owners Gen2. L'ecart exact est 135 noms communs, cinq
+uniquement vers les owners Gen2. L'ecart exact est 145 noms communs, cinq
 exports Instagram legacy uniquement locaux et deux webhooks v2 uniquement
 cloud (`stripeWebhookV2Gen2`, `stripeConnectWebhookV2Gen2`) avec source et
 entree de deploiement dediees. Les cinq legacy Instagram restent explicitement
@@ -901,8 +911,8 @@ max 1 en `getcatalogpublicationstatusgen2-00003-mol`, puis la reactivation max
 sources immuables digestees et sous hold. Le wrapper local refuse toute autre
 revision/generation/digest; le soak final en cours reste dans
 `apphostingaudit/FINALISATION_MIGRATION_GEN2.md`. App Hosting sert
-`build-2026-08-22-003`, rollback prouve
-`build-2026-08-22-002`. L'ADR canonique est
+`build-2026-08-24-002`; la revision precedente immediate est
+`build-2026-08-24-001`. L'ADR canonique est
 `_DOCS/architecture/FUNCTIONS_RUNTIME_ADR.md`.
 
 Le collecteur read-only `scripts/functions-gen2-final-observe.mjs`, expose par
@@ -1040,6 +1050,12 @@ la borne temporelle et G4-A1 est fermee par deux appels admin Gen2 reussis,
 zero erreur, mise a jour idempotente et zero trafic Gen1; la compatibilite
 ancien onglet est remplacee par la preuve que la Gen1 ACTIVE, son endpoint,
 son IAM et son code sont preserves.
+
+Etat source courant du 2026-08-24: cette collecte IP historique est desactivee.
+`AdminIPTracker` n'est plus monte, l'onglet `ip_manager` est retire et
+`trackAdminIPGen2` repond en no-op sans lecture ni ecriture. Les nouvelles
+sessions ne lisent plus l'IP et ne stockent plus `ipMeta`.
+
 G4-A2 est fermee: `updateUserSessionsGen2` partage
 le handler de la Gen1, utilise `analytics-runtime`, CPU Gen1, concurrence 1,
 min 0/max 1 et App Check. Le registre client cible maintenant
@@ -1273,7 +1289,13 @@ Firestore
 |-- sys_catalog_publication_builds/{buildId}
 |   `-- journal borne des builds catalogue
 |-- sys_catalog_media_gc/{id} ......... quarantaine media
-|-- analytics_sessions/{sessionId} .... session + tableau `journey`, expiration 366 j
+|-- analytics_sessions/{sessionId} .... session minimisee + `journey` recent max 25, expiration cible 90 j
+|-- analytics_session_facts/{sessionId} fait d'idempotence du rollup, TTL 120 j
+|-- analytics_rollup_days/{day} ........ total permanent + shards quotidiens temporaires
+|-- analytics_rollup_months/{month} .... agregat permanent compact
+|-- analytics_rollup_years/{year} ...... agregat permanent compact pour l'historique complet
+|-- business_events/{eventId} ......... journal metier minimal append-only, backend-only
+|-- sys_counters/orders ............... prochain numero humain de commande, transactionnel
 |-- sales_stats_daily/{id}
 |-- order_stats_projections/{orderId} . ledger backend-only, retention de la commande
 `-- inventory_stats/{id}
@@ -1289,6 +1311,7 @@ Storage
 |-- commerce-documents/v2/... ......... PDF commande prives, lecture directe interdite
 |-- quote-requests/v1/{quoteId}/... ... photos devis privées, URL admin signée quinze minutes
 |-- admin-invoices/v1/... ............. PDF factures emises prives, lecture directe interdite
+|-- bucket prive analytics archive .... JSONL gzip pseudonymise, Coldline 30 j, suppression 730 j
 `-- autres chemins admin .............. contenus hero/about selon configuration
 ```
 

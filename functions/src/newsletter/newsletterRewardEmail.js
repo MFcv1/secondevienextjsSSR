@@ -1,6 +1,8 @@
 'use strict';
 
 const {
+    EMAIL_COLORS,
+    EMAIL_FONT_STACK,
     escapeHtml,
     renderCallout,
     renderEmailShell,
@@ -24,17 +26,17 @@ function newsletterRewardEmail(reward, senderEmail, siteUrl) {
         html: renderEmailShell({
             preheader: `Votre code ${code} est prêt.`,
             eyebrow: 'Avantage newsletter',
-            title: `Vous avez remporté ${percentage} %`,
-            intro: 'Votre avantage est enregistré. Retrouvez-le à tout moment dans votre espace client avec la même adresse e-mail.',
+            title: 'Votre avantage est prêt.',
+            intro: `Votre réduction de ${percentage} % est enregistrée. Retrouvez-la à tout moment dans votre espace client avec la même adresse e-mail.`,
             summaryHtml: renderSummaryGrid([
                 { label: 'Réduction', value: `${percentage} %` },
                 { label: 'Code', value: code },
                 { label: 'Valable jusqu’au', value: expiryLabel }
             ]),
             contentHtml: `
-                <div style="border:1px solid #ded7cc;border-radius:14px;padding:20px;text-align:center;">
-                    <div style="color:#6f675e;font:700 10px/1.4 Arial,Helvetica,sans-serif;letter-spacing:1.2px;text-transform:uppercase;">Votre code personnel</div>
-                    <div style="margin-top:9px;color:#1c1917;font:700 26px/1.2 Georgia,'Times New Roman',serif;letter-spacing:1.5px;">${escapeHtml(code)}</div>
+                <div style="padding:22px 0;border-top:1px solid ${EMAIL_COLORS.line};border-bottom:1px solid ${EMAIL_COLORS.line};text-align:center;">
+                    <div style="color:${EMAIL_COLORS.muted};font-family:${EMAIL_FONT_STACK};font-size:13px;line-height:1.4;font-weight:400;">Votre code personnel</div>
+                    <div style="margin-top:10px;color:${EMAIL_COLORS.text};font-family:${EMAIL_FONT_STACK};font-size:26px;line-height:1.2;font-weight:600;letter-spacing:1px;">${escapeHtml(code)}</div>
                 </div>
             `,
             calloutHtml: renderCallout({

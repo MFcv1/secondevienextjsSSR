@@ -12,10 +12,11 @@ const returns = require('./v2ReturnCommands');
 const orders = require('./v2OrderQueries');
 const delivery = require('./v2DeliveryPolicyAdmin');
 const promotions = require('./v2PromotionCodes');
+const { runObserved } = require('../../helpers/observability');
 
 const REGION = 'europe-west1';
 
-const callable = (legacyFunction, options = {}) => onCall({
+const callable = (functionName, legacyFunction, options = {}) => onCall({
     region: REGION,
     enforceAppCheck: true,
     cpu: 'gcf_gen1',
@@ -25,7 +26,11 @@ const callable = (legacyFunction, options = {}) => onCall({
     memory: '256MiB',
     timeoutSeconds: 60,
     ...options
-}, (request) => legacyFunction.run(request.data, request));
+}, (request) => runObserved(
+    `${functionName}Gen2`,
+    request,
+    (data) => legacyFunction.run(data, request)
+));
 
 const fixed = {
     adjustInventoryAdmin: product.adjustInventoryAdmin,
@@ -73,13 +78,13 @@ const secretOptions = Object.freeze({
 
 const exported = Object.fromEntries(Object.entries(fixed).map(([name, legacyFunction]) => [
     `${name}Gen2`,
-    callable(legacyFunction, {
+    callable(name, legacyFunction, {
         ...(name === 'prepareCommerceDocumentDelivery' ? { memory: '512MiB' } : {}),
         ...(secretOptions[name] || {})
     })
 ]));
 
-exported.createOrderGen2 = callable(createOrder, secretOptions.createOrder);
-exported.getOrderStatusClientGen2 = callable(getOrderStatusClient);
+exported.createOrderGen2 = callable('createOrder', createOrder, secretOptions.createOrder);
+exported.getOrderStatusClientGen2 = callable('getOrderStatusClient', getOrderStatusClient);
 
 module.exports = exported;

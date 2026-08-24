@@ -194,9 +194,18 @@ reste en finalisation post-audit selon
 retire individuellement 120 Gen1 et leurs fenetres de rollback ont expire sur
 l'autorisation utilisateur. G12-B a retire leurs exports et les trois modules
 commerce exclusivement legacy, sans retirer IAM, secret, donnee ou trigger
-Auth. L'inventaire final vaut 140 exports locaux / 137 Functions cloud / 3
-Gen1 / 134 Gen2. Les trois seules Gen1 sont `grantAdminOnAuth`,
+Auth. La topologie cloud qualifiee valait alors 137 Functions cloud / 3 Gen1 / 134
+Gen2. Le source local valait alors 147 exports: les 140 qualifies plus sept
+exports d'observabilite encore en attente. Les trois seules Gen1 sont `grantAdminOnAuth`,
 `onRegisteredUserCreated` et `onRegisteredUserDeleted`.
+
+Depuis le 2026-08-24, l'observabilite et les rollups analytics sont actifs sur
+le sandbox. La topologie courante vaut 150 exports locaux / 147 Functions cloud
+/ 144 Gen2 / 3 triggers Auth Gen1. App Hosting sert
+`build-2026-08-24-002`, avec `build-2026-08-24-001` comme revision precedente
+immediate. Le bucket prive europeen
+`secondevienextjsssr-analytics-archive-eu` porte les archives pseudonymisees et
+les sauvegardes Firestore, avec acces uniforme et prevention d'acces public.
 
 La fenetre historique G13 couvre sept jours mais seulement environ douze
 minutes apres la fin de G12-A; elle ne prouve pas sept jours de la revision

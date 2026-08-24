@@ -6,7 +6,7 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
 import { GCLOUD_GEN2_TARGETS, buildGcloudGen2DeployArgs } from '../scripts/deploy-functions-targeted.mjs';
-import { EXPECTED_CURRENT_SOURCE_COUNT, PARALLEL_MIGRATION_EXPORTS, extractLocalExports } from '../scripts/functions-gen2-inventory.mjs';
+import { ACTIVE_OBSERVABILITY_EXPORTS, EXPECTED_CURRENT_SOURCE_COUNT, PARALLEL_MIGRATION_EXPORTS, PENDING_OBSERVABILITY_EXPORTS, extractLocalExports } from '../scripts/functions-gen2-inventory.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
@@ -52,7 +52,7 @@ test('G7 reconciles the inventory extractor through G6 and the 14 G7 exports', (
   assert.equal(exports.length, EXPECTED_CURRENT_SOURCE_COUNT);
   assert.equal(PARALLEL_MIGRATION_EXPORTS.size, 119);
   assert.deepEqual(
-    exports.filter(({ name }) => name.endsWith('Gen2') && !PARALLEL_MIGRATION_EXPORTS.has(name)),
+    exports.filter(({ name }) => name.endsWith('Gen2') && !PARALLEL_MIGRATION_EXPORTS.has(name) && !PENDING_OBSERVABILITY_EXPORTS.has(name) && !ACTIVE_OBSERVABILITY_EXPORTS.has(name)),
     []
   );
 });

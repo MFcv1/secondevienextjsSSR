@@ -479,6 +479,56 @@ test('admin order reader exposes one bounded resumable Stripe refund reference',
     assert.equal(serialized.refundAttemptReadError, false);
 });
 
+test('admin order list excludes soft-archived orders from the active projection', async () => {
+    const active = makeOrder({ id: 'order-active-reader' });
+    const archived = {
+        ...makeOrder({ id: 'order-archived-reader' }),
+        archivedAt: '2026-08-24T02:00:00.000Z',
+        archivedBy: 'admin-reader',
+        archiveReason: 'archive durable depuis le back-office'
+    };
+    const snapshots = [active, archived].map((order) => ({
+        id: order.id,
+        data: () => {
+            const { id: _ignored, ...stored } = order;
+            return stored;
+        },
+        ref: {
+            collection: () => {
+                throw new Error('refund lookup forbidden without refund request');
+            }
+        }
+    }));
+    const handler = createListOrdersAdminHandler({
+        authorize: async () => ({ access: { active: true } }),
+        dbFactory: () => ({
+            collection: (name) => {
+                assert.equal(name, 'orders');
+                return {
+                    orderBy: (field, direction) => {
+                        assert.equal(field, 'createdAt');
+                        assert.equal(direction, 'desc');
+                        return {
+                            limit: (value) => {
+                                assert.equal(value, 25);
+                                return {
+                                    get: async () => ({
+                                        size: snapshots.length,
+                                        docs: snapshots
+                                    })
+                                };
+                            }
+                        };
+                    }
+                };
+            }
+        })
+    });
+    const result = await handler({}, { auth: { uid: 'admin-reader' } });
+    assert.deepEqual(result.orders.map((order) => order.id), ['order-active-reader']);
+    assert.equal(result.nextCursor, null);
+});
+
 test('order query guards reject invalid pagination and authorize before Firestore', async () => {
     assert.equal(normalizePageSize(undefined), 25);
     assert.throws(() => normalizePageSize(51), (error) => error.code === 'invalid-argument');

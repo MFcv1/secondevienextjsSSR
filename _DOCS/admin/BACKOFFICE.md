@@ -12,7 +12,27 @@ Etat actif:
 
 ## 1. Architecture
 
-`/admin` est une route dynamique, `noindex`, montee par `AdminAppIsland`. Les grandes vues sont chargees avec `React.lazy` pour ne pas placer tout le back-office dans le bundle initial. La route ne lit jamais le catalogue public avant l'authentification. Une fois l'acces admin fort etabli, Stats charge le catalogue public court en parallele de ses agregats afin de resoudre les miniatures des meubles en tendance; ce chargement visuel ne bloque pas les statistiques.
+`/admin` est une route dynamique, `noindex`, montee par `AdminAppIsland`. Elle
+n'expose aucun portail de connexion autonome: la galerie et son bouton
+`Connexion` constituent l'unique entree visible. Une visite directe sans
+session, avec la session Firebase anonyme d'analytics ou avec un compte client
+est renvoyee silencieusement vers `/`. Apres une connexion publique, la
+resolution d'un claim admin redirige vers `/admin` et revele le lien `Admin`
+du header. Cette discretion ne participe pas a la decision de securite, qui
+reste appliquee par claims, registre actif, AAL2, App Check, Rules et Functions.
+Les grandes vues sont chargees avec `React.lazy` pour ne pas placer tout le
+back-office dans le bundle initial. La route ne lit jamais le catalogue public
+avant l'authentification. Une fois l'acces admin fort etabli, Stats charge le
+catalogue public court en parallele de ses agregats afin de resoudre les
+miniatures des meubles en tendance; ce chargement visuel ne bloque pas les
+statistiques.
+
+Le sandbox expose l'onglet lazy `Incidents`. Il appelle uniquement
+`getDiagnosticTimelineAdminGen2`, exige l'admin fort AAL2 et retourne une
+timeline expurgee par commande, paiement, remboursement, correlation ou e-mail
+client recherche cote serveur. L'e-mail recherche n'est ni renvoye ni logue;
+chaque consultation ecrit un audit hashe. Aucun bouton de reprise financiere
+directe n'est expose dans cette console.
 
 L'interface commune de connexion est conservee. L'acces admin repose sur
 Firebase Auth, claims, registre `sys_admin_access` et assurance AAL2 Google ou
@@ -49,7 +69,6 @@ Le regroupement est porte par `ADMIN_NAV_GROUPS` dans `AdminAppIsland`; `AdminSi
 | `returns` | Retours | `AdminReturns` | remboursements Stripe |
 | `livraison` | Livraison | `AdminLivraison` | tarifs et configuration livraison |
 | `users` | Clients | `AdminUsers` | comptes et acces admin |
-| `ip_manager` | Securite | `AdminIPManager` | suivi/configuration IP complementaire |
 | `seo` | SEO | `AdminSEO` | controle contenu/indexation |
 | `newsletter` | Infos | `AdminNewsletter` | abonnés issus notamment du jeu galerie, recherche et export |
 | `payment_settings` | Paiement | `AdminPaymentSettings` | Stripe Connect et activation carte |
@@ -466,9 +485,11 @@ serveur.
 L'archivage d'une publication utilise une modale applicative, pas
 `window.confirm`. La cle de commande est creee a l'ouverture puis conservee
 pendant les reprises; l'interface attend la reponse callable et affiche succes
-ou erreur. Le serveur applique une archive souple idempotente (`status:
-archived`, audit et historique de stock conserves), jamais une suppression
-optimiste locale.
+ou erreur. Pour une commande, le serveur conserve la projection financiere et
+ecrit `archivedAt`, `archivedBy` et `archiveReason`; toute action ulterieure est
+refusee et la lecture admin l'exclut de la liste active. Pour un produit, le
+statut devient `archived`. Dans les deux cas, l'audit et l'historique de stock
+sont conserves et aucune suppression optimiste locale n'est permise.
 
 L'expedition n'utilise plus de dialogue natif. Une modale integree distingue
 explicitement l'expedition avec suivi, sans suivi et l'annulation sans effet.
@@ -759,13 +780,22 @@ affiche pour chaque statut son volume et sa part, sans grandes lignes empilees.
 
 Cette lecture analytics est non bloquante: son echec laisse les agregats commerce, l'inventaire et les commandes recentes disponibles. Une couverture de 500 documents est signalee comme plafonnee. `quote_email_opened` reste libelle comme ouverture d'un brouillon e-mail; Stats ne presente jamais ce signal comme un devis recu, envoye ou accepte.
 
-`AdminAnalytics` reprend le moteur de Tous a Table: lecture bornee a 5 000 sessions sur un an, cache IndexedDB de six heures, actualisation manuelle de l'historique, ecoute Firestore des 100 sessions les plus recentes, visiteurs uniques dedupliques par UID Firebase puis IP serveur, ratio UID/IP, regroupement par jour et visiteur, sessions live et parcours. Une session est consideree en ligne lorsque sa derniere activite remonte a moins de 30 secondes. Le bandeau live apparait sans actualisation manuelle et cumule les sessions actives avec leur ville et leur appareil.
+`AdminAnalytics` lit maintenant les rollups serveur permanents pour les KPI et
+graphiques, y compris la periode `Tout`. La liste recente est independante:
+250 projections legeres par page, maximum 1 000 visibles. Le parcours borne
+est charge uniquement via le callable admin AAL2 au clic sur `Tracer`; aucune
+lecture directe de `analytics_sessions` ou IP brute n'est autorisee au
+navigateur. Le cache local accelere la liste mais ne conditionne jamais
+l'historique affiche a une nouvelle administratrice.
 
 Le parcours reste vertical sous 1024 px et devient une frise en grille sur desktop: les etapes occupent une ligne tant que la largeur le permet, puis reprennent naturellement a la ligne suivante, sans barre de defilement horizontale. Chaque etape desktop reserve un media 66x84 px: les etapes `detail` affichent la premiere variante `thumb320` du produit lorsqu'elle existe; les sous-categories `buffets`, `armoires`, `miroirs` et `commodes` reprennent les memes images `*-config-rail.webp` que les quatre cartes sous le hero de la galerie; les categories parentes `meubles`, `assises`, `eclairage` et `decorations` utilisent les illustrations WebP dediees de `public/images/analytics`; Galerie, A propos et Devis utilisent des visuels editoriaux differencies. Les images sont resolues depuis les assets ou le catalogue deja charges et n'alourdissent pas les documents analytics.
 
 Lorsqu'une etape porte un identifiant, le parcours affiche le prefixe compact `ID`: le bleu ardoise des fiches produit et le vert sauge des categories permettent de distinguer une reference produit d'un slug de categorie; les identifiants de contenu residuels restent neutres.
 
-Les sessions admin sont exclues a trois niveaux: le collecteur ne demarre pas quand les claims admin sont actifs, `trackAdminIP` maintient le registre des IP admin, puis `updateUserSessions` supprime les sessions recentes de l'IP lors d'une connexion admin. L'e-mail proprietaire reste un secret serveur et n'est jamais embarque dans le bundle client.
+Les sessions admin sont exclues par les claims: le collecteur ne demarre pas
+pour un admin. Le tracker et l'onglet IP ne sont plus montes; `trackAdminIP`
+reste temporairement un no-op de compatibilite. `updateUserSessions` cible une
+seule session prouvee, sans requete par e-mail ou IP.
 
 ## 8. Maintenance
 

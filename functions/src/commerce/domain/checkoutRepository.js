@@ -40,6 +40,7 @@ function createCheckoutRepository({ db, refs, ids, clock }) {
         'fixtureScope',
         'connectAccount',
         'checkoutIdentity',
+        'orderNumberCounter',
         'order',
         'attempt',
         'product',
@@ -284,7 +285,16 @@ function createCheckoutRepository({ db, refs, ids, clock }) {
             const expiresAt = authorizedFixtureContext?.expiresAt
                 || checkoutExpiresAt
                 || resolveCheckoutExpiry(policy, clock.now());
+            const orderNumberCounterRef = refs.orderNumberCounter();
+            const orderNumberCounterSnapshot = await transaction.get(orderNumberCounterRef);
+            const orderNumber = orderNumberCounterSnapshot.exists
+                ? Number(orderNumberCounterSnapshot.data()?.nextOrderNumber)
+                : 1;
+            if (!Number.isSafeInteger(orderNumber) || orderNumber < 1) {
+                throw checkoutError('COMMERCE_ORDER_NUMBER_COUNTER_INVALID');
+            }
             let order = createOrderV2({
+                orderNumber,
                 userId: ownerUid,
                 clientOrderId: validated.value.clientOrderId,
                 requestHash: validated.requestHash,
@@ -445,6 +455,12 @@ function createCheckoutRepository({ db, refs, ids, clock }) {
                 });
             }
             transaction.set(refs.order(orderId), order);
+            transaction.set(orderNumberCounterRef, {
+                schemaVersion: 1,
+                nextOrderNumber: orderNumber + 1,
+                lastAssignedNumber: orderNumber,
+                updatedAt: now
+            });
             transaction.set(refs.attempt(orderId, attemptId), attempt);
             transaction.set(identityRef, {
                 schemaVersion: 2,

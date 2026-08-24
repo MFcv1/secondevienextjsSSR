@@ -45,7 +45,7 @@ function createOutboxWorker({
                 leaseToken,
                 nowMillis,
                 suppressedAt: clock.now(),
-                purgeAt: new Date(nowMillis + retentionMs).toISOString()
+                purgeAt: new Date(nowMillis + retentionMs)
             });
         }
         try {
@@ -61,7 +61,7 @@ function createOutboxWorker({
                     leaseToken,
                     nowMillis,
                     suppressedAt: clock.now(),
-                    purgeAt: new Date(nowMillis + retentionMs).toISOString(),
+                    purgeAt: new Date(nowMillis + retentionMs),
                     reason: response.reason || 'stale_effect'
                 });
             }
@@ -73,7 +73,7 @@ function createOutboxWorker({
                 nowMillis: clock.nowMillis(),
                 providerMessageId: response.providerMessageId,
                 sentAt: clock.now(),
-                purgeAt: new Date(clock.nowMillis() + retentionMs).toISOString()
+                purgeAt: new Date(clock.nowMillis() + retentionMs)
             });
         } catch (cause) {
             try {
@@ -88,7 +88,12 @@ function createOutboxWorker({
                     await repository.markFailed(outboxId, {
                         leaseToken,
                         nowMillis: clock.nowMillis(),
-                        errorMessage: cause?.code || cause?.message || 'unknown'
+                        errorMessage: cause?.code || cause?.message || 'unknown',
+                        // Une erreur d'authentification/configuration ne guerira
+                        // pas avec huit retries SMTP identiques. Elle part
+                        // immediatement en dead-letter et devient visible par la
+                        // supervision.
+                        ...(cause?.retryable === false ? { maxAttempts: 1 } : {})
                     });
                 }
             } catch (failureCause) {

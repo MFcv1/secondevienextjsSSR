@@ -100,6 +100,7 @@ function healthCountersAreZero(counters = {}) {
   return [
     'dueInbox',
     'expiredInboxLeases',
+    'failedOutbox',
     'deadLetterOutbox',
     'deliveryUnknown',
     'expiredHolds',
@@ -108,6 +109,17 @@ function healthCountersAreZero(counters = {}) {
     'connectDrift',
     'projectionDivergences'
   ].every((key) => counters[key] === 0);
+}
+
+async function readLiveOutboxFailureCounters(db) {
+  const [failed, deadLetter] = await Promise.all([
+    db.collection('commerce_outbox').where('status', '==', 'failed').count().get(),
+    db.collection('commerce_outbox').where('status', '==', 'dead_letter').count().get()
+  ]);
+  return {
+    failedOutbox: Number(failed.data().count || 0),
+    deadLetterOutbox: Number(deadLetter.data().count || 0)
+  };
 }
 
 function productPrice(product) {
@@ -218,14 +230,22 @@ async function main() {
       `artifacts/secondevie/public/data/furniture/${productId}`
     ))
   };
-  const [controlSnap, operationsSnap, runSnap] = await Promise.all([
+  const [controlSnap, operationsSnap, runSnap, liveOutboxFailures] = await Promise.all([
     refs.control.get(),
     refs.operations.get(),
-    refs.run ? refs.run.get() : Promise.resolve(null)
+    refs.run ? refs.run.get() : Promise.resolve(null),
+    readLiveOutboxFailureCounters(db)
   ]);
   invariant(controlSnap.exists && operationsSnap.exists, 'V2_ALL_PREFLIGHT_EVIDENCE_MISSING');
   const control = controlSnap.data();
   const operations = operationsSnap.data();
+  const operationsCounters = {
+    ...(operations.counters || {}),
+    ...liveOutboxFailures
+  };
+  const operationsStatus = Object.values(liveOutboxFailures).some((count) => count > 0)
+    ? 'stop'
+    : operations.status;
 
   if (action === 'status') {
     console.log(JSON.stringify({
@@ -240,8 +260,8 @@ async function main() {
       activePolicyVersion: control.activePolicyVersion,
       activeRunId: control.v2AllRunId || null,
       expiresAt: control.v2AllExpiresAt?.toDate?.().toISOString?.() || null,
-      operationsStatus: operations.status,
-      counters: operations.counters || {}
+      operationsStatus,
+      counters: operationsCounters
     }));
     return;
   }
@@ -307,8 +327,8 @@ async function main() {
       control.newCheckoutMode === FALLBACK_CHECKOUT_MODE &&
         control.adminMutationMode === 'read_only' &&
         control.offlinePaymentMode === 'off' &&
-        operations.status === 'healthy' &&
-        healthCountersAreZero(operations.counters) &&
+        operationsStatus === 'healthy' &&
+        healthCountersAreZero(operationsCounters) &&
         !runSnap.exists,
       'V2_ALL_DISCOVERY_CONTROL_NOT_CLOSED'
     );
@@ -321,7 +341,7 @@ async function main() {
       environment,
       runId,
       controlRevision: control.controlRevision,
-      operationsStatus: operations.status,
+      operationsStatus,
       buyerUidHash: hash(buyer.uid),
       productIds: products.map((product) => product.productId),
       products
@@ -350,8 +370,8 @@ async function main() {
     control.offlinePaymentMode === 'off' &&
       typeof control.activePolicyVersion === 'string' &&
       typeof control.releaseManifestId === 'string' &&
-      operations.status === 'healthy' &&
-      healthCountersAreZero(operations.counters),
+      operationsStatus === 'healthy' &&
+      healthCountersAreZero(operationsCounters),
     'V2_ALL_PREFLIGHT_INVARIANT_FAILED'
   );
 
@@ -376,7 +396,7 @@ async function main() {
       environment,
       runId,
       controlRevision: control.controlRevision,
-      operationsStatus: operations.status,
+      operationsStatus,
       sourcePolicyVersion: control.activePolicyVersion,
       v2AllPolicyVersion: V2_ALL_POLICY_VERSION,
       buyerUidHash: hash(buyer.uid),

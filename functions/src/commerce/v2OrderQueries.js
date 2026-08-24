@@ -605,8 +605,11 @@ function createListOrdersAdminHandler({
             role: 'admin',
             aal2: true
         };
+        const activeOrders = result.snapshot.docs.filter(
+            (snapshot) => !snapshot.data()?.archivedAt
+        );
         return {
-            orders: await Promise.all(result.snapshot.docs.map(
+            orders: await Promise.all(activeOrders.map(
                 (snapshot) => serializeAdminOrder(snapshot, actor)
             )),
             nextCursor: result.nextCursor

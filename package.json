@@ -84,7 +84,7 @@
     "test:commerce:rules": "node tests/commerce/run-rules-containment.cjs --suite rules-v2",
     "test:commerce:faults": "node --require ./tests/commerce/helpers/no-network.cjs --test tests/commerce/faults/idempotency.test.cjs tests/commerce/faults/gate3-saga.test.cjs tests/commerce/faults/gate3-workers.test.cjs tests/commerce/faults/gate4-refund.test.cjs",
     "test:commerce": "pnpm run test:commerce:runner && pnpm run test:commerce:containment && pnpm run test:commerce:unit && pnpm run test:commerce:ui && pnpm run test:commerce:browser && pnpm run test:commerce:property && pnpm run test:commerce:faults && pnpm run test:commerce:rules:containment && pnpm run test:commerce:firebase && pnpm run test:commerce:rules",
-    "test:analytics": "node scripts/verify-analytics-reliability.mjs",
+    "test:analytics": "node scripts/verify-analytics-reliability.mjs && node --test tests/analytics-rollups-contract.test.cjs",
     "test:retention": "node --test tests/data-retention-contract.test.cjs",
     "test:deployment-cache": "node --test tests/deployment-cache-contract.test.mjs",
     "test:functions-g0": "node --test tests/functions-gen2-g0.test.mjs tests/functions-gen2-monitoring.test.mjs",

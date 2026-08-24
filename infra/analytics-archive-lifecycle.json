@@ -1,0 +1,41 @@
+{
+  "rule": [
+    {
+      "action": {
+        "type": "SetStorageClass",
+        "storageClass": "COLDLINE"
+      },
+      "condition": {
+        "age": 30,
+        "matchesPrefix": [
+          "private/analytics-archives/v1/"
+        ],
+        "matchesStorageClass": [
+          "STANDARD"
+        ]
+      }
+    },
+    {
+      "action": {
+        "type": "Delete"
+      },
+      "condition": {
+        "age": 730,
+        "matchesPrefix": [
+          "private/analytics-archives/v1/"
+        ]
+      }
+    },
+    {
+      "action": {
+        "type": "Delete"
+      },
+      "condition": {
+        "age": 30,
+        "matchesPrefix": [
+          "private/firestore-backups/"
+        ]
+      }
+    }
+  ]
+}

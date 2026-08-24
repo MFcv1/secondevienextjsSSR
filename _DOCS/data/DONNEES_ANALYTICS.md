@@ -171,11 +171,10 @@ Contrat du moteur:
 
 - le collecteur attend 1,5 seconde et ignore les robots courants;
 - chaque visiteur obtient un UID Firebase anonyme persistant si aucun compte n'est connecte;
-- l'IP est determinee cote Function a partir des en-tetes proxy, jamais fournie par le client;
-- l'identite fiable utilise le UID Firebase, puis l'IP serveur, puis l'ID session si l'IP manque;
-- le ratio UID/IP mesure l'ecart entre visiteurs uniques et IP uniques;
+- aucune IP, adresse e-mail ou chaine user-agent brute n'est stockee;
+- l'identite fiable utilise un UID Firebase opaque, puis un ID de session pseudonymise;
 - la premiere page et chaque changement de route sont synchronises en moins d'une seconde apres initialisation;
-- la synchronisation periodique est adaptative: le prochain heartbeat est planifie 15 secondes apres la synchronisation la plus recente et uniquement lorsque l'onglet est visible; une route ou un retour visible evite ainsi un heartbeat immediatement redondant;
+- le pipeline deploye planifie le prochain heartbeat 60 secondes apres la synchronisation la plus recente et uniquement lorsque l'onglet est visible; une route ou un retour visible evite ainsi un heartbeat immediatement redondant;
 - une route demandee pendant un appel en vol est mise en attente et conservee; un heartbeat devenu redondant pendant cet appel est abandonne;
 - le beacon de fermeture envoie le dernier parcours et utilise un `fetch keepalive` si le navigateur refuse sa mise en file;
 - un jeton aleatoire n'est conserve qu'en version hachee dans Firestore et protege reprise/synchronisation;
@@ -184,17 +183,19 @@ Contrat du moteur:
 - `lastSyncReason` et `syncReasonCounts` instrumentent `init`, route, heartbeat, visibilite et beacons dans la meme ecriture de session, sans operation Firestore supplementaire;
 - une reprise exige le meme UID, le bon jeton, une activite de moins d'une heure et une session non admin;
 - une session explicitement fermee ne peut etre reprise que pendant une grace de 15 secondes, afin de tolerer un rechargement immediat sans fusionner un retour plusieurs minutes plus tard;
-- l'admin lit au maximum 5 000 sessions commencees dans la derniere annee;
+- l'admin lit les rollups permanents jour/mois/annee pour les statistiques et
+  au maximum 1 000 projections de sessions recentes, par pages de 250;
 - l'onglet Stats effectue une lecture distincte, sans listener, bornee a 500 sessions commencees dans les 30 derniers jours pour les intentions devis et tendances produits; une erreur de cette lecture ne bloque pas les agregats commerce;
 - les vues et visiteurs restent calcules exclusivement depuis `analytics_sessions`; le classement « Meubles en tendance » est ensuite filtre par les identifiants/slugs du catalogue public courant, afin qu'un meuble supprime disparaisse immediatement sans effacer l'historique de visite; le catalogue ne sert aussi qu'a resoudre les miniatures, sans lecture de `furniture`;
-- un cache IndexedDB de six heures evite une nouvelle lecture complete a chaque ouverture;
-- l'etat live est derive d'une activite de moins de 30 secondes et l'admin ecoute en temps reel les 100 sessions les plus recentes;
+- le cache IndexedDB ne contient que les projections recentes expurgees; il
+  n'est jamais la source des statistiques historiques;
+- le detail du parcours, borne aux 25 dernieres etapes, est lu uniquement au clic;
 - les erreurs analytics ne bloquent jamais checkout, Auth ou navigation;
 - ne pas stocker plus de donnees personnelles que necessaire.
 - les callables navigateur imposent App Check; le beacon de fermeture exige
   origine exacte, JSON borne et jeton de synchronisation opaque;
-- `initLiveSession` ignore tout type `admin` fourni par le navigateur et derive
-  le type depuis Auth et le registre IP serveur;
+- `initLiveSession` ignore tout type fourni par le navigateur et derive le type
+  uniquement depuis Auth;
 - aucune IP n'est envoyee a un service de geolocalisation tiers; `geo` reste
   `Unknown` tant qu'un fournisseur HTTPS contractualise n'est pas valide;
 - les logs de conversion ne contiennent ni e-mail ni IP bruts.
@@ -202,12 +203,12 @@ Contrat du moteur:
 Exclusion admin:
 
 - le collecteur ne cree pas de session lorsque les claims admin sont actifs;
-- `trackAdminIP` enregistre l'IP d'un UID present et actif dans `sys_admin_access`;
-- `initLiveSession` classe une IP admin comme session `admin`;
-- `updateUserSessions` supprime les sessions recentes de l'IP lors de la connexion d'un admin et convertit les sessions anonymes lors de la connexion d'un client;
+- le collecteur admin n'est plus monte et `trackAdminIP` est un no-op de compatibilite;
+- `initLiveSession` ne lit ni ne stocke l'IP;
+- `updateUserSessions` cible uniquement la session prouvee par `sessionId` et `syncToken`;
 - `updateUserSessions` determine ce statut depuis `sys_admin_access` sans relire le profil `users/{uid}`, dont le resultat etait auparavant toujours ecrase par le registre;
 - les sessions `type == admin` sont exclues de tous les calculs du panneau Data;
-- l'e-mail proprietaire est lu depuis le secret serveur `SUPER_ADMIN_EMAIL`, jamais code en dur cote client.
+- aucun e-mail brut n'est stocke dans les sessions analytics.
 
 Migration Gen2 sandbox: `updateUserSessionsGen2` est ACTIVE avec le meme handler
 que la Gen1, App Check et le runtime dedie `analytics-runtime`. La revision
@@ -273,7 +274,12 @@ raison `beforeunload`, zero erreur Gen2 et zero nouvel appel Gen1. G4-A5/G4
 sont fermees; la Gen1 et le rollback build `003` restent preserves jusqu'a
 G12-A.
 
-Limite acceptee pour cette version: le panneau repose sur une lecture bornee et des calculs navigateur, sans rollup. Au-dela de 5 000 documents dans la fenetre, l'interface signale une couverture plafonnee. L'architecture haut trafic sera traitee dans une phase distincte demandee par l'utilisateur.
+Depuis le 2026-08-24, les totaux historiques ne dependent plus d'un scan des
+sessions. `aggregateAnalyticsSessionGen2` materialise des faits idempotents et
+huit shards quotidiens; `maintainAnalyticsGen2` compacte les jours, mois et
+annees. Les visiteurs uniques sont une estimation HLL pseudonymisee. La vue
+`Tout` reste donc disponible depuis le debut du site sans relire tous les
+parcours.
 
 Optimisation de cout locale au 2026-07-17: la cadence visible, le seuil live, le parcours et la securite de reprise restent inchanges. Le cache de hash et l'arbitrage des synchronisations visent uniquement les relectures et appels rapproches observes dans la fenetre Data Access. Leur gain exact doit etre mesure apres deploiement sandbox avec le protocole de [AUDIT_COUTS_FIRESTORE.md](AUDIT_COUTS_FIRESTORE.md).
 
@@ -293,23 +299,26 @@ Dans Stats, ce signal est donc affiche comme `Brouillons e-mail ouverts`. Le tun
 
 ## 8. Retention
 
-Le sandbox applique des bornes explicites a l'ecriture et dispose d'une purge
-manuelle idempotente. Il n'existe volontairement aucune tache planifiee de
-suppression: `scripts/purge-expired-firestore.cjs` est un outil operateur en
-dry-run par defaut; `--commit` exige une decision distincte. Aucune suppression
-n'a ete lancee pendant la passe du 2026-08-12.
+Le sandbox applique des bornes explicites a l'ecriture. Les TTL Firestore
+suppriment automatiquement les donnees temporaires arrivees a expiration.
+`maintainAnalyticsGen2`, toutes les quinze minutes, archive d'abord les sessions
+eligibles dans le bucket prive puis entretient les rollups. L'outil operateur
+`scripts/purge-expired-firestore.cjs` reste disponible en dry-run pour les
+collections qui ne relevent pas de cette maintenance.
 
 | Donnees | Finalite/acces | Borne sandbox |
 | --- | --- | --- |
-| `analytics_sessions` | mesure produit, admin fort en lecture | 366 jours, `expireAt` a la creation |
-| anciens rollups analytics | statistiques historiques techniques | 366 jours par timestamp/date |
+| `analytics_sessions` | detail recent, acces uniquement par callable admin AAL2 | 90 jours, TTL cloud active |
+| `analytics_session_facts` | idempotence des rollups | 120 jours, TTL cloud active |
+| `analytics_rollup_days/months/years` | statistiques historiques pseudonymisees | racines compactes permanentes; shards quotidiens 400 jours avec TTL |
+| archive Storage privee | parcours pseudonymises compresses | Coldline apres 30 jours, suppression apres 730 jours |
 | `sys_ratelimit`, `sys_idempotency` | anti-abus et idempotence, backend-only | 30 jours maximum ou expiration explicite |
 | audits securite, Stripe Connect, devis et Meta | imputabilite/support, backend-only | 366 jours, `expireAt` |
 | tirages/gains newsletter et etats OAuth Meta temporaires | anti-rejeu et reprise, Functions uniquement | expiration explicite, fallback 30 jours |
 | promotions inactives sans redemption | configuration commerciale backend-only | 366 jours apres expiration, purge operateur uniquement |
 | redemptions et compteurs promotionnels lies a une commande | preuve de montant et anti-double usage, backend-only | meme retention que la commande; aucune purge generique |
 | `affiliate_clicks` | attribution bornee, backend-only | 90 jours |
-| registre `admin_ips` | exclusion analytics des administrateurs | nettoyage opportuniste apres 90 jours |
+| ancien registre `admin_ips` | donnees historiques, plus aucun producteur ni lecteur applicatif | purge bornee a planifier avant suppression |
 
 G11-R ferme la classification des suppressions analytics: les purges globales
 `clearAllSessions` et `clearAllAffiliateClicks` sont `RETIRE_G12_A`, car elles
@@ -330,6 +339,11 @@ La fenetre de rollback a expire immediatement sur approbation formelle le
 `2026-08-22T22:45:38Z`. G12-B a retire les trois exports et handlers Gen1 de la
 source; l'archive digestee et les manifestes restent disponibles comme preuve
 forensique. Aucun document analytics n'a ete lu, purge ou modifie.
+
+Le backfill sandbox du 2026-08-24 a archive cinq jours, numerote 131 commandes,
+repris 406 sessions et confirme zero champ historique e-mail/IP/user-agent et
+zero `expireAt` manquant apres execution. Une sauvegarde Firestore complete a
+ete terminee avant mutation.
 
 Les audits securite conservent l'UID brut parce qu'il est la cle
 d'imputabilite, mais e-mail, IP et user-agent y sont hashes. Les sessions

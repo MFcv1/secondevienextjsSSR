@@ -45,11 +45,27 @@ test('only missing AAL2 requests an admin login without clearing Firebase sessio
   assert.doesNotMatch(adminIsland, /signOut\(/);
 });
 
+test('the gallery login is the only visible entry to the back-office', () => {
+  const adminIsland = read('app/admin/AdminAppIsland.jsx');
+  const header = read('src/kit/marketplace/HeaderAccountIsland.jsx');
+  const modal = read('src/kit/marketplace/LegacyLoginModalFullIsland.jsx');
+
+  assert.doesNotMatch(adminIsland, /LoginView/);
+  assert.doesNotMatch(adminIsland, /Acces admin refuse/);
+  assert.match(adminIsland, /!user[\s\S]*user\.isAnonymous[\s\S]*!isAdmin/);
+  assert.match(adminIsland, /router\.replace\('\/'\)/);
+  assert.match(header, /onAuthenticated=/);
+  assert.match(header, /authState\.claimsStatus !== 'ready'/);
+  assert.match(header, /if \(isAdmin\) router\.push\('\/admin'\)/);
+  assert.match(modal, /onAuthenticated\?\.\(result\?\.user \|\| null\)/);
+  assert.match(modal, /onAuthenticated\?\.\(userCredential\?\.user \|\| null\)/);
+});
+
 test('a background admin token refresh does not unmount an active publication flow', () => {
   const adminIsland = read('app/admin/AdminAppIsland.jsx');
 
-  assert.match(adminIsland, /const adminAccessIsResolved = Boolean\(user && isAdmin && hasStrongAuth\)/);
-  assert.match(adminIsland, /if \(loading && !adminAccessIsResolved\) return/);
+  assert.match(adminIsland, /const adminAccessIsResolved = Boolean\(user && !user\.isAnonymous && isAdmin && hasStrongAuth\)/);
+  assert.match(adminIsland, /if \(\(loading && !adminAccessIsResolved\) \|\| shouldRedirectToGallery\)/);
   assert.doesNotMatch(adminIsland, /if \(loading\) return/);
 });
 
@@ -62,7 +78,6 @@ test('header, menu and cart consume the shared auth snapshot', () => {
 test('Google popup is prepared before the user click and concurrent requests are blocked', () => {
   const context = read('src/kit/contexts/AuthContext.jsx');
   const modal = read('src/kit/marketplace/LegacyLoginModalFullIsland.jsx');
-  const adminLogin = read('src/kit/commerce/LoginView.jsx');
 
   assert.match(context, /googleRuntimeRef = React\.useRef/);
   assert.match(context, /preloadGoogleLogin = React\.useCallback/);
@@ -72,9 +87,6 @@ test('Google popup is prepared before the user click and concurrent requests are
   assert.match(modal, /googleStatus === 'pending' \|\| googleStatus === 'preparing'/);
   assert.match(modal, /disabled=\{googleStatus === 'preparing' \|\| googleStatus === 'pending'\}/);
   assert.match(modal, /setGoogleStatus\('preload-error'\)/);
-  assert.match(adminLogin, /void preloadGoogleLogin\(\)/);
-  assert.match(adminLogin, /disabled=\{googleStatus === 'preparing' \|\| googleStatus === 'pending'\}/);
-  assert.match(adminLogin, /setGoogleStatus\('preload-error'\)/);
   assert.match(context, /auth\/google-not-prepared/);
   assert.match(context, /recordGoogleAuthDiagnostic/);
 });

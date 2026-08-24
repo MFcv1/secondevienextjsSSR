@@ -77,6 +77,7 @@ function evaluateCommerceHealth(input, { evaluatedAt = null } = {}) {
     const counters = {
         dueInbox: nonNegativeInteger(input?.dueInbox ?? 0, 'dueInbox'),
         expiredInboxLeases: nonNegativeInteger(input?.expiredInboxLeases ?? 0, 'expiredInboxLeases'),
+        failedOutbox: nonNegativeInteger(input?.failedOutbox ?? 0, 'failedOutbox'),
         deadLetterOutbox: nonNegativeInteger(input?.deadLetterOutbox ?? 0, 'deadLetterOutbox'),
         deliveryUnknown: nonNegativeInteger(input?.deliveryUnknown ?? 0, 'deliveryUnknown'),
         expiredHolds: nonNegativeInteger(input?.expiredHolds ?? 0, 'expiredHolds'),
@@ -114,7 +115,7 @@ function evaluateCommerceHealth(input, { evaluatedAt = null } = {}) {
         ? new Date(evaluatedAtMillis + HEALTH_FRESHNESS_WINDOW_MS).toISOString()
         : null;
     const content = {
-        schemaVersion: 3,
+        schemaVersion: 4,
         source: 'commerce_operations_reconciler',
         status: hasStop ? 'stop' : (hasWarning ? 'warning' : 'healthy'),
         counters,

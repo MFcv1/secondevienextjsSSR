@@ -62,7 +62,7 @@ export default function ShipmentDialog({
                 <div className="flex items-start justify-between gap-5">
                     <div>
                         <p className={`text-[10px] font-extrabold uppercase tracking-[0.12em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>
-                            {orderReference(order.id)}
+                            {orderReference(order)}
                         </p>
                         <h3 id="shipment-dialog-title" className="mt-2 text-[20px] font-extrabold tracking-[-0.03em]">
                             {mode === 'update' ? 'Modifier le suivi' : 'Confirmer l’expédition'}

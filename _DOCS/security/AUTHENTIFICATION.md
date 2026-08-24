@@ -149,6 +149,16 @@ Le serveur refuse une inscription ou une assertion dont le flag User Verificatio
 
 Google reste disponible depuis la meme modale. Le store identifie le fournisseur `google.com` et normalise la methode en `google`.
 
+La modale ouverte depuis le bouton `Connexion` de la galerie est l'unique
+porte de connexion visible, pour les clients comme pour les administrateurs.
+Une fois les claims resolus, un compte administrateur est redirige vers
+`/admin` et le header revele le lien `Admin`; un client reste sur la surface
+publique. La route `/admin` n'expose ni formulaire autonome ni message
+d'autorisation aux visiteurs, sessions anonymes ou comptes non admin: elle les
+renvoie silencieusement vers `/`. Cette discretion UX ne remplace jamais les
+claims, le registre actif, l'AAL2, App Check, les Rules ou les validations
+serveur.
+
 Le runtime Firebase Auth et le fournisseur Google sont prepares des l'ouverture
 de la modale. Le clic appelle ainsi `signInWithPopup` sans chargement dynamique
 intermediaire susceptible de perdre l'activation utilisateur du navigateur.

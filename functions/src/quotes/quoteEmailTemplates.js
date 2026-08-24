@@ -1,6 +1,8 @@
 'use strict';
 
 const {
+    EMAIL_COLORS,
+    EMAIL_FONT_STACK,
     escapeHtml,
     renderCallout,
     renderEmailShell,
@@ -26,15 +28,15 @@ function quoteReceiptEmail(quote, senderEmail) {
         { label: 'Estimation', value: euroRange(project.indicativeEstimate) }
     ]);
     const contentHtml = `
-        <div style="border:1px solid #ded7cc;border-radius:14px;padding:18px 20px;">
-            <div style="color:#6f675e;font:700 10px/1.4 Arial,Helvetica,sans-serif;letter-spacing:1.2px;text-transform:uppercase;">
+        <div style="padding:18px 0;border-top:1px solid ${EMAIL_COLORS.line};border-bottom:1px solid ${EMAIL_COLORS.line};">
+            <div style="color:${EMAIL_COLORS.muted};font-family:${EMAIL_FONT_STACK};font-size:11px;line-height:1.4;font-weight:600;letter-spacing:.3px;">
                 Votre demande
             </div>
-            <div style="margin-top:9px;color:#1c1917;font:600 14px/1.6 Arial,Helvetica,sans-serif;">
+            <div style="margin-top:9px;color:${EMAIL_COLORS.text};font-family:${EMAIL_FONT_STACK};font-size:14px;line-height:1.6;font-weight:600;">
                 ${escapeHtml(serviceLabels.length ? serviceLabels.join(' · ') : 'Diagnostic et prestations à préciser')}
             </div>
             ${project.description ? `
-                <div style="margin-top:9px;color:#57504a;font:400 13px/1.6 Arial,Helvetica,sans-serif;">
+                <div style="margin-top:9px;color:${EMAIL_COLORS.muted};font-family:${EMAIL_FONT_STACK};font-size:13px;line-height:1.6;font-weight:400;">
                     ${escapeHtml(project.description)}
                 </div>
             ` : ''}
@@ -49,8 +51,8 @@ function quoteReceiptEmail(quote, senderEmail) {
         html: renderEmailShell({
             preheader: 'Votre demande de restauration est bien enregistrée.',
             eyebrow: 'Demande reçue',
-            title: `Merci ${customer.firstName || ''}, nous avons bien votre demande.`,
-            intro: 'Anaïs va étudier votre meuble, vos besoins et les informations transmises. Vous recevrez une réponse personnalisée dès que le dossier aura été examiné.',
+            title: 'Votre demande a bien été reçue.',
+            intro: `Bonjour ${customer.firstName || ''}, Anaïs va étudier votre meuble et les informations transmises. Vous recevrez une réponse personnalisée dès que le dossier aura été examiné.`,
             summaryHtml,
             contentHtml,
             calloutHtml: renderCallout({

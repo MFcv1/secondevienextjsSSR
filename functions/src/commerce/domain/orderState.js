@@ -130,11 +130,19 @@ function validateOrderV2(order, { requireProjection = true } = {}) {
         throw domainError('COMMERCE_ORDER_INVALID_SHAPE');
     }
     if (order.schemaVersion !== 2) throw domainError('COMMERCE_ORDER_SCHEMA_UNSUPPORTED');
+    if (order.orderNumber !== undefined && (!Number.isSafeInteger(order.orderNumber) || order.orderNumber < 1)) {
+        throw domainError('COMMERCE_ORDER_NUMBER_INVALID');
+    }
     if (!Number.isSafeInteger(order.stateVersion) || order.stateVersion < 0) {
         throw domainError('COMMERCE_ORDER_STATE_VERSION_INVALID');
     }
     if (order.currency !== 'EUR') throw domainError('COMMERCE_ORDER_CURRENCY_INVALID');
     assertString(order.userId, 'userId');
+    if (order.archivedAt != null) {
+        assertString(order.archivedAt, 'archivedAt');
+        assertString(order.archivedBy, 'archivedBy');
+        assertString(order.archiveReason, 'archiveReason');
+    }
 
     validateMoneyInvariants(order.amounts);
     validateInventorySummary(order.inventorySummary);
@@ -263,6 +271,7 @@ function validateOrderV2(order, { requireProjection = true } = {}) {
 }
 
 function createOrderV2({
+    orderNumber,
     userId,
     clientOrderId,
     requestHash,
@@ -291,6 +300,7 @@ function createOrderV2({
     const now = clock.now();
     const order = {
         schemaVersion: 2,
+        ...(Number.isSafeInteger(orderNumber) ? { orderNumber } : {}),
         stateVersion: 0,
         legacyProjectionVersion: 1,
         userId,

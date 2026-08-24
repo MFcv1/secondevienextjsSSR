@@ -105,6 +105,30 @@
         { "fieldPath": "state", "order": "ASCENDING" },
         { "fieldPath": "notBefore", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "business_events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "aggregateId", "order": "ASCENDING" },
+        { "fieldPath": "occurredAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "business_events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "correlationId", "order": "ASCENDING" },
+        { "fieldPath": "occurredAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "analytics_sessions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "sessionActive", "order": "ASCENDING" },
+        { "fieldPath": "lastActivityAt", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": [
@@ -121,6 +145,88 @@
     {
       "collectionGroup": "analytics_sessions",
       "fieldPath": "geo",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "analytics_sessions",
+      "fieldPath": "expireAt",
+      "ttl": true,
+      "indexes": []
+    },
+    {
+      "collectionGroup": "analytics_session_facts",
+      "fieldPath": "expireAt",
+      "ttl": true,
+      "indexes": []
+    },
+    {
+      "collectionGroup": "summary_shards",
+      "fieldPath": "expireAt",
+      "ttl": true,
+      "indexes": []
+    },
+    {
+      "collectionGroup": "sys_ratelimit",
+      "fieldPath": "expireAt",
+      "ttl": true,
+      "indexes": []
+    },
+    {
+      "collectionGroup": "sys_idempotency",
+      "fieldPath": "expireAt",
+      "ttl": true,
+      "indexes": []
+    },
+    {
+      "collectionGroup": "sys_audit_security",
+      "fieldPath": "expireAt",
+      "ttl": true,
+      "indexes": []
+    },
+    {
+      "collectionGroup": "sys_audit_stripe_connect",
+      "fieldPath": "expireAt",
+      "ttl": true,
+      "indexes": []
+    },
+    {
+      "collectionGroup": "sys_audit_quotes",
+      "fieldPath": "expireAt",
+      "ttl": true,
+      "indexes": []
+    },
+    {
+      "collectionGroup": "sys_audit_meta",
+      "fieldPath": "expireAt",
+      "ttl": true,
+      "indexes": []
+    },
+    {
+      "collectionGroup": "sys_meta_oauth_states",
+      "fieldPath": "expiresAt",
+      "ttl": true,
+      "indexes": []
+    },
+    {
+      "collectionGroup": "commerce_outbox",
+      "fieldPath": "purgeAt",
+      "ttl": true,
+      "indexes": []
+    },
+    {
+      "collectionGroup": "commerce_webhook_inbox",
+      "fieldPath": "purgeAt",
+      "ttl": true,
+      "indexes": []
+    },
+    {
+      "collectionGroup": "commerce_outbox",
+      "fieldPath": "payloadSnapshot",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "commerce_webhook_inbox",
+      "fieldPath": "verifiedPayloadSnapshot",
       "indexes": []
     },
     {

@@ -20,18 +20,13 @@ const {
     createTransactionalEmailRuntime
 } = require('../email/transactionalEmailRuntime');
 const {
-    escapeHtml,
-    renderCallout,
-    renderEmailShell,
-    renderSummaryGrid
-} = require('../email/emailDesignSystem');
-const {
     email,
     hashInvoice,
     invoiceNumber,
     normalizeInvoiceDraft
 } = require('./manualInvoiceDomain');
 const { renderManualInvoicePdf } = require('./manualInvoicePdf');
+const { invoiceEmail } = require('./manualInvoiceEmailTemplate');
 
 const db = admin.firestore();
 const PROFILE_REF = 'admin_business_profiles/invoicing';
@@ -379,66 +374,6 @@ async function materializeIssuedInvoice(invoiceRef, invoice) {
         createdAt: admin.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
     return artifact;
-}
-
-function formatMoney(cents) {
-    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' })
-        .format(Number(cents || 0) / 100);
-}
-
-function customerDisplayName(customer) {
-    return customer.customerType === 'business'
-        ? customer.businessName
-        : [customer.firstName, customer.lastName].filter(Boolean).join(' ');
-}
-
-function invoiceEmail(invoice, recipient, senderEmail, artifact) {
-    const name = customerDisplayName(invoice.customer);
-    const contentHtml = `
-        <div style="font:400 14px/1.65 Arial,Helvetica,sans-serif;color:#57504a;">
-            ${invoice.lines.slice(0, 8).map((line) => `
-                <div style="display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid #ded7cc;">
-                    <span>${escapeHtml(`${line.quantity} × ${line.name}`)}</span>
-                    <strong style="white-space:nowrap;color:#1c1917;">${escapeHtml(formatMoney(line.totalCents))}</strong>
-                </div>
-            `).join('')}
-        </div>`;
-    return {
-        from: `${invoice.seller.businessName} <${senderEmail}>`,
-        to: recipient,
-        replyTo: invoice.seller.email || senderEmail,
-        subject: `Votre facture ${invoice.number} · ${invoice.seller.businessName}`,
-        text: [
-            `Bonjour ${name},`,
-            `Votre facture ${invoice.number} d’un montant de ${formatMoney(invoice.totalCents)} est jointe à cet e-mail.`,
-            `Émise le ${invoice.issueDate}.`,
-            `Pour toute question : ${invoice.seller.email}`
-        ].join('\n'),
-        html: renderEmailShell({
-            preheader: `Facture ${invoice.number} — ${formatMoney(invoice.totalCents)}`,
-            eyebrow: 'Votre facture',
-            title: 'Votre document est prêt.',
-            intro: `Bonjour ${name}, vous trouverez votre facture en pièce jointe à cet e-mail.`,
-            summaryHtml: renderSummaryGrid([
-                { label: 'Facture', value: invoice.number },
-                { label: 'Émission', value: invoice.issueDate },
-                { label: 'Total', value: formatMoney(invoice.totalCents) }
-            ]),
-            contentHtml,
-            calloutHtml: renderCallout({
-                title: 'Document joint au format PDF',
-                body: 'Conservez ce document avec vos justificatifs. Répondez à cet e-mail si une information doit être vérifiée.',
-                role: 'info',
-                detail: artifact.filename
-            }),
-            footer: `Facture émise par ${invoice.seller.legalName} · SIREN ${invoice.seller.siren}.`
-        }),
-        attachments: [{
-            filename: artifact.filename,
-            content: artifact.buffer,
-            contentType: artifact.contentType
-        }]
-    };
 }
 
 async function sendManualInvoiceHandler(data, context) {

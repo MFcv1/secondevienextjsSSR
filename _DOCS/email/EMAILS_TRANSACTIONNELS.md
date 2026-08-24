@@ -1,8 +1,8 @@
 # E-mails transactionnels - Seconde Vie
 
-Derniere mise a jour: 2026-08-12
+Derniere mise a jour: 2026-08-23
 Statut: `PREPROD_READY`
-Perimetre: Auth OTP, paiement, cycle de commande v2, remboursements, copie de document, réception de devis et avantage newsletter
+Perimetre: Auth OTP, paiement, cycle de commande v2, remboursements, copie de document, retour client, réception de devis, avantage newsletter, facture manuelle et compatibilité legacy
 
 ## 1. Role
 
@@ -26,10 +26,17 @@ client et reduisent les erreurs fournisseur a leur nom et code bornes.
 
 ## 2. Etat de reference
 
-La bibliotheque source regroupe 17 rendus. Les 15 rendus historiques ont ete
-deployes sur le sandbox depuis le 2026-08-01; l'accuse de reception de devis
-est ajoute au code le 2026-08-09 et reste a deployer puis recapturer. Les 13
-rendus historiques conservent leurs captures de reference.
+La bibliotheque metier actuelle regroupe 19 rendus canoniques. Huit variantes
+supplementaires restent envoyables par les triggers de compatibilite des
+anciennes commandes et par les actions manuelles d'exploitation. Le depot
+controle donc 27 rendus HTML au total. La verification initiale d'adresse
+envoyee par Firebase Auth est un vingt-huitieme message observable, mais son
+HTML appartient au template Firebase configure hors du depot.
+
+La refonte visuelle du 2026-08-23 couvre localement les 19 rendus canoniques et
+les huit rendus de compatibilite/exploitation. Elle n'est pas consideree comme
+deployee tant qu'un deploiement cible et une recette Gmail n'ont pas ete
+explicitement autorises puis executes.
 
 | Famille | Nombre | Audience |
 | --- | ---: | --- |
@@ -38,9 +45,22 @@ rendus historiques conservent leurs captures de reference.
 | cycle de commande | 6 | client |
 | remboursement | 4 | client + administrateur |
 | copie de document | 1 | client |
+| demande de retour | 1 | administrateur |
 | réception de devis | 1 | client |
 | avantage newsletter | 1 | client |
-| **Total source** | **17** | - |
+| facture manuelle | 1 | client |
+| **Total canonique** | **19** | - |
+
+Les huit rendus non canoniques mais encore actifs sont:
+
+| Famille de compatibilite/exploitation | Variantes | Audience |
+| --- | ---: | --- |
+| creation de commande legacy | 2 | client + administrateur |
+| expedition legacy | 1 | client |
+| livraison legacy | 1 | client |
+| statut de remboursement manuel legacy | 3 | client |
+| diagnostic du fournisseur e-mail | 1 | administrateur |
+| **Total compatibilite/exploitation** | **8** | - |
 
 Le lot a ete deploye le 2026-07-30:
 
@@ -52,17 +72,27 @@ Le lot a ete deploye le 2026-07-30:
 
 ## 3. Systeme graphique
 
-Tous les nouveaux messages utilisent le meme langage visuel:
+Tous les messages controles par le depot utilisent desormais un langage de
+correspondance transactionnelle tres epure, inspire des meilleurs e-mails de
+produits logiciels sans reprendre leur marque:
 
-- fond chaud et carte blanche;
-- bandeau sombre `Seconde Vie.`;
-- titres editoriaux en serif;
-- informations metier en sans-serif;
-- grille commande, statut et montant;
-- encarts semantiques vert, bleu, ambre ou rouge;
-- bouton principal noir;
-- HTML responsive et partie texte de repli;
-- donnees dynamiques echappees avant insertion HTML.
+- page blanche continue, sans carte exterieure, ombre ni chassis SaaS;
+- colonne centrale bornee a 580 px et grands espaces de respiration;
+- marque texte `Seconde Vie` alignee a gauche, noire et fortement composee a
+  la maniere d'un wordmark produit, sans bandeau ni sous-titre decoratif;
+- pile typographique native Apple/Windows avec replis e-mail standards;
+- titres directs de 28 a 32 px, sans eyebrow, slogan ou formulation marketing;
+- corps de 15 a 16 px, contraste fort et paragraphes courts;
+- informations commande, statut, montant et facture alignees par lignes fines,
+  jamais dans des tuiles ou cartes multiples;
+- couleurs limitees au bouton vert de marque et aux etats qui exigent une
+  distinction semantique;
+- encarts remplaces par du texte structure; aucune couleur de fond repetitive;
+- bouton principal rectangulaire de 4 px de rayon, centre sur desktop et pleine
+  largeur sur mobile;
+- aucun emoji decoratif, serif theatrale, gradient ou accumulation de badges;
+- HTML par tables compatible avec les clients e-mail, responsive sur mobile;
+- partie texte de repli et echappement des donnees dynamiques conserves.
 
 Le code proprietaire est:
 
@@ -78,13 +108,19 @@ functions/src/email/otpEmailTemplates.js
 
 functions/src/email/commerceEmailTemplates.js
 `-- paiement + fulfillment + remboursement + copie document client/admin
+
+functions/src/invoicing/manualInvoiceEmailTemplate.js
+`-- facture manuelle, rendu pur partage par le worker et la galerie
+
+functions/src/email/orderEmails.js
+`-- rendus legacy et diagnostic alignes sur le meme shell
 ```
 
 ## 4. Galerie complete
 
-Cette planche rassemble les 13 rendus de reference actuellement acceptes. Le
-script local genere aussi les candidats 14 `suivi corrige` et 15 `copie de
-document`, sans remplacer automatiquement cette planche canonique.
+Cette planche rassemble les 19 rendus canoniques generes depuis leurs sources
+executables. Elle sert a la revue visuelle locale; sa presence ne prouve ni un
+deploiement ni une reception chez Gmail.
 
 ![Galerie complete des e-mails](captures/00-galerie-complete.png)
 
@@ -189,6 +225,8 @@ derivee cote serveur. Une expedition sans numero contient un repli explicite.
 Une correction ulterieure utilise `order-tracking-updated` et ne renvoie pas
 la confirmation d'expedition.
 
+![Suivi de livraison corrige](captures/14-suivi-corrige.png)
+
 ### 7.5 Livree
 
 ![Commande livree](captures/09-commande-livree.png)
@@ -204,6 +242,8 @@ bouton vers le back-office. Il indique le parcours conseille selon la garde
 serveur: remboursement direct si la piece est encore a l'atelier, sinon retour
 physique avant remboursement. L'e-mail n'est jamais la source de verite; le
 dossier `customer_return_requests` reste visible meme si l'envoi echoue.
+
+![Demande de retour administrateur](captures/16-demande-retour-admin.png)
 
 ## 8. Remboursements
 
@@ -285,8 +325,10 @@ chargee en memoire par le worker: Gmail conserve `disableFileAccess` et
 `disableUrlAccess`; Resend recoit le contenu Base64. Le transport refuse les
 types autres que PDF et plafonne les pieces jointes a 5 Mio.
 
-Ce modele n'a pas encore de capture canonique. Sa capture sera ajoutee a la
-galerie lors d'un deploiement et d'une recette visuelle explicitement valides.
+Ce modele est inclus dans la galerie locale. La recette de la piece jointe
+reelle reste distincte et exige un envoi sandbox explicitement autorise.
+
+![Copie de document client](captures/15-copie-document.png)
 
 ## 10. Accusé de réception de devis
 
@@ -306,6 +348,8 @@ restent dans le stockage prive.
 Recette sandbox reelle du 2026-08-10: soumission publique, persistance admin
 et reception Gmail client validees avec la meme reference, sans adresse
 metier Seconde Vie configuree.
+
+![Accuse de reception de devis](captures/17-demande-devis-recue.png)
 
 ## 11. Avantage newsletter
 
@@ -335,6 +379,8 @@ lecture dans `Mes avantages` valides avec le meme pourcentage, le meme code et
 la meme echeance. Les valeurs de recette ne sont pas conservees dans la
 documentation.
 
+![Avantage newsletter](captures/18-avantage-newsletter.png)
+
 ## 12. Livraison et idempotence
 
 L'onglet admin Factures ajoute un envoi operationnel hors cycle de commande:
@@ -345,6 +391,8 @@ porte un `sendRequestId`; son etat `sending`, `sent`, `failed` ou
 par l'administratrice est valide serveur et n'est persiste que sous forme de
 hash. Ce rendu ne fait pas partie de la galerie historique des e-mails
 commerce tant qu'aucune recette visuelle sandbox ne l'a accepte.
+
+![Facture manuelle client](captures/19-facture-manuelle.png)
 
 Les e-mails commerce v2 passent par `commerce_outbox`:
 
@@ -365,6 +413,9 @@ Regles:
 - la copie de document est idempotente dans sa fenetre et ne conditionne
   jamais l'acces au PDF;
 - Gmail ambigu devient `delivery_unknown` sans retry automatique;
+- une erreur provider explicitement non reprenable, notamment Gmail `EAUTH`,
+  passe directement en `dead_letter` au premier essai; elle exige une
+  correction du secret avant toute reprise bornee;
 - apres observation du message exact dans la boite de recette, l'operateur
   peut utiliser `scripts/reconcile-commerce-outbox-delivery.mjs`: dry-run par
   defaut, cible sandbox/outbox/commande stricte, confirmation explicite et
@@ -372,6 +423,11 @@ Regles:
 - un succes de remboursement devenu obsolete est `suppressed_stale` avant
   tout appel Gmail;
 - les identifiants techniques servent a l'idempotence sans exposer de secret.
+
+La sante commerce compte separement les outbox `failed` et `dead_letter`.
+Le lecteur d'exploitation relit ces deux compteurs en direct afin qu'une
+projection horaire encore verte ne masque pas une panne apparue entre deux
+reconciliations.
 
 Les deux triggers legacy `onOrderCreated` et `onOrderUpdated` restent separes
 de l'outbox v2, mais le lot local G2-A4 leur ajoute le meme niveau de garde:

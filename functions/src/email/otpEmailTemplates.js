@@ -2,6 +2,7 @@
 
 const {
     EMAIL_COLORS,
+    EMAIL_FONT_STACK,
     escapeHtml,
     renderCallout,
     renderEmailShell
@@ -11,14 +12,14 @@ const OTP_VARIANTS = Object.freeze({
     login: {
         subject: 'Votre code de connexion · Seconde Vie',
         eyebrow: 'Connexion sécurisée',
-        title: 'Ouvrez votre espace.',
+        title: 'Votre code de connexion',
         intro: 'Utilisez ce code à six chiffres pour vous connecter à votre espace client.',
         purpose: 'Code de connexion'
     },
     checkout: {
         subject: 'Validez votre commande · Seconde Vie',
         eyebrow: 'Validation de commande',
-        title: 'Confirmez votre adresse email.',
+        title: 'Votre code de validation',
         intro: 'Utilisez ce code à six chiffres pour poursuivre votre commande en toute sécurité.',
         purpose: 'Code de validation'
     }
@@ -33,14 +34,14 @@ function renderOtpEmail({ variant, code, siteUrl }) {
     }
     const safeCode = escapeHtml(code);
     const contentHtml = `
-        <div style="padding:22px 20px;text-align:center;background:${EMAIL_COLORS.surfaceMuted};border:1px solid ${EMAIL_COLORS.line};border-radius:14px;">
-            <div style="color:${EMAIL_COLORS.muted};font:700 10px/1.4 Arial,Helvetica,sans-serif;letter-spacing:1.3px;text-transform:uppercase;">
+        <div style="padding:22px 0;border-top:1px solid ${EMAIL_COLORS.line};border-bottom:1px solid ${EMAIL_COLORS.line};">
+            <div style="color:${EMAIL_COLORS.muted};font-family:${EMAIL_FONT_STACK};font-size:13px;line-height:1.4;font-weight:400;">
                 ${escapeHtml(copy.purpose)}
             </div>
-            <div style="margin-top:10px;color:${EMAIL_COLORS.text};font:700 38px/1 Arial,Helvetica,sans-serif;letter-spacing:9px;">
+            <div style="margin-top:8px;color:${EMAIL_COLORS.text};font-family:${EMAIL_FONT_STACK};font-size:30px;line-height:1.15;font-weight:600;letter-spacing:5px;">
                 ${safeCode}
             </div>
-            <div style="margin-top:10px;color:${EMAIL_COLORS.muted};font:400 12px/1.5 Arial,Helvetica,sans-serif;">
+            <div style="margin-top:10px;color:${EMAIL_COLORS.muted};font-family:${EMAIL_FONT_STACK};font-size:13px;line-height:1.5;font-weight:400;">
                 Expire dans 10 minutes · Usage unique
             </div>
         </div>
@@ -71,7 +72,8 @@ function renderOtpEmail({ variant, code, siteUrl }) {
             calloutHtml,
             actionLabel: 'Retourner sur Seconde Vie',
             actionUrl: siteUrl,
-            footer: 'Code personnel et temporaire. Seconde Vie ne vous demandera jamais de le communiquer.'
+            footer: 'Code personnel et temporaire. Seconde Vie ne vous demandera jamais de le communiquer.',
+            titleAlign: 'left'
         })
     };
 }

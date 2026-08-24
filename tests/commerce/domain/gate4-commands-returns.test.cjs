@@ -129,6 +129,22 @@ test('allowedActions is server-derived and refuses weak admin or unpaid fulfillm
         role: 'admin',
         aal2: true
     }).includes('archive_order'));
+    const archived = {
+        ...delivered,
+        archivedAt: '2026-07-26T13:00:00.000Z',
+        archivedBy: 'admin-gate4',
+        archiveReason: 'archive durable testee'
+    };
+    assert.deepEqual(computeAllowedActions(archived, {
+        uid: 'admin-gate4',
+        role: 'admin',
+        aal2: true
+    }), []);
+    assert.throws(() => assertActionAllowed(archived, {
+        uid: 'admin-gate4',
+        role: 'admin',
+        aal2: true
+    }, 'archive_order'), { code: 'COMMERCE_ACTION_NOT_ALLOWED' });
 });
 
 test('refund state suspends fulfillment until a partial refund is settled', () => {

@@ -2,6 +2,7 @@
 
 const {
     EMAIL_COLORS,
+    EMAIL_FONT_STACK,
     escapeHtml,
     renderCallout,
     renderEmailShell,
@@ -18,8 +19,10 @@ function formatMoney(amountCents, currency = 'EUR') {
     }).format(Number(amountCents || 0) / 100);
 }
 
-function orderReference(orderId) {
-    return `CMD-${String(orderId || '').slice(0, 10).toUpperCase()}`;
+function orderReference(order, orderId) {
+    const number = Number(order?.orderNumber);
+    if (Number.isSafeInteger(number) && number > 0) return `CMD-${number}`;
+    return `CMD-${String(orderId || order?.id || '').slice(0, 10).toUpperCase()}`;
 }
 
 function deliveryLabel(order) {
@@ -64,28 +67,28 @@ function renderItems(order) {
         const amount = Number(item.unitAmountCents || 0) * quantity;
         return `
             <tr>
-                <td style="padding:13px 0;border-bottom:1px solid ${EMAIL_COLORS.line};color:${EMAIL_COLORS.text};font:400 14px/1.45 Arial,Helvetica,sans-serif;">
+                <td style="padding:14px 0;border-bottom:1px solid ${EMAIL_COLORS.line};color:${EMAIL_COLORS.text};font-family:${EMAIL_FONT_STACK};font-size:14px;line-height:1.45;font-weight:400;">
                     <strong>${escapeHtml(item.titleSnapshot || 'Pièce restaurée')}</strong><br>
                     <span style="color:${EMAIL_COLORS.muted};font-size:12px;">Quantité ${quantity}</span>
                 </td>
-                <td style="padding:13px 0;border-bottom:1px solid ${EMAIL_COLORS.line};color:${EMAIL_COLORS.text};font:600 14px/1.45 Arial,Helvetica,sans-serif;text-align:right;white-space:nowrap;">
+                <td style="padding:14px 0;border-bottom:1px solid ${EMAIL_COLORS.line};color:${EMAIL_COLORS.text};font-family:${EMAIL_FONT_STACK};font-size:14px;line-height:1.45;font-weight:600;text-align:right;white-space:nowrap;">
                     ${escapeHtml(formatMoney(amount, order.currency))}
                 </td>
             </tr>
         `;
     }).join('');
     return `
-        <h2 style="margin:0;color:${EMAIL_COLORS.text};font:600 18px/1.3 Arial,Helvetica,sans-serif;">La pièce concernée</h2>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:7px;">${rows}</table>
+        <h2 style="margin:0;color:${EMAIL_COLORS.text};font-family:${EMAIL_FONT_STACK};font-size:17px;line-height:1.3;font-weight:650;letter-spacing:-.25px;">La pièce concernée</h2>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:9px;">${rows}</table>
     `;
 }
 
 function renderAddress(order) {
     const lines = addressLines(order);
     return `
-        <div style="margin-top:17px;padding:16px 18px;background:${EMAIL_COLORS.surfaceMuted};border-left:3px solid ${EMAIL_COLORS.accent};border-radius:10px;">
-            <div style="font:700 13px/1.4 Arial,Helvetica,sans-serif;">${escapeHtml(deliveryLabel(order))}</div>
-            <div style="margin-top:6px;color:#57504a;font:400 13px/1.55 Arial,Helvetica,sans-serif;">${lines.map(escapeHtml).join('<br>')}</div>
+        <div style="margin-top:20px;padding-top:18px;border-top:1px solid ${EMAIL_COLORS.line};">
+            <div style="color:${EMAIL_COLORS.text};font-family:${EMAIL_FONT_STACK};font-size:13px;line-height:1.4;font-weight:650;">${escapeHtml(deliveryLabel(order))}</div>
+            <div style="margin-top:6px;color:${EMAIL_COLORS.muted};font-family:${EMAIL_FONT_STACK};font-size:13px;line-height:1.55;font-weight:400;">${lines.map(escapeHtml).join('<br>')}</div>
         </div>
     `;
 }
@@ -104,7 +107,7 @@ function baseData({ order, payload, siteUrl }) {
     const isGuestPaymentLink = order.checkout?.channel === 'admin_payment_link';
     return {
         orderId,
-        reference: orderReference(orderId),
+        reference: orderReference(order, orderId),
         amountLabel: formatMoney(amountCents, currency),
         ordersUrl: isGuestPaymentLink
             ? `${siteUrl.replace(/\/$/, '')}/`
@@ -176,13 +179,13 @@ function renderAdminContact(order) {
     const email = order.customerSnapshot?.email || order.userEmail || 'Non renseigné';
     const address = addressLines(order);
     return `
-        <h2 style="margin:0;color:${EMAIL_COLORS.text};font:600 18px/1.3 Arial,Helvetica,sans-serif;">Client et exécution</h2>
+        <h2 style="margin:0;color:${EMAIL_COLORS.text};font-family:${EMAIL_FONT_STACK};font-size:17px;line-height:1.3;font-weight:650;letter-spacing:-.25px;">Client et exécution</h2>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:9px;">
-            <tr><td style="padding:6px 0;color:${EMAIL_COLORS.muted};font-size:13px;">Client</td><td style="padding:6px 0;text-align:right;font:600 13px/1.4 Arial,Helvetica,sans-serif;">${escapeHtml(customerName(order) || 'Non renseigné')}</td></tr>
-            <tr><td style="padding:6px 0;color:${EMAIL_COLORS.muted};font-size:13px;">Email</td><td style="padding:6px 0;text-align:right;font:600 13px/1.4 Arial,Helvetica,sans-serif;">${escapeHtml(email)}</td></tr>
-            <tr><td style="padding:6px 0;color:${EMAIL_COLORS.muted};font-size:13px;">Livraison</td><td style="padding:6px 0;text-align:right;font:600 13px/1.4 Arial,Helvetica,sans-serif;">${escapeHtml(deliveryLabel(order))}</td></tr>
+            <tr><td style="padding:7px 0;color:${EMAIL_COLORS.muted};font-family:${EMAIL_FONT_STACK};font-size:13px;">Client</td><td style="padding:7px 0;text-align:right;color:${EMAIL_COLORS.text};font-family:${EMAIL_FONT_STACK};font-size:13px;line-height:1.4;font-weight:600;">${escapeHtml(customerName(order) || 'Non renseigné')}</td></tr>
+            <tr><td style="padding:7px 0;color:${EMAIL_COLORS.muted};font-family:${EMAIL_FONT_STACK};font-size:13px;">E-mail</td><td style="padding:7px 0;text-align:right;color:${EMAIL_COLORS.text};font-family:${EMAIL_FONT_STACK};font-size:13px;line-height:1.4;font-weight:600;">${escapeHtml(email)}</td></tr>
+            <tr><td style="padding:7px 0;color:${EMAIL_COLORS.muted};font-family:${EMAIL_FONT_STACK};font-size:13px;">Livraison</td><td style="padding:7px 0;text-align:right;color:${EMAIL_COLORS.text};font-family:${EMAIL_FONT_STACK};font-size:13px;line-height:1.4;font-weight:600;">${escapeHtml(deliveryLabel(order))}</td></tr>
         </table>
-        <div style="margin-top:12px;color:#57504a;font:400 13px/1.55 Arial,Helvetica,sans-serif;">${address.map(escapeHtml).join('<br>')}</div>
+        <div style="margin-top:13px;padding-top:14px;border-top:1px solid ${EMAIL_COLORS.line};color:${EMAIL_COLORS.muted};font-family:${EMAIL_FONT_STACK};font-size:13px;line-height:1.55;font-weight:400;">${address.map(escapeHtml).join('<br>')}</div>
         <div style="margin-top:22px;">${renderItems(order)}</div>
     `;
 }
@@ -242,7 +245,8 @@ function adminTemplate({
             }),
             actionLabel: 'Ouvrir dans le back-office',
             actionUrl: data.adminUrl,
-            footer: 'Notification opérationnelle réservée à l’administration Seconde Vie.'
+            footer: 'Notification opérationnelle réservée à l’administration Seconde Vie.',
+            titleAlign: 'left'
         })
     };
 }
@@ -251,7 +255,7 @@ const CUSTOMER_TEMPLATES = Object.freeze({
     'commerce-document-copy': {
         subject: ({ reference }) => `Votre document ${reference} · Seconde Vie`,
         eyebrow: 'Document de commande',
-        title: 'Votre document est joint à cet e-mail.',
+        title: 'Votre document est prêt.',
         intro: () => 'la copie demandée depuis votre espace client est prête.',
         status: 'Disponible',
         role: 'info',
@@ -265,7 +269,7 @@ const CUSTOMER_TEMPLATES = Object.freeze({
     'order-paid': {
         subject: ({ reference }) => `Commande ${reference} confirmée · Seconde Vie`,
         eyebrow: 'Paiement confirmé',
-        title: 'Votre pièce est réservée.',
+        title: 'Votre commande est confirmée.',
         intro: () => 'votre paiement est confirmé et votre commande est enregistrée.',
         status: 'Payée',
         role: 'success',
@@ -278,7 +282,7 @@ const CUSTOMER_TEMPLATES = Object.freeze({
     'order-preparing': {
         subject: ({ reference }) => `${reference} est en préparation · Seconde Vie`,
         eyebrow: 'Préparation atelier',
-        title: 'Votre pièce passe entre nos mains.',
+        title: 'Votre commande est en préparation.',
         intro: () => 'la préparation de votre commande a commencé à l’atelier.',
         status: 'En préparation',
         role: 'info',
@@ -290,7 +294,7 @@ const CUSTOMER_TEMPLATES = Object.freeze({
     'order-ready-for-pickup': {
         subject: ({ reference }) => `${reference} est prête à être retirée · Seconde Vie`,
         eyebrow: 'Retrait atelier',
-        title: 'Votre pièce vous attend.',
+        title: 'Votre commande est prête à être retirée.',
         intro: () => 'votre commande est prête pour son retrait à l’atelier.',
         status: 'Prête au retrait',
         role: 'success',
@@ -303,7 +307,7 @@ const CUSTOMER_TEMPLATES = Object.freeze({
     'order-picked-up': {
         subject: ({ reference }) => `${reference} a été retirée · Seconde Vie`,
         eyebrow: 'Commande remise',
-        title: 'La pièce est entre vos mains.',
+        title: 'Votre commande a été retirée.',
         intro: () => 'le retrait de votre commande est confirmé.',
         status: 'Terminée',
         role: 'success',
@@ -315,7 +319,7 @@ const CUSTOMER_TEMPLATES = Object.freeze({
     'order-shipped': {
         subject: ({ reference }) => `${reference} est expédiée · Seconde Vie`,
         eyebrow: 'Expédition confirmée',
-        title: 'Votre pièce prend la route.',
+        title: 'Votre commande a été expédiée.',
         intro: () => 'votre commande a quitté l’atelier et son expédition est confirmée.',
         status: 'Expédiée',
         role: 'info',
@@ -334,7 +338,7 @@ const CUSTOMER_TEMPLATES = Object.freeze({
     'order-tracking-updated': {
         subject: ({ reference }) => `Suivi mis à jour · ${reference} · Seconde Vie`,
         eyebrow: 'Suivi de livraison',
-        title: 'Les informations de suivi sont disponibles.',
+        title: 'Votre suivi a été mis à jour.',
         intro: () => 'le suivi transporteur de votre commande vient d’être mis à jour.',
         status: 'Expédiée',
         role: 'info',
@@ -353,7 +357,7 @@ const CUSTOMER_TEMPLATES = Object.freeze({
     'order-delivered': {
         subject: ({ reference }) => `${reference} est livrée · Seconde Vie`,
         eyebrow: 'Livraison terminée',
-        title: 'Votre pièce est arrivée.',
+        title: 'Votre commande a été livrée.',
         intro: () => 'la livraison de votre commande est confirmée.',
         status: 'Terminée',
         role: 'success',
@@ -365,7 +369,7 @@ const CUSTOMER_TEMPLATES = Object.freeze({
     'order-refunded': {
         subject: ({ reference }) => `Remboursement ${reference} confirmé · Seconde Vie`,
         eyebrow: 'Remboursement confirmé',
-        title: 'Le remboursement est en route.',
+        title: 'Votre remboursement est confirmé.',
         intro: () => 'Stripe a confirmé le remboursement sur le moyen de paiement utilisé lors de l’achat.',
         status: 'Remboursée',
         role: 'success',
@@ -378,7 +382,7 @@ const CUSTOMER_TEMPLATES = Object.freeze({
     'order-refund-failed': {
         subject: ({ reference }) => `Remboursement ${reference} à vérifier · Seconde Vie`,
         eyebrow: 'Vérification nécessaire',
-        title: 'Votre remboursement demande une vérification.',
+        title: 'Votre remboursement est en cours de vérification.',
         intro: () => 'Stripe n’a pas confirmé le remboursement. Aucun nouveau débit n’a été créé.',
         status: 'À vérifier',
         role: 'danger',
@@ -411,7 +415,7 @@ function renderCommerceEmail({
             senderEmail,
             subject: ({ reference }) => `Nouvelle demande de retour · ${reference}`,
             eyebrow: 'Demande client',
-            title: 'Un retour doit être examiné.',
+            title: 'Nouvelle demande de retour.',
             intro: ({ reference }) => `${reference} fait l’objet d’une demande de retour ou de remboursement.`,
             status: 'À examiner',
             role: 'warning',
@@ -432,7 +436,7 @@ function renderCommerceEmail({
             senderEmail,
             subject: ({ reference }) => `Nouvelle commande ${reference} · ${formatMoney(payload.amountCents, payload.currency)}`,
             eyebrow: 'Nouvelle commande payée',
-            title: 'Une pièce vient d’être vendue.',
+            title: 'Nouvelle commande payée.',
             intro: ({ reference }) => `Le paiement de ${reference} est confirmé. La commande peut entrer en préparation.`,
             status: 'Payée',
             role: 'success',
@@ -450,7 +454,7 @@ function renderCommerceEmail({
             senderEmail,
             subject: ({ reference }) => `Remboursement confirmé · ${reference}`,
             eyebrow: 'Remboursement Stripe',
-            title: 'Le remboursement est confirmé.',
+            title: 'Remboursement confirmé.',
             intro: ({ reference }) => `${reference} a été remboursée sans remise en stock automatique.`,
             status: 'Remboursée',
             role: 'success',
@@ -468,7 +472,7 @@ function renderCommerceEmail({
             senderEmail,
             subject: ({ reference }) => `Action requise · remboursement ${reference}`,
             eyebrow: 'Incident remboursement',
-            title: 'Stripe demande une vérification.',
+            title: 'Remboursement à vérifier.',
             intro: ({ reference }) => `Le remboursement de ${reference} n’a pas été confirmé.`,
             status: 'À vérifier',
             role: 'danger',

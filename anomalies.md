@@ -43,11 +43,11 @@ Echeance de fusion et suppression: 2026-08-06
 | A-020 | Accès administrateur Google | `BLOQUANTE` | `FERMEE` | Le premier parcours n’achevait pas le sélecteur Google; reprise explicite du compte admin réussie |
 | A-021 | Publication admin | `MAJEURE` | `CORRIGEE_A_REQUALIFIER` | Le renouvellement du jeton démontait le parcours, fermait la progression et réinitialisait la vue sur Créer |
 | A-022 | Gate refund.failed Gen2 | `IMPORTANTE` | `REQUALIFIEE` | Le préflight M12/M13 cible désormais les trois Functions Gen2 finales et leurs URL publiques |
-| A-033 | OTP client et checkout | `BLOQUANTE` | `EN_DIAGNOSTIC` | M01 arrive une fois dans Spam, puis M01 et M02 echouent sur une configuration Gmail invalide |
+| A-033 | OTP client et checkout | `BLOQUANTE` | `CORRIGEE_A_REQUALIFIER` | SMTP repare et M01/M02 frais presents dans Gmail; consommation des nouveaux codes encore a rejouer |
 | A-034 | Entree administration | `MAJEURE` | `FERMEE` | Les sessions anonyme et client reviennent a la galerie; seul le compte admin AAL2 ouvre `/admin` |
-| A-035 | Archivage commande | `MAJEURE` | `OUVERTE` | Deux archivages sont audites, mais la commande reste active sans erreur visible |
-| A-036 | E-mails M03-M13 | `BLOQUANTE` | `OUVERTE` | Les outbox fraiches sont en `dead_letter` ou `failed` et Gmail ne recoit aucun message |
-| A-037 | Supervision outbox | `MAJEURE` | `OUVERTE` | Le statut commerce reste vert avec des compteurs nuls malgre les outbox en echec |
+| A-035 | Archivage commande | `MAJEURE` | `FERMEE` | L'archive durable est exclue de la liste active et ne repropose plus de mutation |
+| A-036 | E-mails M03-M13 | `BLOQUANTE` | `FERMEE` | Les 14 messages M03-M13 ont ete repris une fois et retrouves dans les deux boites exactes |
+| A-037 | Supervision outbox | `MAJEURE` | `FERMEE` | Le statut integre les echecs live; apres reprise, tous les compteurs sont a zero etat `healthy` |
 
 Severites:
 
@@ -2058,7 +2058,7 @@ de code.
 
 ### A-033 - Les OTP M01 et M02 ne sont pas fiables dans Gmail
 
-- statut: `EN_DIAGNOSTIC`
+- statut: `CORRIGEE_A_REQUALIFIER`
 - severite: `BLOQUANTE`
 - phase: M01 connexion client puis M02 validation checkout invite
 - environnement: sandbox / Safari puis Chrome / Gmail de recette
@@ -2072,15 +2072,22 @@ de code.
   mais trop tard pour achever le parcours. Le renvoi M01 puis la demande M02
   echouent avec `Configuration email invalide. Verifiez le mot de passe
   d'application Gmail.` Aucun OTP frais complet n'a donc ete valide.
-- impact: les connexions OTP client et checkout invite restent non fiables et
-  ne peuvent pas etre qualifiees de bout en bout.
-- diagnostic courant: le resultat frais remplace l'hypothese d'une disparition
-  systematique apres succes SMTP. Le rail Gmail accepte parfois un envoi, puis
-  refuse les suivants pour configuration d'authentification invalide.
-- limite de requalification visuelle: les callables OTP deployees portent le
-  commit source `cdb83f2`, tandis que les templates du chantier e-mail courant
-  sont modifies localement et non deployes. Cette campagne qualifie donc le
-  runtime Gen2 actuel, pas le nouveau rendu local.
+- cause racine confirmee: les versions actives precedentes de
+  `GMAIL_PASSWORD` sont toutes refusees par Gmail en SMTP avec `EAUTH`/535.
+  Le succes Function initial ne constituait donc pas une preuve de livraison.
+- correction appliquee: nouveau mot de passe d'application limite au sandbox,
+  verification SMTP reelle, puis deploiement cible des seules Functions
+  `sendCustomerLoginOtpGen2` et `sendGuestCheckoutOtpGen2`; les deux revisions
+  actives utilisent la nouvelle version du secret.
+- requalification livraison: deux appels frais, avec App Check et identite du
+  compte client borne, retournent HTTP 200. Gmail client contient les deux
+  sujets exacts `Votre code de connexion` et `Validez votre commande`. Une
+  seconde paire a invalide les premiers codes apparus dans la sortie de
+  diagnostic; les nouveaux codes n'ont pas ete lus ni consignes.
+- limite restante: la livraison M01/M02 est reparee et prouvee, mais les deux
+  nouveaux codes n'ont pas encore ete consommes dans les interfaces connexion
+  et checkout. L'anomalie reste donc `CORRIGEE_A_REQUALIFIER`, pas fermee de
+  bout en bout.
 
 ### A-034 - Une session anonyme revelait un faux ecran de refus administrateur
 
@@ -2119,7 +2126,7 @@ de code.
 
 ### A-035 - L'archivage d'une commande ne produit pas d'etat durable
 
-- statut: `OUVERTE`
+- statut: `FERMEE`
 - severite: `MAJEURE`
 - phase: mutation administrateur apres retrait
 - environnement: sandbox / Chrome / Stripe test
@@ -2131,16 +2138,26 @@ de code.
   actions, puis le panneau revient a l'etat `Retiree` avec le bouton
   `Archiver`. Le rechargement conserve la commande active et aucune erreur
   n'est affichee.
-- preuve autoritaire: deux evenements d'archivage distincts sont inscrits dans
-  l'audit, mais aucune projection d'archive durable n'est visible sur la
-  commande.
-- impact: l'administrateur peut repeter une mutation apparemment acceptee sans
-  obtenir le resultat demande. La restauration n'est pas requalifiable puisque
-  l'archivage initial n'aboutit pas.
+- cause racine: la commande portait bien `archivedAt`, `archivedBy` et la
+  raison d'archive, mais le reader administrateur ne filtrait pas les archives
+  et le deriveur d'actions reproposait `archive_order` sur cet etat.
+- correction appliquee: les commandes archivees sont exclues de la liste
+  active, leurs champs d'archive sont valides par le domaine et aucune action
+  administrateur n'est derivee sur une archive. La commande reste conservee
+  avec ses paiements, remboursements et evenements.
+- regression: archivage idempotent, absence d'actions sur archive et exclusion
+  du reader actif couverts dans les Gates 4 et 5. Suite commerce complete
+  `143/143` sous Node 22.
+- deploiement cible: `archiveOrderAdminGen2` revision
+  `archiveorderadmingen2-00002-ceg` et `listOrdersAdminV2Gen2` revision
+  `listordersadminv2gen2-00002-dor`, sandbox uniquement.
+- requalification Chrome: avant rafraichissement, la vue conservait son cache
+  de session; apres rechargement autoritaire, `CMD-ORD_C2C6C6` est absente des
+  50 commandes actives tandis que la commande non archivee reste visible.
 
 ### A-036 - Les e-mails transactionnels M03 a M13 ne sont pas livres
 
-- statut: `OUVERTE`
+- statut: `FERMEE`
 - severite: `BLOQUANTE`
 - phase: cycle commande, fulfillment et remboursements
 - environnement: sandbox / Chrome / Gmail de recette / Stripe test
@@ -2154,16 +2171,27 @@ de code.
   tentatives; M12 et M13 sont en `failed` apres trois tentatives. Les
   notifications provisoires du remboursement ensuite inverse sont correctement
   marquees `suppressed_stale` et ne constituent pas une anomalie.
-- impact: aucun e-mail transactionnel M03 a M13 n'est qualifie humainement,
-  alors que les commandes et les remboursements atteignent leurs etats
-  durables attendus.
-- limite: la cause applicative precise de l'echec du dispatcher reste a
-  diagnostiquer lors de la prochaine reprise; aucun correctif n'est applique
-  pendant cette recette.
+- cause racine: les 16 outbox en echec portent toutes `EAUTH`; le dispatcher
+  utilisait la meme version Gmail invalide que les OTP. Quatorze documents
+  correspondent a M03-M13 et deux aux demandes de retour administrateur
+  adjacentes.
+- correction appliquee: rotation du secret Gmail sandbox, verification SMTP,
+  deploiement cible de `commerceOutboxDispatcherGen2` revision
+  `commerceoutboxdispatchergen2-00005-wos` et classement immediat en
+  `dead_letter` des erreurs provider non rejouables tant que la configuration
+  n'est pas corrigee.
+- reprise bornee: dry-run exact de 16 candidats `dead_letter`, deux commandes,
+  erreur `EAUTH`, huit tentatives. Les 16 ont ete remis en file une seule fois;
+  les documents `suppressed_stale` n'ont pas ete touches. Resultat final:
+  `sent=16`, aucune erreur et aucun doublon de reprise.
+- requalification Gmail: les dix sujets clients M03/M05-M10/M12 attendus sont
+  tous presents dans la boite cliente avec `in:anywhere`; les quatre sujets
+  administrateur M04/M11/M13 sont tous presents dans la boite administrateur.
+  Les deux notifications de retour adjacentes sont egalement livrees.
 
 ### A-037 - La supervision commerce masque les echecs d'outbox
 
-- statut: `OUVERTE`
+- statut: `FERMEE`
 - severite: `MAJEURE`
 - phase: controle autoritaire de fermeture
 - environnement: sandbox / controles commerce fermes
@@ -2173,11 +2201,21 @@ de code.
 - observe: le controle final indique `operations=healthy` et des compteurs a
   zero, dont `deadLetterOutbox=0`, alors que l'audit des documents du meme run
   enumere les echecs de A-036.
-- impact: la fenetre peut paraitre saine et fermee alors que la livraison des
-  e-mails transactionnels est durablement en echec.
-- controle de confinement: la fenetre est bien `CLOSED`, en `v2_fixture`, avec
-  mutations admin `read_only` et paiement offline `off`; aucun run actif ne
-  subsiste.
+- cause racine: le statut admin et le script de fenetre relisaient seulement le
+  snapshot horaire `sys_commerce_operations/current`; ils ne confrontaient pas
+  ce vert historique aux compteurs live `failed` et `dead_letter`.
+- correction appliquee: ajout de `failedOutbox`, schema de sante v4 et
+  confrontation live fail-closed dans la callable admin comme dans le script
+  de fenetre. Toute outbox en echec impose maintenant `stop` meme si le
+  snapshot stocke est encore vert.
+- deploiement cible: `getCommerceOperationsStatusAdminGen2` revision
+  `getcommerceoperationsstatusadmingen2-00002-ped` et reconciler revision
+  `commerceoperationsreconcilergen2-00002-zud`; les deux Schedulers conservent
+  leur cible, audience, cadence et etat `ENABLED`.
+- requalification finale: apres la reprise A-036 et un passage du reconciler,
+  la fenetre reste `CLOSED`, `v2_fixture`, mutations `read_only`, paiement
+  offline `off`, sans run actif. `operationsStatus=healthy` et les dix
+  compteurs, dont `failedOutbox` et `deadLetterOutbox`, valent tous zero.
 
 ### A-030 - Un favori historique masque sa disponibilite catalogue
 

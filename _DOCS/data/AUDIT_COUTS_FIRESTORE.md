@@ -6,6 +6,11 @@ Projet mesure: `secondevienextjsssr`
 
 ## 1. Objet et fin de l'audit
 
+Au 2026-08-24, le pipeline deploye sur le sandbox reduit le heartbeat de 15 a
+60 secondes, borne `journey` aux 25 dernieres etapes et retire e-mail, IP et
+user-agent des nouveaux documents de session. Les mesures historiques de ce
+chapitre restent celles du sandbox deploye jusqu'a une nouvelle fenetre.
+
 Ce document conserve la preuve de mesure demandee pour expliquer les lectures Firestore, puis choisir des optimisations qui ne degradent ni le temps reel ni la fiabilite du parcours analytics.
 
 Il complete [DONNEES_ANALYTICS.md](DONNEES_ANALYTICS.md). Le code et les consoles Google Cloud restent les preuves finales. Une fois les optimisations mesurees avant/apres, les decisions durables doivent etre fusionnees dans le chapitre canonique et ce rapport peut etre classe comme historique dans Git.
@@ -197,7 +202,7 @@ Le lot local du 2026-07-17 cible uniquement les deux couts redondants prouves en
 
 1. `public/meta` dispose maintenant d'un micro-cache en memoire de cinq secondes par instance `publicCatalog`, avec deduplication d'une lecture deja en vol. Cette fenetre courte absorbe les rafales metadata/page/prefetch sans remplacer les mecanismes de version, de revalidation et de cache catalogue existants.
 2. La validation du jeton analytics conserve en memoire, pendant 60 secondes et au plus pour 1 000 sessions par instance Function, le hash autoritaire deja lu ou cree. Un cache miss ou une reprise de session reste autoritaire via Firestore. Une suppression de session n'est jamais recreee par le cache: l'update Firestore echoue toujours si le document a disparu.
-3. Le heartbeat navigateur reste a 15 secondes en onglet visible, mais il est maintenant planifie 15 secondes apres la synchronisation la plus recente. Une route ou un retour visible repousse donc le prochain heartbeat au lieu de produire deux appels rapproches.
+3. Le heartbeat navigateur passe a 60 secondes en onglet visible et est planifie apres la synchronisation la plus recente. Une route ou un retour visible repousse donc le prochain heartbeat au lieu de produire deux appels rapproches.
 4. Une synchronisation non-heartbeat demandee pendant un appel en vol est mise en attente puis envoyee; un heartbeat devenu redondant pendant cet appel est abandonne. Le parcours route reste prioritaire.
 5. Chaque ecriture de session transporte `lastSyncReason` et incremente `syncReasonCounts.<reason>` dans la meme operation Firestore. Cette instrumentation ne cree ni document de log, ni lecture, ni ecriture supplementaire.
 
@@ -246,8 +251,8 @@ Les 972 lectures proviennent de deux familles:
 
 Pour une session publique visible pendant une heure:
 
-- heartbeat adaptatif au plus toutes les 15 secondes lorsque l'onglet est visible;
-- un changement de route ou un retour visible repousse le prochain heartbeat de 15 secondes;
+- heartbeat adaptatif au plus toutes les 60 secondes lorsque l'onglet est visible;
+- un changement de route ou un retour visible repousse le prochain heartbeat de 60 secondes;
 - un cache borne de 60 secondes reutilise le hash autoritaire du jeton dans une instance Function;
 - un cache miss relit le document session, puis les synchronisations suivantes valident le jeton sans nouvelle lecture pendant la fenetre;
 - chaque synchronisation utile conserve une ecriture de session afin de maintenir le live et le parcours;
@@ -257,13 +262,15 @@ Le heartbeat est suspendu lorsque l'onglet public est masque. Le beacon marque l
 
 La reprise reste une lecture autoritaire car elle doit verifier le UID, l'age, le statut et le jeton du document. Le cache ne remplace donc pas les controles qui dependent de l'etat complet de la session.
 
-Pour l'admin Data:
+Pour l'admin Data depuis le 2026-08-24:
 
-- cache froid: historique `H` jusqu'a 5 000 plus listener initial `L` jusqu'a 100;
-- cache IndexedDB valide de moins de six heures: listener `L` seulement;
-- clic Actualiser: nouvelle lecture historique `H`;
-- remount/reconnexion du listener: jusqu'a `L`;
-- chaque document modifie dans le jeu ecoute: environ une lecture, et non 100.
+- KPI/graphiques: au plus 2 jours, 30 jours, 12 mois ou 50 annees de rollups
+  selon la periode; aucun scan de session;
+- liste recente: 250 projections par page, maximum 1 000 visibles;
+- parcours: une lecture seulement au clic;
+- aucun listener Firestore permanent ni relecture de 5 000 documents;
+- le scheduler consomme un petit nombre de lectures bornees et remplace les
+  scans administrateur repetes.
 
 Pour l'admin Stats depuis le 2026-07-24:
 
@@ -289,7 +296,7 @@ Le lot du 2026-07-16 applique uniquement les changements dont le resultat foncti
 2. L'appel normal de recherche demandait 120 cartes, borne reelle de l'ancienne Function, au lieu de creer une URL Next distincte avec `limit=160` silencieusement plafonnee. Le fallback Firestore direct de cette phase conservait une borne de 160; il a ensuite ete entierement supprime lors du cutover snapshot.
 3. Une carte categorie proche du viewport continue de chauffer ses images, mais sa route produit n'est prechargee qu'au hover, focus ou press.
 4. Le mega-menu precharge seulement le groupe vise, puis chaque enfant au moment de son intention propre.
-5. Le heartbeat analytics de 15 secondes est suspendu lorsque l'onglet est masque. Le beacon de masquage, le retour visible immediat, le seuil live de 30 secondes et le listener admin sont conserves.
+5. Le heartbeat analytics de 60 secondes est suspendu lorsque l'onglet est masque. Le beacon de masquage et le retour visible immediat sont conserves; le panneau Data n'ouvre plus de listener direct sur les sessions.
 6. `updateUserSessions` ne relit plus `users/{uid}` avant `sys_admin_access`, puisque cette lecture etait toujours ecrasee par le registre et ne pouvait changer le resultat.
 
 Les gains ne sont pas convertis en promesse exacte avant une fenetre Usage Insights comparable. Ils ciblent les causes inutiles sans diminuer la cadence visible, la richesse des images, la navigation Next, l'exclusion admin ou la fraicheur catalogue.

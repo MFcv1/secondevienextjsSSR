@@ -278,6 +278,12 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Journal metier minimal. L'admin utilise uniquement le callable AAL2,
+    // qui retourne une projection expurgee et audite chaque consultation.
+    match /business_events/{eventId} {
+      allow read, write: if false;
+    }
+
     match /commerce_financial_projections/{projectionId} {
       allow read, write: if false;
     }
@@ -460,8 +466,34 @@ service cloud.firestore {
 
     // Analytics Sessions
     match /analytics_sessions/{docId} {
-      allow read: if isStrongArtisan();
-      allow write: if false; // Cloud Functions only
+      allow read, write: if false; // Lecture admin via callable projetee uniquement
+    }
+
+    match /analytics_session_facts/{docId} {
+      allow read, write: if false;
+    }
+
+    match /analytics_rollup_days/{dayId} {
+      allow read, write: if false;
+      match /summary_shards/{shardId} {
+        allow read, write: if false;
+      }
+    }
+
+    match /analytics_rollup_months/{monthId} {
+      allow read, write: if false;
+    }
+
+    match /analytics_rollup_years/{yearId} {
+      allow read, write: if false;
+    }
+
+    match /analytics_archive_manifests/{manifestId} {
+      allow read, write: if false;
+    }
+
+    match /sys_analytics_maintenance/{docId} {
+      allow read, write: if false;
     }
 
     match /sales_stats_daily/{docId} {

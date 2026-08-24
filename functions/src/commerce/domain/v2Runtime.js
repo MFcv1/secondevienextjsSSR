@@ -424,6 +424,7 @@ function createRefs(db, appId) {
         checkoutIdentity: (identityId) => document(
             `commerce_checkout_identities/${identityId}`
         ),
+        orderNumberCounter: () => document('sys_counters/orders'),
         order: (orderId) => document(`orders/${orderId}`),
         attempt: (orderId, attemptId) => document(
             `orders/${orderId}/payment_attempts/${attemptId}`

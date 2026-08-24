@@ -10,7 +10,7 @@ import {
 } from './analyticsEvents';
 
 const ANALYTICS_INIT_DELAY_MS = 1500;
-const ANALYTICS_SYNC_INTERVAL_MS = 15000;
+const ANALYTICS_SYNC_INTERVAL_MS = 60000;
 const ROUTE_SYNC_DELAY_MS = 750;
 const MIN_BEACON_GAP_MS = 3000;
 const CLOSED_SESSION_RESUME_GRACE_MS = 15000;
@@ -89,6 +89,10 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
     const syncTokenRef = useRef(null);
     const initCalledRef = useRef(false);
     const journeyToSend = useRef([]);
+    const journeyHistoryRef = useRef([]);
+    const journeyCountRef = useRef(0);
+    const pageCountsRef = useRef({});
+    const actionCountsRef = useRef({});
     const eventPreviewRef = useRef([]);
     const startTimeRef = useRef(Date.now());
     const activeStartedAtRef = useRef(typeof document !== 'undefined' && document.visibilityState === 'hidden' ? null : Date.now());
@@ -114,6 +118,8 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
         const recordAnalyticsEvent = (detail) => {
             if (isAdmin || !detail?.action) return;
             eventPreviewRef.current = [...eventPreviewRef.current, detail].slice(-16);
+            const action = String(detail.action).slice(0, 80);
+            actionCountsRef.current[action] = (actionCountsRef.current[action] || 0) + 1;
             scheduleRouteSync('manual');
         };
         const handleAnalyticsEvent = (event) => recordAnalyticsEvent(event?.detail);
@@ -175,14 +181,19 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
             }
         }
 
-        journeyToSend.current.push({
+        const step = {
             page: current.view,
             itemId: displayId,
             time: new Date().toLocaleTimeString('fr-FR'),
             timestampMs: actionTime,
             timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
             duration: durationSinceLast
-        });
+        };
+        journeyToSend.current.push(step);
+        journeyHistoryRef.current = [...journeyHistoryRef.current, step].slice(-25);
+        journeyCountRef.current += 1;
+        const page = String(current.view || 'unknown').slice(0, 80);
+        pageCountsRef.current[page] = (pageCountsRef.current[page] || 0) + 1;
         lastRecordedKeyRef.current = actionKey;
         lastActionTimeRef.current = actionTime;
         hasRecordedJourneyRef.current = true;
@@ -240,7 +251,10 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
                 sessionId: sessionIdRef.current,
                 syncToken: syncTokenRef.current,
                 duration: getTrackedDuration(),
-                journey: chunk,
+                journey: journeyHistoryRef.current,
+                journeyCount: journeyCountRef.current,
+                pageCounts: pageCountsRef.current,
+                actionCounts: actionCountsRef.current,
                 lastEventPreview: eventPreviewRef.current,
                 sessionActive,
                 reason
@@ -284,7 +298,6 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
 
             const userInfo = {
                 userId: user.uid || 'anonymous',
-                email: user.email || null,
                 type: isAdmin ? 'admin' : (user && !user.isAnonymous ? 'client' : 'anonymous'),
                 ...getDeviceInfo()
             };
@@ -303,6 +316,22 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
                     if (Number.isFinite(startedAtMs) && startedAtMs > 0) {
                         startTimeRef.current = startedAtMs;
                     }
+                    journeyHistoryRef.current = Array.isArray(initRes.data.journeySnapshot)
+                        ? initRes.data.journeySnapshot.slice(-25)
+                        : [];
+                    journeyCountRef.current = Math.max(
+                        journeyHistoryRef.current.length,
+                        Number(initRes.data.journeyCount) || 0
+                    );
+                    pageCountsRef.current = initRes.data.pageCounts && typeof initRes.data.pageCounts === 'object'
+                        ? { ...initRes.data.pageCounts }
+                        : {};
+                    actionCountsRef.current = initRes.data.actionCounts && typeof initRes.data.actionCounts === 'object'
+                        ? { ...initRes.data.actionCounts }
+                        : {};
+                    eventPreviewRef.current = Array.isArray(initRes.data.lastEventPreview)
+                        ? initRes.data.lastEventPreview.slice(-16)
+                        : [];
                     accumulatedActiveMsRef.current = 0;
                     activeStartedAtRef.current = document.visibilityState === 'hidden' ? null : Date.now();
                     lastActionTimeRef.current = Date.now();
@@ -359,14 +388,19 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
                 displayId += ` [depuis: ${parentFurnitureName}]`;
             }
 
-            journeyToSend.current.push({
+            const step = {
                 page: `affiliate_${source}`,
                 itemId: displayId,
                 time: new Date().toLocaleTimeString('fr-FR'),
                 timestampMs: actionTime,
                 timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
                 duration: durationSinceLast
-            });
+            };
+            journeyToSend.current.push(step);
+            journeyHistoryRef.current = [...journeyHistoryRef.current, step].slice(-25);
+            journeyCountRef.current += 1;
+            pageCountsRef.current[step.page] = (pageCountsRef.current[step.page] || 0) + 1;
+            actionCountsRef.current.affiliate_click = (actionCountsRef.current.affiliate_click || 0) + 1;
             hasRecordedJourneyRef.current = true;
             lastActionTimeRef.current = actionTime;
             scheduleRouteSync('affiliate');
@@ -398,7 +432,10 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
                 sessionId: sessionIdRef.current,
                 syncToken: syncTokenRef.current,
                 duration: totalDuration,
-                journey: chunk,
+                journey: journeyHistoryRef.current,
+                journeyCount: journeyCountRef.current,
+                pageCounts: pageCountsRef.current,
+                actionCounts: actionCountsRef.current,
                 lastEventPreview: eventPreviewRef.current,
                 sessionActive: isActive,
                 reason

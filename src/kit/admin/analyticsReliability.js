@@ -1,11 +1,14 @@
-export const MAX_ANALYTICS_SESSIONS = 5000;
+// Limite d'affichage des racines legeres. Les statistiques historiques ne
+// dependent plus de ce lot: elles proviennent des rollups serveur permanents.
+export const MAX_ANALYTICS_SESSIONS = 1000;
 
 export const ANALYTICS_TIME_FILTERS = [
     { id: '1h', label: '1h', duration: 60 * 60 * 1000, step: 60 * 1000 },
     { id: '1j', label: '1j', duration: 24 * 60 * 60 * 1000, step: 60 * 60 * 1000 },
     { id: '7j', label: '7j', duration: 7 * 24 * 60 * 60 * 1000, step: 6 * 60 * 60 * 1000 },
     { id: '1mois', label: '1mois', duration: 30 * 24 * 60 * 60 * 1000, step: 24 * 60 * 60 * 1000 },
-    { id: '1ans', label: '1ans', duration: 365 * 24 * 60 * 60 * 1000, step: 30 * 24 * 60 * 60 * 1000 }
+    { id: '1ans', label: '1ans', duration: 365 * 24 * 60 * 60 * 1000, step: 30 * 24 * 60 * 60 * 1000 },
+    { id: 'tout', label: 'Tout', duration: Number.MAX_SAFE_INTEGER, step: 365 * 24 * 60 * 60 * 1000 }
 ];
 
 const MAX_ANALYTICS_DURATION_SECONDS = 24 * 60 * 60;
@@ -39,6 +42,13 @@ export const getIpVisitorKey = (session) => {
 };
 
 export const getVisitorIdentity = (session) => {
+    const visitorKey = normalizeAnalyticsValue(session?.visitorKey);
+    if (visitorKey) {
+        return {
+            key: `visitor:${visitorKey}`,
+            source: session?.identitySource || 'pseudonymous_uid'
+        };
+    }
     const userId = normalizeAnalyticsValue(session?.userId);
     if (userId && userId.toLowerCase() !== 'unknown') {
         return {
@@ -218,7 +228,11 @@ export const buildVisitorDayGroups = (sessions = [], options = {}) => {
                         0
                     );
                     const journeySteps = sortedSessions.reduce(
-                        (sum, session) => sum + (Array.isArray(session.journey) ? session.journey.length : 0),
+                        (sum, session) => sum + (
+                            Number.isFinite(Number(session.journeyCount))
+                                ? Number(session.journeyCount)
+                                : (Array.isArray(session.journey) ? session.journey.length : 0)
+                        ),
                         0
                     );
                     const isActive = sortedSessions.some((session) => {

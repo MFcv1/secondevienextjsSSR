@@ -13,6 +13,38 @@ let googleProviderInstance = null;
 let appCheckPromise = null;
 export const ADMIN_STEP_UP_REQUIRED_EVENT = 'sv:admin-step-up-required';
 
+const OBSERVED_CALLABLES = new Set([
+  'adjustInventoryAdmin',
+  'archiveOrderAdmin',
+  'cancelReturnAdmin',
+  'createOrder',
+  'createCheckoutV2',
+  'createProductAdmin',
+  'createPublishedProductAdmin',
+  'decideCustomerReturnRequestAdmin',
+  'deleteProductAdmin',
+  'getCommerceOperationsStatusAdmin',
+  'getDiagnosticTimelineAdmin',
+  'getAnalyticsAdmin',
+  'markOrderDeliveredAdmin',
+  'markOrderPickedUpAdmin',
+  'markOrderPreparingAdmin',
+  'markOrderReadyForPickupAdmin',
+  'markOrderShippedAdmin',
+  'markReturnReceivedAdmin',
+  'openReturnAdmin',
+  'publishProductAdmin',
+  'requestCustomerReturn',
+  'requestOrderCancellation',
+  'requestRefundAdmin',
+  'resolveReturnAdmin',
+  'restockReturnLinesAdmin',
+  'resumeCheckoutV2',
+  'updateOrderTrackingAdmin',
+  'updateProductOfferAdmin',
+  'writeOffReturnLinesAdmin',
+]);
+
 const getCallableReason = (error) => (
   error?.details?.reason
   || error?.customData?.details?.reason
@@ -131,7 +163,29 @@ export const getCallableFunction = async (name) => {
   const callable = httpsCallable(functions, getFunctionTarget(name));
   return async (payload) => {
     try {
-      return await callable(payload);
+      if (!OBSERVED_CALLABLES.has(name)) {
+        return await callable(payload);
+      }
+      const data = payload && typeof payload === 'object' && !Array.isArray(payload)
+        ? payload
+        : {};
+      const requestId = typeof globalThis.crypto?.randomUUID === 'function'
+        ? globalThis.crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      let sessionId = null;
+      try {
+        sessionId = window.sessionStorage.getItem('analytics_session_id');
+      } catch {
+        // Le stockage navigateur peut etre bloque. La requete reste tracable.
+      }
+      return await callable({
+        ...data,
+        _observability: {
+          requestId,
+          correlationId: requestId,
+          sessionId,
+        },
+      });
     } catch (error) {
       emitAdminStepUpRequired(error);
       throw error;

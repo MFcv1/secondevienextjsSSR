@@ -428,6 +428,25 @@ test('Gate 7A: panne avant envoi reste retryable failed', async () => {
     });
     await assert.rejects(() => worker.process(outboxEntry().outboxId));
     assert.equal(repository.state.calls[0].type, 'failed');
+    assert.equal(repository.state.calls[0].input.maxAttempts, undefined);
+});
+
+test('Gate 7A: configuration Gmail invalide part immediatement en dead-letter', async () => {
+    const repository = outboxRepository(outboxEntry());
+    const worker = createOutboxWorker({
+        repository,
+        send: async () => {
+            const error = new Error('gmail auth refused');
+            error.code = 'EAUTH';
+            error.retryable = false;
+            throw error;
+        },
+        ids: { leaseToken: () => 'lease-gate7a-eauth' },
+        clock: workerClock()
+    });
+    await assert.rejects(() => worker.process(outboxEntry().outboxId));
+    assert.equal(repository.state.calls[0].type, 'failed');
+    assert.equal(repository.state.calls[0].input.maxAttempts, 1);
 });
 
 test('Gate 7A: Gmail ambigu devient delivery_unknown sans retry automatique', async () => {
@@ -541,11 +560,13 @@ test('Gate 7A: une outbox de fixture est neutralisee sans appel fournisseur', as
 
 test('Gate 7A: seuils exploitation produisent un stop explicite', () => {
     const health = evaluateCommerceHealth({
+        failedOutbox: 2,
         deadLetterOutbox: 1,
         orphanPayments: 2
     });
     assert.equal(health.status, 'stop');
     assert.deepEqual(health.incidents.map((incident) => incident.code), [
+        'failedOutbox',
         'deadLetterOutbox',
         'orphanPayments'
     ]);

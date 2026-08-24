@@ -17,6 +17,13 @@ const {
     getTransactionalEmailRuntime
 } = require('./transactionalEmailRuntime');
 const { createLegacyOrderEmailDelivery } = require('./legacyOrderEmailDelivery');
+const {
+    EMAIL_COLORS,
+    EMAIL_FONT_STACK,
+    renderCallout,
+    renderEmailShell,
+    renderSummaryGrid
+} = require('./emailDesignSystem');
 
 const db = admin.firestore();
 const REFUND_EMAIL_STATUSES = new Set(['refund_pending', 'refunded', 'refund_failed']);
@@ -68,6 +75,13 @@ function operationalErrorSummary(error) {
     };
 }
 
+function orderDisplayReference(orderId, order = {}) {
+    const number = Number(order.orderNumber);
+    return Number.isSafeInteger(number) && number > 0
+        ? `CMD-${number}`
+        : `CMD-${String(orderId || '').slice(0, 8).toUpperCase()}`;
+}
+
 function escapeHtml(unsafe) {
     if (!unsafe || typeof unsafe !== 'string') return unsafe;
     return unsafe
@@ -100,68 +114,106 @@ async function sendNewOrderEmails(orderId, order) {
     const SITE_URL = getSiteUrl();
 
     const safeEmail = escapeHtml(clientEmail || "inconnu");
-    const safeName = escapeHtml(order.shipping?.fullName || "inconnu");
-
     const itemsHtml = (order.items || []).map(item =>
         `<li>${item.quantity || 1}x <b>${escapeHtml(item.name || "Article")}</b> - ${item.price}€</li>`
     ).join('');
 
     const shippingInfo = order.shipping ? formatShippingInfo(order.shipping) : "Non specifie";
+    const reference = orderDisplayReference(orderId, order);
+    const amountLabel = `${Number(order.total || 0).toLocaleString('fr-FR')} €`;
+    const paymentLabel = order.paymentMethod === 'stripe' || order.status === 'paid'
+        ? 'Carte bancaire · validée'
+        : 'Règlement à finaliser';
+    const orderContentHtml = `
+        <div style="color:${EMAIL_COLORS.muted};font-family:${EMAIL_FONT_STACK};font-size:14px;line-height:1.65;">
+            <div style="color:${EMAIL_COLORS.text};font-size:17px;line-height:1.3;font-weight:650;letter-spacing:-.25px;">Articles</div>
+            <ul style="margin:10px 0 0;padding-left:20px;">${itemsHtml}</ul>
+        </div>
+    `;
 
     // Email Admin
     const adminMailOptions = {
-        from: `Commerce Bot <${adminEmail}>`,
+        from: `Seconde Vie <${adminEmail}>`,
         to: adminEmail,
-        subject: `🆕 Nouvelle Commande : ${order.total}€ (${safeName})`,
-        html: `
-            <h2>Nouvelle commande reçue !</h2>
-            <p><b>Client :</b> ${safeName} (${safeEmail})</p>
-            <p><b>Total :</b> ${order.total}€</p>
-            <p><b>Paiement :</b> ${order.paymentMethod === 'stripe' || order.status === 'paid' ? 'Carte Bancaire (Validé)' : 'Différé (À encaisser)'}</p>
-            <hr/>
-            <h3>Articles :</h3>
-            <ul>${itemsHtml}</ul>
-            <hr/>
-            <h3>Livraison :</h3>
-            <p>${shippingInfo}</p>
-            <p><a href="${SITE_URL}/admin">Aller au Dashboard</a></p>
-        `
+        subject: `Nouvelle commande ${reference} · ${amountLabel}`,
+        text: [
+            `Nouvelle commande ${reference}`,
+            `Client : ${clientEmail || 'inconnu'}`,
+            `Total : ${amountLabel}`,
+            `Paiement : ${paymentLabel}`,
+            `Livraison : ${String(shippingInfo).replace(/<[^>]+>/g, '')}`,
+            `${SITE_URL}/admin`
+        ].join('\n'),
+        html: renderEmailShell({
+            preheader: `${reference} · ${amountLabel} · nouvelle commande`,
+            eyebrow: 'Nouvelle commande',
+            title: 'Nouvelle commande.',
+            intro: `${order.shipping?.fullName || 'Un client'} vient de confirmer une commande. Vérifiez le règlement et les modalités de livraison.`,
+            summaryHtml: renderSummaryGrid([
+                { label: 'Commande', value: reference },
+                { label: 'Paiement', value: paymentLabel, color: order.status === 'paid' ? EMAIL_COLORS.success : EMAIL_COLORS.warning },
+                { label: 'Total', value: amountLabel }
+            ]),
+            contentHtml: `${orderContentHtml}
+                <div style="margin-top:20px;padding-top:18px;border-top:1px solid ${EMAIL_COLORS.line};color:${EMAIL_COLORS.muted};font-family:${EMAIL_FONT_STACK};font-size:13px;line-height:1.55;">
+                    <strong style="display:block;margin-bottom:6px;color:${EMAIL_COLORS.text};font-weight:650;">${safeEmail}</strong>
+                    ${shippingInfo}
+                </div>`,
+            calloutHtml: renderCallout({
+                title: 'À vérifier dans le back-office',
+                body: 'Contrôlez le paiement, les coordonnées client et la prochaine étape avant de traiter la commande.',
+                role: order.status === 'paid' ? 'success' : 'warning'
+            }),
+            actionLabel: 'Ouvrir le back-office',
+            actionUrl: `${SITE_URL}/admin`,
+            footer: 'Notification opérationnelle réservée à l’administration Seconde Vie.',
+            titleAlign: 'left'
+        })
     };
 
     // Instructions paiement différé (si applicable)
-    const paymentInstructions = (order.paymentMethod === 'deferred' || order.paymentMethod === 'manual' || order.status === 'pending_payment') ? `
-        <div style="background: #fffbeb; border: 1px solid #fcd34d; padding: 20px; border-radius: 10px; margin: 20px 0;">
-            <h3 style="color: #b45309; margin-top:0;">Instructions de règlement</h3>
-            <p>Pour finaliser votre commande, merci d'effectuer le règlement par <b>Virement</b> ou autre moyen convenu.</p>
-            <p style="font-size: 12px; color: #92400e;"><i>Votre commande sera expédiée dès réception du règlement.</i></p>
-        </div>
-    ` : '';
+    const paymentInstructions = (order.paymentMethod === 'deferred' || order.paymentMethod === 'manual' || order.status === 'pending_payment')
+        ? renderCallout({
+            title: 'Règlement à finaliser',
+            body: 'Effectuez le règlement par virement ou selon le moyen convenu avec l’atelier. La commande sera préparée après réception.',
+            role: 'warning'
+        })
+        : renderCallout({
+            title: 'Commande confirmée',
+            body: 'L’atelier va maintenant vérifier votre pièce et préparer la prochaine étape.',
+            role: 'success'
+        });
 
     // Email Client
     const clientMailOptions = clientEmail ? {
-        from: `Votre Boutique <${adminEmail}>`,
+        from: `Seconde Vie <${adminEmail}>`,
         to: clientEmail,
-        subject: `Confirmation de votre commande`,
-        html: `
-            <div style="font-family: sans-serif; color: #333; max-width: 600px;">
-                <h1 style="color: #d97706;">Merci pour votre commande !</h1>
-                <p>Bonjour ${escapeHtml(order.shipping?.fullName || '')},</p>
-                <p>Nous avons bien reçu votre commande <b>#${orderId.slice(0, 8)}</b>.</p>
-                
-                ${paymentInstructions}
-
-                <div style="background: #f5f5f4; padding: 20px; border-radius: 10px; margin: 20px 0;">
-                    <h3 style="margin-top:0;">Récapitulatif</h3>
-                    <ul>${itemsHtml}</ul>
-                    <p><strong>Total : ${order.total}€</strong></p>
-                </div>
-
-                <p>Adresse de livraison :<br/>${shippingInfo}</p>
-                
-                <hr style="border:none; border-top:1px solid #eee; margin: 20px 0;" />
-                <p>À très vite,<br/><i>L'équipe</i></p>
-            </div>
-        `
+        subject: `Commande ${reference} confirmée · Seconde Vie`,
+        text: [
+            `Bonjour ${order.shipping?.fullName || ''},`,
+            `Votre commande ${reference} est confirmée.`,
+            `Total : ${amountLabel}`,
+            `Paiement : ${paymentLabel}`,
+            `Livraison : ${String(shippingInfo).replace(/<[^>]+>/g, '')}`
+        ].join('\n'),
+        html: renderEmailShell({
+            preheader: `${reference} · ${amountLabel} · commande confirmée`,
+            eyebrow: 'Commande confirmée',
+            title: 'Votre commande est confirmée.',
+            intro: `Bonjour ${order.shipping?.fullName || ''}, votre commande est bien enregistrée auprès de l’atelier.`,
+            summaryHtml: renderSummaryGrid([
+                { label: 'Commande', value: reference },
+                { label: 'Paiement', value: paymentLabel, color: order.status === 'paid' ? EMAIL_COLORS.success : EMAIL_COLORS.warning },
+                { label: 'Total', value: amountLabel }
+            ]),
+            contentHtml: `${orderContentHtml}
+                <div style="margin-top:20px;padding-top:18px;border-top:1px solid ${EMAIL_COLORS.line};color:${EMAIL_COLORS.muted};font-family:${EMAIL_FONT_STACK};font-size:13px;line-height:1.55;">
+                    <strong style="display:block;margin-bottom:6px;color:${EMAIL_COLORS.text};font-weight:650;">Livraison</strong>
+                    ${shippingInfo}
+                </div>`,
+            calloutHtml: paymentInstructions,
+            footer: 'Confirmation transactionnelle Seconde Vie. Conservez cette référence pour toute question.'
+        })
     } : null;
 
     const emailProof = {
@@ -214,7 +266,7 @@ function getRefundEmailCopy(order) {
     if (order.status === 'refunded') {
         return {
             subject: 'Votre remboursement est confirme',
-            title: 'Remboursement confirme',
+            title: 'Votre remboursement est confirmé.',
             body: 'Stripe a confirme le remboursement. Selon votre banque, le credit peut encore prendre quelques jours ouvrables avant d apparaitre sur votre compte.'
         };
     }
@@ -222,14 +274,14 @@ function getRefundEmailCopy(order) {
     if (order.status === 'refund_failed') {
         return {
             subject: 'Information sur votre remboursement',
-            title: 'Remboursement en verification',
+            title: 'Votre remboursement est à vérifier.',
             body: 'Une verification est necessaire cote atelier ou cote Stripe. Nous revenons vers vous des que la situation est debloquee.'
         };
     }
 
     return {
         subject: 'Votre remboursement a ete initie',
-        title: 'Remboursement initie',
+        title: 'Votre remboursement est en cours.',
         body: 'Le remboursement a ete lance via Stripe sur le moyen de paiement initial. Le credit apparait generalement sous 5 a 10 jours ouvrables selon votre banque.'
     };
 }
@@ -252,15 +304,26 @@ exports.sendTestEmail = regionalFunctions().runWith({ enforceAppCheck: true, sec
     await emailRuntime.sender.send({
         from: `Diagnostic Seconde Vie <${adminEmail}>`,
         to: recipient,
-        subject: 'Diagnostic email Seconde Vie',
-        html: `
-            <div style="font-family: sans-serif; color: #1c1917; max-width: 600px;">
-                <h1>Diagnostic email OK</h1>
-                <p>Le transport Gmail des Cloud Functions est opérationnel.</p>
-                <p>Projet : <a href="${SITE_URL}">${SITE_URL}</a></p>
-                <p style="color:#78716c;font-size:12px;">Message généré par sendTestEmail.</p>
-            </div>
-        `
+        subject: 'Diagnostic e-mail Seconde Vie',
+        text: `Le transport des e-mails Seconde Vie est opérationnel.\n${SITE_URL}`,
+        html: renderEmailShell({
+            preheader: 'Le transport des e-mails Seconde Vie est opérationnel.',
+            eyebrow: 'Diagnostic technique',
+            title: 'Tout fonctionne.',
+            intro: 'Le fournisseur transactionnel a accepté ce message de diagnostic.',
+            summaryHtml: renderSummaryGrid([
+                { label: 'État', value: 'Opérationnel', color: EMAIL_COLORS.success },
+                { label: 'Environnement', value: 'Sandbox' }
+            ]),
+            calloutHtml: renderCallout({
+                title: 'Contrôle terminé',
+                body: 'La réception de ce message confirme le parcours d’envoi jusqu’à cette boîte.',
+                role: 'success'
+            }),
+            actionLabel: 'Ouvrir le sandbox',
+            actionUrl: SITE_URL,
+            footer: 'Message de diagnostic réservé à l’administration Seconde Vie.'
+        })
     }, {
         idempotencyKey: buildEmailIdempotencyKey('email-diagnostic', context.auth?.uid, Date.now())
     });
@@ -312,30 +375,59 @@ exports.sendRefundStatusEmailAdmin = regionalFunctions().runWith({ enforceAppChe
 
     const adminEmail = emailRuntime.fromAddress;
     const copy = getRefundEmailCopy(order);
-    const refundId = order.stripeRefundId ? `<p style="color:#78716c;font-size:12px;">Reference Stripe : ${escapeHtml(order.stripeRefundId)}</p>` : '';
+    const refundId = order.stripeRefundId || null;
     const itemsHtml = (order.items || []).map(item =>
         `<li>${item.quantity || 1}x <b>${escapeHtml(item.name || "Article")}</b></li>`
     ).join('');
+    const reference = orderDisplayReference(orderId, order);
+    const amountLabel = formatRefundAmount(order);
+    const refundRole = order.status === 'refunded'
+        ? 'success'
+        : order.status === 'refund_failed'
+            ? 'danger'
+            : 'info';
+    const statusLabel = order.status === 'refunded'
+        ? 'Confirmé'
+        : order.status === 'refund_failed'
+            ? 'À vérifier'
+            : 'En cours';
 
     await emailRuntime.sender.send({
         from: `Seconde Vie <${adminEmail}>`,
         to: clientEmail,
         subject: copy.subject,
-        html: `
-            <div style="font-family: Arial, sans-serif; color: #1c1917; max-width: 620px;">
-                <h1 style="margin-bottom: 8px;">${copy.title}</h1>
-                <p>Bonjour ${escapeHtml(order.shipping?.fullName || '')},</p>
-                <p>${copy.body}</p>
-                <div style="background:#f5f5f4;border:1px solid #e7e5e4;padding:18px;border-radius:12px;margin:20px 0;">
-                    <p style="margin:0 0 8px;"><b>Commande :</b> #${escapeHtml(orderId.slice(0, 8))}</p>
-                    <p style="margin:0 0 8px;"><b>Montant rembourse :</b> ${formatRefundAmount(order)}</p>
-                    ${itemsHtml ? `<ul style="margin:10px 0 0;padding-left:20px;">${itemsHtml}</ul>` : ''}
-                    ${refundId}
-                </div>
-                <p>Si votre banque affiche encore le debit pendant quelques jours, c est normal pendant le traitement interbancaire.</p>
-                <p style="margin-top:24px;">A tres vite,<br/>L equipe Seconde Vie</p>
-            </div>
-        `
+        text: [
+            `Bonjour ${order.shipping?.fullName || ''},`,
+            copy.body,
+            `Commande : ${reference}`,
+            `Montant : ${amountLabel}`,
+            refundId ? `Référence Stripe : ${refundId}` : null
+        ].filter(Boolean).join('\n'),
+        html: renderEmailShell({
+            preheader: `${reference} · remboursement ${statusLabel.toLowerCase()}`,
+            eyebrow: 'Suivi du remboursement',
+            title: copy.title,
+            intro: `Bonjour ${order.shipping?.fullName || ''}, ${copy.body}`,
+            summaryHtml: renderSummaryGrid([
+                { label: 'Commande', value: reference },
+                { label: 'Statut', value: statusLabel, color: EMAIL_COLORS[refundRole] },
+                { label: 'Montant', value: amountLabel }
+            ]),
+            contentHtml: itemsHtml ? `
+                <div style="color:${EMAIL_COLORS.muted};font-family:${EMAIL_FONT_STACK};font-size:14px;line-height:1.65;">
+                    <div style="color:${EMAIL_COLORS.text};font-size:17px;line-height:1.3;font-weight:650;letter-spacing:-.25px;">Pièces concernées</div>
+                    <ul style="margin:10px 0 0;padding-left:20px;">${itemsHtml}</ul>
+                </div>` : '',
+            calloutHtml: renderCallout({
+                title: order.status === 'refunded' ? 'Crédit bancaire en cours' : 'Dossier suivi par l’atelier',
+                body: order.status === 'refunded'
+                    ? 'Selon votre banque, le crédit peut prendre quelques jours ouvrables avant d’apparaître.'
+                    : 'Aucune action supplémentaire n’est nécessaire de votre côté pour le moment.',
+                role: refundRole,
+                detail: refundId ? `Référence Stripe : ${refundId}` : null
+            }),
+            footer: 'Message transactionnel Seconde Vie concernant votre commande.'
+        })
     }, {
         idempotencyKey: buildEmailIdempotencyKey(
             'refund-status',
@@ -439,6 +531,7 @@ exports.onOrderUpdated = onDocumentUpdated(
 
         const emailDelivery = getLegacyEmailDelivery();
         const adminEmail = emailDelivery.fromAddress;
+        const reference = orderDisplayReference(orderId, orderAfter);
 
         // --- 2. SHIPPED ---
         if (orderAfter.status === 'shipped' && orderBefore.status !== 'shipped') {
@@ -446,19 +539,33 @@ exports.onOrderUpdated = onDocumentUpdated(
                 orderId,
                 kind: 'order-shipped',
                 message: {
-                    from: `Votre Boutique <${adminEmail}>`,
+                    from: `Seconde Vie <${adminEmail}>`,
                     to: clientEmail,
-                    subject: `📦 Votre commande a été expédiée !`,
-                    html: `
-                        <div style="font-family: sans-serif; color: #333; max-width: 600px;">
-                            <h1 style="color: #4f46e5;">Bonne nouvelle !</h1>
-                            <p>Bonjour ${escapeHtml(orderAfter.shipping?.fullName || '')},</p>
-                            <p>Votre commande <b>#${orderId.slice(0, 8)}</b> vient d'être expédiée !</p>
-                            ${orderAfter.trackingNumber ? `<p>📍 Numéro de suivi : <b>${escapeHtml(orderAfter.trackingNumber)}</b></p>` : ''}
-                            <hr style="border:none; border-top:1px solid #eee; margin: 20px 0;" />
-                            <p>À très vite,<br/><i>L'équipe</i></p>
-                        </div>
-                    `
+                    subject: `${reference} est expédiée · Seconde Vie`,
+                    text: [
+                        `Bonjour ${orderAfter.shipping?.fullName || ''},`,
+                        `Votre commande ${reference} vient d’être expédiée.`,
+                        orderAfter.trackingNumber ? `Numéro de suivi : ${orderAfter.trackingNumber}` : null
+                    ].filter(Boolean).join('\n'),
+                    html: renderEmailShell({
+                        preheader: `${reference} vient d’être expédiée.`,
+                        eyebrow: 'Expédition confirmée',
+                        title: 'Votre commande a été expédiée.',
+                        intro: `Bonjour ${orderAfter.shipping?.fullName || ''}, votre commande vient de quitter l’atelier.`,
+                        summaryHtml: renderSummaryGrid([
+                            { label: 'Commande', value: reference },
+                            { label: 'Statut', value: 'Expédiée', color: EMAIL_COLORS.info }
+                        ]),
+                        calloutHtml: renderCallout({
+                            title: orderAfter.trackingNumber ? 'Suivi disponible' : 'Remise par le transporteur',
+                            body: orderAfter.trackingNumber
+                                ? 'Conservez ce numéro pour suivre l’acheminement de votre commande.'
+                                : 'Le transporteur vous communiquera directement les modalités de remise.',
+                            role: 'info',
+                            detail: orderAfter.trackingNumber ? `Numéro de suivi : ${orderAfter.trackingNumber}` : null
+                        }),
+                        footer: 'Message transactionnel Seconde Vie concernant la livraison de votre commande.'
+                    })
                 }
             });
             logLegacyEmailDelivery('order-shipped', outcome);
@@ -470,19 +577,30 @@ exports.onOrderUpdated = onDocumentUpdated(
                 orderId,
                 kind: 'order-completed',
                 message: {
-                    from: `Votre Boutique <${adminEmail}>`,
+                    from: `Seconde Vie <${adminEmail}>`,
                     to: clientEmail,
-                    subject: `✨ Votre commande est arrivée !`,
-                    html: `
-                        <div style="font-family: 'Georgia', serif; color: #1c1917; max-width: 600px;">
-                            <h1>Merci pour votre confiance !</h1>
-                            <p>Bonjour ${escapeHtml(orderAfter.shipping?.fullName || '')},</p>
-                            <p>Votre commande <b>#${orderId.slice(0, 8)}</b> a été livrée avec succès.</p>
-                            <p>N'hésitez pas à nous laisser un avis !</p>
-                            <hr style="border:none; border-top:1px solid #eee; margin: 20px 0;" />
-                            <p>À très vite,<br/><i>L'équipe</i></p>
-                        </div>
-                    `
+                    subject: `${reference} est livrée · Seconde Vie`,
+                    text: [
+                        `Bonjour ${orderAfter.shipping?.fullName || ''},`,
+                        `Votre commande ${reference} a été livrée.`,
+                        'Merci pour votre confiance.'
+                    ].join('\n'),
+                    html: renderEmailShell({
+                        preheader: `${reference} a été livrée.`,
+                        eyebrow: 'Livraison terminée',
+                        title: 'Votre commande a été livrée.',
+                        intro: `Bonjour ${orderAfter.shipping?.fullName || ''}, la livraison de votre commande est confirmée. Merci pour votre confiance.`,
+                        summaryHtml: renderSummaryGrid([
+                            { label: 'Commande', value: reference },
+                            { label: 'Statut', value: 'Livrée', color: EMAIL_COLORS.success }
+                        ]),
+                        calloutHtml: renderCallout({
+                            title: 'Une question après livraison ?',
+                            body: 'Répondez simplement à cet e-mail avec votre référence. L’atelier retrouvera votre dossier.',
+                            role: 'success'
+                        }),
+                        footer: 'Message transactionnel Seconde Vie concernant votre commande.'
+                    })
                 }
             });
             logLegacyEmailDelivery('order-completed', outcome);

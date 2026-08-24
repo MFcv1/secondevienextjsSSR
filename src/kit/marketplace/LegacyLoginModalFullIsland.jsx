@@ -202,7 +202,7 @@ const loginWithPasskey = async (email, preparedAuthentication = null, onStepChan
   };
 };
 
-export function LegacyLoginModalContent({ open, onOpenChange }) {
+export function LegacyLoginModalContent({ open, onOpenChange, onAuthenticated }) {
   const { preloadGoogleLogin, loginWithGoogle, loginWithCustomToken } = useAuth();
   const toast = useToast();
   const [googleStatus, setGoogleStatus] = useState('preparing');
@@ -521,6 +521,7 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
     setGoogleStatus('pending');
     try {
       const result = await login();
+      onAuthenticated?.(result?.user || null);
       offerPasskeyOrClose(result?.user);
     } catch (error) {
       toast(getGoogleAuthErrorMessage(error), { type: 'error' });
@@ -537,8 +538,9 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
       const result = await loginWithPasskey(emailValue, preparedPasskeyAuth, setPasskeyLoginStep);
       setPasskeyLoginStep('signing-in');
       const signInStartedAt = startClientPerf();
-      await loginWithCustomToken(result.token, 'passkey');
+      const userCredential = await loginWithCustomToken(result.token, 'passkey');
       logClientPerf('passkey.authentication.signInWithCustomToken', signInStartedAt, { phase: 'success' });
+      onAuthenticated?.(userCredential?.user || null);
       saveLocalPasskeyState(result?.email || emailValue);
       setLocalPasskeyEmails(readLocalPasskeyState().emails);
       close();
@@ -635,6 +637,7 @@ export function LegacyLoginModalContent({ open, onOpenChange }) {
       signInStartedAt = startClientPerf();
       const userCredential = await loginWithCustomToken(customToken, 'email_otp');
       logClientPerf('auth.email.signInWithCustomToken', signInStartedAt, { phase: 'success' });
+      onAuthenticated?.(userCredential?.user || null);
       otpCustomTokenRef.current = null;
       setOtpStatus('success');
       setOtpMessage('Email verifie. Connexion ouverte.');
@@ -1070,6 +1073,7 @@ export default function LegacyLoginModalIsland({
   showShieldIcon = false,
   open,
   onOpenChange,
+  onAuthenticated,
   renderTrigger = true,
 } = {}) {
   const [internalOpen, setInternalOpen] = useState(false);
@@ -1091,7 +1095,11 @@ export default function LegacyLoginModalIsland({
       {isOpen ? (
         <AuthProvider>
           <ToastProvider>
-            <LegacyLoginModalContent open={isOpen} onOpenChange={setOpen} />
+            <LegacyLoginModalContent
+              open={isOpen}
+              onAuthenticated={onAuthenticated}
+              onOpenChange={setOpen}
+            />
           </ToastProvider>
         </AuthProvider>
       ) : null}

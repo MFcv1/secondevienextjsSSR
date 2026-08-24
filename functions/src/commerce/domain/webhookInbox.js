@@ -103,7 +103,8 @@ function markInboxProcessed(entry, { leaseToken, nowMillis, processedAt }) {
         processingUntil: null,
         nextAttemptAt: null,
         lastError: null,
-        processedAt
+        processedAt,
+        purgeAt: new Date(nowMillis + (180 * 24 * 60 * 60 * 1000))
     };
 }
 

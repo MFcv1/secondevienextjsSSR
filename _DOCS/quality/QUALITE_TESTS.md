@@ -461,7 +461,9 @@ ces preuves appartiennent aux Gates M4/M5 sandbox.
 
 Le transport callable fulfillment/archive commande est couvert dans
 `test:commerce:unit`: acteur derive du contexte Auth, autorisation avant acces
-repository, App Check exige, export present et garde controle fail-closed.
+repository, App Check exige, export present et garde controle fail-closed. La
+meme suite prouve qu'une archive souple n'expose plus aucune action et qu'elle
+disparait de la projection admin active sans effacer l'historique client.
 Le transport d'annulation client ajoute les preuves de session obligatoire,
 proprietaire derive du contexte Auth, payload acteur ignore, validation avant
 runtime, App Check/secret Stripe, export present et runtime minimal
@@ -473,6 +475,9 @@ Stripe perdue, reprise de la meme tentative par un second administrateur fort,
 audit de reprise, cumul exact, compte Connect historique et zero restock. La
 lecture admin couvre aussi la jointure bornee de la derniere tentative, sa
 reference Stripe et son indicateur `resumable`.
+Gate 7A couvre aussi le passage immediat en dead-letter des erreurs e-mail non
+reprenables et le statut `stop` produit par toute outbox `failed` ou
+`dead_letter`.
 Les transports retour admin couvrent acteur Auth/AAL2 serveur, commandes
 d'evenement fermees, quantites et versions validees avant runtime, refus des
 lignes inconnues, App Check, runtime retour minimal, exports presents et
@@ -584,6 +589,12 @@ base doivent etre controles manuellement.
 `/mes-commandes` et le workspace commandes reserve a un utilisateur
 authentifie. Il couvre la regression Safari ou la route deconnectee restait sur
 son squelette de chargement.
+
+L'observabilite active est couverte par `tests/observability-contract.test.cjs`,
+`npm run test:retention`, `npm run test:analytics` et `npm run
+test:functions-gen2`. Ces gates verifient la pseudonymisation, les lectures
+bornees, le journal append-only, les TTL declares, les rollups HLL et les dix
+exports actifs. Les tests restent locaux et ne mutent aucune ressource cloud.
 
 Pour une restructuration comme celle-ci:
 

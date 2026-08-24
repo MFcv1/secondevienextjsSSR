@@ -32,9 +32,7 @@ const {
 const {
     resolveStorageBucketName
 } = require('./domain/commerceDocumentStorage');
-const {
-    buildFinancialProjection
-} = require('./domain/financialProjection');
+const { hashPayload } = require('./domain/idempotency');
 const {
     buildFinancialRollupDelta
 } = require('./domain/financialRollup');
@@ -68,8 +66,8 @@ const COMMERCE_OUTBOX_RUNTIME_SERVICE_ACCOUNT =
     'commerce-outbox-dispatcher@secondevienextjsssr.iam.gserviceaccount.com';
 const COMMERCE_OPERATIONS_RUNTIME_SERVICE_ACCOUNT =
     'commerce-operations-reconciler@secondevienextjsssr.iam.gserviceaccount.com';
-const MAX_FACTS = 5000;
-const MAX_ORDERS = 500;
+const DOCUMENT_REPAIR_PAGE_SIZE = 25;
+const MAX_FACTS_PER_ORDER_REPAIR = 100;
 const FIXTURE_COLLECTIONS = [
     'commerce_checkout_identities',
     'commerce_command_results',
@@ -509,21 +507,33 @@ async function upsertImmutableDocument(reference, document) {
     }
 }
 
-async function rebuildDocuments(facts) {
-    const factsByOrder = new Map();
-    for (const fact of facts) {
-        if (!factsByOrder.has(fact.orderId)) factsByOrder.set(fact.orderId, []);
-        factsByOrder.get(fact.orderId).push(fact);
+async function rebuildDocuments(_facts = [], { cursor = null } = {}) {
+    let query = db.collection('orders')
+        .orderBy(admin.firestore.FieldPath.documentId())
+        .limit(DOCUMENT_REPAIR_PAGE_SIZE);
+    if (cursor) query = query.startAfter(cursor);
+    let orders = await query.get();
+    let wrapped = false;
+    if (orders.empty && cursor) {
+        wrapped = true;
+        orders = await db.collection('orders')
+            .orderBy(admin.firestore.FieldPath.documentId())
+            .limit(DOCUMENT_REPAIR_PAGE_SIZE)
+            .get();
     }
-    const orders = await db.collection('orders')
-        .where('schemaVersion', '==', 2)
-        .limit(MAX_ORDERS)
-        .get();
     let created = 0;
     let reused = 0;
     for (const snapshot of orders.docs) {
         const order = { id: snapshot.id, ...snapshot.data() };
-        const orderFacts = factsByOrder.get(snapshot.id) || [];
+        if (order.schemaVersion !== 2) continue;
+        const factsSnapshot = await db.collection('commerce_financial_facts')
+            .where('orderId', '==', snapshot.id)
+            .limit(MAX_FACTS_PER_ORDER_REPAIR + 1)
+            .get();
+        if (factsSnapshot.size > MAX_FACTS_PER_ORDER_REPAIR) {
+            throw operationsError('COMMERCE_ORDER_FACTS_REPAIR_LIMIT_EXCEEDED');
+        }
+        const orderFacts = factsSnapshot.docs.map((document) => document.data());
         if (order.payment?.status === 'succeeded') {
             const receipt = buildPaymentReceipt({
                 order,
@@ -564,12 +574,75 @@ async function rebuildDocuments(facts) {
             else reused += 1;
         }
     }
-    return { scannedOrders: orders.size, created, reused };
+    return {
+        scannedOrders: orders.size,
+        created,
+        reused,
+        cursor: orders.empty ? null : orders.docs[orders.docs.length - 1].id,
+        wrapped
+    };
+}
+
+async function buildProjectionFromRollups(builtAt) {
+    const [totalsSnapshot, dailySnapshot] = await Promise.all([
+        db.collection('commerce_financial_totals').limit(20).get(),
+        db.collection('commerce_financial_daily').orderBy('dateKey', 'desc').limit(366).get()
+    ]);
+    const currencies = {};
+    let factCount = 0;
+    for (const document of totalsSnapshot.docs) {
+        const data = document.data();
+        const currency = String(data.currency || document.id).toUpperCase();
+        currencies[currency] = {
+            capturedCents: Number(data.capturedCents || 0),
+            refundedCents: Number(data.refundedCents || 0),
+            netCents: Number(data.netCents || 0)
+        };
+        factCount += Number(data.factCount || 0);
+    }
+    const days = {};
+    for (const document of dailySnapshot.docs) {
+        const data = document.data();
+        const currency = String(data.currency || 'EUR').toUpperCase();
+        const date = String(data.dateKey || '').slice(0, 10);
+        if (!date) continue;
+        days[`${date}:${currency}`] = {
+            date,
+            currency,
+            capturedCents: Number(data.capturedCents || 0),
+            refundedCents: Number(data.refundedCents || 0),
+            netCents: Number(data.netCents || 0)
+        };
+    }
+    const content = {
+        schemaVersion: 2,
+        source: 'commerce_financial_incremental_rollups',
+        factCount,
+        currencies,
+        days,
+        orders: {},
+        accounts: {},
+        divergences: [],
+        validationMode: 'atomic_rollups_plus_primary_incidents'
+    };
+    return {
+        ...content,
+        projectionHash: hashPayload(content),
+        builtAt
+    };
 }
 
 async function countQuery(query) {
     const snapshot = await query.limit(100).get();
     return snapshot.size;
+}
+
+async function buildLiveOutboxFailureCounters() {
+    const [failedOutbox, deadLetterOutbox] = await Promise.all([
+        countQuery(db.collection('commerce_outbox').where('status', '==', 'failed')),
+        countQuery(db.collection('commerce_outbox').where('status', '==', 'dead_letter'))
+    ]);
+    return { failedOutbox, deadLetterOutbox };
 }
 
 async function connectDriftCount() {
@@ -604,6 +677,7 @@ async function buildHealth(projection) {
     const [
         dueInbox,
         expiredInboxLeases,
+        failedOutbox,
         deadLetterOutbox,
         deliveryUnknown,
         expiredHolds,
@@ -616,6 +690,7 @@ async function buildHealth(projection) {
         countQuery(db.collection('commerce_webhook_inbox')
             .where('status', '==', 'processing')
             .where('processingUntil', '<=', nowMillis)),
+        countQuery(db.collection('commerce_outbox').where('status', '==', 'failed')),
         countQuery(db.collection('commerce_outbox').where('status', '==', 'dead_letter')),
         countQuery(db.collection('commerce_outbox').where('status', '==', 'delivery_unknown')),
         countQuery(db.collection('inventory_reservations')
@@ -638,6 +713,7 @@ async function buildHealth(projection) {
     return evaluateCommerceHealth({
         dueInbox,
         expiredInboxLeases,
+        failedOutbox,
         deadLetterOutbox,
         deliveryUnknown,
         expiredHolds,
@@ -742,15 +818,20 @@ async function persistFinancialRollups(facts, projection, builtAt) {
 }
 
 async function runOperationsRebuild() {
-    const factsSnapshot = await db.collection('commerce_financial_facts').limit(MAX_FACTS).get();
-    const facts = factsSnapshot.docs.map((document) => document.data());
     const builtAt = new Date().toISOString();
-    const projection = buildFinancialProjection(facts, { builtAt });
+    const previousOperations = await db.doc('sys_commerce_operations/current').get();
+    const projection = await buildProjectionFromRollups(builtAt);
     await db.doc('commerce_financial_projections/current').set(projection);
-    const [documents, financialRollups] = await Promise.all([
-        rebuildDocuments(facts),
-        persistFinancialRollups(facts, projection, builtAt)
-    ]);
+    const documents = await rebuildDocuments([], {
+        cursor: previousOperations.exists
+            ? previousOperations.data()?.documents?.cursor || null
+            : null
+    });
+    const financialRollups = {
+        source: 'atomic_incremental_writes',
+        rebuilt: false,
+        factCount: projection.factCount
+    };
     const health = await buildHealth(projection);
     await Promise.all([
         db.doc('sys_commerce_operations/current').set({
@@ -907,19 +988,41 @@ const getCommerceOperationsStatusAdmin = regionalFunctions()
     .runWith({ enforceAppCheck: true })
     .https.onCall(async (_data, context) => {
         await checkActiveStrongAdmin(context);
-        const [operations, control, orderSummary, financialSummary, financialDaily] = await Promise.all([
+        const [
+            operations,
+            control,
+            orderSummary,
+            financialSummary,
+            financialDaily,
+            liveOutboxFailures
+        ] = await Promise.all([
             db.doc('sys_commerce_operations/current').get(),
             db.doc('sys_commerce_control/current').get(),
             buildAdminOrderSummary(),
             buildAdminFinancialSummary(),
-            buildAdminFinancialDaily()
+            buildAdminFinancialDaily(),
+            buildLiveOutboxFailureCounters()
         ]);
         const operationsData = operations.exists ? operations.data() : null;
+        const storedEffective = effectiveCommerceHealth(operationsData);
+        const hasLiveOutboxFailure = Object.values(liveOutboxFailures)
+            .some((count) => count > 0);
         return {
             success: true,
             operations: operationsData ? {
                 ...operationsData,
-                effective: effectiveCommerceHealth(operationsData)
+                storedStatus: operationsData.status || 'unknown',
+                status: hasLiveOutboxFailure ? 'stop' : operationsData.status,
+                counters: {
+                    ...(operationsData.counters || {}),
+                    ...liveOutboxFailures
+                },
+                effective: {
+                    ...storedEffective,
+                    effectiveStatus: hasLiveOutboxFailure
+                        ? 'stop'
+                        : storedEffective.effectiveStatus
+                }
             } : null,
             orderSummary,
             financialSummary,

@@ -140,6 +140,26 @@ exports.resumeCheckoutV2Gen2 = resumeCheckoutV2Gen2;
 exports.startStripeConnectOnboardingGen2 = startStripeConnectOnboardingGen2;
 exports.syncStripeConnectAccountGen2 = syncStripeConnectAccountGen2;
 
+// ── OBSERVABILITE METIER ET TIMELINE ADMIN ──────────────
+const {
+    journalCommerceIncidentGen2,
+    journalFinancialFactGen2,
+    journalInventoryMovementGen2,
+    journalOrderEventGen2,
+    journalOutboxStatusGen2,
+    journalWebhookStatusGen2
+} = require('./src/observability/businessEvents');
+const {
+    getDiagnosticTimelineAdminGen2
+} = require('./src/observability/diagnosticTimeline');
+exports.journalCommerceIncidentGen2 = journalCommerceIncidentGen2;
+exports.journalFinancialFactGen2 = journalFinancialFactGen2;
+exports.journalInventoryMovementGen2 = journalInventoryMovementGen2;
+exports.journalOrderEventGen2 = journalOrderEventGen2;
+exports.journalOutboxStatusGen2 = journalOutboxStatusGen2;
+exports.journalWebhookStatusGen2 = journalWebhookStatusGen2;
+exports.getDiagnosticTimelineAdminGen2 = getDiagnosticTimelineAdminGen2;
+
 // ── PUBLICATION PRODUIT DURABLE ──────────────────────────
 const {
     cleanupProductPublicationSessions,
@@ -319,6 +339,15 @@ exports.deleteSessionGen2 = deleteSessionGen2;
 exports.trackAdminIPGen2 = trackAdminIPGen2;
 exports.updateUserSessionsGen2 = updateUserSessionsGen2;
 exports.onOrderStatsWrite = onOrderStatsWrite;
+
+const {
+    aggregateAnalyticsSessionGen2,
+    getAnalyticsAdminGen2,
+    maintainAnalyticsGen2
+} = require('./src/analytics/rollups');
+exports.aggregateAnalyticsSessionGen2 = aggregateAnalyticsSessionGen2;
+exports.getAnalyticsAdminGen2 = getAnalyticsAdminGen2;
+exports.maintainAnalyticsGen2 = maintainAnalyticsGen2;
 
 // ── TRIGGERS ─────────────────────────────────────────────
 const { onArtifactDeleted } = require('./src/triggers/onArtifactDeleted');

@@ -12,12 +12,14 @@ import {
   validateDeploymentRequest
 } from '../scripts/deploy-functions-targeted.mjs';
 import {
+  ACTIVE_OBSERVABILITY_EXPORTS,
   CLOUD_ONLY_PARALLEL_TARGETS,
   EXPECTED_CURRENT_CLOUD_COUNT,
   EXPECTED_CURRENT_SOURCE_COUNT,
   HOLD_META_RECONCILIATION,
   KEEP_GEN1_AUTH,
   PARALLEL_MIGRATION_EXPORTS,
+  PENDING_OBSERVABILITY_EXPORTS,
   buildInventory,
   extractLocalExports,
   waveFor
@@ -47,7 +49,7 @@ const TARGETS = Object.freeze(LOGICAL.map((name) => `${name}Gen2`));
 
 test('G8 exposes 35 fixed plus l=2 Gen2 callables after the Gen1 retirement', () => {
   const exported = require(path.join(ROOT, 'functions/index.js'));
-  assert.equal(Object.keys(exported).length, 140);
+  assert.equal(Object.keys(exported).length, 150);
   assert.equal(FIXED.length, 35);
   assert.equal(MIGRATED_LEGACY.length, 2);
   for (const name of LOGICAL) {
@@ -59,18 +61,18 @@ test('G8 exposes 35 fixed plus l=2 Gen2 callables after the Gen1 retirement', ()
 
 test('G8 inventory extractor recognizes every parallel export', () => {
   const exports = extractLocalExports(ROOT);
-  assert.equal(exports.length, 140);
-  assert.equal(EXPECTED_CURRENT_SOURCE_COUNT, 140);
-  assert.equal(EXPECTED_CURRENT_CLOUD_COUNT, 137);
+  assert.equal(exports.length, 150);
+  assert.equal(EXPECTED_CURRENT_SOURCE_COUNT, 150);
+  assert.equal(EXPECTED_CURRENT_CLOUD_COUNT, 147);
   assert.equal(PARALLEL_MIGRATION_EXPORTS.size, 119);
-  assert.deepEqual(exports.filter(({ name }) => name.endsWith('Gen2') && !PARALLEL_MIGRATION_EXPORTS.has(name)), []);
+  assert.deepEqual(exports.filter(({ name }) => name.endsWith('Gen2') && !PARALLEL_MIGRATION_EXPORTS.has(name) && !PENDING_OBSERVABILITY_EXPORTS.has(name) && !ACTIVE_OBSERVABILITY_EXPORTS.has(name)), []);
 });
 
-test('G8 inventory rebuild accepts the final 137 cloud targets and assigns the real wave', () => {
+test('G8 inventory rebuild accepts the current 147 cloud targets and assigns the real wave', () => {
   const exports = extractLocalExports(ROOT);
   const cloudNames = exports
     .map(({ name }) => name)
-    .filter((name) => !HOLD_META_RECONCILIATION.has(name))
+    .filter((name) => !HOLD_META_RECONCILIATION.has(name) && !PENDING_OBSERVABILITY_EXPORTS.has(name))
     .concat([...CLOUD_ONLY_PARALLEL_TARGETS]);
   const firebaseRows = cloudNames.map((id) => ({
     id,
@@ -91,16 +93,16 @@ test('G8 inventory rebuild accepts the final 137 cloud targets and assigns the r
     commit: 'c'.repeat(40),
     operator: 'test'
   });
-  assert.equal(inventory.metadata.sourceCount, 140);
-  assert.equal(inventory.metadata.cloudCount, 137);
+  assert.equal(inventory.metadata.sourceCount, 150);
+  assert.equal(inventory.metadata.cloudCount, 147);
   assert.equal(inventory.metadata.cloudGen1Count, 3);
-  assert.equal(inventory.metadata.cloudGen2Count, 134);
+  assert.equal(inventory.metadata.cloudGen2Count, 144);
   for (const name of TARGETS) assert.equal(waveFor(name, 'MIGRATION_PARALLEL'), 'G8');
 });
 
 test('G8 wrappers reuse Gen1 run handlers with App Check and bounded runtime', () => {
   const source = read('functions/src/commerce/gen2G8.js');
-  assert.match(source, /legacyFunction\.run\(request\.data, request\)/);
+  assert.match(source, /legacyFunction\.run\(data, request\)/);
   assert.match(source, /enforceAppCheck:\s*true/);
   assert.match(source, /cpu:\s*'gcf_gen1'/);
   assert.match(source, /concurrency:\s*1/);

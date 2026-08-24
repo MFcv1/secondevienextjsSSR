@@ -104,7 +104,7 @@ export default function OrderDetailPanel({
             <header className={`shrink-0 border-b px-5 pb-4 pt-5 sm:px-6 ${darkMode ? 'border-white/[0.07]' : 'border-black/[0.055]'}`}>
                 <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                        <p className={`font-mono text-[10px] ${mutedTextClass(darkMode)}`}>{orderReference(order.id)}</p>
+                        <p className={`font-mono text-[10px] ${mutedTextClass(darkMode)}`}>{orderReference(order)}</p>
                         <h3 className="mt-1 truncate text-[19px] font-extrabold tracking-[-0.035em]">
                             {order.shipping?.fullName || 'Client inconnu'}
                         </h3>

@@ -277,6 +277,20 @@ ete detruits.
 
 ## 10. Sources de detail
 
+L'observabilite active du 2026-08-24 ne change aucune source de verite
+commerce. Six triggers Gen2 projettent uniquement les transitions
+critiques vers `business_events`; les faits, commandes, mouvements, inbox et
+outbox restent autoritaires. Le reconciler lit les rollups atomiques et repare
+25 commandes par passage avec curseur, au lieu de tronquer silencieusement les
+faits a 5 000 et les commandes a 500. Ces exports sont actifs sur le sandbox;
+Stripe reste exclusivement en mode test.
+
+Les commandes portent aussi un `orderNumber` entier, attribue dans la meme
+transaction que la creation via `sys_counters/orders`. Les 131 commandes
+sandbox existantes ont ete numerotees chronologiquement; la prochaine valeur
+est 132. L'UI et les e-mails affichent `CMD-<numero>` et conservent l'ancien ID
+opaque comme identifiant technique et fallback, sans le remplacer en base.
+
 | Besoin | Source |
 | --- | --- |
 | fonctionnement checkout, Stripe, refunds et preuves | [COMMERCE_STRIPE.md](COMMERCE_STRIPE.md) |

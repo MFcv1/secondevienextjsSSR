@@ -361,3 +361,17 @@ Ne jamais lancer un script de migration, de purge ou de backfill en mode commit 
 - [ ] alertes erreurs, paiements et Auth configurees;
 - [ ] E2E et outils de maintenance fermes en production;
 - [ ] runbook incident et rollback relu.
+
+## 13. Observabilite minimisee active sur le sandbox
+
+Depuis le 2026-08-24, le pipeline deploye retire e-mail, IP et user-agent des nouveaux
+documents `analytics_sessions`. Les identifiants de session ne sont envoyes au
+logger qu'apres hash. `business_events` est backend-only dans les Rules et la
+timeline admin exige claim, registre actif et AAL2; la recherche d'un client
+reste cote serveur et chaque consultation est auditee sous forme hashee.
+
+Les rollups, faits d'idempotence et compteurs sont egalement backend-only. Le
+bucket d'archive europeen interdit l'acces public; seule l'identite runtime
+analytics peut y ecrire. Les archives ne contiennent ni adresse, ni e-mail, ni
+IP, ni user-agent brut et suivent un cycle Coldline a 30 jours puis suppression
+a 730 jours.

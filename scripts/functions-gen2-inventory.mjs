@@ -12,6 +12,20 @@ export const EXPECTED_CODEBASE = 'main';
 export const EXPECTED_SOURCE_COUNT = 157;
 export const EXPECTED_CLOUD_COUNT = 152;
 
+export const ACTIVE_OBSERVABILITY_EXPORTS = new Set([
+  'getDiagnosticTimelineAdminGen2',
+  'journalCommerceIncidentGen2',
+  'journalFinancialFactGen2',
+  'journalInventoryMovementGen2',
+  'journalOrderEventGen2',
+  'journalOutboxStatusGen2',
+  'journalWebhookStatusGen2',
+  'aggregateAnalyticsSessionGen2',
+  'getAnalyticsAdminGen2',
+  'maintainAnalyticsGen2'
+]);
+export const PENDING_OBSERVABILITY_EXPORTS = new Set();
+
 export const PARALLEL_MIGRATION_EXPORTS = new Set([
   'addAdminUserGen2',
   'claimNewsletterRewardGen2',
@@ -162,10 +176,11 @@ export const CLEANED_G12B_REMAINING_TARGETS = new Set(Object.values(G12_REMAININ
 
 export const EXPECTED_CURRENT_SOURCE_COUNT = EXPECTED_SOURCE_COUNT +
   PARALLEL_MIGRATION_EXPORTS.size - CLEANED_G12B_GEN1_TARGETS.size - CLEANED_G12B_G3_TARGETS.size -
-  CLEANED_G12B_REMAINING_TARGETS.size;
+  CLEANED_G12B_REMAINING_TARGETS.size + ACTIVE_OBSERVABILITY_EXPORTS.size;
 export const EXPECTED_CURRENT_CLOUD_COUNT = EXPECTED_CLOUD_COUNT +
   PARALLEL_MIGRATION_EXPORTS.size + CLOUD_ONLY_PARALLEL_TARGETS.size -
-  CLEANED_G12B_GEN1_TARGETS.size - RETIRED_G12A_G3_TARGETS.size - CLEANED_G12B_REMAINING_TARGETS.size;
+  CLEANED_G12B_GEN1_TARGETS.size - RETIRED_G12A_G3_TARGETS.size - CLEANED_G12B_REMAINING_TARGETS.size +
+  ACTIVE_OBSERVABILITY_EXPORTS.size;
 
 export const KEEP_GEN2 = new Set([
   'catalogMediaGarbageCollector',
@@ -391,6 +406,8 @@ export function extractLocalExports(rootDir) {
 }
 
 export function classificationFor(name) {
+  if (PENDING_OBSERVABILITY_EXPORTS.has(name)) return 'PENDING_DEPLOYMENT';
+  if (ACTIVE_OBSERVABILITY_EXPORTS.has(name)) return 'KEEP_GEN2';
   if (PARALLEL_MIGRATION_EXPORTS.has(name)) return 'MIGRATION_PARALLEL';
   if (KEEP_GEN2.has(name)) return 'KEEP_GEN2';
   if (KEEP_GEN1_AUTH.has(name)) return 'KEEP_GEN1_AUTH';
@@ -400,6 +417,8 @@ export function classificationFor(name) {
 }
 
 export function waveFor(name, classification) {
+  if (classification === 'PENDING_DEPLOYMENT') return 'OBSERVABILITY';
+  if (ACTIVE_OBSERVABILITY_EXPORTS.has(name)) return 'OBSERVABILITY';
   if (classification === 'MIGRATION_PARALLEL') {
     const logicalName = name.endsWith('Gen2') ? name.slice(0, -4) : name;
     for (const [wave, names] of WAVE_GROUPS) if (names.has(logicalName)) return wave;
@@ -619,7 +638,7 @@ export function buildInventory({ rootDir, firebaseRows, gcloudRows, iamPolicies,
   if (JSON.stringify(cloudOnly) !== JSON.stringify(expectedCloudOnly)) {
     throw new Error(`Cibles cloud sans source inattendues: ${cloudOnly.join(', ')}`);
   }
-  const expectedLocalOnly = [...HOLD_META_RECONCILIATION].sort();
+  const expectedLocalOnly = [...HOLD_META_RECONCILIATION, ...PENDING_OBSERVABILITY_EXPORTS].sort();
   if (JSON.stringify(localOnly) !== JSON.stringify(expectedLocalOnly)) {
     throw new Error(`Ecart local/cloud inattendu: ${localOnly.join(', ')}`);
   }
@@ -679,7 +698,7 @@ export function buildInventory({ rootDir, firebaseRows, gcloudRows, iamPolicies,
       ownership: overlapFor(local.name, trigger),
       decision: {
         classification,
-        target: ['KEEP_GEN2', 'KEEP_GEN1_AUTH', 'MIGRATION_PARALLEL'].includes(classification)
+        target: ['KEEP_GEN2', 'KEEP_GEN1_AUTH', 'MIGRATION_PARALLEL', 'PENDING_DEPLOYMENT'].includes(classification)
           ? local.name
           : `${local.name}Gen2`,
         wave: waveFor(local.name, classification),
@@ -749,7 +768,7 @@ export function buildInventory({ rootDir, firebaseRows, gcloudRows, iamPolicies,
     });
   }
   const projectIamByServiceAccount = projectRolesFor(projectIam, serviceAccounts);
-  const counts = Object.fromEntries(['KEEP_GEN2', 'KEEP_GEN1_AUTH', 'MIGRATE', 'MIGRATE_OR_RETIRE', 'HOLD_META_RECONCILIATION', 'MIGRATION_PARALLEL']
+  const counts = Object.fromEntries(['KEEP_GEN2', 'KEEP_GEN1_AUTH', 'MIGRATE', 'MIGRATE_OR_RETIRE', 'HOLD_META_RECONCILIATION', 'MIGRATION_PARALLEL', 'PENDING_DEPLOYMENT']
     .map((classification) => [classification, functions.filter((entry) => entry.decision.classification === classification).length]));
   return {
     schemaVersion: 1,

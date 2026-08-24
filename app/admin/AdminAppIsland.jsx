@@ -2,12 +2,12 @@
 
 import React, { Suspense, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Activity,
   BarChart3,
   ChevronLeft,
   CreditCard,
-  Globe,
   Grid,
   Layout,
   LayoutPanelTop,
@@ -25,8 +25,8 @@ import {
   Package,
   ReceiptText,
   TicketPercent,
+  TriangleAlert,
 } from 'lucide-react';
-import LoginView from '../../src/kit/commerce/LoginView';
 import {
   adjustInventoryAdmin,
   deleteProductAdmin,
@@ -72,11 +72,10 @@ const AdminPublicationWorkspace = React.lazy(() => import('../../src/kit/admin/A
 const AdminUsers = React.lazy(() => import('../../src/kit/admin/AdminUsers'));
 const AdminNewsletter = React.lazy(() => import('../../src/kit/admin/AdminNewsletter'));
 const AdminAnalytics = React.lazy(() => import('../../src/kit/admin/AdminAnalytics'));
+const AdminIncidentConsole = React.lazy(() => import('../../src/kit/admin/AdminIncidentConsole'));
 const AdminSEO = React.lazy(() => import('../../src/kit/admin/AdminSEO'));
-const AdminIPManager = React.lazy(() => import('../../src/kit/admin/AdminIPManager'));
 const AdminPaymentSettings = React.lazy(() => import('../../src/kit/admin/AdminPaymentSettings'));
 const AdminPaymentLinks = React.lazy(() => import('../../src/kit/admin/AdminPaymentLinks'));
-const AdminIPTracker = React.lazy(() => import('../../src/kit/admin/AdminIPTracker'));
 const AdminGlobalInventory = React.lazy(() => import('../../src/kit/admin/GlobalInventoryView'));
 const AdminAccount = React.lazy(() => import('../../src/kit/admin/AdminAccount'));
 const BillingOnboardingGuide = React.lazy(() => import('../../src/kit/admin/BillingOnboardingGuide'));
@@ -85,13 +84,13 @@ const LegacyLoginModalIsland = React.lazy(() => import('../../src/kit/marketplac
 const TAB_ICONS = {
   dashboard: Activity,
   analytics: BarChart3,
+  incidents: TriangleAlert,
   studio: Palette,
   homepage: Palette,
   orders: Package,
   returns: RotateCcw,
   promotions: TicketPercent,
   users: Users,
-  ip_manager: Globe,
   seo: Share2,
   newsletter: Mail,
   payment_settings: CreditCard,
@@ -143,17 +142,18 @@ function AdminCatalogStatus({ darkMode, error, loading, onRetry }) {
 }
 
 const ADMIN_NAV_GROUPS = [
-  { label: "Vue d'ensemble", tabs: ['dashboard', 'analytics'] },
+  { label: "Vue d'ensemble", tabs: ['dashboard', 'analytics', 'incidents'] },
   { label: 'Catalogue', tabs: ['furniture', 'inventory', 'studio'] },
   { label: 'Ventes', tabs: ['orders', 'quotes', 'payment_links', 'invoices', 'returns', 'promotions', 'livraison', 'payment_settings'] },
   { label: 'Communication', tabs: ['homepage', 'newsletter', 'seo'] },
-  { label: 'Administration', tabs: ['account', 'users', 'ip_manager'] },
+  { label: 'Administration', tabs: ['account', 'users'] },
 ];
 
 /** Onglets qui pilotent leur propre hauteur : liste et detail scrollent separement. */
 const IMMERSIVE_TABS = new Set(['furniture', 'orders']);
 function AdminContent() {
   const { user, isAdmin, isSuperAdmin, hasStrongAuth, loading } = useAuth();
+  const router = useRouter();
   const [focusedOrderId, setFocusedOrderId] = useState(null);
   const [adminCollection, setAdminCollection] = useState('dashboard');
   const [editingItem, setEditingItem] = useState(null);
@@ -173,6 +173,16 @@ function AdminContent() {
   const catalogRequestRef = React.useRef(null);
   const deletedProductIdsRef = React.useRef(new Set());
   const cachedAdminUidRef = React.useRef(null);
+
+  const shouldRedirectToGallery = !loading && (
+    !user
+    || user.isAnonymous
+    || !isAdmin
+  );
+
+  React.useEffect(() => {
+    if (shouldRedirectToGallery) router.replace('/');
+  }, [router, shouldRedirectToGallery]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -391,7 +401,7 @@ function AdminContent() {
   };
 
   const publicationMutationsBlocked = !deploymentVerified || deploymentStale;
-  const adminAccessIsResolved = Boolean(user && isAdmin && hasStrongAuth);
+  const adminAccessIsResolved = Boolean(user && !user.isAnonymous && isAdmin && hasStrongAuth);
 
   const handleToggleStatus = async (item, collectionName) => {
     if (publicationMutationsBlocked) return;
@@ -441,18 +451,8 @@ function AdminContent() {
   // A forced token refresh emits a short claimsStatus="loading" transition.
   // Keep an already-resolved strong admin session mounted during that refresh:
   // publication progress and its final view switch are local UI state.
-  if (loading && !adminAccessIsResolved) return <div className="min-h-screen bg-[#faf9f5]" />;
-  if (!user) return <LoginView onSuccess={() => {}} />;
-  if (!isAdmin) {
-    return (
-      <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center gap-5 px-6 text-center text-stone-900">
-        <h1 className="text-3xl font-black tracking-tight">Acces admin refuse</h1>
-        <p className="text-sm text-stone-500">Ce compte n&apos;a pas les droits administrateur.</p>
-        <Link className="rounded-full bg-stone-950 px-5 py-3 text-sm font-bold text-white" href="/">
-          Retour au site
-        </Link>
-      </div>
-    );
+  if ((loading && !adminAccessIsResolved) || shouldRedirectToGallery) {
+    return <div className="min-h-screen bg-[#faf9f5]" />;
   }
 
   if (!hasStrongAuth) {
@@ -548,9 +548,6 @@ function AdminContent() {
 
       <div className={`${immersiveLayout ? 'xl:h-[100dvh] xl:overflow-hidden' : 'min-h-screen'} lg:pl-[17.5rem]`}>
         <main className={`${immersiveLayout ? 'max-w-none space-y-6 xl:grid xl:h-full xl:grid-rows-[auto_minmax(0,1fr)] xl:gap-5 xl:space-y-0 xl:py-6' : 'mx-auto max-w-[100rem] space-y-8 lg:py-10'} px-4 py-8 sm:px-6 lg:px-7 2xl:px-10`}>
-        <Suspense fallback={null}>
-          <AdminIPTracker />
-        </Suspense>
         <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div className="flex items-center gap-4">
             <button
@@ -620,8 +617,6 @@ function AdminContent() {
             <AdminStudio darkMode={darkMode} />
           ) : adminCollection === 'users' ? (
             <AdminUsers darkMode={darkMode} />
-          ) : adminCollection === 'ip_manager' ? (
-            <AdminIPManager darkMode={darkMode} />
           ) : adminCollection === 'newsletter' ? (
             <AdminNewsletter darkMode={darkMode} />
           ) : adminCollection === 'seo' ? (
@@ -636,6 +631,8 @@ function AdminContent() {
               />
               <AdminAnalytics darkMode={darkMode} items={catalogState.items} />
             </div>
+          ) : adminCollection === 'incidents' ? (
+            <AdminIncidentConsole darkMode={darkMode} />
           ) : adminCollection === 'payment_settings' ? (
             <AdminPaymentSettings darkMode={darkMode} />
           ) : adminCollection === 'payment_links' ? (

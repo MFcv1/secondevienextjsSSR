@@ -83,7 +83,7 @@ assert.equal(result.kpis.mobilePercentage, 33);
 assert.equal(normalizeSessionDuration(-1), 0);
 assert.equal(normalizeSessionDuration(999999), 24 * 60 * 60);
 
-for (const filter of ANALYTICS_TIME_FILTERS) {
+for (const filter of ANALYTICS_TIME_FILTERS.filter(({ id }) => id !== 'tout')) {
     const inside = {
         id: `inside-${filter.id}`,
         startedAt: { seconds: Math.floor((baseNow - filter.duration + 60 * 1000) / 1000) },
@@ -119,10 +119,13 @@ for (const filter of ANALYTICS_TIME_FILTERS) {
     assert.equal(result.chartData.reduce((sum, slot) => sum + slot.sessions, 0), 1, `${filter.id} chart sessions match KPI`);
 }
 
+result = buildAnalyticsStats(sameIpSessions, 'tout', { now: baseNow });
+assert.equal(result.kpis.totalSessions, 2, 'tout keeps the complete supplied history');
+
 result = buildAnalyticsStats(sameIpSessions, '1j', {
     now: baseNow,
-    fetchedCount: 5000,
-    maxFetched: 5000,
+    fetchedCount: 1000,
+    maxFetched: 1000,
     coverageStartMs: baseNow - 60 * 60 * 1000
 });
 assert.equal(result.dataQuality.isWindowComplete, false);

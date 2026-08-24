@@ -3,7 +3,7 @@ import {
     Users, Clock, Activity, Smartphone, Monitor, Globe, Trash2, AlertCircle, ChevronDown, ChevronRight,
     TrendingUp, MousePointerClick, ShoppingBag, RefreshCw
 } from 'lucide-react';
-import { collection, query, orderBy, limit, getDocs, onSnapshot, where, Timestamp } from 'firebase/firestore';
+import { collection, query, orderBy, limit, getDocs, Timestamp } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { getCallableFunction } from '../config/firebaseLazy';
 import { CATEGORY_RAIL_IMAGE_SOURCES } from '../config/constants';
@@ -15,7 +15,6 @@ import {
     MAX_ANALYTICS_SESSIONS,
     buildVisitorDayGroups,
     buildAnalyticsStats,
-    getAnalyticsWindow,
     getReliableVisitorKey
 } from './analyticsReliability';
 
@@ -29,7 +28,7 @@ const ADMIN_ANALYTICS_CACHE_STORE = 'snapshots';
 const ADMIN_ANALYTICS_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 const ADMIN_SESSIONS_CACHE_KEY = 'traffic-sessions';
 const ADMIN_AFFILIATE_CACHE_KEY = 'affiliate-clicks';
-const OMIT_CACHE_FIELDS = new Set(['email', 'syncTokenHash', 'userAgent']);
+const OMIT_CACHE_FIELDS = new Set(['email', 'syncTokenHash', 'userAgent', 'journey', 'lastEventPreview']);
 
 const JOURNEY_PAGE_ILLUSTRATIONS = Object.freeze({
     gallery: '/images/analytics/journey-gallery-boutique-v3.webp',
@@ -782,7 +781,7 @@ const VisitorSessionGroup = ({
     isOpen,
     onToggle,
     expandedSessionId,
-    setExpandedSessionId,
+    onToggleSessionDetail,
     handleDeleteSession,
     formatDuration,
     productThumbnails
@@ -816,7 +815,7 @@ const VisitorSessionGroup = ({
                                 {visitor.device === 'Mobile' ? <Smartphone size={10} className="shrink-0" /> : <Monitor size={10} className="shrink-0" />}
                                 <span className="truncate">{visitor.deviceLabel}</span>
                             </span>
-                            <span className="font-mono normal-case">{visitor.ipLabel}</span>
+                            <span className="font-mono normal-case">Visiteur pseudonymisé</span>
                             <span>{visitor.identitySource}</span>
                         </div>
                     </div>
@@ -858,7 +857,7 @@ const VisitorSessionGroup = ({
                                         </div>
                                         <div className="min-w-0">
                                             <p className={`text-[10px] font-black truncate ${darkMode ? 'text-stone-300' : 'text-stone-900'}`}>
-                                                Session {session.journey?.length || 0} etape{(session.journey?.length || 0) > 1 ? 's' : ''}
+                                                Session {session.journeyCount || session.journey?.length || 0} etape{(session.journeyCount || session.journey?.length || 0) > 1 ? 's' : ''}
                                             </p>
                                             <p className="text-[9px] font-bold text-stone-500 truncate uppercase">
                                                 {session.os || 'Inconnu'} - {session.browser || 'Inconnu'} - {formatDuration(session.duration)}
@@ -867,7 +866,7 @@ const VisitorSessionGroup = ({
                                     </div>
                                     <div className="flex items-center gap-2 shrink-0">
                                         <button
-                                            onClick={() => setExpandedSessionId(isExpanded ? null : session.id)}
+                                            onClick={() => onToggleSessionDetail(session.id)}
                                             className={`px-3 py-1.5 h-8 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 ${isExpanded ? 'bg-blue-500 text-white' : (darkMode ? 'bg-white/5 text-white/50 hover:bg-white/10' : 'bg-white border border-stone-200 text-stone-600')}`}
                                         >
                                             {isExpanded ? 'Masquer' : 'Tracer'}
@@ -1745,6 +1744,10 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
     const DAYS_PER_PAGE = 10;
     const [openVisitors, setOpenVisitors] = useState({});
     const [sessionsRefreshKey, setSessionsRefreshKey] = useState(() => cachedAnalyticsSessionsLoadedAt || 0);
+    const [overview, setOverview] = useState(null);
+    const [nextBeforeMillis, setNextBeforeMillis] = useState(null);
+    const [loadingOlder, setLoadingOlder] = useState(false);
+    const initialRecentSyncRef = useRef(false);
     const productThumbnails = useMemo(() => buildProductThumbnailMap(items), [items]);
 
     useEffect(() => {
@@ -1774,38 +1777,9 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
         return () => clearInterval(i);
     }, []);
 
-    // Keep the operational surface reactive without reloading the full one-year history.
-    useEffect(() => {
-        const liveQuery = query(
-            collection(db, 'analytics_sessions'),
-            orderBy('lastActivityAt', 'desc'),
-            limit(100)
-        );
-
-        return onSnapshot(liveQuery, (snapshot) => {
-            const incoming = snapshot.docs
-                .map(doc => ({ id: doc.id, ...doc.data() }))
-                .filter(session => session.type !== 'admin');
-            const receivedAt = Date.now();
-
-            setSessions(previous => {
-                const merged = new Map(previous.map(session => [session.id, session]));
-                incoming.forEach(session => merged.set(session.id, session));
-                const next = Array.from(merged.values())
-                    .sort((a, b) => getMillis(b.startedAt) - getMillis(a.startedAt))
-                    .slice(0, MAX_ANALYTICS_SESSIONS);
-                cachedAnalyticsSessions = next;
-                return next;
-            });
-            setNow(receivedAt);
-            setLiveNow(receivedAt);
-        }, (error) => {
-            console.error('Analytics realtime listener error:', error);
-        });
-    }, []);
-
     // Kpis
     const analyticsStats = useMemo(() => {
+        if (overview?.kpis && overview?.chartData && overview?.dataQuality) return overview;
         const oldestStartedAt = sessions
             .map(session => getMillis(session.startedAt))
             .filter(Boolean)
@@ -1817,14 +1791,14 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
             fetchedCount: sessions.length,
             maxFetched: MAX_ANALYTICS_SESSIONS
         });
-    }, [sessions, timeFilter, now]);
+    }, [overview, sessions, timeFilter, now]);
 
     const kpis = analyticsStats.kpis;
     const dataQuality = analyticsStats.dataQuality;
     const chartData = analyticsStats.chartData;
 
     // ─── Groupement des sessions par jour ───
-    const filteredTrafficSessions = analyticsStats.realTraffic;
+    const filteredTrafficSessions = sessions;
 
     const groupedByDay = useMemo(() => (
         buildVisitorDayGroups(filteredTrafficSessions, { now })
@@ -1877,45 +1851,100 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
         }
     }, [firstTrafficDayKey]);
 
-    const loadSessions = useCallback(async () => {
-        setLoading(true);
-        const refreshStartedAt = Date.now();
-        const historyWindow = getAnalyticsWindow('1ans');
-        const historyCutoff = Timestamp.fromMillis(refreshStartedAt - historyWindow.duration);
-        const q = query(
-            collection(db, 'analytics_sessions'),
-            where('startedAt', '>=', historyCutoff),
-            orderBy('startedAt', 'desc'),
-            limit(MAX_ANALYTICS_SESSIONS)
-        );
-
+    const loadOverview = useCallback(async () => {
         try {
-            const snap = await getDocs(q);
-            const data = snap.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
+            const getAnalyticsAdmin = await getCallableFunction('getAnalyticsAdmin');
+            const response = await getAnalyticsAdmin({ action: 'overview', period: timeFilter });
+            setOverview(response.data);
+        } catch (error) {
+            console.error('Analytics overview load error:', error);
+            setOverview(null);
+        }
+    }, [timeFilter]);
 
-            // On filtre les admins pour ne pas polluer l'affichage et les stats
-            const cleanData = data.filter(s => s.type !== 'admin');
+    const loadSessions = useCallback(async ({ incremental = false, beforeMillis = null } = {}) => {
+        if (beforeMillis) setLoadingOlder(true);
+        else setLoading(true);
+        try {
+            const getAnalyticsAdmin = await getCallableFunction('getAnalyticsAdmin');
+            const newestKnown = sessions.reduce(
+                (latest, session) => Math.max(latest, getMillis(session.lastActivityAt) || 0),
+                0
+            );
+            const response = await getAnalyticsAdmin({
+                action: 'list',
+                pageSize: 250,
+                ...(beforeMillis ? { beforeMillis } : {}),
+                ...(!beforeMillis && incremental && newestKnown ? { updatedAfterMillis: newestKnown } : {})
+            });
+            const incoming = Array.isArray(response.data.sessions) ? response.data.sessions : [];
+            const merged = new Map((beforeMillis || incremental ? sessions : []).map(session => [session.id, session]));
+            incoming.forEach(session => merged.set(session.id, session));
+            const cleanData = Array.from(merged.values())
+                .sort((left, right) => getMillis(right.lastActivityAt) - getMillis(left.lastActivityAt))
+                .slice(0, MAX_ANALYTICS_SESSIONS);
             const loadedAt = Date.now();
             cachedAnalyticsSessions = cleanData;
             cachedAnalyticsSessionsLoadedAt = loadedAt;
             setNow(loadedAt);
             setSessions(cleanData);
             setSessionsRefreshKey(loadedAt);
-            writeAdminAnalyticsCache(ADMIN_SESSIONS_CACHE_KEY, cleanData, loadedAt);
-            setLoading(false);
+            const oldestKnown = cleanData.reduce((oldest, session) => {
+                const value = getMillis(session.lastActivityAt);
+                return value ? Math.min(oldest, value) : oldest;
+            }, Infinity);
+            setNextBeforeMillis(beforeMillis
+                ? (response.data.truncated ? (response.data.nextBeforeMillis || oldestKnown) : null)
+                : (
+                    response.data.nextBeforeMillis
+                    || (incremental && cleanData.length >= 250 && Number.isFinite(oldestKnown) ? oldestKnown : null)
+                ));
+            void writeAdminAnalyticsCache(ADMIN_SESSIONS_CACHE_KEY, cleanData, loadedAt);
         } catch (error) {
             console.error("Analytics load error:", error);
+        } finally {
             setLoading(false);
+            setLoadingOlder(false);
         }
-    }, []);
+    }, [sessions]);
 
     useEffect(() => {
-        if (restoringSessions || loading || sessionsRefreshKey > 0) return;
-        loadSessions();
-    }, [restoringSessions, loading, sessionsRefreshKey, loadSessions]);
+        void loadOverview();
+    }, [loadOverview]);
+
+    useEffect(() => {
+        if (restoringSessions || initialRecentSyncRef.current) return;
+        initialRecentSyncRef.current = true;
+        void loadSessions({ incremental: sessions.length > 0 });
+    }, [restoringSessions, loadSessions, sessions.length]);
+
+    const refreshAnalytics = useCallback(async () => {
+        await Promise.all([
+            loadOverview(),
+            loadSessions({ incremental: sessions.length > 0 })
+        ]);
+    }, [loadOverview, loadSessions, sessions.length]);
+
+    const toggleSessionDetail = useCallback(async (sessionId) => {
+        if (expandedSessionId === sessionId) {
+            setExpandedSessionId(null);
+            return;
+        }
+        setExpandedSessionId(sessionId);
+        const existing = sessions.find(session => session.id === sessionId);
+        if (Array.isArray(existing?.journey)) return;
+        try {
+            const getAnalyticsAdmin = await getCallableFunction('getAnalyticsAdmin');
+            const response = await getAnalyticsAdmin({ action: 'detail', sessionId });
+            setSessions(previous => previous.map(session => (
+                session.id === sessionId
+                    ? { ...session, journey: response.data.journey || [], lastEventPreview: response.data.lastEventPreview || [], journeyCount: response.data.journeyCount || session.journeyCount || 0 }
+                    : session
+            )));
+        } catch (error) {
+            console.error('Analytics session detail error:', error);
+        }
+    }, [expandedSessionId, sessions]);
 
     const formatDuration = (seconds) => {
         if (!seconds) return '0s';
@@ -1972,7 +2001,7 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
 
                 <div className="flex flex-wrap items-center gap-3">
                     <button
-                        onClick={loadSessions}
+                        onClick={refreshAnalytics}
                         disabled={loading}
                         className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all border ${darkMode ? 'border-white/10 text-stone-300 hover:bg-white/10' : 'border-stone-200 text-stone-600 hover:bg-stone-100'} disabled:opacity-50`}
                     >
@@ -2017,12 +2046,12 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
                     </div>
                     <div className="grid grid-cols-3 sm:flex sm:items-center gap-3 sm:gap-5 text-left sm:text-right">
                         <div>
-                            <p className="text-[8px] font-black uppercase tracking-widest text-stone-500">IPs uniques</p>
-                            <p className="mt-1 text-sm font-black text-cyan-500 tabular-nums">{kpis.uniqueIps}</p>
+                            <p className="text-[8px] font-black uppercase tracking-widest text-stone-500">Méthode</p>
+                            <p className="mt-1 text-sm font-black text-cyan-500 tabular-nums">Pseudonyme</p>
                         </div>
                         <div>
-                            <p className="text-[8px] font-black uppercase tracking-widest text-stone-500">Ratio UID/IP</p>
-                            <p className={`mt-1 text-sm font-black tabular-nums ${ratioAccent}`}>{kpis.visitorIpRatioLabel}</p>
+                            <p className="text-[8px] font-black uppercase tracking-widest text-stone-500">Historique</p>
+                            <p className={`mt-1 text-sm font-black tabular-nums ${ratioAccent}`}>Complet</p>
                         </div>
                         <div>
                             <p className="text-[8px] font-black uppercase tracking-widest text-stone-500">Sessions brutes</p>
@@ -2031,9 +2060,7 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
                     </div>
                 </div>
                 <p className="mt-4 text-[10px] font-bold text-stone-500 leading-relaxed">
-                    Deduplication par UID Firebase, puis IP serveur. Le compteur utilisateurs uniques est {kpis.visitorIpRatio
-                        ? `${Math.round((kpis.visitorIpRatio - 1) * 100)}% au-dessus`
-                        : 'non comparable'} du compteur IPs uniques.
+                    Statistiques calculées depuis les résumés serveur permanents. Aucun e-mail ni aucune IP brute n’est utilisé.
                 </p>
             </div>
 
@@ -2131,7 +2158,7 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
                                                         isOpen={visitorOpen}
                                                         onToggle={() => setOpenVisitors(prev => ({ ...prev, [visitor.key]: !visitorOpen }))}
                                                         expandedSessionId={expandedSessionId}
-                                                        setExpandedSessionId={setExpandedSessionId}
+                                                        onToggleSessionDetail={toggleSessionDetail}
                                                         handleDeleteSession={handleDeleteSession}
                                                         formatDuration={formatDuration}
                                                         productThumbnails={productThumbnails}
@@ -2199,16 +2226,29 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
                         </button>
                     </div>
                 )}
+
+                {nextBeforeMillis && sessions.length < MAX_ANALYTICS_SESSIONS && (
+                    <div className="flex justify-center pt-3">
+                        <button
+                            type="button"
+                            disabled={loadingOlder}
+                            onClick={() => loadSessions({ beforeMillis: nextBeforeMillis })}
+                            className={`rounded-xl border px-4 py-2 text-[10px] font-black uppercase tracking-widest ${darkMode ? 'border-white/10 text-stone-300 hover:bg-white/5' : 'border-stone-200 text-stone-600 hover:bg-stone-50'} disabled:opacity-50`}
+                        >
+                            {loadingOlder ? 'Chargement…' : 'Charger 250 sessions plus anciennes'}
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* FOOTER INFO MODULE 5 */}
             <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 py-4 border-t border-white/5">
                 {[
-                    "Sessions admin auto-exclues",
-                    "IPs admin exclues au login",
-                    "Uniques: UID puis IP serveur",
+                    "Statistiques historiques permanentes",
+                    "Sessions détaillées chargées par 250",
+                    "Aucun e-mail ni IP dans les analytics",
                     "Sync protegee par jeton",
-                    "Fenetre locale: 1 an"
+                    "Détails actifs: 90 jours"
                 ].map((info, i) => (
                     <div key={i} className="flex items-center gap-1.5">
                         <div className="w-1 h-1 rounded-full bg-stone-700"></div>

@@ -339,6 +339,12 @@ exactement-un envoi si l'accuse est perdu apres acceptation: cet etat devient
 `delivery_unknown` sans retry automatique. Une garantie fournisseur plus forte
 attend Resend ou un provider avec idempotence effective.
 
+Une erreur provider non reprenable comme Gmail `EAUTH` devient
+`dead_letter` des la premiere tentative. La sante d'exploitation compte les
+outbox `failed` et `dead_letter`; le statut admin et le script de fenetre
+`v2_all` relisent ces echecs en direct pour interdire un faux vert entre deux
+reconciliations horaires.
+
 La recette reelle du 2026-07-30 a confirme un MIME multipart valide et
 SPF/DKIM/DMARC `pass` via Gmail SMTP. Gmail a toutefois place le message dans
 les spams: la reputation du compte de recette ne constitue pas une preuve de
@@ -597,9 +603,11 @@ lit cette projection serveur et affiche les montants captures, rembourses et
 nets sans convertir un chargement ou une erreur en zero financier. Les faits
 nouveaux incrementent atomiquement un total par devise et un rollup quotidien;
 le reconciliateur, desormais horaire, ne pilote plus la fraicheur de l'UI et
-sert seulement a reconstruire les valeurs absolues et controler les
-divergences. La sante sandbox est `healthy`, tous les
-compteurs sont a zero et aucune TTL commerce n'est activee.
+sert seulement a controler les divergences. La revision active du 2026-08-24
+relit ces rollups bornes et repare 25 commandes par passage avec curseur; elle
+supprime donc les plafonds silencieux de 5 000 faits et 500 commandes. La sante
+sandbox est `healthy`, tous les compteurs sont a zero et les TTL `purgeAt`
+outbox/inbox sont actifs.
 
 La fermeture G1 du 2026-08-15 qualifie aussi le dispatcher d'expiration avec
 une fixture `e2eOnly` et Stripe test: reservation de 1, annulation fournisseur,

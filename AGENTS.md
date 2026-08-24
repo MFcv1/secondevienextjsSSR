@@ -135,7 +135,7 @@ Next.js 16.3.
 | infrastructure | [INFRASTRUCTURE.md](_DOCS/infra/INFRASTRUCTURE.md) | Firebase/App Hosting/config/env | sandbox actif |
 | runtime Functions | [FUNCTIONS_RUNTIME_ADR.md](_DOCS/architecture/FUNCTIONS_RUNTIME_ADR.md) | Gen2, exceptions Auth, capacite, rollback et horizon Node | sandbox migre et durci |
 | deploiement/cache client | [DEPLOIEMENT_CACHE_CLIENT.md](_DOCS/infra/DEPLOIEMENT_CACHE_CLIENT.md) | `next.config.mjs`, `scripts/with-env.mjs`, `scripts/deployment-id.mjs` | actif |
-| donnees/analytics | [DONNEES_ANALYTICS.md](_DOCS/data/DONNEES_ANALYTICS.md) + [AUDIT_COUTS_FIRESTORE.md](_DOCS/data/AUDIT_COUTS_FIRESTORE.md) | Firestore, UID/IP, sessions live, couts et migrations | moteur Tous a Table adapte, P1 couts public/analytics implemente, catalogue post-cutover mesure a zero lecture Firestore publique |
+| donnees/analytics | [DONNEES_ANALYTICS.md](_DOCS/data/DONNEES_ANALYTICS.md) + [AUDIT_COUTS_FIRESTORE.md](_DOCS/data/AUDIT_COUTS_FIRESTORE.md) | Firestore, sessions pseudonymisees, rollups, archives et couts | rollups permanents actifs, details 90 jours, archives privees 2 ans, listes admin bornees |
 | exploitation | [EXPLOITATION.md](_DOCS/operations/EXPLOITATION.md) | commandes, deploy, rollback, backlog | actif |
 | qualite/tests | [QUALITE_TESTS.md](_DOCS/quality/QUALITE_TESTS.md) | CI, tests, scripts | actif |
 | assistant devis IA | [ASSISTANT_DEVIS.md](_DOCS/ai/ASSISTANT_DEVIS.md) | futur | conception |
@@ -149,16 +149,16 @@ canoniques commerce, admin, client, qualite, infrastructure et exploitation.
 Git conserve l'audit et la roadmap retires.
 
 La topologie Firebase Functions Gen1 vers Gen2 est complete sur le sandbox:
-140 exports locaux, 137 Functions cloud, 134 Gen2 `ACTIVE` et trois triggers
+150 exports locaux, 147 Functions cloud, 144 Gen2 `ACTIVE` et trois triggers
 Auth Gen1. L'exercice rollback/reactivation est ferme et la cloture definitive
 observe maintenant la revision finale pendant sept jours selon
 `apphostingaudit/FINALISATION_MIGRATION_GEN2.md`. L'architecture durable est
 dans [FUNCTIONS_RUNTIME_ADR.md](_DOCS/architecture/FUNCTIONS_RUNTIME_ADR.md):
-140 exports locaux, 137 Functions cloud, 134 Gen2 `ACTIVE` et uniquement les
+150 exports locaux, 147 Functions cloud, 144 Gen2 `ACTIVE` et uniquement les
 trois triggers Auth limites par Firebase encore en Gen1. Les quatre owners
 Scheduler commerce sont Gen2 `ENABLED`; les endpoints Stripe test actifs sont
-Gen2. App Hosting sert `build-2026-08-22-003`, avec rollback prouve
-`build-2026-08-22-002`.
+Gen2. App Hosting sert `build-2026-08-24-002`; `build-2026-08-24-001`
+reste la revision precedente immediate.
 
 Les retraits G12-A ont ete individuels, allowlistes, precedes d'appelants,
 trafic, quiet-windows et rollbacks digestes. G12-B a retire le code exclusif

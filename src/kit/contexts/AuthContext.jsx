@@ -58,6 +58,18 @@ const getEmailVerificationReturnUrl = () => {
     return window.location.href || `${window.location.origin}/`;
 };
 
+const getAnalyticsSessionProof = () => {
+    if (typeof window === 'undefined') return {};
+    try {
+        return {
+            sessionId: window.sessionStorage.getItem('analytics_session_id'),
+            syncToken: window.sessionStorage.getItem('analytics_session_token'),
+        };
+    } catch {
+        return {};
+    }
+};
+
 // Create the context
 const AuthContext = createContext();
 
@@ -176,7 +188,7 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
             const result = await authModule.signInWithPopup(auth, provider);
             recordGoogleAuthDiagnostic({ attempt, phase: 'popup', outcome: 'success' });
             getCallableFunction('updateUserSessions')
-                .then((updateUserSessions) => updateUserSessions())
+                .then((updateUserSessions) => updateUserSessions(getAnalyticsSessionProof()))
                 .catch(err => console.error('Failed to clean sessions after login:', err));
             syncAuthStoreUser(result.user, { lastAuthMethod: 'google' });
             return result;
@@ -190,7 +202,7 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
         const { auth, authModule } = await getAuthRuntime();
         const result = await authModule.signInWithEmailAndPassword(auth, email, password);
         getCallableFunction('updateUserSessions')
-            .then((updateUserSessions) => updateUserSessions())
+            .then((updateUserSessions) => updateUserSessions(getAnalyticsSessionProof()))
             .catch(err => console.error('Failed to clean sessions after login:', err));
         syncAuthStoreUser(result.user, { lastAuthMethod: 'password' });
         return result;
@@ -226,7 +238,7 @@ export const AuthProvider = ({ children, forceInitialize = false, deferUntilRead
         const { auth, authModule } = await getAuthRuntime();
         const result = await signInWithCustomTokenResilient({ authModule, auth, token });
         getCallableFunction('updateUserSessions')
-            .then((updateUserSessions) => updateUserSessions())
+            .then((updateUserSessions) => updateUserSessions(getAnalyticsSessionProof()))
             .catch(err => console.error('Failed to clean sessions after login:', err));
         syncAuthStoreUser(result.user, { lastAuthMethod: method });
         return result;

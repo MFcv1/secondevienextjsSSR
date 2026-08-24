@@ -10,6 +10,15 @@ const {
 const {
     renderOtpEmail
 } = require('../functions/src/email/otpEmailTemplates');
+const {
+    quoteReceiptEmail
+} = require('../functions/src/quotes/quoteEmailTemplates');
+const {
+    newsletterRewardEmail
+} = require('../functions/src/newsletter/newsletterRewardEmail');
+const {
+    invoiceEmail
+} = require('../functions/src/invoicing/manualInvoiceEmailTemplate');
 
 const OUTPUT_DIR = path.resolve(__dirname, '../logs/email-previews');
 const SITE_URL = 'https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app';
@@ -88,7 +97,8 @@ const previews = [
         ['12-remboursement-echec-client', 'Anomalie remboursement · Client', 'order-refund-failed'],
         ['13-remboursement-echec-admin', 'Anomalie remboursement · Admin', 'order-refund-failed-admin'],
         ['14-suivi-corrige', 'Suivi corrigé · Client', 'order-tracking-updated'],
-        ['15-copie-document', 'Copie document · Client', 'commerce-document-copy']
+        ['15-copie-document', 'Copie document · Client', 'commerce-document-copy'],
+        ['16-demande-retour-admin', 'Demande de retour · Admin', 'customer-return-requested-admin']
     ].map(([slug, label, template]) => ({
         slug,
         label,
@@ -105,7 +115,66 @@ const previews = [
             senderEmail: 'admin@secondevie.example',
             siteUrl: SITE_URL
         })
-    }))
+    })),
+    {
+        slug: '17-demande-devis-recue',
+        label: 'Demande de devis reçue · Client',
+        render: () => quoteReceiptEmail({
+            requestNumber: 'DEV-20260823-A7C4F2',
+            customer: {
+                firstName: 'Camille',
+                email: 'camille.martin@example.com'
+            },
+            project: {
+                furnitureLabel: 'Enfilade scandinave',
+                description: 'Préserver la teinte du teck et reprendre les portes.',
+                services: [
+                    { label: 'Décapage doux' },
+                    { label: 'Réparation des portes' },
+                    { label: 'Finition mate' }
+                ],
+                indicativeEstimate: { minCents: 68000, maxCents: 94000 }
+            }
+        }, 'admin@secondevie.example')
+    },
+    {
+        slug: '18-avantage-newsletter',
+        label: 'Avantage newsletter · Client',
+        render: () => newsletterRewardEmail({
+            code: 'SV10-A7C4F2',
+            percentage: 10,
+            emailLower: 'camille.martin@example.com',
+            expiresAt: '2026-09-22T22:00:00.000Z'
+        }, 'admin@secondevie.example', SITE_URL)
+    },
+    {
+        slug: '19-facture-manuelle',
+        label: 'Facture manuelle · Client',
+        render: () => invoiceEmail({
+            number: 'FV-2026-0042',
+            issueDate: '23 août 2026',
+            totalCents: 120000,
+            customer: {
+                customerType: 'individual',
+                firstName: 'Camille',
+                lastName: 'Martin'
+            },
+            seller: {
+                businessName: 'Seconde Vie',
+                legalName: 'Seconde Vie',
+                email: 'admin@secondevie.example',
+                siren: '000 000 000'
+            },
+            lines: [
+                { quantity: 1, name: 'Enfilade scandinave en teck', totalCents: 108000 },
+                { quantity: 1, name: 'Livraison spécialisée', totalCents: 12000 }
+            ]
+        }, 'camille.martin@example.com', 'admin@secondevie.example', {
+            filename: 'facture-FV-2026-0042.pdf',
+            buffer: Buffer.from('preview'),
+            contentType: 'application/pdf'
+        })
+    }
 ];
 
 async function main() {

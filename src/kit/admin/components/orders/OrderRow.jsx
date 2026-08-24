@@ -55,7 +55,7 @@ function OrderRow({ darkMode = false, onKeyDown, onSelect, order, selected = fal
                             {order.shipping?.fullName || 'Client inconnu'}
                         </span>
                         <span className={`mt-0.5 block truncate font-mono text-[10px] ${darkMode ? 'text-stone-600' : 'text-stone-400'}`}>
-                            {orderReference(order.id)}
+                            {orderReference(order)}
                         </span>
                     </span>
                 </span>

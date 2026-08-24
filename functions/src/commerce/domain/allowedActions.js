@@ -17,6 +17,11 @@ function computeAllowedActions(order, actor) {
     const owner = actor.uid === order.userId;
     const strongAdmin = actor.role === 'admin' && actor.aal2 === true;
 
+    // Une archive souple reste consultable pour l'historique comptable, mais
+    // elle ne doit plus accepter de nouvelle commande metier. Sans cette garde,
+    // l'action archive_order restait proposee et pouvait reecrire archivedAt.
+    if (order.archivedAt) return [];
+
     if (
         owner &&
         order.checkout.status === 'active' &&

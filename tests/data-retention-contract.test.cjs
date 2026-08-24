@@ -53,6 +53,8 @@ test('les collections techniques ont une politique de retention bornee', () => {
         'newsletter_rewards',
         'sys_meta_oauth_states',
         'sys_meta_asset_choices',
+        'commerce_outbox',
+        'commerce_webhook_inbox',
         'affiliate_clicks'
     ]) {
         assert.ok(targets.has(collectionName), `cible de retention absente: ${collectionName}`);
@@ -60,6 +62,8 @@ test('les collections techniques ont une politique de retention bornee', () => {
     assert.equal(targets.get('sys_audit_security').retentionDays, AUDIT_RETENTION_DAYS);
     assert.equal(targets.get('sys_audit_stripe_connect').retentionDays, AUDIT_RETENTION_DAYS);
     assert.equal(targets.get('affiliate_clicks').retentionDays, AFFILIATE_RETENTION_DAYS);
+    assert.equal(targets.get('commerce_outbox').retentionDays, 90);
+    assert.equal(targets.get('commerce_webhook_inbox').retentionDays, 180);
     assert.deepEqual(
         selectTargets({ collections: ['sys_audit_security'] }).map((target) => target.name),
         ['sys_audit_security']
@@ -102,6 +106,8 @@ test('les producteurs sensibles ecrivent une expiration et ne journalisent pas l
     const metaSource = read('functions/src/integrations/meta.js');
     const quoteSource = read('functions/src/quotes/quoteRequests.js');
     const sessionSource = read('functions/src/analytics/sessions.js');
+    const adminIpSource = read('functions/src/analytics/adminIP.js');
+    const ttlConfig = JSON.parse(read('firestore.indexes.json'));
 
     assert.match(securitySource, /emailHash:\s*hash\(email\)/);
     assert.match(securitySource, /ipHash:\s*hash\(ip\)/);
@@ -127,4 +133,26 @@ test('les producteurs sensibles ecrivent une expiration et ne journalisent pas l
     assert.match(metaSource, /expireAt:\s*timestampAfterDays\(AUDIT_RETENTION_DAYS\)/);
     assert.equal((quoteSource.match(/expireAt:\s*timestampAfterDays\(AUDIT_RETENTION_DAYS/g) || []).length, 3);
     assert.match(sessionSource, /expireAt:\s*timestampFromNow\(ANALYTICS_SESSION_RETENTION_DAYS\)/);
+    assert.doesNotMatch(sessionSource, /\n\s*email:\s*authEmail/);
+    assert.doesNotMatch(sessionSource, /\n\s*ip:\s*ip[,\s]/);
+    assert.doesNotMatch(sessionSource, /\n\s*userAgent:/);
+    assert.doesNotMatch(sessionSource, /getClientIpInfo|isAdminIP|\n\s*ipMeta:/);
+    assert.doesNotMatch(adminIpSource, /adminEmail|admin_ips|db\.runTransaction|transaction\.set/);
+    assert.doesNotMatch(sessionSource, /journey:\s*admin\.firestore\.FieldValue\.arrayUnion/);
+
+    const ttlCollections = new Set(
+        ttlConfig.fieldOverrides
+            .filter((entry) => entry.ttl === true)
+            .map((entry) => entry.collectionGroup)
+    );
+    for (const collectionName of [
+        'analytics_sessions',
+        'sys_ratelimit',
+        'sys_idempotency',
+        'sys_audit_security',
+        'commerce_outbox',
+        'commerce_webhook_inbox'
+    ]) {
+        assert.ok(ttlCollections.has(collectionName), `TTL absent: ${collectionName}`);
+    }
 });

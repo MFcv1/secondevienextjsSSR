@@ -10,9 +10,11 @@ import {
   buildGcloudGen2DeployArgs
 } from '../scripts/deploy-functions-targeted.mjs';
 import {
+  ACTIVE_OBSERVABILITY_EXPORTS,
   EXPECTED_CURRENT_CLOUD_COUNT,
   EXPECTED_CURRENT_SOURCE_COUNT,
   PARALLEL_MIGRATION_EXPORTS,
+  PENDING_OBSERVABILITY_EXPORTS,
   extractLocalExports,
   waveFor
 } from '../scripts/functions-gen2-inventory.mjs';
@@ -89,7 +91,7 @@ function createFakeDb() {
 
 test('G9 exposes exactly 24 Gen2 targets after retirement of every matching Gen1', () => {
   const exported = require(path.join(ROOT, 'functions/index.js'));
-  assert.equal(Object.keys(exported).length, 140);
+  assert.equal(Object.keys(exported).length, 150);
   assert.equal(LOGICAL.length, 24);
   for (const name of LOGICAL) {
     assert.equal(exported[name], undefined, `${name} Gen1 encore exportee`);
@@ -100,12 +102,12 @@ test('G9 exposes exactly 24 Gen2 targets after retirement of every matching Gen1
 
 test('G9 inventory counts are recalculated from the complete source set', () => {
   const exports = extractLocalExports(ROOT);
-  assert.equal(exports.length, 140);
-  assert.equal(EXPECTED_CURRENT_SOURCE_COUNT, 140);
-  assert.equal(EXPECTED_CURRENT_CLOUD_COUNT, 137);
+  assert.equal(exports.length, 150);
+  assert.equal(EXPECTED_CURRENT_SOURCE_COUNT, 150);
+  assert.equal(EXPECTED_CURRENT_CLOUD_COUNT, 147);
   assert.equal(PARALLEL_MIGRATION_EXPORTS.size, 119);
   assert.deepEqual(
-    exports.filter(({ name }) => name.endsWith('Gen2') && !PARALLEL_MIGRATION_EXPORTS.has(name)),
+    exports.filter(({ name }) => name.endsWith('Gen2') && !PARALLEL_MIGRATION_EXPORTS.has(name) && !PENDING_OBSERVABILITY_EXPORTS.has(name) && !ACTIVE_OBSERVABILITY_EXPORTS.has(name)),
     []
   );
 });
@@ -179,7 +181,7 @@ test('G9 scheduler fence bounds a concurrent double invocation and uses a fencin
 test('G9 wrappers keep App Check and client registry cuts over only the 20 callables', () => {
   const wrapper = read('functions/src/commerce/gen2G9.js');
   const registry = read('src/kit/config/functionTargets.js');
-  assert.match(wrapper, /legacyFunction\.run\(request\.data, request\)/);
+  assert.match(wrapper, /legacyFunction\.run\(data, request\)/);
   assert.match(wrapper, /enforceAppCheck:\s*true/);
   assert.match(wrapper, /createSchedulerFence/);
   for (const name of LOGICAL) {

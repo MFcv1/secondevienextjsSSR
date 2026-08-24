@@ -165,6 +165,18 @@ function createTargets() {
             timestampFields: ['expireAt', 'updatedAt', 'createdAt']
         },
         {
+            name: 'commerce_outbox',
+            recursive: false,
+            retentionDays: 90,
+            timestampFields: ['purgeAt', 'sentAt', 'suppressedAt', 'createdAt']
+        },
+        {
+            name: 'commerce_webhook_inbox',
+            recursive: false,
+            retentionDays: 180,
+            timestampFields: ['purgeAt', 'processedAt', 'receivedAt']
+        },
+        {
             name: 'sys_audit_security',
             recursive: false,
             retentionDays: AUDIT_RETENTION_DAYS,

@@ -95,7 +95,12 @@ export const formatDayLabel = (timestamp) => {
     return dayFormatter.format(new Date(millis));
 };
 
-export const orderReference = (orderId) => `CMD-${String(orderId || '').slice(0, 10).toUpperCase()}`;
+export const orderReference = (orderOrId) => {
+    const orderNumber = typeof orderOrId === 'object' ? Number(orderOrId?.orderNumber) : null;
+    if (Number.isSafeInteger(orderNumber) && orderNumber > 0) return `CMD-${orderNumber}`;
+    const orderId = typeof orderOrId === 'object' ? orderOrId?.id : orderOrId;
+    return `CMD-${String(orderId || '').slice(0, 10).toUpperCase()}`;
+};
 
 // ── Etat logistique et commercial ────────────────────────────────────────────
 

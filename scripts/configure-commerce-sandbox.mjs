@@ -24,6 +24,7 @@ function healthCountersAreZero(counters = {}) {
   return [
     'dueInbox',
     'expiredInboxLeases',
+    'failedOutbox',
     'deadLetterOutbox',
     'deliveryUnknown',
     'expiredHolds',

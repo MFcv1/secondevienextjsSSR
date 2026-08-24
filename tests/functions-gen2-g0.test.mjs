@@ -59,7 +59,7 @@ function validate(args) {
   });
 }
 
-test('inventaire source final: 140 exports uniques et resolus apres G12-B', () => {
+test('inventaire source courant: 150 exports dont dix observabilite actives', () => {
   const exports = extractLocalExports(ROOT);
   const expectedCurrentCount = EXPECTED_CURRENT_SOURCE_COUNT;
   assert.equal(exports.length, expectedCurrentCount);

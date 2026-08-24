@@ -175,6 +175,7 @@ function gate3Refs(firestore) {
             firestore,
             `commerce_checkout_identities/${identityId}`
         ),
+        orderNumberCounter: () => doc(firestore, 'sys_counters/orders'),
         order: (orderId) => doc(firestore, `orders/${orderId}`),
         attempt: (orderId, attemptId) => doc(
             firestore,

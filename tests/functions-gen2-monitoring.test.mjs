@@ -34,9 +34,9 @@ test('les metriques commerce ne peuvent pas compter les journaux de leurs propre
   assert.equal(filters.get('secondevie_commerce_health_unhealthy'), applicationLogFilter('commerce_health_unhealthy'));
 });
 
-test('les alertes commerce sont directes, severisees et limitees a une notification par heure', () => {
+test('les alertes applicatives sont directes, severisees et limitees a une notification par heure', () => {
   const definitions = POLICIES.filter((policy) => policy.logMatchFilter);
-  assert.equal(definitions.length, 2);
+  assert.equal(definitions.length, 3);
 
   for (const definition of definitions) {
     const policy = buildLogMatchPolicy(definition, CHANNELS);
@@ -55,7 +55,7 @@ test('les alertes commerce sont directes, severisees et limitees a une notificat
 });
 
 test('chaque policy porte une severite exploitable', () => {
-  assert.equal(POLICIES.length, 8);
+  assert.equal(POLICIES.length, 9);
   for (const definition of POLICIES) {
     assert.ok(['ERROR', 'WARNING'].includes(definition.severity), definition.displayName);
   }
