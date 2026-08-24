@@ -1,0 +1,87 @@
+{
+  "metadata": {
+    "baselineCommit": "f6367a017ddcca90b21e6e4c40b90d42b7d2826a",
+    "codebase": "main",
+    "generatedAt": "2026-08-25T00:00:00.000Z",
+    "operator": "matthis.fradin2@gmail.com",
+    "project": "secondevienextjsssr",
+    "scope": "getDiagnosticTimelineAdminGen2"
+  },
+  "deploymentPolicy": {
+    "exactCodebase": "main",
+    "exactProject": "secondevienextjsssr",
+    "forbiddenGlobalSelector": "functions",
+    "forbiddenTargets": [],
+    "maxBatchSize": 1
+  },
+  "gates": {
+    "deploymentAllowed": true
+  },
+  "functions": [
+    {
+      "name": "getDiagnosticTimelineAdminGen2",
+      "source": {
+        "export": "getDiagnosticTimelineAdminGen2",
+        "file": "functions/src/observability/diagnosticTimeline.js"
+      },
+      "cloud": {
+        "codebase": "main",
+        "generation": 2,
+        "present": true,
+        "project": "secondevienextjsssr",
+        "region": "europe-west1",
+        "revision": "getdiagnostictimelineadmingen2-00001-lah",
+        "runtime": "nodejs22",
+        "state": "ACTIVE",
+        "updatedAt": "2026-08-24T15:03:33.630368590Z"
+      },
+      "trigger": {
+        "retry": false,
+        "type": "callable"
+      },
+      "runtime": {
+        "concurrency": 1,
+        "cpu": "0.3333",
+        "ingress": "ALLOW_ALL",
+        "maxInstances": 1,
+        "memoryMiB": 512,
+        "minInstances": 0,
+        "retry": false,
+        "timeoutSeconds": 60
+      },
+      "identities": {
+        "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/231220287936-compute@developer.gserviceaccount.com",
+        "runtimeServiceAccount": "231220287936-compute@developer.gserviceaccount.com"
+      },
+      "secrets": [],
+      "dataAccess": {
+        "reads": [
+          "orders",
+          "commerce_attempts",
+          "commerce_financial_facts",
+          "commerce_incidents",
+          "commerce_inventory_movements",
+          "commerce_outbox",
+          "commerce_webhook_inbox",
+          "business_events"
+        ],
+        "writes": [
+          "sys_audit_security"
+        ]
+      },
+      "idempotence": {
+        "status": "READ_ONLY_EXCEPT_AUDIT"
+      },
+      "ownership": {
+        "owner": "ADMIN_INCIDENT_CONSOLE"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1,
+        "rollback": "Redeployer le commit f6367a0 parent stable sur cette seule cible; conserver les audits et donnees metier.",
+        "target": "getDiagnosticTimelineAdminGen2",
+        "wave": "INCIDENTS_CONSOLE"
+      }
+    }
+  ]
+}
