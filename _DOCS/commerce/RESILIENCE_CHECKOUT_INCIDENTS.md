@@ -299,23 +299,403 @@ Comparaison read-only de l'ordre echantillon:
 
 Aucune correction n'est implementee au moment de la creation de ce document.
 
-## 14. Journal des changements
+## 14. Gate D1 - audit statique et conception des seams
+
+Statut: `OK`
+
+Date de cloture: 2026-08-24
+
+Perimetre de preuve: code et tests locaux au commit `8ebe5e7`, sans execution
+de test, serveur, navigateur, build, E2E ou acces cloud.
+
+### 14.1 Cartographie reelle du checkout v2
+
+```text
+navigateur non fiable
+  CheckoutView
+  -> clientOrderId stable tant que l'intention d'achat ne change pas
+  -> input allowliste sans prix ni total client
+  -> createCheckoutV2 via Functions callable
+     -> Firebase Auth obligatoire + App Check
+     -> controle commerce serveur fail-closed
+     -> transaction Firestore unique
+        -> checkout identity = hash(ownerUid, clientOrderId)
+        -> requestHash canonique de l'input normalise
+        -> policy/livraison/compte Connect relus et epingles
+        -> produits/prix/stock/inventoryVersion relus
+        -> order + orderNumber + payment_attempt
+        -> reservations quantitatives + mouvements hold
+        -> promotion reservee, si presente
+     -> saga PaymentIntent
+        -> tentative create_pending -> create_inflight
+        -> Stripe create avec une idempotency key derivee orderId/attemptId
+        -> PI valide sur orderId/requestHash/montant/devise/Connect
+        -> tentative attached + PI attache a la commande
+     -> reponse client: orderId, clientSecret, montants serveur, Connect
+  -> descriptor local UID/orderId/clientOrderId/cartLineId/cartRevision,
+     sans clientSecret ni montant
+  -> Stripe Payment Element / confirmPayment
+  -> UI en attente; succes affiche seulement apres order.payment=succeeded
+
+Stripe test
+  -> webhook Platform ou Connect signe
+  -> corps brut verifie puis eventId/payloadHash persistants
+  -> commerce_webhook_inbox/{inboxId}
+     received -> processing(leaseToken, processingUntil) -> processed
+     ou failed(backoff) -> dead_letter
+  -> worker relit le PaymentIntent/Refund autoritaire dans le compte epingle
+  -> transaction Firestore fencee unique
+     -> reducer monotone de commande
+     -> reservation held -> committed ou released
+     -> mouvement stock deterministe
+     -> fait financier append-only + rollups total/jour
+     -> recu sandbox immutable
+     -> deux outboxes deterministes client/admin
+     -> inbox processed dans la meme transaction
+  -> commerce_outbox
+     pending/failed -> processing(lease) -> sent
+     ou dead_letter/delivery_unknown/suppressed_*
+
+workers Gen2
+  -> Scheduler fence 8 minutes, maxInstances=1, retryCount=0
+  -> inbox/outbox/reservations: pages 25, quatre pages maximum
+  -> outbox et expiration toutes les deux minutes
+  -> reservation expiree: rapprochement/cancel Stripe provider-first,
+     puis liberation idempotente seulement apres etat canceled
+  -> reconciliation operations horaire
+     -> rollups financiers + documents + incidents + health
+
+observabilite et console
+  -> six triggers business_events append-only et idempotents
+     commande / finance / stock / incident / outbox / webhook
+  -> getDiagnosticTimelineAdminGen2
+     Auth admin + registre actif + AAL2 + App Check
+  -> recherches bornees par order/payment/refund/e-mail/correlation
+  -> fusion commande, tentative, refund, retour, document, fait,
+     mouvement, outbox, incident et business_events
+  -> tri chronologique, 100 evenements les plus recents, indicateur truncated
+  -> AdminIncidentConsole, sans acces direct Firestore/Cloud Logging
+```
+
+Le navigateur ne confirme jamais un paiement depuis le seul retour de
+`stripe.confirmPayment`. En v2, `CheckoutStripeModal` attend la projection
+durable `payment.status=succeeded` par listener Firestore. Une erreur de ce
+listener reste une confirmation en attente et n'est pas convertie en succes.
+
+### 14.2 Identites, deduplication et correlations
+
+| Identite | Construction et portee | Garantie |
+| --- | --- | --- |
+| `clientOrderId` | genere dans `CheckoutView`, conserve pendant les retries/reprises de la meme intention | une identite navigateur stable; un changement de panier/promotion admissible la renouvelle |
+| checkout identity | SHA-256 de `ownerUid + clientOrderId` | une commande durable par intention et proprietaire; conflit si `requestHash` differe |
+| `requestHash` | hash canonique de l'input checkout normalise et allowliste | prix, ordre des cles et champs libres du navigateur ne peuvent pas modifier l'identite serveur |
+| `orderId` / `attemptId` | UUID serveur prefixes `ord_` / `att_` | identites durables de commande et tentative |
+| `commandId` | UUID serveur pour le hold initial; fourni par le client pour les commandes metier puis associe a `payloadHash` | lookup du resultat avant `expectedVersion`; retry acquitte sans seconde transition |
+| `stateVersion` / `expectedVersion` | entiers monotones sur commande, tentative, reservation et commandes admin | precondition optimiste; une version stale est refusee sauf retry deja acquitte |
+| Stripe idempotency key | SHA-256 de `v1|payment_intent.create|orderId|attemptId`, prefixe `sv_checkout_v1_` | meme PaymentIntent apres timeout, crash ou resultat inconnu |
+| `eventId` Stripe | identifiant fournisseur verifie | identite externe de livraison webhook |
+| `inboxId` | SHA-256 de `scope|accountId|eventId` | dedup Platform/Connect; le meme ID avec un autre `payloadHash` est un conflit |
+| `leaseToken` / fence inbox | UUID, lease 60 s, verification dans la transaction d'effet | un worker expire ne peut pas committer apres reprise par un autre |
+| `effectId` stock | hash de `type|orderId|inventoryKey` | un seul hold/commit/release par effet et cle inventaire |
+| `effectId` financier | hash de `financial|type|account|providerObjectId` | un fait capture/refund/reversal append-only par effet fournisseur |
+| `outboxId` | hash de `effectId|template|recipientRole|email` | une intention par effet/template/destinataire; transmise comme cle d'idempotence provider |
+| `eventId` metier | hash de `sourceRef|eventType|correlation/version` | projection `business_events` append-only avec `.create`, doublon ignore |
+| `correlationId` | priorite `commandId`, `effectId`, event Stripe ou ID source | liaison console entre commande, finance, stock, e-mail et webhook sans payload personnel |
+| `runId` fixture | format `run_*`, epingle au scope fixture et propage dans `testContext` | confinement, neutralisation e-mail et quarantaine run-scoped |
+| `runId` worker | UUID du passage Scheduler | heartbeat technique sans identifiant commande ni donnee personnelle |
+| fence Scheduler | lease documentee par scheduler, token UUID et compteur `fence` | zero chevauchement Gen1/Gen2 ou double invocation active |
+
+### 14.3 Transactions, verrous, retries, timeouts et transitions
+
+- La preparation checkout est une transaction Firestore unique. Elle relit
+  d'abord identite, control, policy, scope fixture eventuel, compte Connect,
+  produits, promotion et compteur de commande; elle ecrit ensuite commande,
+  tentative, reservations, mouvements, promotion et identite. Un echec avant
+  commit ne laisse ni commande ni hold.
+- L'appel Stripe est deliberement hors transaction. Les fenetres entre effet
+  Stripe et persistance sont fermees par la meme idempotency key et par les
+  etats `create_inflight` / `create_unknown` / `attached`.
+- `saveAttempt` exige identite Stripe/request/Connect identique et une seule
+  progression de `stateVersion`; un PI different pour la meme commande est un
+  conflit explicite.
+- L'inbox persiste avant traitement. Claim, application des effets et passage
+  `processed` sont fences; l'effet et l'acquittement inbox partagent la meme
+  transaction Firestore.
+- Le reducer paiement est monotone. Les statuts Stripe non terminaux gardent le
+  hold; un statut inconnu, `requires_capture`, un orphan ou un conflit terminal
+  cree un incident et/ou `needs_review`, sans compensation speculative.
+- Capture, mouvements `commit`, fait financier, rollups, recu, promotions et
+  deux outboxes sont ecrits atomiquement. Un refund ne restocke jamais.
+- Inbox et outbox utilisent une lease de 60 secondes, huit tentatives au plus
+  et un backoff exponentiel plafonne a une heure. Une erreur e-mail non
+  reprenable devient `dead_letter` immediat; une acceptation Gmail ambigue
+  devient `delivery_unknown` sans retry automatique.
+- Les sweepers sont bornes a 25 elements par page et quatre pages. Un run avec
+  echec ou curseur restant est `incomplete` et fait echouer le Scheduler au
+  lieu de produire un faux vert.
+- Les owners Scheduler Gen2 ont `retryCount: 0`, concurrence/max instance 1 et
+  une fence Firestore de huit minutes. Outbox et expirations tournent toutes
+  les deux minutes; la reconciliation operations toutes les 60 minutes.
+- Les callables checkout Gen2 ont un timeout de 60 secondes. L'attente UI de
+  confirmation durable est bornee a 45 secondes; son expiration affiche un
+  etat encore en verification, jamais un succes.
+- La reprise recharge la commande et la tentative sous UID proprietaire,
+  refuse les terminaux `paid`, `expired` et `canceled`, puis reutilise le meme
+  PaymentIntent. Le recapitulatif vient des lignes immuables de la commande.
+
+### 14.4 Couverture R00-R19 et seams recommandes
+
+`Couvert` signifie qu'un test local actuel prouve l'invariant principal. Il ne
+signifie pas que la preuve correspondante est deja qualifiee dans la console.
+
+| ID | Couverture actuelle et preuves | Seam D2/D3 recommande | Preuve attendue dans Incidents |
+| --- | --- | --- | --- |
+| R00 | `PARTIELLEMENT_COUVERT`: create/settlement nominal Emulator, reducer, UI durable; aucune qualification comportementale complete de la console | runner pur puis fixture Emulator composee | creation, hold, tentative, webhook processed, commit, capture, recu et deux outboxes, ordre chronologique, recovery `safe` |
+| R01 | `NON_COUVERT`: aucun test hors-ligne avant callable | interception reseau navigateur avant `createCheckoutV2`; aucune reponse serveur simulee | zero match/commande pour le `clientOrderId`; aucune fausse timeline |
+| R02 | `COUVERT`: checkout atomique/idempotent Emulator, crash apres hold, retry meme commande | mock callable qui perd la reponse, puis repository Emulator avec meme input | une commande, une tentative et un hold; retry correle, aucun doublon |
+| R03 | `PARTIELLEMENT_COUVERT`: concurrence stock et identite backend; pas de double clic navigateur | deux appels concurrents sur le meme mock/adaptateur, puis Emulator | un seul orderId/effect; si le doublon est journalise, correlation identique et aucun second mouvement |
+| R04 | `PARTIELLEMENT_COUVERT`: descriptor reload/multi-onglet et resume serveur; confirmation Stripe non composee | navigateur local avec storage reel et adaptateurs checkout/etat commande | point d'arret `attached`/`processing`, reprise sur meme order/PI, puis convergence ou attente explicite |
+| R05 | `COUVERT`: reponse Stripe perdue, crash avant attach/apres attach, meme cle et un PI dans les tests saga | adaptateur Stripe deterministe existant; aucun reseau | tentative `create_unknown` puis `attached`, meme correlation; jamais deux PI |
+| R06 | `COUVERT`: rollback transactionnel avant persist et multi-SKU atomique dans Emulator | failpoint repository dans transaction Emulator | aucun order/hold/mouvement/PI; echec explicite sans incident financier |
+| R07 | `PARTIELLEMENT_COUVERT`: fenetres apres reponse Stripe couvertes par mocks, pas par Stripe test | adaptateur Stripe + failpoint avant attach/persist; L4 ulterieur seulement sur autorisation | etat indetermine visible, tentative reprise avec meme PI, ou `needs_review` si mismatch |
+| R08 | `COUVERT`: inboxId/payloadHash, duplicate identity, commit exactement une fois | runner ingress puis Emulator sur le meme event deux fois | reception/processed uniques ou doublon neutralise, un seul fait/mouvement/outbox |
+| R09 | `PARTIELLEMENT_COUVERT`: reducer monotone et generations de statuts; pas de sequence inbox distincte desordonnee de bout en bout | runner de permutations puis deux inbox Emulator en ordre inverse | ordre d'arrivee distinct de la decision metier; aucun recul apres `succeeded` |
+| R10 | `PARTIELLEMENT_COUVERT`: UI attend 45 s, hold non terminal, sweeper retry; pas de delai compose | horloge/adaptateur worker + interception navigateur de la projection commande | `processing`/attente, inbox due/failed puis processed, convergence sans succes precoce |
+| R11 | `COUVERT`: crash apres claim/retrieve, avant commit/apres commit, expiry lease et fencing Emulator | failpoints inbox existants sous Emulator | tentative 1 interrompue, lease reprise, tentative suivante, un effet final unique |
+| R12 | `COUVERT`: failed, dead-letter, delivery_unknown, sent et fixture suppressed testes | mock adaptateur e-mail/outbox worker; jamais de provider | paiement reste succeeded; e-mail failed/dead_letter/delivery_unknown avec attemptCount et recovery bloque si ambigu |
+| R13 | `COUVERT`: race annulation/paiement, expiry provider-first et release unique | horloge controlee + saga pure, puis Emulator | arbitrage paid ou canceled, mouvements commit/release exclusifs et ordre explicite |
+| R14 | `NON_COUVERT`: autorisations transport testees, pas expiration pendant resume/re-auth | interception callable `unauthenticated`/App Check puis mock de reauth et retry meme descriptor | refus sans lecture metier, puis reprise meme order; aucune nouvelle commande |
+| R15 | `COUVERT`: transaction Emulator stock 1, un seul hold concurrent | Emulator avec deux UID et deux `clientOrderId` | gagnant avec hold; perdant refuse sans stock negatif ni mouvement orphelin |
+| R16 | `NON_COUVERT`: timeouts du runner anti-faux-vert seulement, pas le comportement checkout 503/lent | interception reseau navigateur 503 puis delai, horloge fake et retry manuel borne | erreur/latence puis reprise meme `clientOrderId`; aucune duplication; cold start mesure separement |
+| R17 | `NON_COUVERT`: plafond 100 seulement verrouille statiquement | fake Firestore deterministe en D2 puis fixture 101+ en Emulator D3 | exactement 100 plus recents, ordre stable et indicateur `truncated=true` visible |
+| R18 | `COUVERT`: mauvais secret/scope refuse dans les tests ingress et contrat signature | runner pur du handler/ingress avec corps signe invalide | aucune mutation/timeline commande; log/audit technique expurge, aucun secret |
+| R19 | `PARTIELLEMENT_COUVERT`: baseline L3 refuse client et AAL1; contrats Auth/App Check statiques | conserver L3 read-only pour la preuve transport; unit test de l'autorisation en D2 si seam injectable | refus avant requetes metier, audit hashe sans valeur de recherche ni donnee commande |
+
+Les scenarios qui necessitent encore une preuve sandbox pour leur semantique
+fournisseur reelle sont R05, R07, R10 et R18; cette limite n'empeche pas D2 et
+D3 de prouver localement leurs invariants. Aucun scenario D1 n'autorise L4.
+
+### 14.5 Choix des seams
+
+Ordre retenu:
+
+1. **Runner pur** pour reducer, idempotence, permutations, horloge, leases,
+   backoff, timeouts et evaluation console.
+2. **Mocks/adaptateurs injectes** pour Stripe, e-mail, callable checkout,
+   lecture de commande et Auth/App Check. Les factories runtime acceptent deja
+   `stripe`, `clock`, `ids`, `repository` et `failpoints` sans configuration
+   globale.
+3. **Interception reseau navigateur** uniquement pour R01, R02, R04, R14 et
+   R16, aux frontieres callable/projection; aucun appel externe ne doit sortir.
+4. **Emulator Suite** pour transactions, concurrence, rollback, leases,
+   fencing, troncature et composition multi-collections.
+5. **Failpoint serveur** non retenu pour D2/D3. Il ne sera reconsidere en D4
+   que si Stripe test ne permet pas de placer deterministement la panne depuis
+   le runner ou l'adaptateur.
+
+Le module `domain/failpoints.js` actuel est une dependance en memoire: le
+runtime executable passe `null` par defaut, aucun handler ne lit un profil dans
+le payload, aucune variable d'environnement ne l'active et aucun
+`NEXT_PUBLIC_*` ne le reference. Les tests l'injectent directement dans les
+factories.
+
+### 14.6 Protections contre une activation hors test/sandbox
+
+Protections obligatoires D2/D3:
+
+- harnais et profils uniquement sous `tests/commerce/resilience/` ou helpers
+  de tests, jamais importes par `functions/index.js`, `v2Checkout.js`,
+  `v2Webhooks.js`, `gen2G9.js` ou le bundle Next;
+- garde reseau existante `tests/commerce/helpers/no-network.cjs` pour L0/L1;
+- Emulator uniquement avec projet `demo-*`, sans credential Firebase/Google,
+  via le wrapper commerce existant;
+- aucun champ `failpoint`, `fault`, `profile`, `seed` ou `runId` de resilience
+  ajoute au contrat public checkout; le `runId` fixture existant reste reserve
+  au scope backend allowliste;
+- aucun `NEXT_PUBLIC_*`, query string, localStorage, header libre ou valeur de
+  formulaire ne selectionne une panne;
+- seed et horloge injectees par le runner, rapportees sans payload metier;
+- toute suite echoue si un appel reseau, un scenario saute, un timeout ou un
+  manifeste incomplet est observe.
+
+Si un failpoint serveur devenait indispensable en D4, une decision distincte
+devrait exiger simultanement: projet exact `secondevienextjsssr`, environnement
+Stripe test verifie cote serveur, service/revision allowlistes, configuration
+serveur non publique absente par defaut, profil enumere, `runId` manifeste,
+expiration absolue courte, compteur maximal d'activations, admin fort AAL2,
+audit technique sans payload, desactivation en `finally`, deploy cible et test
+prouvant le refus lorsque l'un de ces gardes manque. Aucun de ces mecanismes
+n'est implemente en D1.
+
+### 14.7 Liste exacte des tests D2 a construire
+
+Fichiers futurs autorises en D2, sans modifier le code applicatif tant qu'un
+seam existant suffit:
+
+`tests/commerce/resilience/checkout-boundaries.test.cjs`
+
+1. `R00 nominal local conserve une commande, un PI logique et un settlement`;
+2. `R01 offline avant callable ne cree aucun effet et conserve l'intention`;
+3. `R02 reponse callable perdue reprend le meme clientOrderId et orderId`;
+4. `R03 deux soumissions concurrentes retournent un seul resultat durable`;
+5. `R05 timeout Stripe reutilise exactement la meme idempotency key`;
+6. `R07 effet Stripe acquis puis persistance interrompue converge ou needs_review`;
+7. `R09 toutes les permutations non terminales puis succeeded restent monotones`;
+8. `R10 webhook retarde garde processing puis converge apres retry`;
+9. `R13 expiration et succeeded concurrents produisent commit XOR release`;
+10. `R16 503 puis retry manuel garde la meme intention et un backoff borne`.
+
+`tests/commerce/resilience/worker-outbox.test.cjs`
+
+11. `R08 livraison webhook dupliquee ne produit qu'un effet`;
+12. `R11 interruption apres claim perd la fence et le successeur commit une fois`;
+13. `R11 interruption apres commit rend le retry sans effet supplementaire`;
+14. `R12 echec retryable e-mail devient failed sans inverser le paiement`;
+15. `R12 echec non retryable devient dead_letter a la premiere tentative`;
+16. `R12 accuse Gmail ambigu devient delivery_unknown sans nouvel envoi`;
+17. `R18 signature invalide est rejetee avant persist et sans payload sensible`.
+
+`tests/commerce/resilience/incident-console.test.cjs`
+
+18. `R00 timeline fusionne et ordonne toutes les familles checkout attendues`;
+19. `R05 create_unknown puis attached partage la correlation de tentative`;
+20. `R08 webhook received puis processed est visible sans doublon de source`;
+21. `R09 ordre arrivee webhook ne fait pas regresser le verdict de reprise`;
+22. `R11 retry worker expose attemptCount et resultat final`;
+23. `R12 dead_letter et delivery_unknown bloquent le verdict de reprise`;
+24. `R17 101 evenements retourne les 100 plus recents et truncated true`;
+25. `console ne retourne jamais e-mail adresse telephone IP token secret ou payload outbox`;
+26. `recherche correlation reste bornee a dix commandes et cent evenements`;
+27. `echec audit de consultation ne retourne aucune timeline` — test rouge
+    attendu tant que RC-003 n'est pas corrige, sans correction pendant D2;
+28. `recherche CMD par orderNumber retrouve la commande` — test rouge attendu
+    tant que RC-001 n'est pas corrige;
+29. `webhook historique traite apparait dans la timeline` — test rouge attendu
+    tant que RC-002 n'est pas corrige;
+30. `recherche invalide produit un audit hashe` — test rouge attendu tant que
+    RC-004 n'est pas corrige.
+
+`tests/commerce/browser/checkout-resilience.spec.mjs`
+
+31. `R02 perte de reponse create puis reload reprend le meme descriptor`;
+32. `R03 double clic ne lance pas deux intentions client`;
+33. `R04 reload pendant confirmation reprend les lignes immuables commande`;
+34. `R10 timeout confirmation affiche verification en cours jamais succes`;
+35. `R14 Auth ou App Check expire puis reauth reprend la meme commande`;
+36. `R16 callable lent ou 503 conserve une reprise explicite sans boucle`.
+
+Les tests navigateur D2 utiliseront une page/harness locale et des routes
+interceptees; ils ne lanceront ni site complet, ni Firebase reel, ni Stripe,
+ni provider e-mail. R06 et R15 restent deja prouves par Emulator et seront
+rejoues/composes en D3 plutot que dupliques artificiellement en D2.
+
+### 14.8 Preuves console minimales communes
+
+Pour chaque scenario qui atteint une commande, la preuve future devra montrer:
+
+- identifiant commande technique tronque dans le rapport, jamais les donnees
+  client completes;
+- etat commande, paiement, fulfillment, refund et `stateVersion` finals;
+- timeline chronologique et `truncated` explicite;
+- correlation de la tentative, du webhook, des mouvements, du fait et des
+  outboxes sans exposer de payload;
+- nombre exact de holds/commit/release, faits et outboxes;
+- statut/attemptCount inbox et outbox lorsque la panne les concerne;
+- verdict `safe`, `review` ou `blocked` et raisons compatibles avec les etats
+  autoritaires;
+- absence d'e-mail, adresse, telephone, IP, token, secret, clientSecret et
+  corps webhook complet.
+
+### 14.9 Inconnues et blocages constates
+
+- RC-001 a RC-006 restent ouverts et non corriges. RC-001/RC-002/RC-003/RC-004
+  empechent d'utiliser la console comme oracle exhaustif avant tests rouges et
+  correction dans une passe ulterieure autorisee.
+- `buildOrderDiagnostic` lit directement les collections autoritaires mais ne
+  lit pas directement l'inbox; la visibilite webhook depend donc de
+  `business_events`. La baseline a prouve un trou historique RC-002.
+- Le plafond 100 est code et teste statiquement, pas exerce avec 101 donnees.
+- Les timestamps de plusieurs sous-collections sont tries seulement apres
+  fusion; l'ordre stable en cas de timestamps identiques n'est pas defini par
+  un tie-breaker explicite.
+- Le client v2 n'a pas de retry automatique du callable create sur 503; la
+  reprise repose sur un retry utilisateur avec le meme `clientOrderId`. D2
+  doit verifier ce contrat sans introduire de boucle automatique.
+- Les garanties Stripe sur erreur reseau de bas niveau, livraison webhook et
+  idempotence provider ne sont prouvables completement qu'en L4 Stripe test;
+  D1 n'autorise ni appel ni paiement.
+- L'Emulator ne prouve ni IAM, App Check reel, index deploye, cold start, Stripe
+  Connect ni contention hebergee. Ces limites restent des gates D3/D4.
+- La preuve R19 L3 existe dans la baseline, mais l'echec fail-closed de l'audit
+  reste bloque par RC-003.
+- `AGENTS.md`, `map.md` et `_DOCS/README.md` referencent encore la campagne au
+  stade D0. Le perimetre D1 autorise uniquement la modification de ce document;
+  leur synchronisation necessite donc une autorisation documentaire ulterieure.
+
+### 14.10 Journal D1
+
+Fichiers et zones lus integralement avant audit:
+
+- `AGENTS.md`, `map.md`;
+- ce document;
+- `COMMERCE_SYNTHESE.md`, `COMMERCE_STRIPE.md`;
+- `BACKOFFICE.md`, `DONNEES_ANALYTICS.md`, `AUDIT_COUTS_FIRESTORE.md`;
+- `AUTHENTIFICATION.md`, `SECURITE_GLOBALE.md`;
+- `QUALITE_TESTS.md`, `EXPLOITATION.md`.
+
+Code executable inspecte:
+
+- client: `CheckoutView.jsx`, `CheckoutStripeModal.jsx`,
+  `CheckoutPaymentStep.jsx`, `checkoutController.js`, `checkoutRecovery.js`,
+  `checkoutContract.js`, `commerceV2Client.js`, `orderAdapter.js`;
+- checkout/runtime: `v2Checkout.js`, `v2Webhooks.js`, `v2Operations.js`,
+  `v2ReservationExpiry.js`, `gen2G9.js`, `domain/v2Runtime.js`;
+- domaine: `checkoutRepository.js`, `checkoutCoordinator.js`,
+  `checkoutSaga.js`, `checkoutSagaService.js`, `checkoutSagaRepository.js`,
+  `idempotency.js`, `failpoints.js`, `reservationRepository.js`,
+  `stripeWebhookIngress.js`, `webhookInbox.js`,
+  `webhookInboxRepository.js`, `webhookWorker.js`, `reconcilePayment.js`,
+  `paymentEffectApplier.js`, `commerceEffects.js`, `financialRollup.js`,
+  `outboxRepository.js`, `outboxWorker.js`, `firestoreWorkerQueries.js`,
+  `boundedWorkerSweeper.js`, `reservationExpiryWorker.js`,
+  `workerRunHealth.js`, `schedulerFence.js`, `operationsHealth.js`;
+- observabilite/admin: `businessEvents.js`, `diagnosticTimeline.js`,
+  `AdminIncidentConsole.jsx`;
+- tests/manifeste: `tests/commerce/faults/*.cjs`,
+  `tests/commerce/suites/firebase-domain.cjs`,
+  `tests/commerce/domain/order-state.test.cjs`,
+  `gate5-consumers.test.cjs`, `gate7a-operations.test.cjs`,
+  `property.test.cjs`, `tests/commerce/browser/gate5-browser.spec.mjs`,
+  `tests/commerce/manifest.json`, `tests/observability-contract.test.cjs`,
+  `tests/security-hardening.test.mjs`, `package.json`.
+
+Validations D1 executees avant edition: verification read-only de la branche,
+du HEAD, du checkpoint, du tag et du worktree; recherches `rg` sur fichiers,
+identites, failpoints, transactions, tests et appelants. Aucune suite n'a ete
+lancee conformement aux interdictions D1.
+
+Conclusion D1: les seams locaux necessaires existent deja et sont inactifs par
+defaut. D2 peut rester entierement local, deterministe et sans failpoint
+serveur. Gate D1 = `OK`.
+
+## 15. Journal des changements
 
 | Date | SHA | Changement | Validation | Deploiement |
 | --- | --- | --- | --- | --- |
 | 2026-08-24 | `53aa224` | checkpoint avant campagne; console/observabilite existantes | lint 0 erreur; 17 tests cibles; secret scan et diff-check propres | non |
 | 2026-08-24 | commit D0, voir historique Git | creation du plan et branche `codex/checkout-resilience-lab` | liens et diff documentaire a verifier | non |
+| 2026-08-24 | ce commit D1 | cartographie checkout, couverture R00-R19 et seams D2/D3 | audit statique, references, secret scan et diff-check | non |
 
 Chaque futur changement de code obtient une ligne distincte avec les tests et
 le statut du deploiement. Ne jamais regrouper plusieurs injections sans raison.
 
-## 15. Journal d'execution
+## 16. Journal d'execution
 
 | Run ID | Scenario | SHA/revision | Resultat | Preuves | Anomalies | Nettoyage |
 | --- | --- | --- | --- | --- | --- | --- |
 | PRE-INCIDENTS-20260824 | baseline console read-only | `53aa224` / sandbox courant | `PARTIEL` | section 12 | RC-001 a RC-006 | aucun |
 
-## 16. Gates de progression
+## 17. Gates de progression
 
 ### Gate D0 - cadre documentaire
 
@@ -331,6 +711,8 @@ le statut du deploiement. Ne jamais regrouper plusieurs injections sans raison.
 - couverture existante associee a R00-R19;
 - choix argumente entre proxy navigateur, mocks, emulator et failpoint;
 - aucun code mort ou controle public de panne.
+
+Cloture le 2026-08-24 avec statut `OK`; preuves et choix en section 14.
 
 ### Gate D2 - tests deterministes locaux
 
@@ -363,7 +745,7 @@ le statut du deploiement. Ne jamais regrouper plusieurs injections sans raison.
 - references retirees de `AGENTS.md`, `_DOCS/README.md` et `map.md`;
 - ce document supprime au plus tard le 2026-10-31; Git conserve l'historique.
 
-## 17. References de methode
+## 18. References de methode
 
 - Stripe, idempotence et erreurs reseau:
   <https://docs.stripe.com/error-low-level>
