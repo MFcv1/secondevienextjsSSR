@@ -1,7 +1,7 @@
 # Registre temporaire des anomalies de recette commerce
 
-Derniere mise a jour: 2026-08-13
-Statut: `FERME_AVEC_RESIDU_EXTERNE_EMAIL`
+Derniere mise a jour: 2026-08-24
+Statut: `OUVERT_APRES_RECETTE_CHROME`
 Campagne: [TEST_COMMERCE_SANDBOX.md](TEST_COMMERCE_SANDBOX.md)
 Echeance de fusion et suppression: 2026-08-06
 
@@ -43,6 +43,11 @@ Echeance de fusion et suppression: 2026-08-06
 | A-020 | Accès administrateur Google | `BLOQUANTE` | `FERMEE` | Le premier parcours n’achevait pas le sélecteur Google; reprise explicite du compte admin réussie |
 | A-021 | Publication admin | `MAJEURE` | `CORRIGEE_A_REQUALIFIER` | Le renouvellement du jeton démontait le parcours, fermait la progression et réinitialisait la vue sur Créer |
 | A-022 | Gate refund.failed Gen2 | `IMPORTANTE` | `REQUALIFIEE` | Le préflight M12/M13 cible désormais les trois Functions Gen2 finales et leurs URL publiques |
+| A-033 | OTP client et checkout | `BLOQUANTE` | `EN_DIAGNOSTIC` | M01 arrive une fois dans Spam, puis M01 et M02 echouent sur une configuration Gmail invalide |
+| A-034 | Entree administration | `MAJEURE` | `FERMEE` | Les sessions anonyme et client reviennent a la galerie; seul le compte admin AAL2 ouvre `/admin` |
+| A-035 | Archivage commande | `MAJEURE` | `OUVERTE` | Deux archivages sont audites, mais la commande reste active sans erreur visible |
+| A-036 | E-mails M03-M13 | `BLOQUANTE` | `OUVERTE` | Les outbox fraiches sont en `dead_letter` ou `failed` et Gmail ne recoit aucun message |
+| A-037 | Supervision outbox | `MAJEURE` | `OUVERTE` | Le statut commerce reste vert avec des compteurs nuls malgre les outbox en echec |
 
 Severites:
 
@@ -2050,6 +2055,129 @@ de code.
   Safari a recu le message, affiche son contenu et reconnu le PDF joint. Une
   seconde copie apres A-032 est partie en une tentative, ce qui confirme le
   chemin nominal sans retry.
+
+### A-033 - Les OTP M01 et M02 ne sont pas fiables dans Gmail
+
+- statut: `EN_DIAGNOSTIC`
+- severite: `BLOQUANTE`
+- phase: M01 connexion client puis M02 validation checkout invite
+- environnement: sandbox / Safari puis Chrome / Gmail de recette
+- `runId`: `run_v2all_20260824_chrome02`
+- identite: `pvml7008@gmail.com`, compte client sans droit administrateur
+- attendu: chaque demande unique livre son objet distinct dans la boite client,
+  eventuellement dans Spam, puis permet la validation du code a usage unique.
+- observe initial: la reprise Safari du 2026-08-23 confirmait `Code envoye` et
+  un succes Gen2 pour M01 et M02, sans message retrouve dans Gmail.
+- requalification fraiche: dans Chrome, un premier M01 est arrive dans Spam,
+  mais trop tard pour achever le parcours. Le renvoi M01 puis la demande M02
+  echouent avec `Configuration email invalide. Verifiez le mot de passe
+  d'application Gmail.` Aucun OTP frais complet n'a donc ete valide.
+- impact: les connexions OTP client et checkout invite restent non fiables et
+  ne peuvent pas etre qualifiees de bout en bout.
+- diagnostic courant: le resultat frais remplace l'hypothese d'une disparition
+  systematique apres succes SMTP. Le rail Gmail accepte parfois un envoi, puis
+  refuse les suivants pour configuration d'authentification invalide.
+- limite de requalification visuelle: les callables OTP deployees portent le
+  commit source `cdb83f2`, tandis que les templates du chantier e-mail courant
+  sont modifies localement et non deployes. Cette campagne qualifie donc le
+  runtime Gen2 actuel, pas le nouveau rendu local.
+
+### A-034 - Une session anonyme revelait un faux ecran de refus administrateur
+
+- statut: `FERMEE`
+- severite: `MAJEURE`
+- phase: entree administrateur avant ouverture de la fenetre commerce
+- environnement: sandbox / Chrome / controles commerce fermes
+- `runId`: `run_v2all_20260824_chrome01`
+- attendu: la galerie et son bouton `Connexion` sont l'unique porte visible;
+  un visiteur, une session anonyme ou un client qui ouvre `/admin` revient
+  silencieusement vers `/`, tandis qu'un admin authentifie depuis la galerie
+  est dirige vers le back-office apres resolution de ses claims.
+- observe: le header public affichait `Connexion`, mais `/admin` rendait
+  `Acces admin refuse - Ce compte n'a pas les droits administrateur`.
+- cause racine: la session Firebase anonyme creee pour l'analytics porte un
+  objet `user` vrai. `AdminAppIsland` affichait son formulaire uniquement pour
+  `!user`, puis classait toute autre session sans claim dans le refus admin.
+- impact: le site revelait une surface administrative inutile et presentait
+  une session anonyme comme un compte refuse; le parcours humain pouvait croire
+  a une mauvaise attribution de role avant meme toute connexion Google.
+- correction locale: `/admin` renvoie silencieusement vers `/` les visiteurs,
+  sessions anonymes et comptes non admin. La modale publique notifie la fin de
+  connexion; le header attend les claims et dirige uniquement un admin resolu
+  vers `/admin`. Les claims, le registre actif, l'AAL2, App Check, Rules et
+  Functions restent autoritaires.
+- regression: le contrat Auth prouve l'absence de `LoginView` et du message de
+  refus dans `AdminAppIsland`, la redirection des trois etats non admin et la
+  redirection post-connexion seulement apres `claimsStatus=ready` et claim
+  admin.
+- validations locales: `npm run test:auth` 78/78, lint cible sans erreur et
+  `git diff --check` vert.
+- requalification Chrome: la session anonyme et le compte client sont revenus
+  silencieusement a la galerie. Le compte administrateur de recette a seul
+  ouvert `/admin`, avec l'assurance AAL2 confirmee. Le faux portail n'est plus
+  expose sur le sandbox deploye.
+
+### A-035 - L'archivage d'une commande ne produit pas d'etat durable
+
+- statut: `OUVERTE`
+- severite: `MAJEURE`
+- phase: mutation administrateur apres retrait
+- environnement: sandbox / Chrome / Stripe test
+- `runId`: `run_v2all_20260824_chrome02`
+- commande: `CMD-ORD_C2C6C6`
+- attendu: apres confirmation, la commande retiree est archivee durablement et
+  disparait de la liste active, avec un retour explicite en cas d'echec.
+- observe: deux confirmations successives desactivent temporairement les
+  actions, puis le panneau revient a l'etat `Retiree` avec le bouton
+  `Archiver`. Le rechargement conserve la commande active et aucune erreur
+  n'est affichee.
+- preuve autoritaire: deux evenements d'archivage distincts sont inscrits dans
+  l'audit, mais aucune projection d'archive durable n'est visible sur la
+  commande.
+- impact: l'administrateur peut repeter une mutation apparemment acceptee sans
+  obtenir le resultat demande. La restauration n'est pas requalifiable puisque
+  l'archivage initial n'aboutit pas.
+
+### A-036 - Les e-mails transactionnels M03 a M13 ne sont pas livres
+
+- statut: `OUVERTE`
+- severite: `BLOQUANTE`
+- phase: cycle commande, fulfillment et remboursements
+- environnement: sandbox / Chrome / Gmail de recette / Stripe test
+- `runId`: `run_v2all_20260824_chrome02`
+- attendu: chaque transition metier livre le message client ou administrateur
+  correspondant dans Gmail.
+- observe: aucun message frais lie aux deux commandes n'est retrouve dans les
+  boites client ou administrateur, y compris avec une recherche `in:anywhere`.
+- preuve autoritaire: les outbox M03 a M09 sont en `dead_letter`, avec huit
+  tentatives pour plusieurs modeles. M10 et M11 sont en `failed` apres deux
+  tentatives; M12 et M13 sont en `failed` apres trois tentatives. Les
+  notifications provisoires du remboursement ensuite inverse sont correctement
+  marquees `suppressed_stale` et ne constituent pas une anomalie.
+- impact: aucun e-mail transactionnel M03 a M13 n'est qualifie humainement,
+  alors que les commandes et les remboursements atteignent leurs etats
+  durables attendus.
+- limite: la cause applicative precise de l'echec du dispatcher reste a
+  diagnostiquer lors de la prochaine reprise; aucun correctif n'est applique
+  pendant cette recette.
+
+### A-037 - La supervision commerce masque les echecs d'outbox
+
+- statut: `OUVERTE`
+- severite: `MAJEURE`
+- phase: controle autoritaire de fermeture
+- environnement: sandbox / controles commerce fermes
+- `runId`: `run_v2all_20260824_chrome02`
+- attendu: le statut d'exploitation et ses compteurs signalent les outbox en
+  `dead_letter` ou `failed` du run controle.
+- observe: le controle final indique `operations=healthy` et des compteurs a
+  zero, dont `deadLetterOutbox=0`, alors que l'audit des documents du meme run
+  enumere les echecs de A-036.
+- impact: la fenetre peut paraitre saine et fermee alors que la livraison des
+  e-mails transactionnels est durablement en echec.
+- controle de confinement: la fenetre est bien `CLOSED`, en `v2_fixture`, avec
+  mutations admin `read_only` et paiement offline `off`; aucun run actif ne
+  subsiste.
 
 ### A-030 - Un favori historique masque sa disponibilite catalogue
 
