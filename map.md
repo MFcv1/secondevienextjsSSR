@@ -269,7 +269,8 @@ politique/control backend fail-closed
   -> inventoryKey + holds quantitatifs [Gate 2]
   -> projection legacy + readers v1/v2
   -> lecteurs UID/admin frontend actifs
-  -> timeline admin bornee: creation/paiement + journal annulation/refund
+  -> timeline admin bornee: creation/paiement + journal annulation/refund,
+     inbox historiques par objectId provider borne et audit fail-closed
   -> flags checkout/reprise et commandes frontend off
   -X createCheckout/mutations v2 refuses par controle serveur explicite off
 
@@ -315,6 +316,8 @@ scripts/activate-commerce-fixture.mjs
 
 scripts/commerce-v2-all-window.mjs
 scripts/configure-commerce-sandbox.mjs
+scripts/checkout-resilience-game-day-d4.mjs ... game day D4 fail-closed, 2 PI test max, outbox neutralisee, cleanup et rollback
+scripts/checkout-resilience-game-day-d4-close.mjs ... closeout R07/R10, failpoint runner local, pause endpoint Stripe test 5 s, restauration finally
   -> statut recuperable, decouverte read-only, preflight, ouverture et fermeture
      auditee `v2_all` sur cinq produits exacts
   -> policy UI sandbox epinglee puis policy precedente restauree
@@ -372,7 +375,8 @@ AnalyticsCollectorIsland + AuthProvider anonyme [C]
   -> analytics_sessions/{sessionId} sans e-mail/IP/user-agent, journey recent borne a 25 et compteurs de raisons [DB]
   -> AdminDashboard: intentions/tendances 30 jours + miniatures du snapshot public court [C]
   -> AdminAnalytics: historique borne, cache IndexedDB, listener live et frise illustree [C]
-  -> AdminIncidentConsole: recherche support et timeline expurgee via callable AAL2 [C/F]
+  -> AdminIncidentConsole: recherche support CMD/provider/correlation/e-mail,
+     timeline expurgee, attemptCount et audit fail-closed via callable AAL2 [C/F]
   -> UID/IP, courbe, bandeau live cumulatif, visiteurs et parcours [C]
 ```
 
@@ -1392,9 +1396,11 @@ tests/catalog/*.test.cjs
 tests/catalog/emulator/*.test.cjs
 tests/commerce/runner/*.cjs
 tests/commerce/suites/*.cjs
+tests/commerce/suites/resilience-emulator.cjs ... Gate D3 locale: concurrence, doublons, desordre, troncature, cleanup runId
 tests/commerce/domain/*.test.cjs .......... unitaire + contrats UI/migration Gates 5/6
 tests/commerce/browser/*.spec.mjs ......... reprise/revisions multi-onglet locale
 tests/commerce/faults/*.test.cjs
+tests/commerce/resilience/*.test.cjs ...... Gate D2: frontieres checkout, workers/outbox et console Incidents
 tests/commerce/rules/*.cjs
 tests/commerce/fixtures/*.json
 tests/commerce/runner-self-test.cjs

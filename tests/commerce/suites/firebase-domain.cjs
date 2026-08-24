@@ -346,6 +346,10 @@ async function seedGate3Checkout(firestore) {
         stock: 2,
         inventoryVersion: 0
     });
+    await setDoc(refs.orderNumberCounter(), {
+        nextOrderNumber: 1,
+        updatedAt: '2026-07-26T12:00:00.000Z'
+    });
     let orderCounter = 0;
     let attemptCounter = 0;
     let commandCounter = 0;

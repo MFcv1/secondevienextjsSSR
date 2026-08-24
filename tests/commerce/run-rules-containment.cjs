@@ -11,7 +11,12 @@ const STORAGE_PORT = 9295;
 const repositoryRoot = path.resolve(__dirname, '..', '..');
 const suiteArgumentIndex = process.argv.indexOf('--suite');
 const suiteName = suiteArgumentIndex >= 0 ? process.argv[suiteArgumentIndex + 1] : 'rules-containment';
-const allowedSuites = new Set(['rules-containment', 'firebase-domain', 'rules-v2']);
+const allowedSuites = new Set([
+  'rules-containment',
+  'firebase-domain',
+  'resilience-emulator',
+  'rules-v2',
+]);
 
 function fail(message) {
   process.stderr.write(`COMMERCE_RULES_GUARD ${message}\n`);

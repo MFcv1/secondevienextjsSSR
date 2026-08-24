@@ -65,6 +65,18 @@
         "gate4-product-commands-are-atomic-idempotent-and-soft-archive"
       ]
     },
+    "resilience-emulator": {
+      "module": "./suites/resilience-emulator.cjs",
+      "timeoutMs": 15000,
+      "scenarios": [
+        "d3-transaction-rollback-is-atomic-and-cleaned",
+        "d3-stock-one-concurrency-has-one-winner-and-cleans",
+        "d3-duplicate-webhook-produces-one-domain-effect-and-cleans",
+        "d3-late-processing-event-cannot-regress-paid-order-and-cleans",
+        "d3-timeline-is-bounded-at-one-hundred-and-cleans",
+        "d3-runid-scope-does-not-leave-fixtures"
+      ]
+    },
     "rules-v2": {
       "module": "./rules/v2-boundaries.cjs",
       "timeoutMs": 10000,

@@ -232,11 +232,13 @@ async function writeSecurityAudit(eventType, context, payload = {}) {
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             expireAt: timestampAfterDays(AUDIT_RETENTION_DAYS)
         });
+        return true;
     } catch (error) {
         console.error('Security audit write failed:', {
             eventType,
             code: String(error?.code || error?.name || 'unknown').slice(0, 120)
         });
+        return false;
     }
 }
 

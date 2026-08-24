@@ -106,6 +106,7 @@ function Timeline({ events, darkMode }) {
               <div className={`mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>
                 <span className="inline-flex items-center gap-1.5"><Clock3 size={12} />{formatDate(event.at)}</span>
                 {event.detail && <span>{event.detail}</span>}
+                {Number.isSafeInteger(event.attemptCount) && <span>Tentative : {event.attemptCount}</span>}
               </div>
               {event.correlationId && (
                 <p className={`mt-2 break-all font-mono text-[10px] ${darkMode ? 'text-stone-600' : 'text-stone-400'}`}>

@@ -368,7 +368,9 @@ Depuis le 2026-08-24, le pipeline deploye retire e-mail, IP et user-agent des no
 documents `analytics_sessions`. Les identifiants de session ne sont envoyes au
 logger qu'apres hash. `business_events` est backend-only dans les Rules et la
 timeline admin exige claim, registre actif et AAL2; la recherche d'un client
-reste cote serveur et chaque consultation est auditee sous forme hashee.
+reste cote serveur et chaque consultation est auditee sous forme hashee. La
+console incidents est fail-closed sur l'ecriture de cet audit; une recherche
+invalide est auditee apres autorisation, sans valeur brute ni lecture metier.
 
 Les rollups, faits d'idempotence et compteurs sont egalement backend-only. Le
 bucket d'archive europeen interdit l'acces public; seule l'identite runtime

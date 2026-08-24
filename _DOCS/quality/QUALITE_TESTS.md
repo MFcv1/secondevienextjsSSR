@@ -250,6 +250,17 @@ Etat `CODE_READY`:
   dont create/attach PI, inbox, capture + mouvement + fait + outbox et token
   guest mono-usage, commandes auditees, refunds cumules sans restock et
   retours/dispositions concurrents;
+- `test:commerce:resilience:emulator` execute les fixtures jetables `run_d3_*`
+  de resilience: rollback, stock 1 concurrent, webhook duplique, deux inbox
+  desordonnees, timeline 101+ bornee et preuve de nettoyage avant teardown;
+- `commerce:resilience:d4` est un game day externe fail-closed: sandbox exact,
+  Stripe test obligatoire, confirmation et budget de deux PI, scope fixture,
+  outbox neutralisee, cleanup sans suppression et rollback du controle. Il ne
+  doit jamais etre lance en CI ou sans autorisation L4 explicite;
+- `commerce:resilience:d4:close` ferme R07/R10 avec deux PI test: failpoint
+  memoire runner non public, pause endpoint Connect exactement 5 s, restauration
+  dans `finally`, controle revisionne, cleanup et zero e-mail/refund. Meme
+  interdiction CI et meme autorisation L4 explicite;
 - `test:commerce:rules` ferme explicitement sous-collections et collections v2;
 - `commerce:legacy:classify` produit le manifeste Gate 6 read-only avec
   pagination, checkpoint, hashes et relecture Stripe;
@@ -595,6 +606,14 @@ L'observabilite active est couverte par `tests/observability-contract.test.cjs`,
 test:functions-gen2`. Ces gates verifient la pseudonymisation, les lectures
 bornees, le journal append-only, les TTL declares, les rollups HLL et les dix
 exports actifs. Les tests restent locaux et ne mutent aucune ressource cloud.
+
+La campagne de resilience checkout ajoute
+`tests/commerce/resilience/checkout-boundaries.test.cjs`,
+`worker-outbox.test.cjs`, `incident-console.test.cjs` et le harness local
+`tests/commerce/browser/checkout-resilience.spec.mjs`. D2 couvre 36 tests
+deterministes sous garde anti-reseau, dont recherche `CMD-*`, inbox webhook
+historique, audit timeline fail-closed, audit hashe des refus et projection de
+`attemptCount`; aucun de ces tests ne contacte Stripe, Firebase ou l'e-mail.
 
 Pour une restructuration comme celle-ci:
 

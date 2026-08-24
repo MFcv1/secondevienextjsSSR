@@ -243,6 +243,8 @@ ne conserve que des syntheses, hashes, compteurs et chemins de preuve.
 | Run ID | Environnement | Donnees creees | Operations Stripe/e-mail | Retention/nettoyage | Statut |
 | --- | --- | --- | --- | --- | --- |
 | PRE-INCIDENTS-20260824 | sandbox read-only | aucune donnee metier; audits de consultation attendus | aucune | aucun nettoyage requis | `CLOS` |
+| D4-STRIPE-6d9be04ee9e6 | sandbox transactionnel | 2 commandes fixture, 2 PaymentIntents test, 1 fait financier, mouvements et auxiliaires correles | 1 paiement test, 1 annulation PI, 0 remboursement, 0 e-mail | preuves financieres preservees; 3 auxiliaires quarantaines; 0 suppression | `PARTIEL` |
+| D4-CLOSE-2d209b1a854c | sandbox transactionnel | 2 commandes fixture, 2 PaymentIntents test, 1 fait financier, mouvements et auxiliaires correles | 1 paiement test, 1 annulation PI, 0 remboursement, 0 e-mail; endpoint Connect pause 5 s puis reactive | 10 preuves preservees; 3 auxiliaires quarantaines; 0 suppression | `CLOS` |
 
 Toute fixture future est inscrite ici avant son utilisation. Une donnee non
 inscrite est consideree hors scope et ne doit pas etre modifiee.
@@ -290,14 +292,17 @@ Comparaison read-only de l'ordre echantillon:
 
 | ID | Gravite | Preuve | Cause probable | Correction necessaire | Statut |
 | --- | --- | --- | --- | --- | --- |
-| RC-001 | majeure | `CMD-111` ne retrouve pas la commande existante | la recherche `order` lit seulement `orders/{value}` et ne requete pas `orderNumber` | normaliser `CMD-*`, extraire le numero et effectuer une requete bornee/indexee | `OUVERTE` |
-| RC-002 | majeure | webhook inbox traite absent d'une timeline comparee | la timeline ne lit pas directement `commerce_webhook_inbox`; le journal `business_events` historique est vide | projeter les webhooks de maniere durable ou lire une projection bornee dediee; ajouter un test historique | `OUVERTE` |
-| RC-003 | moyenne | une erreur d'ecriture audit n'empecherait pas la consultation | `writeSecurityAudit` journalise l'erreur mais reste fail-open | rendre l'audit de lecture incident fail-closed ou definir une preuve durable equivalente avant reponse | `OUVERTE` |
-| RC-004 | moyenne | recherche invalide absente des audits fonctionnels | normalisation executee avant l'ecriture d'audit | auditer les tentatives refusees avec type et valeur haches, sans conserver l'entree brute | `OUVERTE` |
-| RC-005 | faible | plafond 100 non exerce sur donnees existantes | aucun aggregate ne depasse 31 evenements | construire uniquement en L2 une fixture synthetique de 101+ evenements | `OUVERTE` |
+| RC-001 | majeure | `CMD-111` ne retrouve pas la commande existante | la recherche `order` lit seulement `orders/{value}` et ne requete pas `orderNumber` | normaliser `CMD-*`, extraire le numero et effectuer une requete bornee/indexee | `CORRIGEE_LOCAL_A_REQUALIFIER` |
+| RC-002 | majeure | webhook inbox traite absent d'une timeline comparee | la timeline ne lit pas directement `commerce_webhook_inbox`; le journal `business_events` historique est vide | projeter les webhooks de maniere durable ou lire une projection bornee dediee; ajouter un test historique | `CORRIGEE_LOCAL_A_REQUALIFIER` |
+| RC-003 | moyenne | une erreur d'ecriture audit n'empecherait pas la consultation | `writeSecurityAudit` journalise l'erreur mais reste fail-open | rendre l'audit de lecture incident fail-closed ou definir une preuve durable equivalente avant reponse | `CORRIGEE_LOCAL_A_REQUALIFIER` |
+| RC-004 | moyenne | recherche invalide absente des audits fonctionnels | normalisation executee avant l'ecriture d'audit | auditer les tentatives refusees avec type et valeur haches, sans conserver l'entree brute | `CORRIGEE_LOCAL_A_REQUALIFIER` |
+| RC-005 | faible | plafond 100 non exerce sur donnees existantes | aucun aggregate ne depasse 31 evenements | fixture synthetique 101+ uniquement sous Emulator | `PROUVEE_D3_EMULATOR` |
 | RC-006 | moyenne | premier appel froid proche de 8,6 s | Function Gen2 `minInstances: 0` et initialisation a froid | mesurer plusieurs appels froids avant toute decision; ameliorer le feedback UI ou la capacite seulement si seuil confirme | `A_MESURER` |
+| RC-007 | majeure | le controle sandbox etait `v2_fixture` mais sans `fixtureScopeVersion`, et sa policy ne correspondait pas au seul scope actif | fenetre fixture historique restauree avec des references devenues absentes | reconfigurer le sandbox dans une passe dediee avec manifeste, puis verifier checkout et rollback | `CORRIGEE_D4_SANDBOX` |
 
-Aucune correction n'est implementee au moment de la creation de ce document.
+Aucune correction n'etait implementee au moment de D0. D2 a reproduit
+RC-001 a RC-004 en rouge, applique les corrections locales autorisees et passe
+leurs tests au vert; aucun deploiement ou requalification sandbox n'a eu lieu.
 
 ## 14. Gate D1 - audit statique et conception des seams
 
@@ -456,18 +461,18 @@ signifie pas que la preuve correspondante est deja qualifiee dans la console.
 | R03 | `PARTIELLEMENT_COUVERT`: concurrence stock et identite backend; pas de double clic navigateur | deux appels concurrents sur le meme mock/adaptateur, puis Emulator | un seul orderId/effect; si le doublon est journalise, correlation identique et aucun second mouvement |
 | R04 | `PARTIELLEMENT_COUVERT`: descriptor reload/multi-onglet et resume serveur; confirmation Stripe non composee | navigateur local avec storage reel et adaptateurs checkout/etat commande | point d'arret `attached`/`processing`, reprise sur meme order/PI, puis convergence ou attente explicite |
 | R05 | `COUVERT`: reponse Stripe perdue, crash avant attach/apres attach, meme cle et un PI dans les tests saga | adaptateur Stripe deterministe existant; aucun reseau | tentative `create_unknown` puis `attached`, meme correlation; jamais deux PI |
-| R06 | `COUVERT`: rollback transactionnel avant persist et multi-SKU atomique dans Emulator | failpoint repository dans transaction Emulator | aucun order/hold/mouvement/PI; echec explicite sans incident financier |
+| R06 | `COUVERT_D3`: rollback transactionnel avant persist rejoue avec fixture `runId` et nettoyage prouve | failpoint repository dans transaction Emulator | aucun order/hold/mouvement/PI; echec explicite sans incident financier |
 | R07 | `PARTIELLEMENT_COUVERT`: fenetres apres reponse Stripe couvertes par mocks, pas par Stripe test | adaptateur Stripe + failpoint avant attach/persist; L4 ulterieur seulement sur autorisation | etat indetermine visible, tentative reprise avec meme PI, ou `needs_review` si mismatch |
-| R08 | `COUVERT`: inboxId/payloadHash, duplicate identity, commit exactement une fois | runner ingress puis Emulator sur le meme event deux fois | reception/processed uniques ou doublon neutralise, un seul fait/mouvement/outbox |
-| R09 | `PARTIELLEMENT_COUVERT`: reducer monotone et generations de statuts; pas de sequence inbox distincte desordonnee de bout en bout | runner de permutations puis deux inbox Emulator en ordre inverse | ordre d'arrivee distinct de la decision metier; aucun recul apres `succeeded` |
+| R08 | `COUVERT_D3`: deux persistences concurrentes du meme event reutilisent une inbox et produisent un fait unique | runner ingress puis Emulator sur le meme event deux fois | reception/processed uniques ou doublon neutralise, un seul fait/mouvement/outbox |
+| R09 | `COUVERT_D3`: deux inbox distinctes sont appliquees en ordre `succeeded` puis `processing`; la commande ne regresse pas | runner de permutations puis deux inbox Emulator en ordre inverse | ordre d'arrivee distinct de la decision metier; aucun recul apres `succeeded` |
 | R10 | `PARTIELLEMENT_COUVERT`: UI attend 45 s, hold non terminal, sweeper retry; pas de delai compose | horloge/adaptateur worker + interception navigateur de la projection commande | `processing`/attente, inbox due/failed puis processed, convergence sans succes precoce |
 | R11 | `COUVERT`: crash apres claim/retrieve, avant commit/apres commit, expiry lease et fencing Emulator | failpoints inbox existants sous Emulator | tentative 1 interrompue, lease reprise, tentative suivante, un effet final unique |
 | R12 | `COUVERT`: failed, dead-letter, delivery_unknown, sent et fixture suppressed testes | mock adaptateur e-mail/outbox worker; jamais de provider | paiement reste succeeded; e-mail failed/dead_letter/delivery_unknown avec attemptCount et recovery bloque si ambigu |
 | R13 | `COUVERT`: race annulation/paiement, expiry provider-first et release unique | horloge controlee + saga pure, puis Emulator | arbitrage paid ou canceled, mouvements commit/release exclusifs et ordre explicite |
 | R14 | `NON_COUVERT`: autorisations transport testees, pas expiration pendant resume/re-auth | interception callable `unauthenticated`/App Check puis mock de reauth et retry meme descriptor | refus sans lecture metier, puis reprise meme order; aucune nouvelle commande |
-| R15 | `COUVERT`: transaction Emulator stock 1, un seul hold concurrent | Emulator avec deux UID et deux `clientOrderId` | gagnant avec hold; perdant refuse sans stock negatif ni mouvement orphelin |
+| R15 | `COUVERT_D3`: deux holds concurrents sur stock 1 donnent exactement un gagnant et un refus, puis nettoyage | Emulator avec deux UID et deux `clientOrderId` | gagnant avec hold; perdant refuse sans stock negatif ni mouvement orphelin |
 | R16 | `NON_COUVERT`: timeouts du runner anti-faux-vert seulement, pas le comportement checkout 503/lent | interception reseau navigateur 503 puis delai, horloge fake et retry manuel borne | erreur/latence puis reprise meme `clientOrderId`; aucune duplication; cold start mesure separement |
-| R17 | `NON_COUVERT`: plafond 100 seulement verrouille statiquement | fake Firestore deterministe en D2 puis fixture 101+ en Emulator D3 | exactement 100 plus recents, ordre stable et indicateur `truncated=true` visible |
+| R17 | `COUVERT_D3`: 101 evenements commande et une outbox sont composes dans Firestore Emulator; la reponse contient 100 evenements et `truncated=true` | fake Firestore deterministe en D2 puis fixture 101+ en Emulator D3 | exactement 100 plus recents, ordre stable et indicateur `truncated=true` visible |
 | R18 | `COUVERT`: mauvais secret/scope refuse dans les tests ingress et contrat signature | runner pur du handler/ingress avec corps signe invalide | aucune mutation/timeline commande; log/audit technique expurge, aucun secret |
 | R19 | `PARTIELLEMENT_COUVERT`: baseline L3 refuse client et AAL1; contrats Auth/App Check statiques | conserver L3 read-only pour la preuve transport; unit test de l'autorisation en D2 si seam injectable | refus avant requetes metier, audit hashe sans valeur de recherche ni donnee commande |
 
@@ -608,29 +613,32 @@ Pour chaque scenario qui atteint une commande, la preuve future devra montrer:
 
 ### 14.9 Inconnues et blocages constates
 
-- RC-001 a RC-006 restent ouverts et non corriges. RC-001/RC-002/RC-003/RC-004
-  empechent d'utiliser la console comme oracle exhaustif avant tests rouges et
-  correction dans une passe ulterieure autorisee.
-- `buildOrderDiagnostic` lit directement les collections autoritaires mais ne
-  lit pas directement l'inbox; la visibilite webhook depend donc de
-  `business_events`. La baseline a prouve un trou historique RC-002.
-- Le plafond 100 est code et teste statiquement, pas exerce avec 101 donnees.
+Constats D1 et resolution observee pendant D2/D3:
+
+- RC-001 a RC-004 ont ete reproduits en rouge puis corriges et requalifies
+  localement en D2; la console refuse maintenant la timeline si son audit
+  echoue et les recherches invalides restent auditees sans valeur brute;
+- `buildOrderDiagnostic` relit maintenant les inbox historiques par identite
+  provider autoritaire, avec limites strictes et sans payload; RC-002 est
+  requalifie localement;
+- le plafond 100, seulement statique en D1, passe avec 101 evenements sur fake
+  Firestore D2 puis Firestore Emulator D3; RC-005 est ferme localement;
 - Les timestamps de plusieurs sous-collections sont tries seulement apres
   fusion; l'ordre stable en cas de timestamps identiques n'est pas defini par
   un tie-breaker explicite.
 - Le client v2 n'a pas de retry automatique du callable create sur 503; la
-  reprise repose sur un retry utilisateur avec le meme `clientOrderId`. D2
-  doit verifier ce contrat sans introduire de boucle automatique.
+  reprise repose sur un retry utilisateur avec le meme `clientOrderId`. D2 a
+  verifie ce contrat sans introduire de boucle automatique.
 - Les garanties Stripe sur erreur reseau de bas niveau, livraison webhook et
   idempotence provider ne sont prouvables completement qu'en L4 Stripe test;
   D1 n'autorise ni appel ni paiement.
 - L'Emulator ne prouve ni IAM, App Check reel, index deploye, cold start, Stripe
-  Connect ni contention hebergee. Ces limites restent des gates D3/D4.
-- La preuve R19 L3 existe dans la baseline, mais l'echec fail-closed de l'audit
-  reste bloque par RC-003.
-- `AGENTS.md`, `map.md` et `_DOCS/README.md` referencent encore la campagne au
-  stade D0. Le perimetre D1 autorise uniquement la modification de ce document;
-  leur synchronisation necessite donc une autorisation documentaire ulterieure.
+  Connect ni contention hebergee. Apres D3, ces limites restent reservees a
+  D4 ou a une mesure hebergee ulterieure explicitement autorisee.
+- La preuve R19 L3 existe dans la baseline et l'echec fail-closed de l'audit
+  est maintenant requalifie localement; le transport sandbox reste hors D3.
+- RC-006 reste la seule lacune de cette serie non mesuree: le cold start exige
+  un environnement heberge et une autorisation ulterieure.
 
 ### 14.10 Journal D1
 
@@ -678,24 +686,299 @@ Conclusion D1: les seams locaux necessaires existent deja et sont inactifs par
 defaut. D2 peut rester entierement local, deterministe et sans failpoint
 serveur. Gate D1 = `OK`.
 
-## 15. Journal des changements
+## 15. Gate D2 - tests deterministes locaux
+
+Statut: `OK`
+
+Date d'execution: 2026-08-24
+
+Perimetre execute: runners Node sous garde anti-reseau et harness Playwright
+local sur `127.0.0.1`. Aucun Emulator, Firebase reel, Stripe, provider e-mail,
+donnee metier ou cloud n'a ete utilise.
+
+### 15.1 Tests construits et resultats
+
+Les 36 tests prevus en section 14.7 existent maintenant dans:
+
+- `tests/commerce/resilience/checkout-boundaries.test.cjs`: 10/10 passes;
+- `tests/commerce/resilience/worker-outbox.test.cjs`: 7/7 passes;
+- `tests/commerce/resilience/incident-console.test.cjs`: 13/13 passes apres
+  reproduction rouge et correction autorisee des cinq lacunes;
+- `tests/commerce/browser/checkout-resilience.spec.mjs`: 6/6 passes sur le
+  projet Playwright `desktop` et un serveur local ephemere.
+
+Bilan D2 final: 36/36 passes, zero `TODO` et zero echec inattendu. RC-001 a
+RC-004 et `D2-GAP-001` ont d'abord ete prouves en rouge, puis corriges apres
+autorisation explicite. Le premier run a aussi detecte une fixture R09
+incomplete qui omettait montant/devise sur `payment_succeeded`; seule cette
+fixture a ete corrigee, puis R09 a passe contre le reducer executable.
+
+Regression ciblee: 75/75 tests existants passent sur faults, consommateurs
+checkout, proprietes et contrat d'observabilite; 33/33 tests securite/Auth
+cibles passent. ESLint passe sans warning sur les fichiers modifies.
+
+Un premier passage a utilise Node `v26.7.0`. L'integralite de D2, ESLint et des
+75 regressions ciblees a ensuite ete rejouee avec Node `v22.23.2` et pnpm
+`11.7.0`, conformement a la baseline du depot, avec des resultats identiques.
+
+### 15.2 Couverture observee R00-R19
+
+| ID | Resultat D2 | Limite restante |
+| --- | --- | --- |
+| R00 | `OK_LOCAL` | aucune semantique provider reelle |
+| R01 | `OK_LOCAL` | harness de frontiere, pas le site complet |
+| R02 | `OK_LOCAL` Node + navigateur | aucune latence hebergee |
+| R03 | `OK_LOCAL` Node + navigateur | concurrence Firestore reservee a D3 |
+| R04 | `OK_LOCAL` navigateur | Stripe test non utilise |
+| R05 | `OK_LOCAL` saga + console | erreur reseau provider reelle reservee a D4 |
+| R06 | `HORS_D2` | rollback transactionnel Emulator reserve a D3 |
+| R07 | `OK_LOCAL` | fenetre Stripe test reservee a D4 |
+| R08 | `OK_LOCAL` ingress + worker + console | composition transactionnelle Emulator reservee a D3 |
+| R09 | `OK_LOCAL` permutations reducer + console | desordre de deux inbox Firestore reserve a D3 |
+| R10 | `OK_LOCAL` horloge + navigateur | delai webhook heberge reserve a D4 |
+| R11 | `OK_LOCAL` | `attemptCount` projete et affiche; lease Firestore reservee a D3 |
+| R12 | `OK_LOCAL` | aucun provider e-mail contacte |
+| R13 | `OK_LOCAL` | concurrence transactionnelle reservee a D3 |
+| R14 | `OK_LOCAL` navigateur | Auth/App Check reels non utilises |
+| R15 | `HORS_D2` | concurrence stock Emulator reservee a D3 |
+| R16 | `OK_LOCAL` Node + navigateur | cold start heberge non mesure |
+| R17 | `OK_LOCAL` | 101 evenements sur fake Firestore; Emulator reserve a D3 |
+| R18 | `OK_LOCAL` | signature Stripe test reelle reservee a D4 |
+| R19 | `OK_LOCAL` | L3 deja prouve; audit fail-closed local, transport sandbox a requalifier |
+
+### 15.3 Corrections fermees localement et limites suivantes
+
+- RC-001: `CMD-<numero>` est converti en entier sur une expression stricte,
+  puis recherche par `orderNumber` avec une limite de deux resultats;
+- RC-002: les inbox historiques sont relues par au plus dix `objectId`
+  autoritaires issus du PaymentIntent et des faits financiers, vingt documents
+  par objet et cinquante au total; aucun payload webhook n'est renvoye;
+- RC-003: `writeSecurityAudit` retourne maintenant son resultat et la timeline
+  refuse toute reponse lorsque l'audit de consultation echoue;
+- RC-004: une recherche invalide produit, apres autorisation admin, un audit de
+  type et valeur haches avant de renvoyer l'erreur, sans lecture metier;
+- `D2-GAP-001`: `attemptCount` borne est projete depuis tentative, inbox,
+  outbox ou `business_event`, puis affiche dans la console.
+
+RC-005 a ensuite ete requalifie sur Firestore Emulator avec 101 evenements;
+voir section 16. RC-006 est une mesure de cold start heberge et reste reservee
+a une gate ulterieure autorisee. Le replay Node 22 est ferme.
+
+### 15.4 Commandes executees
+
+```bash
+export PATH="/Users/matthis/.nvm/versions/node/v22.23.2/bin:$PATH"
+pnpm run test:commerce:faults
+pnpm run test:commerce:ui
+pnpm run test:commerce:property
+node --require ./tests/commerce/helpers/no-network.cjs --test tests/observability-contract.test.cjs
+node --require ./tests/commerce/helpers/no-network.cjs --test tests/commerce/resilience/checkout-boundaries.test.cjs tests/commerce/resilience/worker-outbox.test.cjs tests/commerce/resilience/incident-console.test.cjs
+pnpm exec playwright test tests/commerce/browser/checkout-resilience.spec.mjs --project=desktop
+pnpm exec eslint tests/commerce/resilience/checkout-boundaries.test.cjs tests/commerce/resilience/worker-outbox.test.cjs tests/commerce/resilience/incident-console.test.cjs tests/commerce/browser/checkout-resilience.spec.mjs --max-warnings 0
+node --test tests/security-hardening.test.mjs tests/auth-assurance.test.cjs tests/auth-admin-revocation.test.cjs
+pnpm run lint
+```
+
+## 16. Gate D3 - Emulator Suite
+
+Statut: `OK`
+
+Date d'execution: 2026-08-24
+
+Perimetre execute: Firestore Emulator local sur le projet force
+`demo-secondevie-commerce`, port `127.0.0.1:8185`, sans credential cloud. Le
+wrapper refuse un projet non `demo-*`, un port different, un credential
+Firebase/Google et tout telechargement d'emulateur absent du cache.
+
+### 16.1 Suite et preuves
+
+La suite durable `resilience-emulator`, declaree dans
+`tests/commerce/manifest.json`, execute six scenarios isoles dans six workers:
+
+1. R06: failpoint avant persistance, rollback sans resultat partiel;
+2. R15: deux holds concurrents sur stock 1, un gagnant et un refus;
+3. R08: deux livraisons du meme webhook, une inbox et un fait financier;
+4. R09: deux inbox distinctes appliquees en ordre inverse, `succeeded` puis
+   `processing`, sans regression de l'etat `paid`;
+5. R17: 101 evenements commande et une outbox, reponse bornee a 100 avec
+   `truncated=true` et `attemptCount` conserve;
+6. confinement: deux fixtures `runId` supprimees puis collection locale vide.
+
+Chaque scenario utilise un `runId` au format `run_d3_*`, propage
+`testContext.runId`, enregistre les references creees, les supprime avant le
+teardown et verifie leur absence. `clearFirestore()` reste un second filet dans
+le `finally`, pas la preuve principale de nettoyage.
+
+Resultat Node `22.23.2`, pnpm `11.7.0`, Java Temurin 21: 6/6 scenarios, 28
+assertions, aucun skip, TODO, timeout ou echec. Rapport machine ignore:
+`test-results/commerce/resilience-emulator.json`.
+
+La regression historique `firebase-domain` a d'abord revele que son fixture
+checkout ne creait pas `sys_counters/orders` depuis l'ajout du numero de
+commande. Seul `seedGate3Checkout` a ete complete par `nextOrderNumber: 1`.
+Apres cette correction de fixture, la suite historique passe 20/20 avec 114
+assertions. Les 30 tests Node D2 et les 13 contrats du runner passent aussi
+43/43; ESLint cible passe sans warning.
+
+Un premier run D3 vert a ete observe sous Node 26 avant le replay complet sous
+Node 22. Le verdict D3 repose uniquement sur le replay Node 22. Aucun appel
+Stripe, e-mail, Firebase reel, sandbox ou cloud n'a eu lieu. Aucun paiement,
+remboursement, message, donnee metier ou deploiement n'a ete cree.
+
+### 16.2 Limites et prochaine decision
+
+RC-005 est ferme localement par la preuve Emulator. RC-006 reste non mesure:
+un cold start heberge ne peut pas etre prouve en L2. L'Emulator ne qualifie pas
+IAM, App Check reel, index deployes, Stripe test, contention hebergee ni Cloud
+Logging. D4 a ensuite ete autorisee et executee partiellement; voir section 17.
+
+### 16.3 Commandes executees
+
+```bash
+export PATH="/Users/matthis/.nvm/versions/node/v22.23.2/bin:$PATH"
+pnpm run test:commerce:resilience:emulator
+pnpm run test:commerce:firebase
+pnpm exec eslint tests/commerce/suites/resilience-emulator.cjs tests/commerce/run-rules-containment.cjs --max-warnings 0
+node --test tests/commerce/runner-self-test.cjs tests/commerce/resilience/checkout-boundaries.test.cjs tests/commerce/resilience/worker-outbox.test.cjs tests/commerce/resilience/incident-console.test.cjs
+```
+
+## 17. Gate D4 - game day sandbox
+
+Statut: `OK`
+
+Date d'execution: 2026-08-24, de `18:16:04Z` a `18:17:12Z`.
+
+Autorisation: message utilisateur explicite pour D4 puis autorisation
+explicite de bascule cloud temporaire et rollback. Aucun deploiement n'a ete
+necessaire ou execute.
+
+### 17.1 Manifeste et rayon d'impact
+
+- projet exact `secondevienextjsssr`, environnement sandbox;
+- Stripe `sk_test_*` et compte Connect `livemode=false`, charges actives;
+- App Hosting HTTP 200 et operations commerce `healthy` avant ouverture;
+- un seul produit `e2eOnly` existant, publie, stock initial 10;
+- deux sous-runs `run_d4_*`, deux PaymentIntents au maximum;
+- budget realise: un PI annule provider-first, un PI paye, zero refund;
+- outbox fixture obligatoire, deux intentions finales `suppressed_test`, zero
+  appel provider e-mail;
+- rapport machine ignore:
+  `logs/commerce/resilience/run_d4_1787595364997.json`, run hash
+  `6d9be04ee9e6`.
+
+Le preflight a detecte RC-007: le controle etait deja `v2_fixture`, mais ses
+references fixture etaient absentes ou decalees du seul scope actif. La
+fenetre D4 a donc epingle temporairement le scope actif a la revision 73. Le
+rollback a restaure le mode, la policy et les champs originaux a la revision
+74. La contre-verification a trouve deux champs auparavant absents restaures a
+`null`; ils ont ete supprimes sous precondition a la revision 75. La forme
+initiale est restauree. RC-007 reste volontairement non corrigee: la campagne
+n'avait pas autorite pour transformer le rollback en reconfiguration durable.
+
+### 17.2 Resultats des scenarios
+
+| Scenario | Verdict | Preuve sandbox |
+| --- | --- | --- |
+| R00 nominal | `OK_D4` | paiement `succeeded`, commande durable `paid`, stock `committed`, 1 fait, 1 mouvement commit, 1 inbox processed, 2 outboxes; console diagnostic: 1 match |
+| R05 reponse create perdue | `OK_D4` | commande/PI durables avant consommation de la reponse, retry meme orderId et meme PI, puis annulation provider-first; decouverte 5,836 s |
+| R07 echec Firestore apres effet Stripe | `NON_EXECUTE` | aucun seam externe ne place cette coupure sans failpoint serveur deploye |
+| R10 webhook retarde | `PARTIEL` | livraison Stripe reelle puis etat durable en 1,229 s; aucun retard injecte car desactiver l'endpoint partage depassait le rayon autorise |
+| R18 signature invalide | `OK_D4` | HTTP 400 et zero document inbox pour l'event invalide |
+
+La console Admin n'a pas ete pilotee visuellement: son callable AAL2/App Check
+a retourne exactement une timeline pour la commande nominale. Firestore,
+Stripe test et la projection console concordent. Les 32 entrees Cloud Logging
+bornees couvrent create checkout, webhook, diagnostic, outbox et cleanup;
+zero severite `ERROR` ou superieure et aucune troncature.
+
+### 17.3 Nettoyage et etat final
+
+- commande R05: `canceled`, PI `canceled`, zero fait, zero hold, zero refund;
+- commande R00: paiement/PI `succeeded`, un fait, zero hold, zero refund;
+- deux outboxes R00 `suppressed_test`; preuve structurelle de zero envoi;
+- cleanup officiel execute en dry-run puis commit pour les deux runId:
+  10 preuves protegees preservees, 3 auxiliaires quarantaines, zero delete;
+- controle restaure en `v2_fixture`, revision 75, champs fixture initialement
+  absents de nouveau absents;
+- aucun secret, token ou identifiant complet inscrit dans le document.
+
+### 17.4 Limites observees apres le premier run
+
+Le premier run restait `PARTIEL`: R07 exigeait un point de coupure apres effet
+Stripe et R10 un retard de livraison isole. Une autorisation ulterieure a
+permis de fermer ces deux limites sans deployer de failpoint serveur; voir
+section 17.5. RC-006 reste une mesure de cold start separee.
+
+Commande qualifiante:
+
+```bash
+export PATH="/Users/matthis/.nvm/versions/node/v22.23.2/bin:$PATH"
+node scripts/with-env.mjs .env.sandbox node scripts/checkout-resilience-game-day-d4.mjs --project=secondevienextjsssr --env=sandbox --commit=true --confirm=RUN_D4_secondevienextjsssr --max-payment-intents=2
+```
+
+### 17.5 Closeout R07/R10 et RC-007
+
+Autorisation utilisateur explicite recue apres le run partiel. Le closeout
+`2d209b1a854c`, execute de `18:46:47Z` a `18:49:11Z`, a conserve le meme
+budget: deux PI test maximum, zero refund et zero e-mail.
+
+- RC-007: le controle est durablement aligne a la revision 76 sur le scope
+  actif et sa policy, en `v2_fixture`, `read_only` et paiement offline `off`;
+- R07: le failpoint memoire existant
+  `create.after_stripe_response_before_attach` a ete injecte uniquement par le
+  runner local. Il n'existe aucun parametre public, variable d'environnement,
+  callable ou code deploye permettant son activation. Une commande et une
+  tentative ont survecu a la coupure; le retry a retrouve le meme PI par la
+  meme cle Stripe, puis l'ordre a ete annule provider-first;
+- R10: l'unique endpoint Connect Stripe test a ete desactive exactement 5 s
+  via l'API Stripe officielle. Pendant la pause, le PI etait `succeeded` mais
+  la commande restait `awaiting_method`, sans faux succes. L'endpoint a ete
+  reactive avant une livraison signee; la commande est devenue durable en
+  136 ms, avec stock commit;
+- restauration: endpoint Connect `enabled`, `livemode=false`, controle
+  revision 76 aligne, operations `healthy`;
+- donnees: commande R07 et PI `canceled`; commande R10 et PI `succeeded`; zero
+  hold et zero refund; deux outboxes R10 `suppressed_test`;
+- console: un match AAL2/App Check pour R10;
+- cleanup: dry-run puis commit, 10 preuves preservees, 3 auxiliaires
+  quarantaines, zero delete;
+- logs: 24 entrees bornees sur webhook, diagnostic, outbox et cleanup, zero
+  severite `ERROR` ou superieure, aucune troncature.
+
+Rapport machine ignore:
+`logs/commerce/resilience/run_d4_close_1787597207225.json`. Le closeout a
+utilise `scripts/checkout-resilience-game-day-d4-close.mjs`; aucune Function,
+revision App Hosting ou configuration de production n'a ete deployee.
+
+Gate D4 finale = `OK`. RC-006 reste hors de cette gate: elle demande une
+campagne de mesures froides distincte, pas une injection de panne checkout.
+
+## 18. Journal des changements
 
 | Date | SHA | Changement | Validation | Deploiement |
 | --- | --- | --- | --- | --- |
 | 2026-08-24 | `53aa224` | checkpoint avant campagne; console/observabilite existantes | lint 0 erreur; 17 tests cibles; secret scan et diff-check propres | non |
 | 2026-08-24 | commit D0, voir historique Git | creation du plan et branche `codex/checkout-resilience-lab` | liens et diff documentaire a verifier | non |
 | 2026-08-24 | ce commit D1 | cartographie checkout, couverture R00-R19 et seams D2/D3 | audit statique, references, secret scan et diff-check | non |
+| 2026-08-24 | worktree D2 non commite | 36 tests locaux, reproduction rouge puis corrections RC-001 a RC-004/D2-GAP-001 | 36 passes D2, 75 regressions, 33 securite/Auth, ESLint | non |
+| 2026-08-24 | worktree D3 non commite | suite Emulator `runId`, concurrence, doublon, desordre, troncature et nettoyage; fixture compteur historique completee | D3 6/6 et 28 assertions; firebase-domain 20/20 et 114 assertions; Node/runner 43/43; ESLint | non |
+| 2026-08-24 | worktree D4 non commite | runner game day fail-closed, 2 PI test max, outbox neutralisee, cleanup et rollback | R00/R05/R18 OK; R10 partiel; R07 non execute; 32 logs bornes sans erreur | aucune revision deployee |
+| 2026-08-24 | worktree D4 close non commite | failpoint runner R07, pause endpoint test R10, correction RC-007 | R07/R10 OK; endpoint restaure; controle 76; 24 logs sans erreur | aucune revision deployee |
 
 Chaque futur changement de code obtient une ligne distincte avec les tests et
 le statut du deploiement. Ne jamais regrouper plusieurs injections sans raison.
 
-## 16. Journal d'execution
+## 19. Journal d'execution
 
 | Run ID | Scenario | SHA/revision | Resultat | Preuves | Anomalies | Nettoyage |
 | --- | --- | --- | --- | --- | --- | --- |
 | PRE-INCIDENTS-20260824 | baseline console read-only | `53aa224` / sandbox courant | `PARTIEL` | section 12 | RC-001 a RC-006 | aucun |
+| D2-LOCAL-20260824 | runners purs et navigateur local | `8631e28` + worktree D2 | `OK`: 36/36 passes apres corrections | section 15 | RC-005 requalifiee ensuite en D3; RC-006 a mesurer ulterieurement | serveur local ferme; aucune donnee |
+| D3-EMU-20260824 | Firestore Emulator local, six workers `run_d3_*` | `8631e28` + worktree D2/D3 | `OK`: 6/6, 28 assertions; regression 20/20 | section 16 + rapports ignores | RC-005 fermee localement; RC-006 hors L2 | references supprimees et absence verifiee avant teardown |
+| D4-STRIPE-6d9be04ee9e6 | sandbox + Stripe test, 2 PI max | revision cloud existante + fenetre controle 73, rollback 75 | `PARTIEL`: R00/R05/R18 OK, R10 partiel, R07 non execute | section 17 + rapport ignore + 32 logs bornes | RC-007 detectee; RC-006 non mesuree | PI actif annule, holds 0, outboxes neutralisees, auxiliaires quarantaines, preuves preservees |
+| D4-CLOSE-2d209b1a854c | sandbox + Stripe test, 2 PI max, pause webhook 5 s | controle 76, Functions existantes | `OK`: R07/R10 et RC-007 fermes | section 17.5 + rapport ignore + 24 logs bornes | RC-006 hors gate | endpoint reactive, holds 0, outboxes neutralisees, 3 auxiliaires quarantaines, preuves preservees |
 
-## 17. Gates de progression
+## 20. Gates de progression
 
 ### Gate D0 - cadre documentaire
 
@@ -721,12 +1004,18 @@ Cloture le 2026-08-24 avec statut `OK`; preuves et choix en section 14.
 - aucune ressource cloud utilisee;
 - rapport de couverture de la matrice mis a jour.
 
+Cloturee le 2026-08-24 avec statut `OK`; resultats, cycle rouge/vert et limites
+en section 15. Aucun critere D3 ou D4 n'est revendique.
+
 ### Gate D3 - Emulator Suite
 
 - fixtures jetables et namespacées par `runId`;
 - concurrence, duplications et desordre testes;
 - preuve de nettoyage local;
 - aucun appel Stripe ou e-mail reel.
+
+Cloturee le 2026-08-24 avec statut `OK`; preuves, nettoyage et limites en
+section 16. Aucun critere D4 n'est revendique.
 
 ### Gate D4 - game day sandbox
 
@@ -735,6 +1024,10 @@ Cloture le 2026-08-24 avec statut `OK`; preuves et choix en section 14.
 - Stripe test uniquement et outbox neutralisee ou compte de recette autorise;
 - deploiement cible explicitement approuve, si indispensable;
 - comparaison console/Firestore/Stripe test/Logging pour chaque run.
+
+Cloturee le 2026-08-24 avec statut `OK`; preuves en sections 17.1 a 17.5.
+Aucun deploiement ni failpoint serveur activable publiquement. R07 est ferme
+par injection runner et R10 par une pause Stripe test de 5 s restauree.
 
 ### Gate D5 - cloture
 
@@ -745,7 +1038,7 @@ Cloture le 2026-08-24 avec statut `OK`; preuves et choix en section 14.
 - references retirees de `AGENTS.md`, `_DOCS/README.md` et `map.md`;
 - ce document supprime au plus tard le 2026-10-31; Git conserve l'historique.
 
-## 18. References de methode
+## 21. References de methode
 
 - Stripe, idempotence et erreurs reseau:
   <https://docs.stripe.com/error-low-level>

@@ -11,9 +11,18 @@ const { hashOpaque, runObserved } = require('../../helpers/observability');
 
 const REGION = 'europe-west1';
 const MAX_EVENTS = 100;
+const MAX_PROVIDER_OBJECTS = 10;
 
 function invalid(message) {
     return new functions.https.HttpsError('invalid-argument', message);
+}
+
+function auditUnavailable() {
+    return new functions.https.HttpsError(
+        'internal',
+        'Audit de consultation indisponible.',
+        { reason: 'OBSERVABILITY_AUDIT_UNAVAILABLE' }
+    );
 }
 
 function iso(value) {
@@ -52,7 +61,16 @@ function normalizeSearch(data = {}) {
 async function resolveOrderIds(db, search) {
     if (search.kind === 'order') {
         const snapshot = await db.doc(`orders/${search.value}`).get();
-        return snapshot.exists ? [snapshot.id] : [];
+        if (snapshot.exists) return [snapshot.id];
+        const reference = /^CMD-([1-9][0-9]{0,14})$/i.exec(search.value);
+        if (!reference) return [];
+        const orderNumber = Number(reference[1]);
+        if (!Number.isSafeInteger(orderNumber)) return [];
+        const orders = await db.collection('orders')
+            .where('orderNumber', '==', orderNumber)
+            .limit(2)
+            .get();
+        return orders.docs.map((doc) => doc.id);
     }
     if (search.kind === 'correlation') {
         const events = await db.collection('business_events')
@@ -80,7 +98,17 @@ async function resolveOrderIds(db, search) {
     return [...new Set([...legacy.docs, ...current.docs].map((doc) => doc.id))];
 }
 
-function timelineEvent({ id, type, at, source, status = 'recorded', severity = 'info', detail = null, correlationId = null }) {
+function timelineEvent({
+    id,
+    type,
+    at,
+    source,
+    status = 'recorded',
+    severity = 'info',
+    detail = null,
+    correlationId = null,
+    attemptCount = null
+}) {
     return {
         id,
         type: String(type || 'unknown').slice(0, 120),
@@ -89,8 +117,32 @@ function timelineEvent({ id, type, at, source, status = 'recorded', severity = '
         status,
         severity,
         detail,
-        correlationId
+        correlationId,
+        ...(Number.isSafeInteger(attemptCount) && attemptCount >= 0 ? { attemptCount } : {})
     };
+}
+
+async function loadHistoricalWebhookDocs(db, order, facts) {
+    const providerObjectIds = [...new Set([
+        order?.payment?.paymentIntentId,
+        ...facts.docs.map((doc) => doc.data()?.providerObjectId)
+    ].filter((value) => typeof value === 'string' && value.length >= 3))]
+        .slice(0, MAX_PROVIDER_OBJECTS);
+    if (providerObjectIds.length === 0) return [];
+    const snapshots = await Promise.all(providerObjectIds.map((objectId) => (
+        db.collection('commerce_webhook_inbox')
+            .where('objectId', '==', objectId)
+            .limit(20)
+            .get()
+    )));
+    const unique = new Map();
+    for (const snapshot of snapshots) {
+        for (const document of snapshot.docs) {
+            if (!unique.has(document.id)) unique.set(document.id, document);
+            if (unique.size >= 50) return [...unique.values()];
+        }
+    }
+    return [...unique.values()];
 }
 
 function recoveryAssessment(order, incidents, outbox) {
@@ -119,8 +171,10 @@ function recoveryAssessment(order, incidents, outbox) {
 
 async function buildOrderDiagnostic(db, orderId) {
     const orderRef = db.doc(`orders/${orderId}`);
+    const orderSnapshot = await orderRef.get();
+    if (!orderSnapshot.exists) return null;
+    const order = orderSnapshot.data() || {};
     const [
-        orderSnapshot,
         orderEvents,
         attempts,
         refunds,
@@ -132,7 +186,6 @@ async function buildOrderDiagnostic(db, orderId) {
         incidents,
         businessEvents
     ] = await Promise.all([
-        orderRef.get(),
         orderRef.collection('events').orderBy('createdAt', 'asc').limit(MAX_EVENTS).get(),
         orderRef.collection('payment_attempts').limit(20).get(),
         orderRef.collection('refunds').limit(20).get(),
@@ -144,8 +197,7 @@ async function buildOrderDiagnostic(db, orderId) {
         db.collection('commerce_incidents').where('orderId', '==', orderId).limit(50).get(),
         db.collection('business_events').where('aggregateId', '==', orderId).orderBy('occurredAt', 'asc').limit(MAX_EVENTS).get()
     ]);
-    if (!orderSnapshot.exists) return null;
-    const order = orderSnapshot.data() || {};
+    const historicalWebhooks = await loadHistoricalWebhookDocs(db, order, facts);
     const events = [];
     for (const doc of orderEvents.docs) {
         const data = doc.data();
@@ -168,7 +220,8 @@ async function buildOrderDiagnostic(db, orderId) {
             source: 'Stripe',
             status: data.status || 'recorded',
             severity: ['failed', 'needs_review'].includes(data.status) ? 'error' : 'info',
-            correlationId: data.commandId || doc.id
+            correlationId: data.commandId || doc.id,
+            attemptCount: data.attemptCount
         }));
     }
     for (const doc of facts.docs) {
@@ -216,7 +269,8 @@ async function buildOrderDiagnostic(db, orderId) {
             source: 'outbox',
             status: data.status || 'recorded',
             severity: ['failed', 'dead_letter', 'delivery_unknown'].includes(data.status) ? 'error' : 'info',
-            correlationId: data.effectId || doc.id
+            correlationId: data.effectId || doc.id,
+            attemptCount: data.attemptCount
         }));
     }
     for (const doc of incidents.docs) {
@@ -253,6 +307,19 @@ async function buildOrderDiagnostic(db, orderId) {
             correlationId: doc.id
         }));
     }
+    for (const doc of historicalWebhooks) {
+        const data = doc.data();
+        events.push(timelineEvent({
+            id: `webhook:${doc.id}`,
+            type: `Webhook · ${data.type || 'evenement'}`,
+            at: data.processedAt || data.receivedAt,
+            source: 'webhook',
+            status: data.status || 'recorded',
+            severity: ['failed', 'dead_letter'].includes(data.status) ? 'error' : 'info',
+            correlationId: data.eventId || doc.id,
+            attemptCount: data.attemptCount
+        }));
+    }
     for (const doc of businessEvents.docs) {
         const data = doc.data();
         if (events.some((entry) => data.source?.ref && entry.id.endsWith(data.source.ref.split('/').pop()))) continue;
@@ -263,7 +330,8 @@ async function buildOrderDiagnostic(db, orderId) {
             source: data.source?.kind || 'journal',
             status: data.outcome?.status || 'recorded',
             severity: ['failed', 'dead_letter', 'delivery_unknown', 'needs_review'].includes(data.outcome?.status) ? 'error' : 'info',
-            correlationId: data.correlationId || null
+            correlationId: data.correlationId || null,
+            attemptCount: data.payload?.attemptCount
         }));
     }
     events.sort((left, right) => String(left.at || '').localeCompare(String(right.at || '')));
@@ -285,20 +353,37 @@ async function buildOrderDiagnostic(db, orderId) {
     };
 }
 
-async function handler(data, context) {
-    await checkActiveStrongAdmin(context);
-    const search = normalizeSearch(data);
-    const db = admin.firestore();
+async function handler(data, context, dependencies = {}) {
+    const authorize = dependencies.authorize || checkActiveStrongAdmin;
+    const audit = dependencies.audit || writeSecurityAudit;
+    const getDb = dependencies.getDb || (() => admin.firestore());
+    const hash = dependencies.hash || hashOpaque;
+    await authorize(context);
+    let search;
+    try {
+        search = normalizeSearch(data);
+    } catch (error) {
+        const rawValue = String(data?.value || '').trim();
+        const audited = await audit('observability.timeline_invalid', context, {
+            searchType: String(data?.kind || 'auto').slice(0, 40),
+            searchHash: hash(rawValue.slice(0, 180)),
+            inputLength: Math.min(rawValue.length, 10_000)
+        });
+        if (audited !== true) throw auditUnavailable();
+        throw error;
+    }
+    const db = getDb();
     const orderIds = await resolveOrderIds(db, search);
-    await writeSecurityAudit('observability.timeline_viewed', context, {
+    const audited = await audit('observability.timeline_viewed', context, {
         searchType: search.kind,
-        searchHash: hashOpaque(search.value),
+        searchHash: hash(search.value),
         matchCount: orderIds.length
     });
+    if (audited !== true) throw auditUnavailable();
     const matches = await Promise.all(orderIds.slice(0, 10).map((orderId) => buildOrderDiagnostic(db, orderId)));
     return {
         success: true,
-        search: { kind: search.kind, valueHash: hashOpaque(search.value) },
+        search: { kind: search.kind, valueHash: hash(search.value) },
         matches: matches.filter(Boolean),
         truncated: orderIds.length > 10
     };
@@ -324,6 +409,7 @@ module.exports = {
     getDiagnosticTimelineAdminGen2,
     handler,
     normalizeSearch,
+    loadHistoricalWebhookDocs,
     recoveryAssessment,
     resolveOrderIds
 };

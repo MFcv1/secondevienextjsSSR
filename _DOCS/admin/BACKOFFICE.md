@@ -31,8 +31,14 @@ Le sandbox expose l'onglet lazy `Incidents`. Il appelle uniquement
 `getDiagnosticTimelineAdminGen2`, exige l'admin fort AAL2 et retourne une
 timeline expurgee par commande, paiement, remboursement, correlation ou e-mail
 client recherche cote serveur. L'e-mail recherche n'est ni renvoye ni logue;
-chaque consultation ecrit un audit hashe. Aucun bouton de reprise financiere
-directe n'est expose dans cette console.
+chaque consultation ecrit un audit hashe et la reponse est refusee si cet audit
+echoue. Les recherches invalides sont elles aussi auditees sous forme hashee,
+sans lecture metier. Une reference `CMD-<numero>` resout `orderNumber` par une
+requete bornee. La timeline complete les journaux recents avec les inbox
+historiques retrouvees par identifiants provider autoritaires bornes, sans
+renvoyer leur payload, et affiche le nombre de tentatives worker lorsqu'il est
+connu. Aucun bouton de reprise financiere directe n'est expose dans cette
+console.
 
 L'interface commune de connexion est conservee. L'acces admin repose sur
 Firebase Auth, claims, registre `sys_admin_access` et assurance AAL2 Google ou
