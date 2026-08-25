@@ -286,11 +286,11 @@ politique/control backend fail-closed
   -> UI client/admin via commandes serveur
 ```
 
-Gates 0A a 8 sont fermees en sandbox depuis le 2026-07-28. La fenetre
-fonctionnelle `v2_all/v2` ouverte le 2026-08-02 a ete refermee apres le game
-day resilience du 2026-08-24. Le controle courant est
-`v2_fixture/read_only` revision 76, avec scope et policy fixture alignes;
-Stripe reste en mode test et le paiement offline reste `off`.
+Gates 0A a 8 sont fermees en sandbox depuis le 2026-07-28. Apres la fermeture
+du game day resilience du 2026-08-24, le controle transactionnel a ete rouvert
+durablement par autorisation explicite le 2026-08-25: `v2_all/v2` revision 77,
+policy `sandbox_transactional_policy_20260802`, Stripe test et paiement offline
+`off`. Aucun `runId` ni minuteur de fenetre temporaire ne pilote cette ouverture.
 
 Gate 6 ajoute un rail de migration sans writer:
 
@@ -1416,8 +1416,9 @@ ce seul scope, les workers bornes, projections, documents sandbox,
 exploitation et cleanup audite sur un manifeste immutable. Gate 7B execute le
 runner `scripts/e2e-commerce-core-gate7b.mjs` deux fois sur le meme SHA/release
 avec Stripe Connect, 3DS, OTP Gmail et drain final. Les trois lecteurs Gate 5
-restent actifs. La fenetre `v2_all/v2` du 2026-08-02 est maintenant refermee;
-le sandbox est revenu a `v2_fixture/read_only`, Stripe test uniquement.
+restent actifs. Le sandbox est ouvert durablement en `v2_all/v2` depuis le
+2026-08-25, Stripe test uniquement; le paiement offline et tout rail live
+restent fermes.
 
 ## 12. Matrice d'impact rapide
 
@@ -1430,7 +1431,7 @@ le sandbox est revenu a `v2_fixture/read_only`, Stripe test uniquement.
 | Auth | `AUTHENTIFICATION.md` | authStore, AuthContext, modal, auth Functions | `test:auth` + smoke |
 | securite/rules | `SECURITE_GLOBALE.md` | rules, helpers security, Functions | tests negatifs + sandbox cible |
 | espace client | `ESPACE_CLIENT.md` | routes compte, MyOrders, wishlist | smoke compte |
-| paiement/refund | `COMMERCE_SYNTHESE.md`, puis `COMMERCE_STRIPE.md` | commerce client/Functions/admin | Gates 0A a 8 fermees; `PREPROD_TRANSACTIONAL_READY` sandbox; controle courant `v2_fixture/read_only`, Stripe test uniquement, offline et live fermes |
+| paiement/refund | `COMMERCE_SYNTHESE.md`, puis `COMMERCE_STRIPE.md` | commerce client/Functions/admin | Gates 0A a 8 fermees; `PREPROD_TRANSACTIONAL_READY` sandbox; controle courant `v2_all/v2` revision 77, Stripe test uniquement, offline et live fermes |
 | admin | `BACKOFFICE.md` | AdminAppIsland, tabs, Functions | smoke tabs + action cible |
 | infra | `INFRASTRUCTURE.md` | yaml/json/env/runtime | audits read-only + build |
 | donnees | `DONNEES_ANALYTICS.md` + `AUDIT_COUTS_FIRESTORE.md` | rules/indexes/scripts/Functions | dry-run/comptage/rollback + mesure avant/apres |

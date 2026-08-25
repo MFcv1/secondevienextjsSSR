@@ -1,6 +1,6 @@
 # Commerce, checkout et Stripe
 
-Derniere mise a jour: 2026-08-13
+Derniere mise a jour: 2026-08-25
 Statut: `PREPROD_TRANSACTIONAL_READY`
 
 Etat actif:
@@ -10,9 +10,9 @@ Etat actif:
 > annulation provider-first, concurrence stock, commandes client, fulfillment,
 > refund, retour/restock, suspension de policy, e-mails, documents et
 > rapprochement. Le statut `PREPROD_TRANSACTIONAL_READY` reste strictement
-> borne au sandbox. La fenetre `v2_all/v2` ouverte le 2026-08-02 est refermee
-> depuis le game day du 2026-08-24. Le controle courant est
-> `v2_fixture/read_only` revision 76; le paiement offline reste `off`. Stripe
+> borne au sandbox. Apres la fermeture du game day du 2026-08-24, le controle
+> a ete rouvert durablement sur autorisation explicite le 2026-08-25 en
+> `v2_all/v2` revision 77; le paiement offline reste `off`. Stripe
 > live et le rail production ne sont pas autorises.
 
 ## 1. Perimetre
@@ -714,8 +714,11 @@ webhook signe; la commande a converge durablement en 136 ms. L'endpoint final
 est `enabled`, en mode test. Aucun parametre public, variable `NEXT_PUBLIC_*`
 ou configuration de production ne peut activer ces pannes.
 
-Le control plane final est `v2_fixture/read_only` revision 76, policy et scope
-fixture alignes, operations `healthy`. RC-006 est ferme le 2026-08-24 par
+Le control plane courant est `v2_all/v2` revision 77, policy
+`sandbox_transactional_policy_20260802`, sans scope fixture ni echeance,
+operations `healthy`. Les modes de fermeture restent disponibles comme
+rollback explicite, mais aucun job ne referme automatiquement le sandbox.
+RC-006 est ferme le 2026-08-24 par
 quatre cold starts Cloud Run confirmes: minimum 3,731 s, mediane 4,331 s,
 moyenne 4,351 s et maximum 5,013 s cote serveur. La probe courante a mesure
 4,972 s cote client pour 4,226 s cote serveur, puis 731/294 ms cote client et

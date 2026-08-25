@@ -735,6 +735,16 @@ Activation fonctionnelle sandbox du 2026-08-02:
 - operations `healthy` et compteurs a zero;
 - Stripe reste en mode test; aucun rail live ou production active.
 
+Reouverture durable du sandbox le 2026-08-25:
+
+- autorisation explicite de conserver tous les parcours testables;
+- controle commerce revision 77: `v2_all`, mutations admin `v2`, offline `off`;
+- policy active `sandbox_transactional_policy_20260802`;
+- operations `healthy` et compteurs a zero au preflight et apres activation;
+- aucune commande, aucun paiement et aucun e-mail crees par l'activation;
+- aucun `runId`, aucune echeance et aucune fermeture automatique;
+- Stripe test uniquement, rail production absent.
+
 ## 11. Rollback
 
 App Hosting:

@@ -1,6 +1,6 @@
 # Synthese du noyau commerce
 
-Derniere mise a jour: 2026-08-24
+Derniere mise a jour: 2026-08-25
 Statut: `POINT_ENTREE_COMMERCE`
 Qualification actuelle: `PREPROD_TRANSACTIONAL_READY`
 
@@ -25,8 +25,9 @@ en section 10 restent autoritaires.
 Le noyau commerce est qualifie `PREPROD_TRANSACTIONAL_READY` sur le projet
 Firebase sandbox `secondevienextjsssr`. La qualification initiale sur fixtures
 techniques allowlistees a ete completee le 2026-07-29 par une fenetre
-`v2_all` bornee a cinq meubles reels, trois commandes Loa et Stripe test. Cette
-fenetre est refermee; elle ne constitue pas une ouverture publique permanente.
+`v2_all` bornee a cinq meubles reels, trois commandes Loa et Stripe test. Le
+sandbox est maintenant ouvert durablement en mode transactionnel de test; cela
+ne constitue ni une ouverture Stripe live ni un GO production.
 
 La qualification couvre:
 
@@ -45,7 +46,7 @@ La qualification couvre:
 
 Elle ne constitue pas:
 
-- une activation publique permanente `v2_all`;
+- une activation Stripe live ou production;
 - une autorisation Stripe Live;
 - un GO production;
 - une validation fiscale, comptable ou juridique;
@@ -53,10 +54,10 @@ Elle ne constitue pas:
 
 Le rail admin de liens de paiement sans compte est deploye sur le sandbox
 depuis le 2026-08-01. Il reutilise les orders, reservations, PaymentIntent,
-webhooks et outboxes v2. La fenetre fonctionnelle `v2_all/v2` ouverte le
-2026-08-02 a ete refermee apres le game day du 2026-08-24. Le controle courant
-est `v2_fixture/read_only` revision 76, avec scope et policy fixture alignes;
-Stripe reste exclusivement en mode test.
+webhooks et outboxes v2. Apres la fermeture du game day du 2026-08-24, le
+controle a ete rouvert durablement sur autorisation explicite le 2026-08-25.
+L'etat courant est `v2_all/v2` revision 77 avec la policy
+`sandbox_transactional_policy_20260802`; Stripe reste exclusivement en mode test.
 
 La migration Functions G8 du 2026-08-19 duplique en Gen2 les 35 callables
 commerce hors checkout/webhooks/workers et deux legacy encore appelees (`createOrder` et
@@ -183,12 +184,13 @@ Release fonctionnel Gate 8:
 
 ## 6. Etat fonctionnel du sandbox
 
-Etat courant apres la fermeture du 2026-08-24:
+Etat courant depuis l'ouverture durable du 2026-08-25:
 
 - le checkout v2 est toujours expose dans le build sandbox;
-- `adminMutationMode=read_only`;
+- `adminMutationMode=v2`;
 - `offlinePaymentMode=off`;
-- `newCheckoutMode=v2_fixture`, revision 76, scope et policy alignes;
+- `newCheckoutMode=v2_all`, revision 77, sans scope fixture ni echeance de fenetre;
+- policy active `sandbox_transactional_policy_20260802`;
 - les produits de test restent `e2eOnly` et exclus du catalogue public;
 - Stripe est exclusivement en mode test et aucun secret live n'est attendu;
 - l'endpoint Connect sandbox qualifie est

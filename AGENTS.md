@@ -82,11 +82,11 @@ Le noyau commerce a ferme les Gates 0A a 8 le 2026-07-28 et porte le statut
 `PREPROD_TRANSACTIONAL_READY`. La qualification initiale sur fixtures a ete
 completee le 2026-07-29 par une fenetre `v2_all` autorisee, bornee a cinq
 meubles reels et Stripe test, puis refermee sans divergence backend. Les flags
-UI transactionnels et les mutations admin ont ensuite ete actifs sur le
-sandbox pour les tests fonctionnels. Apres le game day resilience du
-2026-08-24, le controle courant est revenu a `v2_fixture/read_only` revision
-76, avec scope et policy fixture alignes; Stripe reste en test et le paiement
-offline reste `off`. Tout rail Stripe live et toute production demeurent
+UI transactionnels et les mutations admin sont actifs durablement sur le
+sandbox pour les tests fonctionnels. Apres la fermeture du game day resilience
+du 2026-08-24, l'autorisation explicite du 2026-08-25 a rouvert le controle en
+`v2_all/v2` revision 77 avec la policy transactionnelle sandbox; Stripe reste
+en test et le paiement offline reste `off`. Tout rail Stripe live et toute production demeurent
 differes. Ce statut n'est pas un GO production.
 
 ## 4. Environnement de reference
@@ -313,9 +313,9 @@ Interdictions:
 - snapshot de commande conserve l'historique;
 - Stripe sandbox et live strictement separes.
 
-La qualification fonctionnelle reste bornee au sandbox et a Stripe test. La
-fenetre `v2_all` ouverte le 2026-08-02 a ete refermee: le controle courant est
-`v2_fixture/read_only` revision 76. Stripe live ou production exigent toujours
+La qualification fonctionnelle reste bornee au sandbox et a Stripe test. Le
+controle courant est durablement ouvert en `v2_all/v2` revision 77 par decision
+explicite du 2026-08-25. Stripe live ou production exigent toujours
 une decision distincte, une fenetre d'observation et les gates live
 correspondantes; aucune preuve sandbox ne suffit a les autoriser.
 
