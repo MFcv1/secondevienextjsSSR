@@ -375,6 +375,9 @@ AnalyticsCollectorIsland + AuthProvider anonyme [C]
   -> AdminAnalytics: historique borne, cache IndexedDB, listener live et frise illustree [C]
   -> AdminIncidentConsole: recherche support CMD/provider/correlation/e-mail,
      timeline expurgee, attemptCount et audit fail-closed via callable AAL2 [C/F]
+     -> vue Systeme: erreurs Cloud Logging groupees par empreinte technique,
+        liste bornee puis occurrences/pile expurgees chargees au clic [C/F/EXT]
+     -> Error Reporting et alerte Monitoring directe sur les erreurs inattendues [EXT]
   -> UID/IP, courbe, bandeau live cumulatif, visiteurs et parcours [C]
 ```
 
@@ -441,6 +444,7 @@ galerie: choix d'une carte [C]
 |-- storage.rules .................... Autorisations Storage
 |-- playwright.config.mjs ........... Configuration navigateur
 |-- eslint.config.mjs ............... Qualite statique
+|-- instrumentation-client.js ....... coupure Performance avant transition vers une route sensible
 `-- .env.* ........................... Contrats locaux, secrets reels non documentes
 ```
 
@@ -458,6 +462,7 @@ app/
 |-- RouteTransitionIsland.jsx ......... transitions globales
 |-- route-transition.config.js ........ contrat des transitions
 |-- ViewportHeightSyncIsland.jsx ...... hauteur visualViewport globale et persistante
+|-- PerformanceMonitoringIsland.jsx ... SDK Firebase Performance lazy sur allowlist vitrine
 |-- GalleryMobileShellIsland.jsx ...... shell mobile galerie
 |-- HeroVideoSliderIsland.jsx ......... hero video interactif
 |-- HomeMotionIslandV4.jsx ............ motion home
@@ -537,6 +542,7 @@ src/kit/
 |   |-- AnalyticsProvider.jsx ......... pipeline analytics navigateur
 |   |-- analyticsEvents.js ............ bus borne des actions metier vers la session
 |   |-- clientPerf.js ................. mesures client
+|   |-- performanceRoutePolicy.js ..... allowlist pure des routes Performance non sensibles
 |   |-- ErrorBoundary.jsx ............. frontiere erreur
 |   `-- CustomerTestimonialsCarousel.jsx
 `-- ui/
@@ -655,6 +661,7 @@ src/kit/admin/
 |-- quoteAdminClient.js ............... cache court et callables protégées Devis
 |-- AdminAnalytics.jsx ................ moteur Data canonique: UID pseudonyme, live, parcours bornes, courbes
 |-- AdminIncidentConsole.jsx .......... console incidents, recherche, timeline et verdict de reprise
+|-- SystemIncidentConsole.jsx ......... lignes Cloud dedupliquees et inspecteur a la demande
 |-- AdminForm.jsx ..................... creation/edition annonces
 |   |-- productPublicationClient.js ... nettoyage local de reprise obsolete + attente de la release publique exacte
 |   |-- components/InstagramPublicationPreview.jsx .. apercu prive Instagram iPhone 17 Pro
@@ -858,7 +865,8 @@ functions/
     |   `-- rollups.js .................. agregats jour/mois/annee, HLL, archive Storage et callable admin
     |-- observability/
     |   |-- businessEvents.js ........... projection append-only des transitions critiques
-    |   `-- diagnosticTimeline.js ....... recherche admin AAL2, timeline expurgee et audit
+    |   |-- diagnosticTimeline.js ....... recherche admin AAL2, timeline expurgee et audit
+    |   `-- systemIncidents.js .......... lecture Cloud Logging bornee, deduplication et projection expurgee
     |-- onboarding/
     |   |-- billingGuide.js ........... callables, modes, etat backend-only
     |   `-- billingGuideContract.js ... modes, etapes, UID cible et format Billing
@@ -1388,6 +1396,9 @@ tests/passkey-*.test.cjs
 tests/data-retention-contract.test.cjs ... dry-run, expirations et minimisation des audits
 tests/security-client-ip.test.cjs ........ identite reseau bornee pour OTP/passkeys/devis/newsletter
 tests/security-output-encoding.test.cjs .. encodage HTML/script/PDF + erreurs internes generiques
+tests/observability-contract.test.cjs .... correlation, minimisation et frontiere serveur
+tests/system-incidents.test.cjs .......... groupes, redaction, bornes et audit Cloud Logging
+tests/performance-route-policy.test.mjs . allowlist Performance et coupure avant route privee
 tests/billing-onboarding-contract.test.cjs
 tests/smoke.spec.mjs
 tests/catalog/*.test.cjs

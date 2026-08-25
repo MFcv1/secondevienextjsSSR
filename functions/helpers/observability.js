@@ -3,7 +3,7 @@
 const crypto = require('node:crypto');
 const logger = require('firebase-functions/logger');
 
-const SAFE_ID = /^[A-Za-z0-9_:.\-]{1,180}$/;
+const SAFE_ID = /^[A-Za-z0-9_:.-]{1,180}$/;
 
 function safeId(value) {
     const normalized = String(value || '').trim();
@@ -63,7 +63,35 @@ function errorClass(error) {
     return String(error?.code || error?.name || 'unknown').slice(0, 120);
 }
 
-function structuredLog(severity, message, fields = {}) {
+const EXPECTED_ERROR_CODES = new Set([
+    'already-exists',
+    'cancelled',
+    'failed-precondition',
+    'invalid-argument',
+    'not-found',
+    'permission-denied',
+    'resource-exhausted',
+    'unauthenticated'
+]);
+
+function isExpectedError(error) {
+    return EXPECTED_ERROR_CODES.has(String(error?.code || '').replace(/^functions\//, ''));
+}
+
+function errorReportingMessage(error) {
+    const kind = errorClass(error);
+    const frames = String(error?.stack || '')
+        .split('\n')
+        .slice(1, 13)
+        .map((line) => line.trim())
+        .filter((line) => /^at\s/.test(line))
+        .map((line) => line
+            .replace(/\/workspace\//g, '')
+            .replace(/\([^()]*node_modules\//g, '(node_modules/'));
+    return [`${kind}: operation failed`, ...frames].join('\n').slice(0, 6000);
+}
+
+function structuredLog(severity, message, fields = {}, options = {}) {
     const payload = {
         event: message,
         severity: String(severity || 'info').toUpperCase(),
@@ -78,6 +106,12 @@ function structuredLog(severity, message, fields = {}) {
                 : severity === 'debug'
                     ? 'debug'
                     : 'info';
+    if (options.errorReportingMessage && method === 'error') {
+        const reportable = new Error('operation failed');
+        reportable.stack = options.errorReportingMessage;
+        logger.error(reportable, payload);
+        return;
+    }
     logger[method](message, payload);
 }
 
@@ -108,13 +142,17 @@ async function runObserved(functionName, request, handler) {
         }
         return result;
     } catch (error) {
-        structuredLog('error', 'function_failed', {
+        const expected = isExpectedError(error);
+        structuredLog(expected ? 'warning' : 'error', 'function_failed', {
             ...runtimeIdentity(functionName),
             ...context,
             durationMs: Date.now() - startedAt,
             outcome: 'failed',
             errorClass: errorClass(error),
+            expected,
             retryable: error?.retryable === true
+        }, {
+            ...(expected ? {} : { errorReportingMessage: errorReportingMessage(error) })
         });
         throw error;
     }
@@ -122,7 +160,9 @@ async function runObserved(functionName, request, handler) {
 
 module.exports = {
     errorClass,
+    errorReportingMessage,
     hashOpaque,
+    isExpectedError,
     normalizeObservabilityInput,
     runObserved,
     safeId,

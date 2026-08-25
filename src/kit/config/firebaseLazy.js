@@ -25,6 +25,7 @@ const OBSERVED_CALLABLES = new Set([
   'deleteProductAdmin',
   'getCommerceOperationsStatusAdmin',
   'getDiagnosticTimelineAdmin',
+  'getSystemIncidentsAdmin',
   'getAnalyticsAdmin',
   'markOrderDeliveredAdmin',
   'markOrderPickedUpAdmin',

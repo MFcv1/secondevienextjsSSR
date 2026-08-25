@@ -6,7 +6,9 @@ const path = require('node:path');
 const test = require('node:test');
 
 const {
+    errorReportingMessage,
     hashOpaque,
+    isExpectedError,
     normalizeObservabilityInput,
     safeId,
     shouldSampleSuccess,
@@ -50,7 +52,7 @@ test('les succes sont echantillonnes mais les taux extremes restent deterministe
     );
 });
 
-test('la console admin reste serveur, bornee et sans acces direct aux logs Cloud', () => {
+test('la console admin garde Cloud Logging cote serveur et sous projection expurgee', () => {
     const callableSource = read('functions/src/observability/diagnosticTimeline.js');
     const uiSource = read('src/kit/admin/AdminIncidentConsole.jsx');
     const rulesSource = read('firestore.rules');
@@ -60,7 +62,21 @@ test('la console admin reste serveur, bornee et sans acces direct aux logs Cloud
     assert.match(callableSource, /MAX_EVENTS\s*=\s*100/);
     assert.match(uiSource, /getDiagnosticTimelineAdmin/);
     assert.doesNotMatch(uiSource, /logging\.googleapis|business_events|collection\(/);
+    const systemSource = read('functions/src/observability/systemIncidents.js');
+    assert.match(systemSource, /checkActiveStrongAdmin/);
+    assert.match(systemSource, /writeSecurityAudit/);
+    assert.match(systemSource, /MAX_SCAN_ENTRIES\s*=\s*500/);
+    assert.match(systemSource, /SENSITIVE_KEY/);
     assert.match(rulesSource, /match \/business_events\/\{eventId\}[\s\S]*allow read, write: if false/);
+});
+
+test('Error Reporting recoit une pile expurgee seulement pour les erreurs inattendues', () => {
+    assert.equal(isExpectedError({ code: 'invalid-argument' }), true);
+    assert.equal(isExpectedError(new Error('panne')), false);
+    const error = new Error('client@example.com ne doit pas sortir');
+    const message = errorReportingMessage(error);
+    assert.match(message, /^Error: operation failed/);
+    assert.doesNotMatch(message, /client@example\.com/);
 });
 
 test('les logs Gen2 et les alertes ciblent aussi Cloud Run revision', () => {

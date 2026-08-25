@@ -152,6 +152,9 @@ const {
 const {
     getDiagnosticTimelineAdminGen2
 } = require('./src/observability/diagnosticTimeline');
+const {
+    getSystemIncidentsAdminGen2
+} = require('./src/observability/systemIncidents');
 exports.journalCommerceIncidentGen2 = journalCommerceIncidentGen2;
 exports.journalFinancialFactGen2 = journalFinancialFactGen2;
 exports.journalInventoryMovementGen2 = journalInventoryMovementGen2;
@@ -159,6 +162,7 @@ exports.journalOrderEventGen2 = journalOrderEventGen2;
 exports.journalOutboxStatusGen2 = journalOutboxStatusGen2;
 exports.journalWebhookStatusGen2 = journalWebhookStatusGen2;
 exports.getDiagnosticTimelineAdminGen2 = getDiagnosticTimelineAdminGen2;
+exports.getSystemIncidentsAdminGen2 = getSystemIncidentsAdminGen2;
 
 // ── PUBLICATION PRODUIT DURABLE ──────────────────────────
 const {

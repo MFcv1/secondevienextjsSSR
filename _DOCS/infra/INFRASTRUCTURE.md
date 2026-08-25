@@ -283,6 +283,22 @@ auto-close six heures; il supprime une boucle ouverture/resolution sans changer
 le destinataire `loa.gto`. Les huit policies portent maintenant une severite
 `ERROR` ou `WARNING`. L'IAM publisher du service agent est borne au topic G1.
 
+Le raccord observabilite systeme ajoute une callable Gen2 dediee
+`getSystemIncidentsAdminGen2`. Son runtime `observability-admin-runtime` porte
+uniquement `datastore.user`, `logging.viewer`, `logging.logWriter` et
+`serviceusage.serviceUsageConsumer`; aucune cle, Storage, Auth admin, Stripe ou
+secret n'est attache. Une dixieme policy `LogMatch` alerte les
+`function_failed` inattendus sans metrique log supplementaire.
+
+Firebase Performance Monitoring est charge dynamiquement dans
+`PerformanceMonitoringIsland`. L'allowlist se limite aux pages vitrine `/`,
+`/galerie`, `/categorie/*`, `/produit/*` et `/a-propos`. Le SDK n'est pas
+initialise sur une entree directe privee et `instrumentation-client.js` coupe
+collecte et instrumentation des le debut d'une transition vers `/admin`,
+`/checkout`, `/payer/*`, `/mes-commandes`, `/wishlist`, `/recherche` ou
+`/devis`. Aucun identifiant commande, token de lien prive, saisie client ou
+route admin n'entre donc dans Performance Monitoring.
+
 Le drill mesure un RPO de 1 374 secondes et un RTO de restore de 1 064 secondes.
 Les deux TTL ne sont pas restaures par le backup et restent volontairement
 absents de la base isolee. Auth, Storage, secrets et configuration ont ete

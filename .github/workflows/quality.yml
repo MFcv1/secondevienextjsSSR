@@ -45,6 +45,7 @@ jobs:
       - run: pnpm appcheck:audit
       - run: pnpm test:analytics
       - run: pnpm test:retention
+      - run: pnpm test:observability
       - run: pnpm test:billing-onboarding
       - run: pnpm test:invoices
       - run: pnpm test:admin-cache

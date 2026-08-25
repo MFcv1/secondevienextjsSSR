@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "codebase": "main",
+    "baselineCommit": "046e006d080884819ed5a0a10b193bdd106102e9",
+    "gate": "OBSERVABILITY_SYSTEM_SANDBOX",
+    "generatedAt": "2026-08-25T00:00:00.000Z"
+  },
+  "deploymentPolicy": {
+    "exactProject": "secondevienextjsssr",
+    "exactCodebase": "main",
+    "forbiddenGlobalSelector": "functions",
+    "forbiddenTargets": [],
+    "maxBatchSize": 1
+  },
+  "functions": [
+    {
+      "name": "getSystemIncidentsAdminGen2",
+      "cloud": {
+        "present": false,
+        "generation": 2,
+        "region": "europe-west1"
+      },
+      "decision": {
+        "classification": "MIGRATION_PARALLEL",
+        "deploymentMaxBatchSize": 1,
+        "wave": "OBSERVABILITY_SYSTEM_SANDBOX",
+        "rollback": "Supprimer uniquement getSystemIncidentsAdminGen2 et restaurer le rollout App Hosting precedent."
+      },
+      "identities": {
+        "runtimeServiceAccount": "observability-admin-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+      },
+      "runtime": {
+        "memoryMiB": 512,
+        "timeoutSeconds": 60,
+        "concurrency": 1,
+        "minInstances": 0,
+        "maxInstances": 1
+      },
+      "source": {
+        "export": "getSystemIncidentsAdminGen2",
+        "file": "functions/src/observability/systemIncidents.js"
+      },
+      "trigger": {
+        "type": "callable",
+        "appCheck": true
+      }
+    }
+  ]
+}

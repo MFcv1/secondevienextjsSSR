@@ -285,7 +285,18 @@ Optimisation de cout locale au 2026-07-17: la cadence visible, le seuil live, le
 
 Les anciennes collections de rollup peuvent encore exister dans le sandbox apres les versions precedentes, mais aucun code actif ne les lit ou ne les alimente. Aucune purge de donnees historique n'est executee pendant ce portage.
 
-### 7.1 Evenements devis
+### 7.1 Performance Monitoring vitrine
+
+Firebase Performance Monitoring est distinct des sessions analytics metier et
+n'ecrit aucun document Firestore. Son SDK est charge paresseusement uniquement
+sur la galerie, les categories, les fiches produit et A propos. Checkout,
+paiement prive, compte, admin, wishlist, recherche et devis restent exclus; la
+collecte est coupee avant leur transition. Aucun identifiant de commande,
+client, correlation ou attribut personnalise n'est envoye. Les tableaux
+Firebase peuvent etre echantillonnes ou incomplets lors d'un incident de la
+plateforme et ne constituent pas une preuve comptable ni une source metier.
+
+### 7.2 Evenements devis
 
 La vue `Data` distingue strictement la demande de devis du tunnel d'achat direct. Les evenements actuellement emis par le formulaire de restauration sont:
 

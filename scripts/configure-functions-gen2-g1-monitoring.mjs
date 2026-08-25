@@ -15,6 +15,16 @@ const POLICY_DOCUMENTATION = 'Runbook: apphostingaudit/runbooks/G1_OPERATIONS.md
 const LOG_ALERT_RATE_LIMIT = '3600s';
 const LOG_ALERT_AUTO_CLOSE = '21600s';
 const DEFAULT_SECONDARY_SOURCE = 'pubsub';
+const LEGACY_EXPECTED_ERROR_CLASSES = Object.freeze([
+  'already-exists',
+  'cancelled',
+  'failed-precondition',
+  'invalid-argument',
+  'not-found',
+  'permission-denied',
+  'resource-exhausted',
+  'unauthenticated'
+]);
 const MONITORING_VIOLATION_LOGS = Object.freeze([
   `projects/${PROJECT_ID}/logs/monitoring.googleapis.com%2FViolationOpenEventv1`,
   `projects/${PROJECT_ID}/logs/monitoring.googleapis.com%2FViolationAutoResolveEventv1`
@@ -25,6 +35,17 @@ function applicationLogFilter(message) {
     '(resource.type="cloud_run_revision" OR resource.type="cloud_function")',
     ...MONITORING_VIOLATION_LOGS.map((logName) => `logName!="${logName}"`),
     `(jsonPayload.message="${message}" OR textPayload:"${message}")`
+  ].join(' ');
+}
+
+function unexpectedFunctionFailureFilter() {
+  const legacyExpected = `jsonPayload.errorClass=(${LEGACY_EXPECTED_ERROR_CLASSES.map((value) => `"${value}"`).join(' OR ')})`;
+  return [
+    '(resource.type="cloud_run_revision" OR resource.type="cloud_function")',
+    ...MONITORING_VIOLATION_LOGS.map((logName) => `logName!="${logName}"`),
+    'severity>=ERROR',
+    'jsonPayload.event="function_failed"',
+    `(jsonPayload.expected=false OR (NOT jsonPayload.expected:* AND NOT ${legacyExpected}))`
   ].join(' ');
 }
 
@@ -104,6 +125,12 @@ const POLICIES = Object.freeze([
     displayName: 'G1 Sandbox - Analytics maintenance failed',
     conditionName: 'Archivage ou rollup analytics en echec',
     logMatchFilter: applicationLogFilter('analytics_maintenance_failed'),
+    severity: 'ERROR'
+  },
+  {
+    displayName: 'Sandbox - Unexpected application failure',
+    conditionName: 'Erreur applicative inattendue à investiguer',
+    logMatchFilter: unexpectedFunctionFailureFilter(),
     severity: 'ERROR'
   },
   {
@@ -441,6 +468,7 @@ export {
   MONITORING_VIOLATION_LOGS,
   POLICIES,
   applicationLogFilter,
+  unexpectedFunctionFailureFilter,
   buildLogMatchPolicy,
   logMatchPolicyIsCurrent
 };

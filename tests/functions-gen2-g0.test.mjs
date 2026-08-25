@@ -59,7 +59,7 @@ function validate(args) {
   });
 }
 
-test('inventaire source courant: 150 exports dont dix observabilite actives', () => {
+test('inventaire source courant: 151 exports dont onze observabilite actives', () => {
   const exports = extractLocalExports(ROOT);
   const expectedCurrentCount = EXPECTED_CURRENT_SOURCE_COUNT;
   assert.equal(exports.length, expectedCurrentCount);

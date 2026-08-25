@@ -2,6 +2,7 @@
 
 import React from 'react';
 import {
+  Activity,
   AlertTriangle,
   CheckCircle2,
   ChevronDown,
@@ -11,6 +12,7 @@ import {
   ShieldAlert,
 } from 'lucide-react';
 import { getCallableFunction } from '../config/firebaseLazy';
+import SystemIncidentConsole from './SystemIncidentConsole';
 
 const SEARCH_TYPES = [
   { value: 'auto', label: 'Détection automatique' },
@@ -121,9 +123,9 @@ function Timeline({ events, darkMode }) {
   );
 }
 
-export default function AdminIncidentConsole({ darkMode = false }) {
+function OrderIncidentConsole({ darkMode = false, initialValue = '' }) {
   const [kind, setKind] = React.useState('auto');
-  const [value, setValue] = React.useState('');
+  const [value, setValue] = React.useState(initialValue);
   const [state, setState] = React.useState({ status: 'idle', data: null, error: null });
   const [selectedIndex, setSelectedIndex] = React.useState(0);
 
@@ -149,14 +151,6 @@ export default function AdminIncidentConsole({ darkMode = false }) {
 
   return (
     <div className="space-y-5" data-archetype="monitoring-console">
-      <header className="max-w-3xl">
-        <p className={`text-[10px] font-black uppercase tracking-[0.22em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>Diagnostic sécurisé</p>
-        <h1 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">Console incidents</h1>
-        <p className={`mt-2 text-sm leading-6 ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>
-          Retrouvez une commande, puis voyez simplement où le parcours s’est arrêté. Chaque consultation est auditée.
-        </p>
-      </header>
-
       <form onSubmit={submit} className={`grid gap-2 rounded-xl border p-3 sm:grid-cols-[190px_minmax(0,1fr)_auto] ${panel}`}>
         <label className="relative">
           <span className="sr-only">Type de recherche</span>
@@ -235,6 +229,37 @@ export default function AdminIncidentConsole({ darkMode = false }) {
           </aside>
         </div>
       )}
+    </div>
+  );
+}
+
+export default function AdminIncidentConsole({ darkMode = false }) {
+  const [mode, setMode] = React.useState('system');
+  const [orderValue, setOrderValue] = React.useState('');
+  const surface = darkMode ? 'border-white/10 bg-[#111214]' : 'border-black/10 bg-[#f5f5f7]';
+
+  const openOrder = (value) => {
+    setOrderValue(value);
+    setMode('order');
+  };
+
+  return (
+    <div className="space-y-5" data-archetype="monitoring-console">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="max-w-3xl">
+          <p className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${darkMode ? 'text-stone-500' : 'text-stone-500'}`}>Observabilité sandbox</p>
+          <h1 className="mt-1.5 text-2xl font-semibold tracking-[-0.025em] sm:text-3xl">Console incidents</h1>
+          <p className={`mt-2 text-sm leading-6 ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>Détectez une erreur système, retrouvez son action d’origine, puis vérifiez l’état métier durable.</p>
+        </div>
+        <div className={`inline-flex h-10 w-fit rounded-xl border p-1 ${surface}`} role="tablist" aria-label="Type de diagnostic">
+          <button type="button" role="tab" aria-selected={mode === 'system'} onClick={() => setMode('system')} className={`inline-flex items-center gap-2 rounded-lg px-3 text-xs font-semibold transition-colors ${mode === 'system' ? (darkMode ? 'bg-white text-black' : 'bg-white text-black shadow-sm') : 'text-stone-500'}`}><Activity size={14} /> Système</button>
+          <button type="button" role="tab" aria-selected={mode === 'order'} onClick={() => setMode('order')} className={`inline-flex items-center gap-2 rounded-lg px-3 text-xs font-semibold transition-colors ${mode === 'order' ? (darkMode ? 'bg-white text-black' : 'bg-white text-black shadow-sm') : 'text-stone-500'}`}><Search size={14} /> Commande</button>
+        </div>
+      </header>
+
+      {mode === 'system'
+        ? <SystemIncidentConsole darkMode={darkMode} onOpenOrder={openOrder} />
+        : <OrderIncidentConsole key={orderValue || 'manual'} darkMode={darkMode} initialValue={orderValue} />}
     </div>
   );
 }

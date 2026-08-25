@@ -87,6 +87,7 @@
     "test:commerce": "pnpm run test:commerce:runner && pnpm run test:commerce:containment && pnpm run test:commerce:unit && pnpm run test:commerce:ui && pnpm run test:commerce:browser && pnpm run test:commerce:property && pnpm run test:commerce:faults && pnpm run test:commerce:rules:containment && pnpm run test:commerce:firebase && pnpm run test:commerce:resilience:emulator && pnpm run test:commerce:rules",
     "test:analytics": "node scripts/verify-analytics-reliability.mjs && node --test tests/analytics-rollups-contract.test.cjs",
     "test:retention": "node --test tests/data-retention-contract.test.cjs",
+    "test:observability": "node --test tests/observability-contract.test.cjs tests/system-incidents.test.cjs tests/performance-route-policy.test.mjs",
     "test:deployment-cache": "node --test tests/deployment-cache-contract.test.mjs",
     "test:functions-g0": "node --test tests/functions-gen2-g0.test.mjs tests/functions-gen2-monitoring.test.mjs",
     "test:functions-g2a": "node --test tests/functions-gen2-g2a.test.cjs",

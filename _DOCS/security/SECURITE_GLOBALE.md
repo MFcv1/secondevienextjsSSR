@@ -378,6 +378,21 @@ analytics peut y ecrire. Les archives ne contiennent ni adresse, ni e-mail, ni
 IP, ni user-agent brut et suivent un cycle Coldline a 30 jours puis suppression
 a 730 jours.
 
+La lecture Cloud Logging de la console Systeme reste exclusivement serveur.
+Elle exige App Check et admin fort AAL2, utilise une identite runtime dediee
+`logging.viewer`, puis reconstruit une projection allowlistee. Les cles dont le
+nom evoque token, secret, cookie, e-mail, telephone, adresse, payload, requete,
+reponse ou carte sont exclues; les textes restants passent par redaction et
+borne de taille. Liste et detail ecrivent un audit hashe et echouent fermes si
+cet audit est indisponible. Aucun droit Logs n'est donne au bundle navigateur.
+
+Performance Monitoring applique une allowlist positive de routes vitrine. Les
+tunnels prives, le checkout, les liens `/payer/*`, le compte, l'admin, la
+recherche et le devis sont explicitement exclus et la collecte est coupee au
+debut de la transition Next. Cette restriction est un garde de minimisation,
+pas une autorisation: aucune donnee metier ou personnelle ne doit etre ajoutee
+comme attribut de trace.
+
 La qualification resilience close le 2026-08-24 confirme que les mecanismes de
 panne n'existent ni dans les Functions deployees, ni dans un parametre public,
 ni dans une variable `NEXT_PUBLIC_*`. R07 etait un failpoint en memoire du seul

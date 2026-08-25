@@ -25,6 +25,7 @@ const FUNCTION_TARGETS = Object.freeze({
   getCatalogPublicationStatus: 'getCatalogPublicationStatusGen2',
   getDeliveryPolicyAdmin: 'getDeliveryPolicyAdminGen2',
   getDiagnosticTimelineAdmin: 'getDiagnosticTimelineAdminGen2',
+  getSystemIncidentsAdmin: 'getSystemIncidentsAdminGen2',
   getAnalyticsAdmin: 'getAnalyticsAdminGen2',
   getInstagramConnectionStatusAdmin: 'getInstagramConnectionStatusAdminGen2',
   getManualInvoiceWorkspaceAdmin: 'getManualInvoiceWorkspaceAdminGen2',

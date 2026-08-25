@@ -599,6 +599,14 @@ test:functions-gen2`. Ces gates verifient la pseudonymisation, les lectures
 bornees, le journal append-only, les TTL declares, les rollups HLL et les dix
 exports actifs. Les tests restent locaux et ne mutent aucune ressource cloud.
 
+`npm run test:observability` ajoute `tests/system-incidents.test.cjs` et
+`tests/performance-route-policy.test.mjs`. La gate prouve le groupement stable,
+les compteurs/dates, l'expurgation des donnees sensibles, les bornes 500/80/50,
+l'audit fail-closed et l'absence de SDK Cloud dans le navigateur. Elle verrouille
+aussi Performance Monitoring sur `/`, `/galerie`, `/categorie/*`,
+`/produit/*` et `/a-propos`, avec coupure au debut d'une transition vers toute
+route privee ou sensible.
+
 La couverture durable de resilience checkout comprend
 `tests/commerce/resilience/checkout-boundaries.test.cjs`,
 `worker-outbox.test.cjs`, `incident-console.test.cjs` et le harness local

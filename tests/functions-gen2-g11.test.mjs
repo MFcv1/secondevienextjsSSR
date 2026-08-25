@@ -153,9 +153,9 @@ test('G11 commit est atomique, audite et reprenable par operationId', async () =
 
 test('G11 Gen2 est une cible unique, App Check et runtime moindre privilege', () => {
   const exports = extractLocalExports(ROOT);
-  assert.equal(exports.length, 150);
-  assert.equal(EXPECTED_CURRENT_SOURCE_COUNT, 150);
-  assert.equal(EXPECTED_CURRENT_CLOUD_COUNT, 147);
+  assert.equal(exports.length, 151);
+  assert.equal(EXPECTED_CURRENT_SOURCE_COUNT, 151);
+  assert.equal(EXPECTED_CURRENT_CLOUD_COUNT, 148);
   assert.equal(waveFor('deleteSessionGen2', 'MIGRATION_PARALLEL'), 'G11');
   assert.ok(!exports.some(({ name }) => name === 'deleteSession'));
   assert.ok(exports.some(({ name }) => name === 'deleteSessionGen2'));

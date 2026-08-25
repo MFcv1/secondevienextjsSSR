@@ -8,6 +8,7 @@ import RouteTransitionIsland from './RouteTransitionIsland';
 import ViewportHeightSyncIsland from './ViewportHeightSyncIsland';
 import SupportChatLauncherIsland from '../src/kit/marketplace/SupportChatLauncherIsland';
 import AnalyticsCollectorIsland from './AnalyticsCollectorIsland';
+import PerformanceMonitoringIsland from './PerformanceMonitoringIsland';
 import { publicEnv } from '../src/lib/server/env';
 
 const siteName = publicEnv.siteName;
@@ -145,6 +146,7 @@ export default function RootLayout({ children }) {
         <RouteTransitionIsland />
         <SupportChatLauncherIsland />
         <AnalyticsCollectorIsland />
+        <PerformanceMonitoringIsland />
       </body>
     </html>
   );

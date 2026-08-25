@@ -14,6 +14,7 @@ export const EXPECTED_CLOUD_COUNT = 152;
 
 export const ACTIVE_OBSERVABILITY_EXPORTS = new Set([
   'getDiagnosticTimelineAdminGen2',
+  'getSystemIncidentsAdminGen2',
   'journalCommerceIncidentGen2',
   'journalFinancialFactGen2',
   'journalInventoryMovementGen2',

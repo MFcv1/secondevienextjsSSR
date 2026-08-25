@@ -49,7 +49,7 @@ const TARGETS = Object.freeze(LOGICAL.map((name) => `${name}Gen2`));
 
 test('G8 exposes 35 fixed plus l=2 Gen2 callables after the Gen1 retirement', () => {
   const exported = require(path.join(ROOT, 'functions/index.js'));
-  assert.equal(Object.keys(exported).length, 150);
+  assert.equal(Object.keys(exported).length, 151);
   assert.equal(FIXED.length, 35);
   assert.equal(MIGRATED_LEGACY.length, 2);
   for (const name of LOGICAL) {
@@ -61,9 +61,9 @@ test('G8 exposes 35 fixed plus l=2 Gen2 callables after the Gen1 retirement', ()
 
 test('G8 inventory extractor recognizes every parallel export', () => {
   const exports = extractLocalExports(ROOT);
-  assert.equal(exports.length, 150);
-  assert.equal(EXPECTED_CURRENT_SOURCE_COUNT, 150);
-  assert.equal(EXPECTED_CURRENT_CLOUD_COUNT, 147);
+  assert.equal(exports.length, 151);
+  assert.equal(EXPECTED_CURRENT_SOURCE_COUNT, 151);
+  assert.equal(EXPECTED_CURRENT_CLOUD_COUNT, 148);
   assert.equal(PARALLEL_MIGRATION_EXPORTS.size, 119);
   assert.deepEqual(exports.filter(({ name }) => name.endsWith('Gen2') && !PARALLEL_MIGRATION_EXPORTS.has(name) && !PENDING_OBSERVABILITY_EXPORTS.has(name) && !ACTIVE_OBSERVABILITY_EXPORTS.has(name)), []);
 });
@@ -93,10 +93,10 @@ test('G8 inventory rebuild accepts the current 147 cloud targets and assigns the
     commit: 'c'.repeat(40),
     operator: 'test'
   });
-  assert.equal(inventory.metadata.sourceCount, 150);
-  assert.equal(inventory.metadata.cloudCount, 147);
+  assert.equal(inventory.metadata.sourceCount, 151);
+  assert.equal(inventory.metadata.cloudCount, 148);
   assert.equal(inventory.metadata.cloudGen1Count, 3);
-  assert.equal(inventory.metadata.cloudGen2Count, 144);
+  assert.equal(inventory.metadata.cloudGen2Count, 145);
   for (const name of TARGETS) assert.equal(waveFor(name, 'MIGRATION_PARALLEL'), 'G8');
 });
 

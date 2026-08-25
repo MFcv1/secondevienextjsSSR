@@ -500,3 +500,20 @@ suite Emulator prouve la troncature avec 101 evenements et le cleanup par
 minimum 3,731 s, mediane 4,331 s, moyenne 4,351 s et maximum 5,013 s cote
 serveur. La mesure ne revele pas de cout Firestore non borne; `minInstances: 0`
 est conserve pour eviter un cout fixe sandbox sans trafic representatif.
+
+### 10.5 Cout borne des erreurs systeme
+
+La vue Systeme ne copie aucun log dans Firestore et n'ajoute aucun listener.
+Elle interroge les logs deja ingeres uniquement a l'ouverture ou au clic sur
+Actualiser: 500 entrees maximum sur 1 h, 6 h, 24 h, 3 j ou 7 j, puis 50
+occurrences maximum pour un detail. Cloud Logging ne facture pas la lecture de
+ces entrees; le cout porte sur leur ingestion et leur retention. La mesure
+read-only du 2026-08-25 totalise environ 0,617 Gio ingere sur trente jours,
+soit environ 1,2 % des 50 Gio mensuels inclus. Le raccord ne justifie donc ni
+export BigQuery, ni Data Access, ni nouvelle metrique log a forte cardinalite.
+
+L'alerte critique utilise une condition `LogMatch` directe sur les erreurs
+applicatives inattendues. Elle ne cree pas de metrique personnalisee et limite
+les notifications a une par heure, avec fermeture automatique apres six
+heures. Les identifiants de correlation restent des champs de logs existants,
+jamais des labels Monitoring a forte cardinalite.

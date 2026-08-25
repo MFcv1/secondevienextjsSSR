@@ -36,7 +36,7 @@ test('les metriques commerce ne peuvent pas compter les journaux de leurs propre
 
 test('les alertes applicatives sont directes, severisees et limitees a une notification par heure', () => {
   const definitions = POLICIES.filter((policy) => policy.logMatchFilter);
-  assert.equal(definitions.length, 3);
+  assert.equal(definitions.length, 4);
 
   for (const definition of definitions) {
     const policy = buildLogMatchPolicy(definition, CHANNELS);
@@ -55,7 +55,7 @@ test('les alertes applicatives sont directes, severisees et limitees a une notif
 });
 
 test('chaque policy porte une severite exploitable', () => {
-  assert.equal(POLICIES.length, 9);
+  assert.equal(POLICIES.length, 10);
   for (const definition of POLICIES) {
     assert.ok(['ERROR', 'WARNING'].includes(definition.severity), definition.displayName);
   }

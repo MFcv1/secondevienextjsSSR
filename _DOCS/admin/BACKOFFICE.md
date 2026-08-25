@@ -40,6 +40,28 @@ renvoyer leur payload, et affiche le nombre de tentatives worker lorsqu'il est
 connu. Aucun bouton de reprise financiere directe n'est expose dans cette
 console.
 
+La vue `Systeme` de ce meme onglet appelle `getSystemIncidentsAdminGen2` sous
+les memes controles App Check, claim, registre et AAL2. Elle lit Cloud Logging
+cote serveur sur une fenetre explicite de 1 heure a 7 jours, au plus 500
+entrees et 80 groupes. Une empreinte stable `service + function + event +
+errorClass + premiere frame` rassemble les repetitions de la meme panne sur
+une seule ligne: le nombre, la premiere occurrence et la derniere occurrence
+restent visibles. Cette deduplication ne supprime aucun log; elle evite
+simplement de presenter des centaines de lignes identiques a l'operateur.
+
+La liste ne renvoie que des champs allowlistes. E-mail, telephone, adresse,
+headers, cookies, tokens, secrets, corps de requete/reponse et payloads provider
+ne sont jamais projetes. La pile est expurgee et les occurrences exactes, au
+plus 50, ne sont relues qu'au clic. `correlationId`, `orderId`, `commandId` et
+`traceId` permettent de remonter a l'action d'origine; un `orderId` ouvre la
+vue Commande pre-remplie. Des liens explicites ouvrent Logs Explorer et Error
+Reporting dans Google Cloud pour l'analyse exhaustive.
+
+L'interface reprend une console systeme epuree: barre de filtres compacte,
+une erreur par ligne datee, compteur tabulaire et inspecteur lateral. Elle ne
+poll pas Cloud Logging; l'ouverture et le bouton Actualiser sont les seules
+lectures. Chaque liste et chaque detail sont audites fail-closed.
+
 La qualification resilience D2-D4 a verrouille par tests la recherche
 `CMD-<numero>`, les inbox webhook historiques, l'audit fail-closed, le hash des
 recherches invalides, la projection `attemptCount`, la troncature a 100
@@ -107,7 +129,7 @@ Le regroupement est porte par `ADMIN_NAV_GROUPS` dans `AdminAppIsland`; `AdminSi
 | `payment_settings` | Paiement | `AdminPaymentSettings` | Stripe Connect et activation carte |
 | `account` | Mon compte | `AdminAccount`, `BillingOnboardingOperator` | identite admin et pilotage de l'onboarding facturation |
 | `maintenance` | Maintenance | `AdminMaintenance` | outils destructifs controles |
-| `incidents` | Incidents | `AdminIncidentConsole` | timeline expurgee, correlations et verdict de reprise |
+| `incidents` | Incidents | `AdminIncidentConsole`, `SystemIncidentConsole` | erreurs systeme dedupliquees, detail Cloud a la demande, timeline commande et verdict de reprise |
 
 Les labels peuvent evoluer; les ID sont des contrats de navigation et ne doivent pas etre renommes sans migration.
 
