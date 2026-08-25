@@ -744,6 +744,11 @@ Reouverture durable du sandbox le 2026-08-25:
 - aucune commande, aucun paiement et aucun e-mail crees par l'activation;
 - aucun `runId`, aucune echeance et aucune fermeture automatique;
 - Stripe test uniquement, rail production absent.
+- rollout App Hosting final `sv-mt7xuly7-a69f005bc743`;
+- probes `/`, `/checkout`, `/admin` et `/api/catalog/version` en HTTP `200`;
+- une premiere creation de build a ete refusee en HTTP `401` apres upload,
+  sans rollout ni remplacement du site; la reprise avec un jeton gcloud frais
+  a termine le rollout avec succes.
 
 ## 11. Rollback
 
