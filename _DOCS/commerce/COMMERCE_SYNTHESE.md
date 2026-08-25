@@ -291,8 +291,14 @@ Stripe reste exclusivement en mode test.
 Les commandes portent aussi un `orderNumber` entier, attribue dans la meme
 transaction que la creation via `sys_counters/orders`. Les 131 commandes
 sandbox existantes ont ete numerotees chronologiquement; la prochaine valeur
-est 132. L'UI et les e-mails affichent `CMD-<numero>` et conservent l'ancien ID
-opaque comme identifiant technique et fallback, sans le remplacer en base.
+est 132. La reference humaine canonique est `C<orderNumber>` sur toutes les
+surfaces: client, administration, confirmation checkout, liens de paiement,
+e-mails et PDF. Une valeur absente ou invalide affiche `Référence indisponible`;
+l'ID Firestore opaque reste strictement technique et n'est jamais un fallback
+humain. Aucun document n'est renomme et aucune donnee n'est migree. La console
+Incidents accepte encore `CMD-<numero>` uniquement comme syntaxe de recherche
+legacy, ainsi que `C<numero>`, la casse minuscule, le numero nu et l'`orderId`
+technique.
 
 La campagne de resilience checkout D0 a D5 est close le 2026-08-24. Les suites
 locales deterministes couvrent les frontieres navigateur/Functions/Stripe,

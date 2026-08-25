@@ -2,6 +2,7 @@
 
 const crypto = require('node:crypto');
 const { jsPDF } = require('jspdf');
+const { formatOrderReference, getOrderReference } = require('../../shared/orderReference.cjs');
 
 const PDF_CONTENT_TYPE = 'application/pdf';
 const MAX_PDF_BYTES = 2 * 1024 * 1024;
@@ -117,8 +118,9 @@ function addFooter(pdf) {
 function renderCommerceDocumentPdf({ order, document }) {
     validateInput(order, document);
     const descriptor = descriptorFor(document);
-    const shortOrderId = safeText(order.id).slice(0, 12).toUpperCase();
-    const filename = `${descriptor.filenamePrefix}_CMD-${shortOrderId}.pdf`;
+    const orderReference = getOrderReference(order);
+    const filenameReference = formatOrderReference(order?.orderNumber, 'Reference_indisponible');
+    const filename = `${descriptor.filenamePrefix}_${filenameReference}.pdf`;
     const customerName = safeText(
         order.customerSnapshot?.fullName ||
         order.shippingSnapshot?.fullName ||
@@ -139,7 +141,7 @@ function renderCommerceDocumentPdf({ order, document }) {
     pdf.setLanguage('fr-FR');
     pdf.setProperties({
         title: descriptor.label,
-        subject: `Commande CMD-${shortOrderId}`,
+        subject: `Commande ${orderReference}`,
         author: 'Seconde Vie',
         creator: 'Seconde Vie'
     });
@@ -164,7 +166,7 @@ function renderCommerceDocumentPdf({ order, document }) {
     drawHeader();
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(10);
-    pdf.text(`Commande : CMD-${shortOrderId}`, 15, 59);
+    pdf.text(`Commande : ${orderReference}`, 15, 59);
     pdf.text(`Client : ${customerName}`, 15, 67, { maxWidth: 180 });
     pdf.text(`Émission : ${formatDate(document.issuedAt)}`, 15, 75);
     pdf.setFontSize(8);

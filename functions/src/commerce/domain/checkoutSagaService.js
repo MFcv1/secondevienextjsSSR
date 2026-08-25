@@ -39,6 +39,7 @@ function createCheckoutSagaService({ stripe, repository, clock, failpoints = nul
             validatePaymentIntentForOrder(existing, order, attempt);
             return {
                 orderId: order.id,
+                orderNumber: order.orderNumber,
                 paymentIntentId: existing.id,
                 clientSecret: existing.client_secret,
                 shippingCents: order.amounts.shippingCents,
@@ -86,6 +87,7 @@ function createCheckoutSagaService({ stripe, repository, clock, failpoints = nul
         failpoints?.hit('create.after_attach_before_response');
         return {
             orderId: order.id,
+            orderNumber: order.orderNumber,
             paymentIntentId: paymentIntent.id,
             clientSecret: paymentIntent.client_secret,
             shippingCents: order.amounts.shippingCents,

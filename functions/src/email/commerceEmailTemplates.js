@@ -1,5 +1,7 @@
 'use strict';
 
+const { getOrderReference } = require('../shared/orderReference.cjs');
+
 const {
     EMAIL_COLORS,
     EMAIL_FONT_STACK,
@@ -19,10 +21,8 @@ function formatMoney(amountCents, currency = 'EUR') {
     }).format(Number(amountCents || 0) / 100);
 }
 
-function orderReference(order, orderId) {
-    const number = Number(order?.orderNumber);
-    if (Number.isSafeInteger(number) && number > 0) return `CMD-${number}`;
-    return `CMD-${String(orderId || order?.id || '').slice(0, 10).toUpperCase()}`;
+function orderReference(order) {
+    return getOrderReference(order);
 }
 
 function deliveryLabel(order) {
@@ -107,7 +107,7 @@ function baseData({ order, payload, siteUrl }) {
     const isGuestPaymentLink = order.checkout?.channel === 'admin_payment_link';
     return {
         orderId,
-        reference: orderReference(order, orderId),
+        reference: orderReference(order),
         amountLabel: formatMoney(amountCents, currency),
         ordersUrl: isGuestPaymentLink
             ? `${siteUrl.replace(/\/$/, '')}/`

@@ -8,6 +8,7 @@
     "node": "22.x"
   },
   "scripts": {
+    "test:order-reference": "node --test tests/order-reference.test.cjs",
     "dev": "node scripts/with-env.mjs .env.sandbox next dev",
     "dev:host": "node scripts/with-env.mjs .env.sandbox next dev -H 0.0.0.0",
     "dev:host:auto": "node scripts/with-env.mjs .env.sandbox next dev -H 0.0.0.0 -p auto",

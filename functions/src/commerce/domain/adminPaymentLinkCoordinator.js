@@ -1,5 +1,7 @@
 'use strict';
 
+const { getOrderReference } = require('../../shared/orderReference.cjs');
+
 const {
     ADMIN_PAYMENT_LINK_CHANNEL,
     buildPaymentLinkUrl,
@@ -108,7 +110,7 @@ function serializePublicOrder(order, nowMillis) {
     const status = derivePaymentLinkStatus(order, nowMillis);
     return {
         orderId: order.id,
-        reference: `CMD-${String(order.id).replace(/^ord_/, '').slice(0, 10).toUpperCase()}`,
+        reference: getOrderReference(order),
         status,
         currency: order.currency,
         items: order.items.map(safeLine),

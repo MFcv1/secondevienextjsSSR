@@ -170,6 +170,7 @@ test('Gate 7A: rebuild repete produit exactement le meme hash', () => {
 
 function premiumEmailOrder() {
     return {
+        orderNumber: 132,
         currency: 'EUR',
         customerSnapshot: { email: 'client@example.test' },
         shippingSnapshot: {
@@ -214,12 +215,12 @@ test('Gate 7A: paiement client et notification admin sont deux messages premium 
     assert.equal(message.to, 'client@example.test');
     assert.equal(message.bcc, undefined);
     assert.equal(adminMessage.to, 'admin@example.test');
-    assert.match(message.subject, /CMD-ORD_CF6220/);
+    assert.match(message.subject, /C132/);
     assert.match(message.text, /Retrait à l’atelier/);
     assert.match(message.html, /Voir ma commande/);
     assert.match(message.html, /Chevet &lt;restaure&gt;/);
     assert.doesNotMatch(message.html, /Chevet <restaure>/);
-    assert.match(adminMessage.subject, /Nouvelle commande CMD-ORD_CF6220/);
+    assert.match(adminMessage.subject, /Nouvelle commande C132/);
     assert.match(adminMessage.html, /Ouvrir dans le back-office/);
     assert.match(adminMessage.html, /admin\?order_id=ord_cf6220c7-890d-4e78-bb6f-c049df51fb08/);
     assert.match(adminMessage.text, /pi_sandbox_123/);
@@ -244,7 +245,7 @@ test('Gate 7A: remboursement client et admin exposent Stripe sans restock implic
 
     assert.equal(message.to, 'client@example.test');
     assert.equal(adminMessage.to, 'admin@example.test');
-    assert.match(message.subject, /Remboursement CMD-ORD_CF6220 confirmé/);
+    assert.match(message.subject, /Remboursement C132 confirmé/);
     assert.match(message.text, /re_sandbox_123/);
     assert.match(message.html, /Crédit bancaire en cours/);
     assert.match(message.html, /Voir ma commande/);
@@ -274,7 +275,7 @@ test('Gate 7A: chaque transition fulfillment et anomalie refund possede un rendu
             }
         }, premiumEmailOrder(), 'admin@example.test');
         assert.equal(message.to, 'client@example.test');
-        assert.match(message.html, /CMD-ORD_CF6220/);
+        assert.match(message.html, /C132/);
         assert.match(
             message.html,
             template === 'commerce-document-copy'

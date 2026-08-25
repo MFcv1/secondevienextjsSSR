@@ -1,6 +1,6 @@
 # Espace client
 
-Derniere mise a jour: 2026-08-23
+Derniere mise a jour: 2026-08-25
 Statut: `PREPROD_READY`
 
 Restriction active:
@@ -52,6 +52,11 @@ depuis le 2026-08-02 avec les controls `v2_all/v2` et Stripe test.
 | Support | configuration metier | contact et aide |
 
 Adresse et profil sont aujourd'hui principalement des vues de synthese derivees des commandes; ce ne sont pas encore un carnet d'adresses complet editable.
+
+Toutes les surfaces de commande visibles utilisent `C<orderNumber>` comme
+reference humaine, y compris les cartes, documents et confirmations. L'ID
+Firestore opaque reste reserve aux routes, appels serveur et details techniques;
+il ne remplace jamais une reference absente, qui affiche `Référence indisponible`.
 
 Les avantages newsletter ne sont jamais lus directement depuis Firestore. La
 callable `listMyNewsletterRewards` dérive l'adresse du jeton Firebase vérifié,

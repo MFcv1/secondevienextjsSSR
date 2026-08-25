@@ -25,6 +25,7 @@ function fixtures() {
     const order = {
         schemaVersion: 2,
         id: 'order-document-0001',
+        orderNumber: 132,
         userId: 'uid-document-owner',
         userEmail: 'client@example.test',
         currency: 'EUR',
@@ -58,7 +59,8 @@ test('document delivery: le PDF serveur est déterministe et explicitement non f
     assert.equal(first.buffer.subarray(0, 5).toString(), '%PDF-');
     assert.equal(first.sha256, second.sha256);
     assert.equal(first.buffer.equals(second.buffer), true);
-    assert.match(first.filename, /^Recu_paiement_CMD-/);
+    assert.equal(first.filename, 'Recu_paiement_C132.pdf');
+    assert.equal(first.buffer.includes(Buffer.from('order-document-0001')), false);
     assert.equal(first.contentType, 'application/pdf');
     assert.ok(first.size < 2 * 1024 * 1024);
 });

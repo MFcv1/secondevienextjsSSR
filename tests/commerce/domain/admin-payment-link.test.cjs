@@ -12,6 +12,9 @@ const {
     rotatePaymentLinkState,
     verifyPaymentLinkToken
 } = require('../../../functions/src/commerce/domain/adminPaymentLink');
+const {
+    serializePublicOrder
+} = require('../../../functions/src/commerce/domain/adminPaymentLinkCoordinator');
 
 const SECRET = 'test-payment-link-secret-with-at-least-thirty-two-characters';
 const NOW = '2026-08-01T10:00:00.000Z';
@@ -81,6 +84,20 @@ test('payment link URL contains no email or customer data', () => {
     assert.match(url, /^https:\/\/example\.com\/payer\/ord_payment_link_123\/[A-Za-z0-9_-]+$/);
     assert.equal(url.includes('client%40example.com'), false);
     assert.equal(url.includes('client@example.com'), false);
+});
+
+test('payment link exposes C orderNumber and never promotes the opaque orderId', () => {
+    const publicOrder = serializePublicOrder({
+        ...order(),
+        id: 'ord_payment_link_opaque',
+        orderNumber: 132,
+        currency: 'EUR',
+        items: [{ lineId: 'line-1', productId: 'product-1', titleSnapshot: 'Fauteuil', quantity: 1, unitAmountCents: 12000 }],
+        amounts: { itemsCents: 12000, shippingCents: 0, totalCents: 12000 },
+        deliverySnapshot: null
+    }, Date.parse(NOW));
+    assert.equal(publicOrder.reference, 'C132');
+    assert.equal(publicOrder.reference.includes('ord_payment_link_opaque'), false);
 });
 
 test('expiry stays bounded between thirty minutes and twenty-four hours', () => {

@@ -102,12 +102,12 @@ function IncidentInspector({ group, detail, detailStatus, darkMode, onClose, onO
           </div>
         </section>
 
-        <section className="mt-5">
-          <h3 className="text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-500">Action d’origine</h3>
+        <details className="mt-5 rounded-xl border border-stone-500/20 p-3.5">
+          <summary className="cursor-pointer text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-500">Détails techniques de l’action</summary>
           <div className="mt-2">
             <CopyValue darkMode={darkMode} label="Corrélation" value={occurrence?.correlationId} />
-            <CopyValue darkMode={darkMode} label="Commande" value={occurrence?.orderId} />
-            <CopyValue darkMode={darkMode} label="Commande tech." value={occurrence?.commandId} />
+            <CopyValue darkMode={darkMode} label="ID commande" value={occurrence?.orderId} />
+            <CopyValue darkMode={darkMode} label="Action technique" value={occurrence?.commandId} />
             <CopyValue darkMode={darkMode} label="Trace Cloud" value={occurrence?.traceId} />
           </div>
           {occurrence?.orderId && (
@@ -115,7 +115,7 @@ function IncidentInspector({ group, detail, detailStatus, darkMode, onClose, onO
               Ouvrir la chronologie commande <ChevronRight size={14} />
             </button>
           )}
-        </section>
+        </details>
 
         <section className="mt-5">
           <h3 className="text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-500">Pile expurgée</h3>

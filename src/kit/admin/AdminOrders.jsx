@@ -466,7 +466,7 @@ const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled =
                     darkMode={darkMode}
                     confirm={confirmRequest.action.confirm}
                     icon={confirmRequest.action.icon}
-                    orderId={confirmRequest.order.id}
+                    order={confirmRequest.order}
                     pending={activeOrderId === confirmRequest.order.id}
                     onCancel={() => setConfirmRequest(null)}
                     onConfirm={() => runOrderAction(confirmRequest.order, confirmRequest.action.id)}

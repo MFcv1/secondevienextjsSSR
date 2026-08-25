@@ -78,7 +78,7 @@ test('les commandes ont un compteur transactionnel et un affichage lisible', () 
     assert.match(repository, /orderNumberCounter/);
     assert.match(repository, /nextOrderNumber/);
     assert.match(state, /orderNumber/);
-    assert.match(presentation, /CMD-\$\{orderNumber\}/);
+    assert.match(presentation, /getOrderReference/);
     assert.match(backfill, /BACKFILL_SANDBOX_OBSERVABILITY/);
     assert.match(backfill, /EXPECTED_PROJECT\s*=\s*'secondevienextjsssr'/);
 });

@@ -33,8 +33,11 @@ timeline expurgee par commande, paiement, remboursement, correlation ou e-mail
 client recherche cote serveur. L'e-mail recherche n'est ni renvoye ni logue;
 chaque consultation ecrit un audit hashe et la reponse est refusee si cet audit
 echoue. Les recherches invalides sont elles aussi auditees sous forme hashee,
-sans lecture metier. Une reference `CMD-<numero>` resout `orderNumber` par une
-requete bornee. La timeline complete les journaux recents avec les inbox
+sans lecture metier. La reference humaine canonique `C<numero>` resout
+`orderNumber` par une requete bornee. Les formes `c<numero>`, numero nu et
+`CMD-<numero>`/`cmd-<numero>` restent acceptees uniquement pour la recherche
+retrospective; l'`orderId` technique reste recherchable et n'apparait que dans
+les details techniques. La timeline complete les journaux recents avec les inbox
 historiques retrouvees par identifiants provider autoritaires bornes, sans
 renvoyer leur payload, et affiche le nombre de tentatives worker lorsqu'il est
 connu. Aucun bouton de reprise financiere directe n'est expose dans cette
@@ -62,8 +65,8 @@ une erreur par ligne datee, compteur tabulaire et inspecteur lateral. Elle ne
 poll pas Cloud Logging; l'ouverture et le bouton Actualiser sont les seules
 lectures. Chaque liste et chaque detail sont audites fail-closed.
 
-La qualification resilience D2-D4 a verrouille par tests la recherche
-`CMD-<numero>`, les inbox webhook historiques, l'audit fail-closed, le hash des
+La qualification resilience D2-D4 a verrouille par tests la recherche humaine
+courante et legacy, les inbox webhook historiques, l'audit fail-closed, le hash des
 recherches invalides, la projection `attemptCount`, la troncature a 100
 evenements et l'expurgation des donnees sensibles. Le game day a confirme que
 les preuves R07 et R10 apparaissent dans la timeline avec leurs correlations et
@@ -83,8 +86,8 @@ Le rollout officiel sandbox du 2026-08-25 sert la console corrigee dans le
 deployment App Hosting `sv-mt7vweks-863c363c7563`. `Incidents` est le dernier
 item du dernier groupe `Administration`, sur desktop comme dans le tiroir
 mobile. La callable ciblee est active en revision
-`getdiagnostictimelineadmingen2-00002-val`; une probe AAL2/App Check a retrouve
-`CMD-111`, retourne une timeline bornee et ecrit son audit sans afficher de
+`getdiagnostictimelineadmingen2-00002-val`; une probe AAL2/App Check historique
+a retrouve `CMD-111` via la compatibilite legacy, retourne une timeline bornee et ecrit son audit sans afficher de
 donnee personnelle. Lors de ce rollout, le controle commerce etait encore
 `v2_fixture/read_only` revision 76 avec operations `healthy`; il a ensuite ete
 rouvert durablement en `v2_all/v2` revision 77 sur autorisation explicite.

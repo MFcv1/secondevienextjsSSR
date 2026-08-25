@@ -1,6 +1,6 @@
 # E-mails transactionnels - Seconde Vie
 
-Derniere mise a jour: 2026-08-23
+Derniere mise a jour: 2026-08-25
 Statut: `PREPROD_READY`
 Perimetre: Auth OTP, paiement, cycle de commande v2, remboursements, copie de document, retour client, réception de devis, avantage newsletter, facture manuelle et compatibilité legacy
 
@@ -160,7 +160,7 @@ Modele: `order-paid`
 
 Informations:
 
-- reference de commande;
+- reference humaine canonique `C<orderNumber>` (jamais l'ID Firestore opaque);
 - statut paye;
 - montant total;
 - article et quantite;
@@ -312,7 +312,7 @@ Le clic client sur un document appelle `prepareCommerceDocumentDelivery`.
 Apres verification Auth/App Check et UID proprietaire, la Function materialise
 le PDF prive et cree une intention outbox deterministe. Le message contient:
 
-- la reference et le montant de la commande;
+- la reference humaine `C<orderNumber>` et le montant de la commande;
 - un rappel `document sandbox non fiscal`;
 - une piece jointe PDF strictement identique a celle ouverte sur le site;
 - un bouton authentifie vers la section Documents de `/mes-commandes`.

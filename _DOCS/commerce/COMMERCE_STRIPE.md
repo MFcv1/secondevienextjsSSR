@@ -26,6 +26,11 @@ Stripe sont autoritaires pour prix, stock et paiement. Les mutations legacy
 restent coupees avant effet; leurs readers et webhooks ne servent qu'au
 drainage et a la compatibilite read-only.
 
+La reference humaine d'une commande est exclusivement `C<orderNumber>`. Le
+`orderId` opaque continue d'assurer routes, jointures, commandes serveur,
+idempotence et integration Stripe, sans etre affiche comme reference ni modifie
+en base. Une absence de `orderNumber` se degrade en `Référence indisponible`.
+
 ## 2. Flux d'achat
 
 ```text

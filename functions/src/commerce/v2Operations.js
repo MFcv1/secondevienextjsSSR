@@ -3,6 +3,7 @@
 const crypto = require('node:crypto');
 const admin = require('firebase-admin');
 const functions = require('firebase-functions/v1');
+const { getOrderReference } = require('../shared/orderReference.cjs');
 const { APP_ID, getSiteUrl } = require('../../helpers/config');
 const {
     GMAIL_EMAIL,
@@ -130,8 +131,8 @@ function formatMoney(amountCents, currency = 'EUR') {
     }).format(Number(amountCents || 0) / 100);
 }
 
-function orderReference(orderId) {
-    return `CMD-${String(orderId || '').slice(0, 10).toUpperCase()}`;
+function orderReference(order) {
+    return getOrderReference(order);
 }
 
 function deliveryLabel(order) {
@@ -273,7 +274,7 @@ function messageFor(entry, order, senderEmail) {
     const amount = Number(entry.payloadSnapshot?.amountCents || 0);
     const currency = entry.payloadSnapshot?.currency || order.currency || 'EUR';
     const amountLabel = formatMoney(amount, currency);
-    const reference = orderReference(order.id || entry.payloadSnapshot?.orderId);
+    const reference = orderReference(order);
     const customerName = String(order.shippingSnapshot?.fullName || '').trim();
     const greeting = customerName ? `Bonjour ${customerName}, ` : '';
     const siteUrl = getSiteUrl().replace(/\/$/, '');

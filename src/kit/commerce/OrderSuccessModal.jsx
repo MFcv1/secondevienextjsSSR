@@ -1,10 +1,14 @@
 import { useEffect, useRef } from 'react';
 import { ArrowRight, Check, Clock3, Mail, ShoppingBag } from 'lucide-react';
+import orderReferenceHelpers from '../../../shared/orderReference.cjs';
 
-const OrderSuccessModal = ({ onClose, onViewOrders, paymentMethod }) => {
+const { formatOrderReference } = orderReferenceHelpers;
+
+const OrderSuccessModal = ({ onClose, onViewOrders, paymentMethod, orderNumber }) => {
     const isStripe = paymentMethod === 'stripe_elements';
     const primaryActionRef = useRef(null);
     const screenRef = useRef(null);
+    const orderReference = formatOrderReference(orderNumber, '');
     const steps = isStripe
         ? [
             ['Paiement', 'Confirmé'],
@@ -67,7 +71,7 @@ const OrderSuccessModal = ({ onClose, onViewOrders, paymentMethod }) => {
                                 : <Clock3 size={25} strokeWidth={1.8} aria-hidden="true" />}
                         </div>
                         <p className="mt-8 text-[11px] font-semibold uppercase tracking-[0.2em] text-stone-400">
-                            {isStripe ? 'Commande confirmée' : 'Commande réservée'}
+                            {orderReference ? `Commande ${orderReference}` : (isStripe ? 'Commande confirmée' : 'Commande réservée')}
                         </p>
                         <h1 id="order-success-title" className="mt-3 max-w-[13ch] text-[2.5rem] font-semibold leading-[0.98] tracking-[-0.05em] text-white sm:text-5xl lg:text-[clamp(3.5rem,5vw,5.8rem)]">
                             {isStripe ? 'Merci, votre commande est confirmée.' : 'Votre commande est bien réservée.'}

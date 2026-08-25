@@ -34,6 +34,9 @@ import {
     loadAdminReturnsFirstPage,
 } from './adminCommerceData';
 import { adaptCommerceOrder } from '../commerce/orderAdapter';
+import orderReferenceHelpers from '../../../shared/orderReference.cjs';
+
+const { getOrderReference } = orderReferenceHelpers;
 
 const REFUNDABLE_STATUSES = new Set(['paid', 'shipped', 'completed']);
 const REFUND_TRACKED_STATUSES = new Set(['refund_pending', 'refunded', 'refund_failed']);
@@ -426,6 +429,7 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                 return [
                     request.requestId,
                     request.orderId,
+                    getOrderReference(order),
                     order.customerSnapshot?.email,
                     order.shippingSnapshot?.fullName,
                     getRequestItemsLabel(request),
@@ -838,7 +842,7 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
             {decisionDraft ? (
                 <div className="fixed inset-0 z-[125] flex items-center justify-center bg-stone-950/55 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
                     <form onSubmit={submitCustomerRequestDecision} className={`w-full max-w-lg rounded-2xl border p-6 shadow-2xl ${panelClass}`}>
-                        <p className={`text-xs font-semibold ${mutedText}`}>Commande #{decisionDraft.request.orderId}</p>
+                        <p className={`text-xs font-semibold ${mutedText}`}>Commande {getOrderReference(decisionDraft.request.order)}</p>
                         <h3 className="mt-1 text-xl font-black tracking-tight">
                             {decisionDraft.decision === 'refund_now' ? 'Rembourser maintenant' :
                                 decisionDraft.decision === 'authorize_return' ? 'Autoriser le retour' :
@@ -873,7 +877,7 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                         onSubmit={submitRefund}
                         className={`w-full max-w-lg rounded-2xl border p-6 shadow-2xl ${panelClass}`}
                     >
-                        <p className={`text-xs font-semibold ${mutedText}`}>Commande #{refundDraft.order.id}</p>
+                        <p className={`text-xs font-semibold ${mutedText}`}>Commande {getOrderReference(refundDraft.order)}</p>
                         <h3 id="refund-dialog-title" className="mt-1 text-xl font-black tracking-tight">
                             Remboursement Stripe
                         </h3>
@@ -918,7 +922,7 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
             {returnDraft ? (
                 <div className="fixed inset-0 z-[125] flex items-center justify-center bg-stone-950/55 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="return-dialog-title">
                     <form onSubmit={submitReturnDraft} className={`max-h-[90dvh] w-full max-w-xl overflow-y-auto rounded-2xl border p-6 shadow-2xl ${panelClass}`}>
-                        <p className={`text-xs font-semibold ${mutedText}`}>Commande #{returnDraft.order.id}</p>
+                        <p className={`text-xs font-semibold ${mutedText}`}>Commande {getOrderReference(returnDraft.order)}</p>
                         <h3 id="return-dialog-title" className="mt-1 text-xl font-black tracking-tight">
                             {returnDraft.type === 'open' ? 'Ouvrir un retour' : returnActionLabel(returnDraft.action)}
                         </h3>
@@ -1070,7 +1074,7 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                                         </p>
                                         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
                                             <span className="text-xs font-bold">{customerRequestReason(request.reason)}</span>
-                                            <span className={`font-mono text-[10px] ${mutedText}`}>#{request.orderId}</span>
+                                            <span className={`font-mono text-[10px] ${mutedText}`}>{getOrderReference(request.order)}</span>
                                         </div>
                                         {request.note ? (
                                             <details className="mt-2 text-xs">
@@ -1131,7 +1135,7 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                                         </div>
                                         <p className="mt-2 truncate text-base font-black tracking-tight">{getItemsLabel(order)}</p>
                                         <p className={`mt-1 truncate text-xs ${mutedText}`}>{order.shipping?.fullName || 'Client inconnu'} · {email || 'Email absent'}</p>
-                                        <p className={`mt-1 font-mono text-[10px] ${mutedText}`}>#{order.id} · {formatShortDate(order.createdAt)}</p>
+                                        <p className={`mt-1 font-mono text-[10px] ${mutedText}`}>{getOrderReference(order)} · {formatShortDate(order.createdAt)}</p>
                                     </div>
 
                                     <div>

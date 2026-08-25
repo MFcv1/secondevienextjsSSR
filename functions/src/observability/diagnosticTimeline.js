@@ -8,6 +8,7 @@ const {
     writeSecurityAudit
 } = require('../../helpers/security');
 const { hashOpaque, runObserved } = require('../../helpers/observability');
+const { parseOrderReference } = require('../shared/orderReference.cjs');
 
 const REGION = 'europe-west1';
 const MAX_EVENTS = 100;
@@ -62,10 +63,8 @@ async function resolveOrderIds(db, search) {
     if (search.kind === 'order') {
         const snapshot = await db.doc(`orders/${search.value}`).get();
         if (snapshot.exists) return [snapshot.id];
-        const reference = /^CMD-([1-9][0-9]{0,14})$/i.exec(search.value);
-        if (!reference) return [];
-        const orderNumber = Number(reference[1]);
-        if (!Number.isSafeInteger(orderNumber)) return [];
+        const orderNumber = parseOrderReference(search.value);
+        if (!orderNumber) return [];
         const orders = await db.collection('orders')
             .where('orderNumber', '==', orderNumber)
             .limit(2)
@@ -338,6 +337,7 @@ async function buildOrderDiagnostic(db, orderId) {
     return {
         order: {
             id: orderId,
+            orderNumber: Number.isSafeInteger(order.orderNumber) ? order.orderNumber : null,
             schemaVersion: order.schemaVersion || 1,
             status: order.status || 'unknown',
             stateVersion: Number.isSafeInteger(order.stateVersion) ? order.stateVersion : null,

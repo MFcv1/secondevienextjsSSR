@@ -14,7 +14,7 @@ export default function ConfirmDialog({
     icon = 'check',
     onCancel,
     onConfirm,
-    orderId,
+    order,
     pending = false,
 }) {
     return (
@@ -27,7 +27,7 @@ export default function ConfirmDialog({
         >
             <div className="p-6 sm:p-7">
                 <p className={`text-[10px] font-extrabold uppercase tracking-[0.12em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>
-                    {orderReference(orderId)}
+                    {orderReference(order)}
                 </p>
                 <h3 id="order-confirm-title" className="mt-2 text-[20px] font-extrabold tracking-[-0.03em]">
                     {confirm.title}

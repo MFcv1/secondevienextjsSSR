@@ -209,6 +209,7 @@ const CheckoutView = ({
     
     const [clientSecret, setClientSecret] = useState(null);
     const [createdOrderId, setCreatedOrderId] = useState(null);
+    const [createdOrderNumber, setCreatedOrderNumber] = useState(null);
     const [createdOrderOtpToken, setCreatedOrderOtpToken] = useState('');
     const [createdStripeConnectedAccountId, setCreatedStripeConnectedAccountId] = useState('');
     const [lockedOrderDraft, setLockedOrderDraft] = useState(null);
@@ -287,6 +288,7 @@ const CheckoutView = ({
         checkoutClientOrderIdRef.current = null;
         setClientSecret(null);
         setCreatedOrderId(null);
+        setCreatedOrderNumber(null);
         setCreatedOrderOtpToken('');
         setCreatedStripeConnectedAccountId('');
         setLockedOrderDraft(null);
@@ -334,6 +336,7 @@ const CheckoutView = ({
                     });
                 }
                 setCreatedStripeConnectedAccountId(resumed.connectedAccountId || '');
+                setCreatedOrderNumber(Number.isSafeInteger(resumed.orderNumber) ? resumed.orderNumber : null);
             }
             setCheckoutState('ready_to_pay');
         } catch (error) {
@@ -854,6 +857,7 @@ const CheckoutView = ({
                     : null);
                 if (result.promotion) setPromotionPreview(result.promotion);
                 setCreatedOrderId(result.orderId);
+                setCreatedOrderNumber(Number.isSafeInteger(result.orderNumber) ? result.orderNumber : null);
                 setCreatedOrderOtpToken('');
                 setCreatedStripeConnectedAccountId(
                     result.connectedAccountId || ''
@@ -892,6 +896,7 @@ const CheckoutView = ({
                     if (result.data.clientSecret) {
                         setClientSecret(result.data.clientSecret);
                         setCreatedOrderId(result.data.orderId);
+                        setCreatedOrderNumber(Number.isSafeInteger(result.data.orderNumber) ? result.data.orderNumber : null);
                         setCreatedOrderOtpToken(guestOtp.token || '');
                         setCreatedStripeConnectedAccountId(result.data.stripeConnectedAccountId || '');
                         setCheckoutState('ready_to_pay');
@@ -1523,6 +1528,7 @@ const CheckoutView = ({
                     finalTotal={finalTotal}
                     orderTotal={checkoutSubtotal}
                     createdOrderId={createdOrderId}
+                    createdOrderNumber={createdOrderNumber}
                     checkoutOtpToken={createdOrderOtpToken}
                     stripeConnectedAccountId={createdStripeConnectedAccountId}
                     formData={formData}
@@ -1530,7 +1536,10 @@ const CheckoutView = ({
                     purchasedCartLines={lockedOrderDraft?.purchasedCartLines || []}
                     onClose={handleClosePaymentModal}
                     onPlaceOrder={onPlaceOrder}
-                    onPaymentConfirmed={() => {
+                    onPaymentConfirmed={(confirmedOrder) => {
+                        if (Number.isSafeInteger(confirmedOrder?.orderNumber)) {
+                            setCreatedOrderNumber(confirmedOrder.orderNumber);
+                        }
                         if (COMMERCE_V2_CONSUMERS_ENABLED) {
                             advanceCheckoutController({ type: 'SUCCEEDED' });
                         }

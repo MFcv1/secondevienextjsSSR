@@ -3,6 +3,9 @@
 import { getMillis } from '../../../../utils/time.js';
 import { formatShippingAddress } from '../../../../utils/shippingAddress.js';
 import { adaptCommerceOrder } from '../../../commerce/orderAdapter.js';
+import orderReferenceHelpers from '../../../../../shared/orderReference.cjs';
+
+const { getOrderReference } = orderReferenceHelpers;
 
 /**
  * Couche de presentation des ventes : uniquement des fonctions pures.
@@ -96,10 +99,7 @@ export const formatDayLabel = (timestamp) => {
 };
 
 export const orderReference = (orderOrId) => {
-    const orderNumber = typeof orderOrId === 'object' ? Number(orderOrId?.orderNumber) : null;
-    if (Number.isSafeInteger(orderNumber) && orderNumber > 0) return `CMD-${orderNumber}`;
-    const orderId = typeof orderOrId === 'object' ? orderOrId?.id : orderOrId;
-    return `CMD-${String(orderId || '').slice(0, 10).toUpperCase()}`;
+    return getOrderReference(typeof orderOrId === 'object' ? orderOrId : null);
 };
 
 // ── Etat logistique et commercial ────────────────────────────────────────────
@@ -280,7 +280,7 @@ export const buildSearchIndex = (order) => normalizeText([
     order?.shipping?.email,
     order?.shipping?.phone,
     order?.id,
-    orderReference(order?.id),
+    orderReference(order),
     order?.shipping?.city,
     formatShippingAddress(order?.shipping),
     order?.shipmentTracking?.trackingNumber,
@@ -473,7 +473,7 @@ export const buildActionPlan = (order, { enabled = true } = {}) => {
 
 /** Colonnes figees : ce fichier est repris en comptabilite. */
 export const buildCsvRows = (orders = []) => orders.map((order) => ({
-    'ID Commande': order.id,
+    'Référence commande': orderReference(order),
     'Date et heure': formatDateTime(order.createdAt),
     'Paiement confirmé le': formatDateTime(order.payment?.succeededAt || order.paidAt),
     'Client': order.shipping?.fullName || 'N/A',

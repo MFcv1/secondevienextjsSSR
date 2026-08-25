@@ -311,6 +311,7 @@ async function serializeCustomerReturnRequestAdmin(snapshot, db) {
         status: derivedStatus,
         order: {
             id: request.orderId,
+            orderNumber: order.orderNumber,
             customerSnapshot: order.customerSnapshot,
             shippingSnapshot: order.shippingSnapshot,
             items: order.items,

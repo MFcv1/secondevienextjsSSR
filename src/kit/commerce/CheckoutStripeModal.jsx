@@ -9,6 +9,9 @@ import { getFunctionTarget } from '../config/functionTargets';
 import CheckoutPaymentStep from './CheckoutPaymentStep';
 import { COMMERCE_V2_CONSUMERS_ENABLED } from './commerceV2Client';
 import { adaptCommerceOrder } from './orderAdapter';
+import orderReferenceHelpers from '../../../shared/orderReference.cjs';
+
+const { formatOrderReference } = orderReferenceHelpers;
 
 const isTerminalPaymentFailure = (status) => ['payment_failed', 'canceled', 'cancelled', 'cancelled_by_client'].includes(status);
 
@@ -127,6 +130,7 @@ const CheckoutStripeModal = ({
     finalTotal,
     orderTotal,
     createdOrderId,
+    createdOrderNumber,
     checkoutOtpToken,
     stripeConnectedAccountId,
     formData,
@@ -188,9 +192,7 @@ const CheckoutStripeModal = ({
 
     if (typeof document === 'undefined') return null;
 
-    const shortOrderId = createdOrderId
-        ? createdOrderId.replace(/^ord_/, '').slice(0, 8).toUpperCase()
-        : '';
+    const humanOrderReference = formatOrderReference(createdOrderNumber, '');
 
     return createPortal(
         <div
@@ -210,7 +212,7 @@ const CheckoutStripeModal = ({
                             Seconde Vie
                         </span>
                         <span className="text-[11px] font-medium tabular-nums text-stone-500">
-                            {shortOrderId ? `Commande ${shortOrderId}` : 'Commande sécurisée'}
+                            {humanOrderReference ? `Commande ${humanOrderReference}` : 'Commande sécurisée'}
                         </span>
                     </div>
 
@@ -314,14 +316,15 @@ const CheckoutStripeModal = ({
                                                 setConfirmationState('waiting');
                                                 setConfirmationMessage('');
                                                 try {
-                                                    await waitForPaidOrder({
+                                                    const confirmedOrder = await waitForPaidOrder({
                                                         orderId: createdOrderId,
                                                         email: formData.email,
                                                         checkoutOtpToken
                                                     });
-                                                    onPaymentConfirmed?.();
+                                                    onPaymentConfirmed?.(confirmedOrder);
                                                     await onPlaceOrder({
                                                         id: createdOrderId,
+                                                        orderNumber: confirmedOrder?.orderNumber || createdOrderNumber,
                                                         ...formData,
                                                         paymentMethod: 'stripe_elements',
                                                         total: orderTotal,

@@ -50,6 +50,7 @@ class Query {
 function fakeDb({ orderId = 'order-console-0001', order = {}, subcollections = {}, collections = {} } = {}) {
     const orderData = {
         schemaVersion: 2,
+        orderNumber: 132,
         status: 'paid',
         stateVersion: 4,
         payment: { status: 'succeeded' },
@@ -99,6 +100,7 @@ test('R00 timeline fusionne et ordonne toutes les familles checkout attendues', 
         'Stripe', 'commande', 'document', 'fait financier', 'inventaire', 'outbox', 'webhook'
     ].sort());
     assert.deepEqual(diagnostic.timeline.map((event) => event.at), [...diagnostic.timeline.map((event) => event.at)].sort());
+    assert.equal(diagnostic.order.orderNumber, 132);
 });
 
 test('R05 create_unknown puis attached partage la correlation de tentative', async () => {
@@ -226,13 +228,21 @@ test('echec audit de consultation ne retourne aucune timeline', async () => {
     assert.equal(timelineReads, 0);
 });
 
-test('recherche CMD par orderNumber retrouve la commande', async () => {
+test('recherche humaine courante, nue et legacy resout le meme orderNumber', async () => {
     const db = fakeDb({
         collections: {
             orders: [doc('order-console-0001', { orderNumber: 20260001 })]
         }
     });
-    const ids = await resolveOrderIds(db, { kind: 'order', value: 'CMD-20260001' });
+    for (const value of ['C20260001', 'c20260001', '20260001', 'CMD-20260001', 'cmd-20260001']) {
+        const ids = await resolveOrderIds(db, { kind: 'order', value });
+        assert.deepEqual(ids, ['order-console-0001']);
+    }
+});
+
+test('recherche technique par orderId reste disponible', async () => {
+    const db = fakeDb();
+    const ids = await resolveOrderIds(db, { kind: 'order', value: 'order-console-0001' });
     assert.deepEqual(ids, ['order-console-0001']);
 });
 

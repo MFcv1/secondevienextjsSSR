@@ -12,6 +12,9 @@ import {
     X,
 } from 'lucide-react';
 import { prepareCommerceDocumentDelivery } from './commerceV2Client';
+import orderReferenceHelpers from '../../../shared/orderReference.cjs';
+
+const { getOrderReference } = orderReferenceHelpers;
 
 const formatPrice = (cents, currency = 'EUR') => (
     new Intl.NumberFormat('fr-FR', {
@@ -156,7 +159,7 @@ const CommerceDocumentModal = ({ entry, onClose }) => {
             await navigator.share({
                 files: [shareFile],
                 title: delivery.document.label,
-                text: `Document de la commande CMD-${String(entry.order.id).slice(0, 10).toUpperCase()}`,
+                text: `Document de la commande ${getOrderReference(entry.order)}`,
             });
         } catch (error) {
             if (error?.name !== 'AbortError') {
@@ -166,7 +169,7 @@ const CommerceDocumentModal = ({ entry, onClose }) => {
     };
 
     if (typeof document === 'undefined') return null;
-    const orderReference = `CMD-${String(entry.order.id || '').slice(0, 10).toUpperCase()}`;
+    const orderReference = getOrderReference(entry.order);
     const emailMessage = delivery?.email?.queued
         ? delivery.email.reused
             ? `Une copie est déjà programmée pour ${delivery.email.maskedRecipient}.`

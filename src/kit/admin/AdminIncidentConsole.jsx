@@ -13,6 +13,9 @@ import {
 } from 'lucide-react';
 import { getCallableFunction } from '../config/firebaseLazy';
 import SystemIncidentConsole from './SystemIncidentConsole';
+import orderReferenceHelpers from '../../../shared/orderReference.cjs';
+
+const { getOrderReference } = orderReferenceHelpers;
 
 const SEARCH_TYPES = [
   { value: 'auto', label: 'Détection automatique' },
@@ -193,7 +196,7 @@ function OrderIncidentConsole({ darkMode = false, initialValue = '' }) {
           <section className={`rounded-xl border p-4 sm:p-5 ${panel}`}>
             <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className={`font-mono text-[10px] uppercase tracking-[0.12em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>{selected.order.id}</p>
+                <p className={`font-mono text-[10px] uppercase tracking-[0.12em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>{getOrderReference(selected.order)}</p>
                 <h2 className="mt-1 text-xl font-black">Historique technique et métier</h2>
               </div>
               <StatusPill darkMode={darkMode} status={selected.order.status}>{selected.order.status}</StatusPill>
@@ -209,7 +212,7 @@ function OrderIncidentConsole({ darkMode = false, initialValue = '' }) {
                 <div className="mt-3 space-y-1">
                   {matches.map((match, index) => (
                     <button key={match.order.id} onClick={() => setSelectedIndex(index)} type="button" className={`w-full rounded-lg border px-3 py-2 text-left font-mono text-xs ${index === selectedIndex ? 'border-stone-950 bg-stone-950 text-white dark:border-white dark:bg-white dark:text-stone-950' : input}`}>
-                      {match.order.id}
+                      {getOrderReference(match.order)}
                     </button>
                   ))}
                 </div>
@@ -226,6 +229,15 @@ function OrderIncidentConsole({ darkMode = false, initialValue = '' }) {
                 <dt>Version</dt><dd className="font-mono">{selected.order.stateVersion ?? '—'}</dd>
               </dl>
             </section>
+            <details className={`rounded-xl border p-4 ${panel}`}>
+              <summary className="cursor-pointer text-xs font-black uppercase tracking-[0.12em]">Détails techniques</summary>
+              <dl className={`mt-3 grid gap-2 text-xs ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>
+                <div>
+                  <dt className="text-[10px] uppercase tracking-[0.1em]">Identifiant Firestore</dt>
+                  <dd className="mt-1 break-all font-mono text-[10px]">{selected.order.id}</dd>
+                </div>
+              </dl>
+            </details>
           </aside>
         </div>
       )}

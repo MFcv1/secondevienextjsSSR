@@ -87,6 +87,7 @@ function CheckoutPageContent() {
   const [darkMode, setDarkMode] = useState(false);
   const [showOrderSuccess, setShowOrderSuccess] = useState(false);
   const [orderSuccessMethod, setOrderSuccessMethod] = useState('');
+  const [orderSuccessNumber, setOrderSuccessNumber] = useState(null);
   const [checkoutReturnNotice, setCheckoutReturnNotice] = useState('');
   const [cartLoading, setCartLoading] = useState(true);
   const [fixtureContext, setFixtureContext] = useState(null);
@@ -261,6 +262,7 @@ function CheckoutPageContent() {
 
   const handlePlaceOrder = async (orderData = {}) => {
     setOrderSuccessMethod(orderData.paymentMethod || 'deferred');
+    setOrderSuccessNumber(Number.isSafeInteger(orderData.orderNumber) ? orderData.orderNumber : null);
     setShowOrderSuccess(true);
     try {
       await clearCartAfterOrder(orderData.purchasedCartLines || []);
@@ -346,6 +348,7 @@ function CheckoutPageContent() {
           window.clearTimeout(timeoutId);
           unsubscribe?.();
           setOrderSuccessMethod('stripe_elements');
+          setOrderSuccessNumber(Number.isSafeInteger(order.orderNumber) ? order.orderNumber : null);
           setCheckoutReturnNotice('');
           setShowOrderSuccess(true);
           window.history.replaceState({}, '', '/checkout');
@@ -422,6 +425,7 @@ function CheckoutPageContent() {
       {showOrderSuccess ? (
         <OrderSuccessModal
           paymentMethod={orderSuccessMethod}
+          orderNumber={orderSuccessNumber}
           onClose={closeOrderSuccess}
           onViewOrders={viewOrderAfterSuccess}
         />

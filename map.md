@@ -292,6 +292,17 @@ durablement par autorisation explicite le 2026-08-25: `v2_all/v2` revision 77,
 policy `sandbox_transactional_policy_20260802`, Stripe test et paiement offline
 `off`. Aucun `runId` ni minuteur de fenetre temporaire ne pilote cette ouverture.
 
+Reference commande partagee:
+
+```text
+shared/orderReference.cjs
+  -> format canonique C<orderNumber> pour UI, admin, e-mails et PDF
+  -> miroir functions/src/shared/orderReference.cjs requis par le packaging Firebase
+  -> fallback Référence indisponible, jamais l'orderId opaque
+  -> parse recherche Incidents: C/c, numero nu, CMD-/cmd- legacy
+  -> orderId technique conserve pour routes, jointures, Stripe et idempotence
+```
+
 Gate 6 ajoute un rail de migration sans writer:
 
 ```text
@@ -445,6 +456,7 @@ galerie: choix d'une carte [C]
 |-- playwright.config.mjs ........... Configuration navigateur
 |-- eslint.config.mjs ............... Qualite statique
 |-- instrumentation-client.js ....... coupure Performance avant transition vers une route sensible
+|-- shared/orderReference.cjs ....... format/parse unique des references humaines C<orderNumber>
 `-- .env.* ........................... Contrats locaux, secrets reels non documentes
 ```
 

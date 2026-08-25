@@ -12,6 +12,9 @@ import { getProductImageItems } from '../../utils/imageUtils';
 import { getProductUrl } from '../../utils/slug';
 import { getMillis } from '../../utils/time';
 import { downloadCsv } from './exportCsv';
+import orderReferenceModule from '../../../shared/orderReference.cjs';
+
+const { getOrderReference } = orderReferenceModule;
 
 // ─── MOTION & FORMAT HELPERS ───
 
@@ -1725,7 +1728,7 @@ const AdminDashboard = ({
                                                         <span className={`text-[12px] font-semibold ${textBase}`}>{clientName}</span>
                                                     </div>
                                                 </td>
-                                                <td className={`px-4 py-3.5 font-mono text-[10px] ${darkMode ? 'text-white/36' : 'text-stone-400'}`}>#{String(order.id).slice(-7).toUpperCase()}</td>
+                                                <td className={`px-4 py-3.5 font-mono text-[10px] ${darkMode ? 'text-white/36' : 'text-stone-400'}`}>{getOrderReference(order)}</td>
                                                 <td className={`px-4 py-3.5 text-[11px] ${darkMode ? 'text-white/46' : 'text-stone-500'}`}>{getRelativeOrderDate(order.createdAt)}</td>
                                                 <td className="px-4 py-3.5 text-right">
                                                     <span

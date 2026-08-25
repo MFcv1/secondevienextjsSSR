@@ -27,6 +27,7 @@ import {
     WalletCards,
     X,
 } from 'lucide-react';
+import orderReferenceHelpers from '../../../shared/orderReference.cjs';
 import KIT_CONFIG from '../config/constants';
 import { formatShippingCityLine } from '../../utils/shippingAddress';
 import { getMillis } from '../../utils/time';
@@ -43,6 +44,8 @@ import {
 import { adaptCommerceOrder } from './orderAdapter';
 import CommerceDocumentModal from './CommerceDocumentModal';
 import { listMyNewsletterRewards } from '../marketplace/newsletterRewardClient';
+
+const { getOrderReference } = orderReferenceHelpers;
 
 const BUSINESS_PHONE = process.env.NEXT_PUBLIC_BUSINESS_PHONE || '';
 const BUSINESS_PHONE_TEL = BUSINESS_PHONE.replace(/\s/g, '');
@@ -722,8 +725,7 @@ const getOrderImage = (order, index = 0) => (
 );
 
 const getOrderNumber = (order) => {
-    const id = order?.orderNumber || order?.id || '';
-    return `CMD-${String(id).slice(0, 10).toUpperCase()}`;
+    return getOrderReference(order);
 };
 
 const getOrderItemsSummary = (order) => (

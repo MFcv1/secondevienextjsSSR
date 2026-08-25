@@ -19,11 +19,13 @@ function order({
     fulfillment = 'unfulfilled',
     hasFailure = false,
     id = 'order-test',
+    orderNumber = 132,
     refund = 'none',
     status = 'paid',
 } = {}) {
     return {
         id,
+        orderNumber,
         schemaVersion: 2,
         status,
         payment: { status: 'succeeded' },
@@ -36,6 +38,15 @@ function order({
         allowedActions,
     };
 }
+
+test('sales reference and CSV use C orderNumber without opaque fallback', async () => {
+    const { buildCsvRows, orderReference } = await loadPresentation();
+    const current = order({ id: 'order-opaque', orderNumber: 132 });
+    assert.equal(orderReference(current), 'C132');
+    assert.equal(orderReference({ id: 'order-opaque' }), 'Référence indisponible');
+    assert.equal(buildCsvRows([current])[0]['Référence commande'], 'C132');
+    assert.equal(Object.hasOwn(buildCsvRows([current])[0], 'ID Commande'), false);
+});
 
 test('sales segments keep refunded goods on site actionable and close departed goods', async () => {
     const { getOrderSegment, isRefundedWithGoodsOnSite } = await loadPresentation();

@@ -1,6 +1,6 @@
 # Qualite, tests et gates
 
-Derniere mise a jour: 2026-08-23
+Derniere mise a jour: 2026-08-25
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Principe de proportion
@@ -611,7 +611,8 @@ La couverture durable de resilience checkout comprend
 `tests/commerce/resilience/checkout-boundaries.test.cjs`,
 `worker-outbox.test.cjs`, `incident-console.test.cjs` et le harness local
 `tests/commerce/browser/checkout-resilience.spec.mjs`. D2 couvre 36 tests
-deterministes sous garde anti-reseau, dont recherche `CMD-*`, inbox webhook
+deterministes sous garde anti-reseau, dont recherche `C*`, numero nu et
+compatibilite legacy `CMD-*`, inbox webhook
 historique, audit timeline fail-closed, audit hashe des refus et projection de
 `attemptCount`; aucun de ces tests ne contacte Stripe, Firebase ou l'e-mail.
 La suite D3 `resilience-emulator.cjs` ajoute 6 scenarios et 28 assertions sur
@@ -630,7 +631,7 @@ infra, le build Next 16.3, `seo:surface`, `next:routes` et `mobile:contract`.
 Le test `admin-navigation-contract.test.mjs` verrouille `Incidents` comme
 dernier item du menu lateral. Apres rollout, le bundle servi prouve le meme
 ordre, les routes publiques ciblees retournent 200 et la callable revision
-`00002-val` resout `CMD-111` avec une timeline bornee.
+`00002-val` resout historiquement `CMD-111` comme syntaxe legacy avec une timeline bornee.
 
 Pour une restructuration comme celle-ci:
 

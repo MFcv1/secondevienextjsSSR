@@ -8,6 +8,7 @@ const admin = require('firebase-admin');
 const functions = require('firebase-functions/v1');
 const { onCall } = require('firebase-functions/v2/https');
 const { onDocumentCreated, onDocumentUpdated } = require('firebase-functions/v2/firestore');
+const { getOrderReference } = require('../shared/orderReference.cjs');
 const { getSiteUrl } = require('../../helpers/config');
 const { checkActiveStrongAdmin, normalizeFirestoreId } = require('../../helpers/security');
 const { regionalFunctions } = require('../../helpers/runtime');
@@ -75,11 +76,8 @@ function operationalErrorSummary(error) {
     };
 }
 
-function orderDisplayReference(orderId, order = {}) {
-    const number = Number(order.orderNumber);
-    return Number.isSafeInteger(number) && number > 0
-        ? `CMD-${number}`
-        : `CMD-${String(orderId || '').slice(0, 8).toUpperCase()}`;
+function orderDisplayReference(order = {}) {
+    return getOrderReference(order);
 }
 
 function escapeHtml(unsafe) {
@@ -119,7 +117,7 @@ async function sendNewOrderEmails(orderId, order) {
     ).join('');
 
     const shippingInfo = order.shipping ? formatShippingInfo(order.shipping) : "Non specifie";
-    const reference = orderDisplayReference(orderId, order);
+    const reference = orderDisplayReference(order);
     const amountLabel = `${Number(order.total || 0).toLocaleString('fr-FR')} €`;
     const paymentLabel = order.paymentMethod === 'stripe' || order.status === 'paid'
         ? 'Carte bancaire · validée'
@@ -379,7 +377,7 @@ exports.sendRefundStatusEmailAdmin = regionalFunctions().runWith({ enforceAppChe
     const itemsHtml = (order.items || []).map(item =>
         `<li>${item.quantity || 1}x <b>${escapeHtml(item.name || "Article")}</b></li>`
     ).join('');
-    const reference = orderDisplayReference(orderId, order);
+    const reference = orderDisplayReference(order);
     const amountLabel = formatRefundAmount(order);
     const refundRole = order.status === 'refunded'
         ? 'success'
@@ -531,7 +529,7 @@ exports.onOrderUpdated = onDocumentUpdated(
 
         const emailDelivery = getLegacyEmailDelivery();
         const adminEmail = emailDelivery.fromAddress;
-        const reference = orderDisplayReference(orderId, orderAfter);
+        const reference = orderDisplayReference(orderAfter);
 
         // --- 2. SHIPPED ---
         if (orderAfter.status === 'shipped' && orderBefore.status !== 'shipped') {
