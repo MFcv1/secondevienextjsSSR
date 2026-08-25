@@ -135,7 +135,7 @@ test('G9 deploy definitions bind one immutable archive, exact secrets and schedu
     'PAYMENT_LINK_HMAC_SECRET=PAYMENT_LINK_HMAC_SECRET:1'
   ]);
   assert.deepEqual(GCLOUD_GEN2_TARGETS.commerceOutboxDispatcherGen2.secrets, [
-    'GMAIL_EMAIL=GMAIL_EMAIL:2', 'GMAIL_PASSWORD=GMAIL_PASSWORD:5',
+    'GMAIL_EMAIL=GMAIL_EMAIL:2', 'GMAIL_PASSWORD=GMAIL_PASSWORD:6',
     'RESEND_API_KEY=RESEND_API_KEY:1'
   ]);
 });
