@@ -149,15 +149,15 @@ canoniques commerce, admin, client, qualite, infrastructure et exploitation.
 Git conserve l'audit et la roadmap retires.
 
 La topologie Firebase Functions Gen1 vers Gen2 est complete sur le sandbox:
-150 exports locaux, 147 Functions cloud, 144 Gen2 `ACTIVE` et trois triggers
+151 exports locaux, 148 Functions cloud, 145 Gen2 `ACTIVE` et trois triggers
 Auth Gen1. L'exercice rollback/reactivation est ferme et la cloture definitive
 observe maintenant la revision finale pendant sept jours selon
 `apphostingaudit/FINALISATION_MIGRATION_GEN2.md`. L'architecture durable est
 dans [FUNCTIONS_RUNTIME_ADR.md](_DOCS/architecture/FUNCTIONS_RUNTIME_ADR.md):
-150 exports locaux, 147 Functions cloud, 144 Gen2 `ACTIVE` et uniquement les
+151 exports locaux, 148 Functions cloud, 145 Gen2 `ACTIVE` et uniquement les
 trois triggers Auth limites par Firebase encore en Gen1. Les quatre owners
 Scheduler commerce sont Gen2 `ENABLED`; les endpoints Stripe test actifs sont
-Gen2. App Hosting sert `build-2026-08-24-002`; `build-2026-08-24-001`
+Gen2. App Hosting sert `build-2026-08-25-002`; `build-2026-08-25-001`
 reste la revision precedente immediate.
 
 Les retraits G12-A ont ete individuels, allowlistes, precedes d'appelants,

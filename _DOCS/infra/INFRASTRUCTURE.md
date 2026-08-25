@@ -200,9 +200,9 @@ exports d'observabilite encore en attente. Les trois seules Gen1 sont `grantAdmi
 `onRegisteredUserCreated` et `onRegisteredUserDeleted`.
 
 Depuis le 2026-08-24, l'observabilite et les rollups analytics sont actifs sur
-le sandbox. La topologie courante vaut 150 exports locaux / 147 Functions cloud
-/ 144 Gen2 / 3 triggers Auth Gen1. App Hosting sert
-`build-2026-08-24-002`, avec `build-2026-08-24-001` comme revision precedente
+le sandbox. La topologie courante vaut 151 exports locaux / 148 Functions cloud
+/ 145 Gen2 / 3 triggers Auth Gen1. App Hosting sert
+`build-2026-08-25-002`, avec `build-2026-08-25-001` comme revision precedente
 immediate. Le bucket prive europeen
 `secondevienextjsssr-analytics-archive-eu` porte les archives pseudonymisees et
 les sauvegardes Firestore, avec acces uniforme et prevention d'acces public.

@@ -1,6 +1,6 @@
 # ADR - Architecture Firebase Functions apres migration Gen2
 
-Derniere mise a jour: 2026-08-24
+Derniere mise a jour: 2026-08-25
 Statut: `ACCEPTE - TOPOLOGIE_COMPLETE - FINALISATION_POST_AUDIT_EN_COURS`
 
 ## Decision
@@ -12,18 +12,18 @@ la cadence de livraison d'un domaine deviennent un probleme concret.
 
 L'etat autoritaire est:
 
-- 150 exports locaux;
-- 147 Functions cloud;
-- 144 Gen2 `ACTIVE`;
+- 151 exports locaux;
+- 148 Functions cloud;
+- 145 Gen2 `ACTIVE`;
 - exactement trois Gen1 Auth conservees:
   `grantAdminOnAuth`, `onRegisteredUserCreated` et
   `onRegisteredUserDeleted`;
 - cinq exports Instagram legacy restent uniquement locaux; deux webhooks v2
   restent uniquement cloud avec leur source et leur entree de deploiement
-  dediees. L'ecart net local/cloud est donc `145 communs + 5 / + 2`; aucun
+  dediees. L'ecart net local/cloud est donc `146 communs + 5 / + 2`; aucun
   deploiement global n'est permis;
-- App Hosting sert `build-2026-08-24-002`; la revision precedente immediate
-  est `build-2026-08-24-001`.
+- App Hosting sert `build-2026-08-25-002`; la revision precedente immediate
+  est `build-2026-08-25-001`.
 
 Les deploiements Functions restent individuels, allowlistes et lies a une
 archive immuable. Production, Stripe live et un selecteur global `functions`
@@ -32,8 +32,8 @@ restent interdits sans decision distincte.
 ## Observation et capacite
 
 La fenetre historique G13 couvre sept jours de metriques et confirme, a sa fin,
-les 134 Gen2 de la migration historique. La topologie courante ajoute dix
-Functions d'observabilite, neuf alertes Monitoring actives et un dashboard. G12-A
+les 134 Gen2 de la migration historique. La topologie courante ajoute onze
+Functions d'observabilite, dix alertes Monitoring actives et un dashboard. G12-A
 s'est toutefois terminee environ douze minutes avant la fin de cette fenetre et
 le tuning est posterieur: cette preuve n'est pas un soak de sept jours de la
 topologie finale. Un soak final reste requis par le plan temporaire

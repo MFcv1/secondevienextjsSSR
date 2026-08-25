@@ -895,13 +895,13 @@ functions/
 
 ## 9. Exports Cloud Functions
 
-Etat courant au 2026-08-24: `functions/index.js` contient 150 exports uniques
-locaux; 147 Functions sont deployees dans le sandbox (3 Gen1, 144 Gen2).
+Etat courant au 2026-08-25: `functions/index.js` contient 151 exports uniques
+locaux; 148 Functions sont deployees dans le sandbox (3 Gen1, 145 Gen2).
 Les trois seules Gen1 sont les triggers Auth
 `grantAdminOnAuth`, `onRegisteredUserCreated` et `onRegisteredUserDeleted`.
 Toutes les autres cibles cloud conservees sont Gen2 `ACTIVE`; les quatre
 owners Scheduler commerce sont `ENABLED` et les endpoints Stripe test pointent
-uniquement vers les owners Gen2. L'ecart exact est 145 noms communs, cinq
+uniquement vers les owners Gen2. L'ecart exact est 146 noms communs, cinq
 exports Instagram legacy uniquement locaux et deux webhooks v2 uniquement
 cloud (`stripeWebhookV2Gen2`, `stripeConnectWebhookV2Gen2`) avec source et
 entree de deploiement dediees. Les cinq legacy Instagram restent explicitement
@@ -921,8 +921,8 @@ max 1 en `getcatalogpublicationstatusgen2-00003-mol`, puis la reactivation max
 sources immuables digestees et sous hold. Le wrapper local refuse toute autre
 revision/generation/digest; le soak final en cours reste dans
 `apphostingaudit/FINALISATION_MIGRATION_GEN2.md`. App Hosting sert
-`build-2026-08-24-002`; la revision precedente immediate est
-`build-2026-08-24-001`. L'ADR canonique est
+`build-2026-08-25-002`; la revision precedente immediate est
+`build-2026-08-25-001`. L'ADR canonique est
 `_DOCS/architecture/FUNCTIONS_RUNTIME_ADR.md`.
 
 Le collecteur read-only `scripts/functions-gen2-final-observe.mjs`, expose par
