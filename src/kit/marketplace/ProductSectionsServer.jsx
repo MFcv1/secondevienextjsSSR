@@ -1015,8 +1015,7 @@ export const NewsletterSectionServer = ({ darkMode = false } = {}) => (
                 <span className="discount-promo-cycle__tail">
                   <span className="discount-promo-cycle__digit discount-promo-cycle__digit--units">
                     <span className="discount-promo-cycle__digit-layer discount-promo-cycle__digit-layer--zero">0</span>
-                    <span className="discount-promo-cycle__digit-layer discount-promo-cycle__digit-layer--five-teen">5</span>
-                    <span className="discount-promo-cycle__digit-layer discount-promo-cycle__digit-layer--five-solo">5</span>
+                    <span className="discount-promo-cycle__digit-layer discount-promo-cycle__digit-layer--five">5</span>
                   </span>
                   <span className="discount-promo-cycle__percent">%</span>
                 </span>
@@ -1024,7 +1023,7 @@ export const NewsletterSectionServer = ({ darkMode = false } = {}) => (
               <span className="discount-promo-cycle__descriptor">
                 <span className="discount-promo-cycle__divider" aria-hidden="true" />
                 <span className="discount-promo-cycle__copy">
-                  <span>De reduction</span>
+                  <span>De réduction</span>
                   <strong>avec ton code promotionnel</strong>
                 </span>
               </span>
@@ -1075,13 +1074,16 @@ export const NewsletterSectionServer = ({ darkMode = false } = {}) => (
           </div>
 
           <div data-nl-game className={`discount-game relative flex min-h-[420px] flex-col items-center justify-center overflow-hidden p-6 sm:p-7 md:p-8 lg:p-9 dark:bg-[#181511] ${darkMode ? 'bg-[#1d1a16]' : 'bg-[#fffbf5]'}`}>
-            <span className="discount-game__glow" aria-hidden="true" />
-
             <p data-nl-game-label className="discount-game__label relative font-sans text-[10px] font-extrabold uppercase tracking-[0.24em]">
-              Choisis une carte
+              <span data-nl-game-label-text className="discount-game__label-text">Choisis une carte</span>
             </p>
 
-            <div data-nl-cards className="discount-game__cards relative mt-7 flex items-start justify-center">
+            <div data-nl-cards className="discount-game__cards relative mt-7 flex items-center justify-center">
+              <span className="discount-game__bloom" aria-hidden="true" />
+              <span className="discount-game__rays" aria-hidden="true" />
+              <span className="discount-game__halo" aria-hidden="true" />
+              <span className="discount-game__halo discount-game__halo--echo" aria-hidden="true" />
+
               {[0, 1, 2].map((cardIndex) => (
                 <button
                   key={cardIndex}
@@ -1090,14 +1092,19 @@ export const NewsletterSectionServer = ({ darkMode = false } = {}) => (
                   className="discount-card"
                   aria-label={`Retourner la carte ${cardIndex + 1}`}
                 >
+                  <span className="discount-card__shadow" aria-hidden="true" />
                   <span className="discount-card__flip">
                     <span className="discount-card__face discount-card__face--back">
+                      <span className="discount-card__grain" aria-hidden="true" />
+                      <span className="discount-card__frame" aria-hidden="true" />
+                      <span className="discount-card__mark" aria-hidden="true" />
                       <span className="discount-card__sheen" aria-hidden="true" />
-                      <Sparkles size={30} strokeWidth={1.1} aria-hidden="true" />
                     </span>
                     <span className="discount-card__face discount-card__face--front">
+                      <span className="discount-card__frame" aria-hidden="true" />
                       <span className="discount-card__value" data-nl-card-value>—</span>
                       <span className="discount-card__caption">de reduction</span>
+                      <span className="discount-card__glare" aria-hidden="true" />
                     </span>
                   </span>
                 </button>
@@ -1129,6 +1136,7 @@ export const NewsletterSectionServer = ({ darkMode = false } = {}) => (
             </ul>
 
             <div data-nl-won hidden className="discount-game__won relative mt-8 text-center">
+              <span className="discount-game__won-rule" aria-hidden="true" />
               <p data-nl-won-value className="discount-game__won-value font-serif">
                 0<span className="discount-game__won-percent">%</span>
               </p>

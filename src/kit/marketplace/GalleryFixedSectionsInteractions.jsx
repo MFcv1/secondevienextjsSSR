@@ -1237,6 +1237,21 @@ const setupNewsletterGame = () => {
       }, delay));
     };
 
+    const labelText = gameLabel?.querySelector('[data-nl-game-label-text]') || gameLabel;
+
+    const setLabel = (text) => {
+      if (!labelText || labelText.textContent === text) return;
+      if (reduceMotion || !gameLabel) {
+        labelText.textContent = text;
+        return;
+      }
+      gameLabel.dataset.nlLabelSwap = 'out';
+      later(() => {
+        labelText.textContent = text;
+        gameLabel.dataset.nlLabelSwap = 'in';
+      }, 240);
+    };
+
     const showError = (message) => {
       if (!errorMessage) return;
       errorMessage.textContent = message;
@@ -1261,32 +1276,82 @@ const setupNewsletterGame = () => {
       game.dataset.nlDealt = 'true';
     }
 
+    // Les etincelles naissent sur le contour de la carte, pas en son centre :
+    // elles se lisent comme une poussiere soulevee par la carte qui se pose.
     const burst = (card) => {
       if (reduceMotion || !cardsWrap) return;
       const cardBounds = card.getBoundingClientRect();
       const hostBounds = cardsWrap.getBoundingClientRect();
       const originX = cardBounds.left - hostBounds.left + cardBounds.width / 2;
       const originY = cardBounds.top - hostBounds.top + cardBounds.height / 2;
+      const radius = Math.min(cardBounds.width, cardBounds.height) * 0.46;
+      const count = 22;
 
-      for (let index = 0; index < 18; index += 1) {
+      for (let index = 0; index < count; index += 1) {
+        const angle = (Math.PI * 2 * index) / count + Math.random() * 0.26;
+        const size = 2 + Math.random() * 2.6;
         const spark = document.createElement('span');
         spark.className = 'discount-spark';
-        spark.style.left = `${originX}px`;
-        spark.style.top = `${originY}px`;
+        spark.style.width = `${size.toFixed(1)}px`;
+        spark.style.height = `${size.toFixed(1)}px`;
+        spark.style.left = `${originX + Math.cos(angle) * radius}px`;
+        spark.style.top = `${originY + Math.sin(angle) * radius * 1.18}px`;
         cardsWrap.appendChild(spark);
 
-        const angle = (Math.PI * 2 * index) / 18 + Math.random() * 0.5;
-        const distance = 52 + Math.random() * 46;
+        const distance = radius * (0.5 + Math.random() * 0.75);
+        const midX = Math.cos(angle) * distance * 0.42;
+        const midY = Math.sin(angle) * distance * 0.42;
+        const endX = Math.cos(angle) * distance;
+        const endY = Math.sin(angle) * distance + 16;
         const animation = spark.animate(
           [
-            { transform: 'translate(-50%, -50%) scale(0.3)', opacity: 1 },
-            { transform: `translate(${Math.cos(angle) * distance}px, ${Math.sin(angle) * distance}px) scale(1)`, opacity: 0 },
+            { transform: 'translate(-50%, -50%) scale(0.2)', opacity: 0 },
+            { transform: `translate(calc(-50% + ${midX.toFixed(1)}px), calc(-50% + ${midY.toFixed(1)}px)) scale(1)`, opacity: 0.9, offset: 0.26 },
+            { transform: `translate(calc(-50% + ${endX.toFixed(1)}px), calc(-50% + ${endY.toFixed(1)}px)) scale(0.16)`, opacity: 0 },
           ],
-          { duration: 700 + Math.random() * 300, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
+          { duration: 900 + Math.random() * 520, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
         );
         animation.finished.catch(() => {}).finally(() => spark.remove());
       }
     };
+
+    // Inclinaison qui suit le pointeur : la carte reste un objet physique sous
+    // la souris. La duree de transition est raccourcie par le :hover en CSS,
+    // le suivi est donc immediat et le retour au repos reste amorti.
+    const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+    if (finePointer && !reduceMotion) {
+      const maxTilt = 7;
+      let tiltFrame = 0;
+
+      cards.forEach((card) => {
+        card.addEventListener('pointermove', (event) => {
+          if (game.dataset.nlGameState !== 'idle') return;
+          if (tiltFrame) window.cancelAnimationFrame(tiltFrame);
+          tiltFrame = window.requestAnimationFrame(() => {
+            tiltFrame = 0;
+            const bounds = card.getBoundingClientRect();
+            const ratioX = (event.clientX - bounds.left) / bounds.width - 0.5;
+            const ratioY = (event.clientY - bounds.top) / bounds.height - 0.5;
+            card.style.setProperty('--tilt-y', `${(ratioX * maxTilt).toFixed(2)}deg`);
+            card.style.setProperty('--tilt-x', `${(-ratioY * maxTilt).toFixed(2)}deg`);
+          });
+        }, eventOptions);
+
+        card.addEventListener('pointerleave', () => {
+          card.style.removeProperty('--tilt-x');
+          card.style.removeProperty('--tilt-y');
+        }, eventOptions);
+      });
+
+      cleanups.push(() => {
+        if (tiltFrame) window.cancelAnimationFrame(tiltFrame);
+        cards.forEach((card) => {
+          card.style.removeProperty('--tilt-x');
+          card.style.removeProperty('--tilt-y');
+        });
+      });
+    }
 
     const countUp = (target) => {
       if (!wonValue) return;
@@ -1308,6 +1373,14 @@ const setupNewsletterGame = () => {
       window.requestAnimationFrame(step);
     };
 
+    // Temps 1 : la carte a fini de se retourner. Le halo et l'onde partent avec
+    // la poussiere d'etincelles, avant que le panneau de gain ne monte.
+    const landCard = (card) => {
+      game.dataset.nlGameState = 'won';
+      burst(card);
+    };
+
+    // Temps 2 : le gain se lit.
     const revealPrize = () => {
       game.dataset.nlGameState = 'won';
       if (won) won.hidden = false;
@@ -1325,13 +1398,31 @@ const setupNewsletterGame = () => {
       if (fineText) fineText.textContent = `Ton code de ${prize}% et nos nouveautes, dans le meme e-mail.`;
     };
 
+    // Duree du glissement de la carte vers l'axe du panneau, calee sur la
+    // transition CSS. Tant qu'elle n'est pas ecoulee, la carte n'entame pas sa
+    // rotation : les deux mouvements s'enchainent au lieu de se superposer.
+    const GLIDE_MS = 720;
+    // Instant ou la face devient lisible dans la rotation de 980 ms.
+    const FLIP_LAND_MS = 800;
+
     cards.forEach((card) => {
       card.addEventListener('click', async () => {
         if (game.dataset.nlGameState !== 'idle') return;
         game.dataset.nlGameState = 'revealing';
         clearError();
         cards.forEach((other) => { other.disabled = true; });
-        if (gameLabel) gameLabel.textContent = 'Tirage en cours...';
+
+        // La mise en scene demarre a l'instant du clic et ne depend pas du
+        // reseau : la carte s'avance, les autres se retirent, et la carte
+        // avancee respire tant que le tirage n'est pas revenu. Attendre la
+        // reponse avant de bouger laissait l'interface figee sur un libelle.
+        card.style.removeProperty('--tilt-x');
+        card.style.removeProperty('--tilt-y');
+        cards.forEach((other) => {
+          other.dataset.nlCardState = other === card ? 'picked' : 'faded';
+        });
+        setLabel('Ta carte s’avance');
+        const startedAt = performance.now();
 
         try {
           const api = await import('./newsletterRewardClient');
@@ -1345,21 +1436,29 @@ const setupNewsletterGame = () => {
           cards.forEach((other) => {
             const value = other.querySelector('[data-nl-card-value]');
             if (value) value.textContent = String(prize);
-            other.dataset.nlCardState = other === card ? 'picked' : 'faded';
           });
-          if (gameLabel) gameLabel.textContent = 'Ta carte révèle';
+
+          // Le reste de la sequence repart de la fin du glissement, quel que
+          // soit le temps qu'a pris le tirage.
+          const settle = reduceMotion
+            ? 0
+            : Math.max(0, GLIDE_MS - (performance.now() - startedAt));
           later(() => {
             card.dataset.nlCardFlipped = 'true';
-            burst(card);
-          }, reduceMotion ? 0 : 300);
-          later(revealPrize, reduceMotion ? 0 : 1050);
+            setLabel('Ta carte se retourne');
+          }, settle);
+          later(() => landCard(card), reduceMotion ? 0 : settle + FLIP_LAND_MS);
+          later(revealPrize, reduceMotion ? 0 : settle + FLIP_LAND_MS + 340);
         } catch (error) {
           console.error('Newsletter draw failed:', error);
           game.dataset.nlGameState = 'idle';
           prize = null;
           playId = null;
-          cards.forEach((other) => { other.disabled = false; });
-          if (gameLabel) gameLabel.textContent = 'Choisis une carte';
+          cards.forEach((other) => {
+            other.disabled = false;
+            delete other.dataset.nlCardState;
+          });
+          setLabel('Choisis une carte');
           showError('Le tirage n’a pas abouti. Réessaie dans quelques instants.');
         }
       }, eventOptions);
@@ -1431,7 +1530,8 @@ const setupNewsletterGame = () => {
       if (sent) sent.hidden = true;
       clearError();
       if (submit) submit.disabled = true;
-      if (gameLabel) gameLabel.textContent = 'Choisis une carte';
+      if (gameLabel) delete gameLabel.dataset.nlLabelSwap;
+      if (labelText) labelText.textContent = 'Choisis une carte';
     });
   });
 

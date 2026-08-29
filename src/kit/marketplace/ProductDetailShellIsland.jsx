@@ -37,11 +37,11 @@ const getProductImageFitMode = (ratio) => (
 );
 
 const getDesktopDetailImageStyle = () => ({
-  width: 'min(min(calc((100vw - var(--product-detail-sidebar-width, 500px)) * 0.74), 920px), calc(min(74vh, 760px) * 0.75))',
+  width: 'min(min(calc((100vw - var(--product-detail-sidebar-width, 500px)) * 0.74), 920px), calc(min(58vh, 760px) * 0.75))',
   height: 'auto',
   aspectRatio: String(DEFAULT_PRODUCT_IMAGE_RATIO),
   maxWidth: 'min(calc((100vw - var(--product-detail-sidebar-width, 500px)) * 0.74), 920px)',
-  maxHeight: 'min(74vh, 760px)',
+  maxHeight: 'min(58vh, 760px)',
   backgroundColor: 'transparent',
 });
 
@@ -1285,7 +1285,7 @@ export default function ProductDetailShellIsland({
         </div>
 
         <div
-          className="hidden lg:flex flex-1 h-[100vh] grid grid-rows-[15vh_72vh_13vh] relative overflow-hidden bg-black/5"
+          className="hidden lg:grid flex-1 h-[100vh] grid-rows-[15vh_72vh_13vh] relative overflow-hidden bg-black/5"
           onWheel={handleDesktopImageWheel}
         >
           <div className="w-full h-full pointer-events-none" />
