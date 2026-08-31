@@ -1201,6 +1201,8 @@ const setupNewsletterGame = () => {
 
     const cards = Array.from(game.querySelectorAll('[data-nl-card]'));
     const cardsWrap = game.querySelector('[data-nl-cards]');
+    const fxCanvas = game.querySelector('[data-nl-fx]');
+    const fxBack = game.querySelector('[data-nl-fx-back]');
     const won = game.querySelector('[data-nl-won]');
     const wonValue = game.querySelector('[data-nl-won-value]');
     const form = section.querySelector('[data-nl-form]');
@@ -1222,19 +1224,39 @@ const setupNewsletterGame = () => {
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const eventController = new AbortController();
     const eventOptions = { signal: eventController.signal };
-    const timers = [];
+    const timers = new Set();
     let disposed = false;
     let prize = null;
     let playId = null;
     let isSubmitting = false;
 
-    game.dataset.nlGameState = 'idle';
     game.dataset.nlDealt = 'false';
+    game.dataset.nlAct = 'idle';
 
+    /* --- Chronologie ------------------------------------------------------
+       La sequence est une suite de rendez-vous annulables : l'echec du tirage
+       doit pouvoir effacer d'un coup toutes les etapes en attente, ce qu'une
+       liste de setTimeout jamais nettoyee ne permettait pas. */
     const later = (callback, delay) => {
-      timers.push(window.setTimeout(() => {
+      const id = window.setTimeout(() => {
+        timers.delete(id);
         if (!disposed) callback();
-      }, delay));
+      }, Math.max(0, delay));
+      timers.add(id);
+      return id;
+    };
+
+    const cancelPending = () => {
+      timers.forEach((id) => window.clearTimeout(id));
+      timers.clear();
+    };
+
+    // Sous prefers-reduced-motion, tous les rendez-vous tombent a zero : la
+    // mecanique reste jouable, la mise en scene disparait.
+    const beat = (ms) => (reduceMotion ? 0 : ms);
+
+    const setAct = (act) => {
+      game.dataset.nlAct = act;
     };
 
     const labelText = gameLabel?.querySelector('[data-nl-game-label-text]') || gameLabel;
@@ -1276,90 +1298,450 @@ const setupNewsletterGame = () => {
       game.dataset.nlDealt = 'true';
     }
 
-    // Les etincelles naissent sur le contour de la carte, pas en son centre :
-    // elles se lisent comme une poussiere soulevee par la carte qui se pose.
-    const burst = (card) => {
-      if (reduceMotion || !cardsWrap) return;
-      const cardBounds = card.getBoundingClientRect();
-      const hostBounds = cardsWrap.getBoundingClientRect();
-      const originX = cardBounds.left - hostBounds.left + cardBounds.width / 2;
-      const originY = cardBounds.top - hostBounds.top + cardBounds.height / 2;
-      const radius = Math.min(cardBounds.width, cardBounds.height) * 0.46;
-      const count = 22;
+    /* --- Mise a l'echelle de la scene -------------------------------------
+       La carte choisie doit occuper le panneau, dont la hauteur reelle depend
+       de la colonne formulaire d'a cote : elle ne peut donc pas etre ecrite en
+       dur dans le CSS. On mesure la place disponible, on en deduit l'echelle
+       et le recentrage vertical, et le CSS anime le reste.
 
-      for (let index = 0; index < count; index += 1) {
-        const angle = (Math.PI * 2 * index) / count + Math.random() * 0.26;
-        const size = 2 + Math.random() * 2.6;
-        const spark = document.createElement('span');
-        spark.className = 'discount-spark';
-        spark.style.width = `${size.toFixed(1)}px`;
-        spark.style.height = `${size.toFixed(1)}px`;
-        spark.style.left = `${originX + Math.cos(angle) * radius}px`;
-        spark.style.top = `${originY + Math.sin(angle) * radius * 1.18}px`;
-        cardsWrap.appendChild(spark);
+       Les reserves haute et basse gardent le libelle et la bande d'appel hors
+       de la trajectoire de la carte. */
+    const HERO_TOP_RESERVE = 46;
+    const HERO_BOTTOM_RESERVE = 84;
+    const HERO_MIN_SCALE = 1.1;
+    const HERO_MAX_SCALE = 1.55;
+    // La carte n'occupe pas toute la bande disponible : elle domine la scene
+    // sans l'ecraser.
+    const HERO_FILL = 0.8;
 
-        const distance = radius * (0.5 + Math.random() * 0.75);
-        const midX = Math.cos(angle) * distance * 0.42;
-        const midY = Math.sin(angle) * distance * 0.42;
-        const endX = Math.cos(angle) * distance;
-        const endY = Math.sin(angle) * distance + 16;
-        const animation = spark.animate(
-          [
-            { transform: 'translate(-50%, -50%) scale(0.2)', opacity: 0 },
-            { transform: `translate(calc(-50% + ${midX.toFixed(1)}px), calc(-50% + ${midY.toFixed(1)}px)) scale(1)`, opacity: 0.9, offset: 0.26 },
-            { transform: `translate(calc(-50% + ${endX.toFixed(1)}px), calc(-50% + ${endY.toFixed(1)}px)) scale(0.16)`, opacity: 0 },
-          ],
-          { duration: 900 + Math.random() * 520, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
-        );
-        animation.finished.catch(() => {}).finally(() => spark.remove());
-      }
+    // Geometrie calculee, jamais mesuree sur la carte elle-meme : une fois
+    // passee en taille reelle, ses dimensions ne sont plus celles du repos et
+    // la mesure se mordrait la queue au redimensionnement.
+    const heroGeometry = () => {
+      // Sur une carte encore au repos, jamais sur celle deja passee en taille
+      // reelle : sa largeur n'est plus celle du repos et le calcul se
+      // mordrait la queue. On lit des valeurs de mise en page plutot que
+      // --card-w : une propriete personnalisee non enregistree renvoie sa
+      // declaration litterale (`clamp(...)`), pas la longueur resolue.
+      const reference = cards.find((card) => card !== crisped) || cards[0];
+      const baseWidth = reference.offsetWidth;
+      const baseHeight = reference.offsetHeight;
+      if (!baseWidth || !baseHeight) return null;
+
+      const face = reference.querySelector('.discount-card__face');
+      const baseRadius = face ? parseFloat(window.getComputedStyle(face).borderTopLeftRadius) || 0 : 0;
+
+      const styles = window.getComputedStyle(game);
+      const padTop = parseFloat(styles.paddingTop) || 0;
+      const padBottom = parseFloat(styles.paddingBottom) || 0;
+      const padLeft = parseFloat(styles.paddingLeft) || 0;
+      const padRight = parseFloat(styles.paddingRight) || 0;
+
+      const innerHeight = game.clientHeight - padTop - padBottom;
+      const innerWidth = game.clientWidth - padLeft - padRight;
+      const band = Math.max(baseHeight, innerHeight - HERO_TOP_RESERVE - HERO_BOTTOM_RESERVE);
+
+      const scale = Math.max(HERO_MIN_SCALE, Math.min(
+        (band * HERO_FILL) / baseHeight,
+        (innerWidth - 32) / baseWidth,
+        HERO_MAX_SCALE,
+      ));
+
+      const width = baseWidth * scale;
+      const height = baseHeight * scale;
+      const centerInGame = padTop + HERO_TOP_RESERVE + band / 2;
+      const wrapTop = cardsWrap?.offsetTop || 0;
+      const wrapHeight = cardsWrap?.offsetHeight || baseHeight;
+      const wrapWidth = cardsWrap?.clientWidth || innerWidth;
+
+      return {
+        scale,
+        width,
+        height,
+        radius: baseRadius * scale,
+        left: wrapWidth / 2 - width / 2,
+        top: centerInGame - wrapTop - height / 2,
+        // Le deplacement precede la mise a l'echelle dans la chaine transform :
+        // il se raisonne donc en pixels non mis a l'echelle.
+        lift: centerInGame - (wrapTop + wrapHeight / 2),
+      };
     };
 
-    // Inclinaison qui suit le pointeur : la carte reste un objet physique sous
-    // la souris. La duree de transition est raccourcie par le :hover en CSS,
-    // le suivi est donc immediat et le retour au repos reste amorti.
-    const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    const measureHero = () => {
+      const geo = heroGeometry();
+      if (!geo) return;
+      game.style.setProperty('--hero-scale', geo.scale.toFixed(3));
+      game.style.setProperty('--hero-lift', `${geo.lift.toFixed(1)}px`);
+    };
 
-    if (finePointer && !reduceMotion) {
-      const maxTilt = 7;
-      let tiltFrame = 0;
+    let crisped = null;
 
-      cards.forEach((card) => {
-        card.addEventListener('pointermove', (event) => {
-          if (game.dataset.nlGameState !== 'idle') return;
-          if (tiltFrame) window.cancelAnimationFrame(tiltFrame);
-          tiltFrame = window.requestAnimationFrame(() => {
-            tiltFrame = 0;
-            const bounds = card.getBoundingClientRect();
-            const ratioX = (event.clientX - bounds.left) / bounds.width - 0.5;
-            const ratioY = (event.clientY - bounds.top) / bounds.height - 0.5;
-            card.style.setProperty('--tilt-y', `${(ratioX * maxTilt).toFixed(2)}deg`);
-            card.style.setProperty('--tilt-x', `${(-ratioY * maxTilt).toFixed(2)}deg`);
-          });
-        }, eventOptions);
+    // Pose la geometrie definitive de la carte en scene : sortie du flux,
+    // dimensions et rayon reels, chaine de transform neutralisee.
+    const applyHeroLayout = (card) => {
+      const geo = heroGeometry();
+      if (!geo || !cardsWrap) return false;
+      crisped = card;
+      card.style.position = 'absolute';
+      card.style.left = `${geo.left.toFixed(1)}px`;
+      card.style.top = `${geo.top.toFixed(1)}px`;
+      card.style.setProperty('--card-w', `${geo.width.toFixed(1)}px`);
+      card.style.setProperty('--card-radius', `${geo.radius.toFixed(1)}px`);
+      card.style.setProperty('--scale', '1');
+      card.style.setProperty('--slide', '0px');
+      card.style.setProperty('--rise', '0px');
+      card.style.setProperty('--lift', '0px');
+      return true;
+    };
 
-        card.addEventListener('pointerleave', () => {
-          card.style.removeProperty('--tilt-x');
-          card.style.removeProperty('--tilt-y');
-        }, eventOptions);
+    /* --- Agrandissement en pleine resolution -------------------------------
+       Agrandir par `transform: scale()` etire un rendu calcule a la petite
+       taille : le texte n'est net qu'a l'arrivee, quand le navigateur le
+       recalcule. On inverse donc la manoeuvre.
+
+       La carte recoit sa taille DEFINITIVE des la premiere image — son texte
+       est donc mis en page en pleine resolution pendant tout le trajet — puis
+       un transform inverse annule visuellement ce saut, et on le relache. La
+       carte n'est plus agrandie : elle part reduite et revient a l'echelle 1.
+       Un rendu qu'on retrecit reste net, celui qu'on etire ne l'est jamais. */
+    const growHero = (card) => {
+      if (!card || crisped === card) return;
+
+      const before = card.getBoundingClientRect();
+
+      // Les deux cartes ecartees sont epinglees a leur place courante avant
+      // que la choisie ne quitte le flux : sans cela le retrait de celle-ci
+      // recentrerait les autres, et ce recalage se verrait puisqu'elles sont
+      // encore a l'ecran a cet instant. Les positions sont toutes lues avant
+      // la moindre ecriture, sinon la premiere fausserait les suivantes.
+      const others = cards.filter((other) => other !== card);
+      const spots = others.map((other) => ({ left: other.offsetLeft, top: other.offsetTop }));
+
+      card.style.transition = 'none';
+      others.forEach((other, index) => {
+        other.style.transition = 'none';
+        other.style.left = `${spots[index].left}px`;
+        other.style.top = `${spots[index].top}px`;
+        other.style.position = 'absolute';
       });
 
-      cleanups.push(() => {
-        if (tiltFrame) window.cancelAnimationFrame(tiltFrame);
-        cards.forEach((card) => {
-          card.style.removeProperty('--tilt-x');
-          card.style.removeProperty('--tilt-y');
+      if (!applyHeroLayout(card)) {
+        card.style.removeProperty('transition');
+        others.forEach((other) => other.style.removeProperty('transition'));
+        return;
+      }
+
+      const after = card.getBoundingClientRect();
+      if (before.width && after.width) {
+        const ratio = before.width / after.width;
+        const dx = (before.left + before.width / 2) - (after.left + after.width / 2);
+        const dy = (before.top + before.height / 2) - (after.top + after.height / 2);
+        card.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) scale(${ratio.toFixed(4)})`;
+      }
+
+      // Fige cet etat de depart avant de rendre la main aux transitions, sans
+      // quoi les deux mutations seraient fusionnees et rien ne s'animerait.
+      void card.offsetWidth;
+      card.style.removeProperty('transition');
+      others.forEach((other) => other.style.removeProperty('transition'));
+      void card.offsetWidth;
+      // Le retrait du transform inverse lance l'agrandissement, desormais un
+      // simple retour a l'echelle 1.
+      card.style.removeProperty('transform');
+    };
+
+    const crispenHero = (card, force = false) => {
+      if (!card || (!force && crisped === card)) return;
+      card.style.transition = 'none';
+      applyHeroLayout(card);
+      void card.offsetWidth;
+      card.style.removeProperty('transition');
+    };
+
+    const releaseHero = (card) => {
+      if (crisped === card) crisped = null;
+      ['transition', 'position', 'left', 'top', 'transition-delay'].forEach((name) => {
+        card.style.removeProperty(name);
+      });
+      ['--card-w', '--card-radius', '--scale', '--slide', '--rise', '--lift'].forEach((name) => {
+        card.style.removeProperty(name);
+      });
+    };
+
+    // La scene se recalcule au redimensionnement : si la fenetre change pendant
+    // que la carte est en scene, elle se recadre au lieu de rester sur
+    // l'ancienne hauteur.
+    let measureFrame = 0;
+    window.addEventListener('resize', () => {
+      if (game.dataset.nlAct === 'idle') return;
+      if (measureFrame) window.cancelAnimationFrame(measureFrame);
+      measureFrame = window.requestAnimationFrame(() => {
+        measureFrame = 0;
+        if (crisped) crispenHero(crisped, true);
+        else measureHero();
+      });
+    }, eventOptions);
+
+    /* --- Confettis et poussiere d'or --------------------------------------
+       Deux canvas, un par plan de profondeur. Pres de 200 particules en DOM
+       anime ne tiennent pas les 60 fps ; la meme quantite dessinee en deux
+       passes rAF ne coute presque rien. Les canvas sont dimensionnes au
+       dernier moment, sur la geometrie reelle de la carte en scene. */
+    const CONFETTI_COUNT = 124;
+    const DUST_COUNT = 68;
+
+    /* --- Modele de lancement, repris de canvas-confetti --------------------
+       Sa signature ne tient ni a ses formes ni a ses couleurs, qui restent
+       ici celles du module, mais a deux choix de trajectoire :
+
+       - la vitesse perd 10 % a chaque image (decroissance exponentielle) ;
+       - la gravite est un deplacement CONSTANT par image, jamais une
+         acceleration.
+
+       On obtient un jet vif, un freinage net, puis une descente reguliere,
+       au lieu d'une parabole qui accelere sans fin.
+
+       Puissance de lancement reprise telle quelle (startVelocity 36, gravite
+       0.8 qui vaut 2.4 px par image dans la bibliotheque). L'avoir reduite
+       pour tenir dans un panneau plus etroit qu'une fenetre ne faisait pas
+       tenir la gerbe : elle plafonnait a 111 px d'apogee mediane, soit un jet
+       timide. A pleine puissance la mediane monte a ~204 px pour 266 px
+       disponibles au-dessus de la carte, et les plus rapides debordent par le
+       haut du panneau — c'est ce depassement qui donne l'impression de force.
+       Le cone reste plus large que les 70 degres de reference pour que les
+       morceaux couvrent aussi les cotes, sur le fond clair. */
+    const CONFETTI_TICKS = 240;
+    const CONFETTI_DECAY = 0.9;
+    const CONFETTI_VELOCITY = 36;
+    const CONFETTI_FALL = 2.4;
+    const CONFETTI_SPREAD = (90 * Math.PI) / 180;
+
+    let fxFrame = 0;
+
+    const fxLayers = () => [fxBack, fxCanvas].filter(Boolean);
+
+    const stopFx = () => {
+      if (fxFrame) window.cancelAnimationFrame(fxFrame);
+      fxFrame = 0;
+      delete game.dataset.nlFx;
+      fxLayers().forEach((canvas) => {
+        const context = canvas.getContext('2d');
+        if (context) context.clearRect(0, 0, canvas.width, canvas.height);
+      });
+    };
+
+    const readPalette = () => {
+      const styles = window.getComputedStyle(section);
+      const pick = (name, fallback) => styles.getPropertyValue(name).trim() || fallback;
+      return [
+        pick('--nl-card-prize-hi', '#ac774e'),
+        pick('--nl-bronze', '#9b734a'),
+        pick('--nl-card-paper-hi', '#fffcf6'),
+        pick('--nl-card-prize-lo', '#67401f'),
+        pick('--nl-accent', '#8b5c42'),
+      ];
+    };
+
+    /* `dustLead` est le retard de la poussiere, en images, sur l'eclat. Il est
+       passe par l'appelant plutot que fige ici : la gerbe part la premiere,
+       le grain dore se leve dans son sillage, et les deux instants se reglent
+       au meme endroit dans la chronologie. */
+    const celebrate = (card, dustLead = 0) => {
+      if (reduceMotion || !fxCanvas) return;
+      const context = fxCanvas.getContext('2d');
+      const backContext = fxBack?.getContext('2d') || null;
+      if (!context) return;
+
+      const ratio = Math.min(window.devicePixelRatio || 1, 2);
+      const stage = game.getBoundingClientRect();
+      const target = card.getBoundingClientRect();
+      const width = stage.width;
+      const height = stage.height;
+      if (!width || !height) return;
+
+      fxLayers().forEach((canvas) => {
+        canvas.width = Math.round(width * ratio);
+        canvas.height = Math.round(height * ratio);
+        canvas.getContext('2d')?.setTransform(ratio, 0, 0, ratio, 0, 0);
+      });
+
+      const originX = target.left - stage.left + target.width / 2;
+      const originY = target.top - stage.top + target.height / 2;
+      /* Les confettis partent du BAS de la carte, la poussiere de son centre.
+         Emise depuis le centre, la gerbe ne disposait que de la moitie de la
+         hauteur utile : 53 morceaux sur 124 sortaient par le haut du cadre au
+         lieu de se deployer, ce qui la tassait. Depuis le bas ils ne sont plus
+         que 4, et la gerbe s'epanouit en passant devant la carte. */
+      const burstY = target.bottom - stage.top;
+      const spread = target.width;
+      const palette = readPalette();
+      const confetti = [];
+      const dust = [];
+
+      // `depth` va de 0 (loin, derriere la carte) a 1 (pres, devant). Il pilote
+      // ensemble la taille, la vitesse et l'opacite : c'est la correlation des
+      // trois qui fait lire la profondeur, pas chacune prise isolement.
+      const layerOf = (depth) => (depth < 0.5 && backContext ? backContext : context);
+
+      for (let index = 0; index < CONFETTI_COUNT; index += 1) {
+        const depth = Math.random();
+        // Cone dirige vers le haut : un jet, pas une sphere.
+        const angle = -Math.PI / 2 + (CONFETTI_SPREAD * 0.5 - Math.random() * CONFETTI_SPREAD);
+        // Entre la moitie et une fois et demie la vitesse nominale : c'est
+        // cet ecart qui etage la gerbe au lieu d'en faire un front unique.
+        const velocity = (CONFETTI_VELOCITY * 0.5 + Math.random() * CONFETTI_VELOCITY)
+          * (0.72 + depth * 0.5);
+        // Un tiers de rubans etroits parmi les rectangles : deux formes qui
+        // tombent differemment valent mieux qu'une seule repetee.
+        const ribbon = Math.random() < 0.32;
+        const size = 0.66 + depth * 0.6;
+        confetti.push({
+          depth,
+          // Emission resserree sur le bord bas de la carte : la dispersion
+          // vient de la gerbe, pas d'un semis initial deja etale.
+          x: originX + (Math.random() - 0.5) * spread * 0.5,
+          y: burstY + (Math.random() - 0.5) * spread * 0.12,
+          angle,
+          velocity,
+          fall: CONFETTI_FALL * (0.7 + depth * 0.6),
+          w: (ribbon ? 2.2 + Math.random() * 1.6 : 3.2 + Math.random() * 4.4) * size,
+          h: (ribbon ? 9 + Math.random() * 9 : 5.5 + Math.random() * 7) * size,
+          tilt: (0.25 + Math.random() * 0.5) * Math.PI,
+          // Oscillation de la face : le morceau se presente tantot de face
+          // tantot sur la tranche, ce qui le fait battre comme du papier.
+          wobble: Math.random() * 10,
+          wobbleSpeed: Math.min(0.11, Math.random() * 0.1 + 0.05),
+          alpha: 0.42 + depth * 0.58,
+          color: palette[index % palette.length],
+          life: 0,
+          // Eclosion etalee sur quelques images : une floraison, pas un pop.
+          delay: Math.random() * 10,
+          span: CONFETTI_TICKS,
         });
-      });
-    }
+      }
 
-    const countUp = (target) => {
-      if (!wonValue) return;
-      const render = (value) => {
-        wonValue.innerHTML = `${value}<span class="discount-game__won-percent">%</span>`;
+      // La poussiere se leve dans le sillage de la gerbe et monte lentement :
+      // c'est elle qui fait durer la celebration une fois les confettis
+      // retombes. Emission etalee sur pres de deux secondes pour que le flux
+      // se renouvelle au lieu de partir d'un seul bloc.
+      for (let index = 0; index < DUST_COUNT; index += 1) {
+        const depth = Math.random();
+        // Repartie de part et d'autre plutot qu'autour du centre : au-dessus
+        // de la carte le grain dore se perdait sur le brun, sur les cotes il
+        // se detache du fond clair.
+        const side = Math.random() < 0.5 ? -1 : 1;
+        const lateral = (0.42 + Math.random() * 0.95) * spread;
+        dust.push({
+          depth,
+          x: originX + side * lateral,
+          y: originY + (Math.random() - 0.15) * spread * 1.05,
+          vy: -(0.22 + Math.random() * 0.5) * (0.55 + depth * 0.9),
+          drift: (Math.random() - 0.5) * 0.42 * (0.5 + depth),
+          phase: Math.random() * Math.PI * 2,
+          radius: (0.7 + Math.random() * 1.7) * (0.55 + depth * 0.85),
+          alpha: 0.3 + depth * 0.62,
+          delay: dustLead + Math.random() * 110,
+          life: 0,
+          span: 270 + Math.random() * 140,
+        });
+      }
+
+      game.dataset.nlFx = 'on';
+      let previous = performance.now();
+
+      const draw = (now) => {
+        if (disposed) {
+          stopFx();
+          return;
+        }
+
+        // Pas normalise sur une image a 60 fps : la chute garde la meme
+        // vitesse sur un ecran 120 Hz comme apres une image sautee.
+        const step = Math.min(2.4, (now - previous) / 16.667);
+        previous = now;
+
+        const contexts = backContext ? [context, backContext] : [context];
+        contexts.forEach((target2d) => {
+          target2d.clearRect(0, 0, width, height);
+          target2d.globalCompositeOperation = 'lighter';
+        });
+
+        let alive = 0;
+
+        dust.forEach((particle) => {
+          particle.life += step;
+          if (particle.life < particle.delay) {
+            alive += 1;
+            return;
+          }
+          const age = (particle.life - particle.delay) / particle.span;
+          if (age >= 1) return;
+          alive += 1;
+          particle.y += particle.vy * step;
+          particle.phase += 0.05 * step;
+          particle.x += (particle.drift + Math.sin(particle.phase) * 0.4) * step;
+          const layer = layerOf(particle.depth);
+          layer.globalAlpha = Math.sin(age * Math.PI) * particle.alpha;
+          layer.fillStyle = palette[0];
+          layer.beginPath();
+          layer.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+          layer.fill();
+        });
+
+        contexts.forEach((target2d) => {
+          target2d.globalCompositeOperation = 'source-over';
+        });
+
+        confetti.forEach((piece) => {
+          piece.life += step;
+          if (piece.life < piece.delay) {
+            alive += 1;
+            return;
+          }
+          const age = (piece.life - piece.delay) / piece.span;
+          if (age >= 1 || piece.y > height + 60) return;
+          alive += 1;
+          // Deplacement puis freinage, dans cet ordre : la chute est un
+          // decalage constant qui s'ajoute a l'elan, et l'elan seul s'eteint.
+          piece.x += Math.cos(piece.angle) * piece.velocity * step;
+          piece.y += (Math.sin(piece.angle) * piece.velocity + piece.fall) * step;
+          piece.velocity *= CONFETTI_DECAY ** step;
+          piece.wobble += piece.wobbleSpeed * step;
+          piece.tilt += 0.1 * step;
+          const layer = layerOf(piece.depth);
+          // Fondu lineaire sur toute la vie : le morceau s'eteint en tombant
+          // au lieu de disparaitre d'un coup en fin de course.
+          layer.globalAlpha = (1 - age) * piece.alpha;
+          layer.save();
+          layer.translate(piece.x, piece.y);
+          layer.rotate(piece.tilt);
+          // La largeur suit l'oscillation : le rectangle se lit alors comme un
+          // morceau de papier qui tourne sur lui-meme.
+          layer.scale(Math.max(0.08, Math.abs(Math.cos(piece.wobble))), 1);
+          layer.fillStyle = piece.color;
+          layer.fillRect(-piece.w / 2, -piece.h / 2, piece.w, piece.h);
+          layer.restore();
+        });
+
+        contexts.forEach((target2d) => {
+          target2d.globalAlpha = 1;
+        });
+
+        if (alive > 0) {
+          fxFrame = window.requestAnimationFrame(draw);
+          return;
+        }
+        stopFx();
       };
+
+      fxFrame = window.requestAnimationFrame(draw);
+    };
+
+    // Le chiffre monte sur la face de la carte, devenue l'affichage du gain.
+    const countUp = (target, node) => {
+      if (!node) return;
       if (reduceMotion) {
-        render(target);
+        node.textContent = String(target);
         return;
       }
       let startTime = null;
@@ -1367,24 +1749,19 @@ const setupNewsletterGame = () => {
         if (disposed) return;
         if (startTime === null) startTime = timestamp;
         const progress = Math.min(1, (timestamp - startTime) / 800);
-        render(Math.round((1 - (1 - progress) ** 3) * target));
+        node.textContent = String(Math.round((1 - (1 - progress) ** 3) * target));
         if (progress < 1) window.requestAnimationFrame(step);
       };
       window.requestAnimationFrame(step);
     };
 
-    // Temps 1 : la carte a fini de se retourner. Le halo et l'onde partent avec
-    // la poussiere d'etincelles, avant que le panneau de gain ne monte.
-    const landCard = (card) => {
-      game.dataset.nlGameState = 'won';
-      burst(card);
-    };
-
-    // Temps 2 : le gain se lit.
+    // Dernier temps : la carte est retablie a plat, le gain se lit, le
+    // formulaire s'arme.
     const revealPrize = () => {
-      game.dataset.nlGameState = 'won';
+      setAct('reveal');
       if (won) won.hidden = false;
-      countUp(prize);
+      // La carte porte le chiffre ; la zone live le dit aux lecteurs d'ecran.
+      if (wonValue) wonValue.textContent = `${prize}% de reduction remportes`;
 
       if (promoCycle) promoCycle.dataset.nlPromoResult = String(prize);
 
@@ -1398,30 +1775,90 @@ const setupNewsletterGame = () => {
       if (fineText) fineText.textContent = `Ton code de ${prize}% et nos nouveautes, dans le meme e-mail.`;
     };
 
-    // Duree du glissement de la carte vers l'axe du panneau, calee sur la
-    // transition CSS. Tant qu'elle n'est pas ecoulee, la carte n'entame pas sa
-    // rotation : les deux mouvements s'enchainent au lieu de se superposer.
-    const GLIDE_MS = 720;
-    // Instant ou la face devient lisible dans la rotation de 980 ms.
-    const FLIP_LAND_MS = 800;
+    /* --- Reperes de la sequence, en millisecondes depuis le clic -----------
+       Ils doublent des durees ecrites en CSS : les modifier d'un cote sans
+       l'autre desynchronise la chorégraphie.
+         ASCEND_AT + 1200 ms de transition CSS = HERO_SETTLED_AT ;
+         TURN_MS doit valoir --turn-ms sur .discount-game. */
+    const ASCEND_AT = 200;
+    const HERO_SETTLED_AT = 1400;
+    const TURN_MS = 1300;
+    // La face n'est de face qu'a la moitie de la rotation : le compteur ne
+    // demarre qu'apres, sinon le chiffre final se lit avant de monter.
+    const VALUE_AT = 700;
+    // La gerbe part quand la face devient lisible.
+    const CELEBRATE_AT = 1180;
+    /* La poussiere ne se leve qu'au moment ou les confettis commencent a ne
+       plus se voir. Leur fondu etant lineaire sur 240 images (4 s), ils sont a
+       ~40 % d'opacite a 2320 ms : c'est la que le grain dore prend le relais.
+       Partir plus tot faisait cohabiter les deux au lieu de les enchainer. */
+    const DUST_AT = 3500;
+    const DUST_LEAD_FRAMES = Math.round(((DUST_AT - CELEBRATE_AT) / 1000) * 60);
+    const SETTLED_AT = TURN_MS;
+
+    // Echec du tirage : la chorégraphie se rembobine au lieu de se couper net.
+    // Retirer l'etat rend leur transform de repos aux trois cartes, qui
+    // reviennent donc en eventail par la transition de base.
+    const rewind = (message) => {
+      cancelPending();
+      stopFx();
+      prize = null;
+      playId = null;
+      setAct('idle');
+      cards.forEach((other) => {
+        other.disabled = false;
+        releaseHero(other);
+        delete other.dataset.nlCardState;
+        delete other.dataset.nlCardFlipped;
+        const value = other.querySelector('[data-nl-card-value]');
+        if (value) value.textContent = '—';
+      });
+      setLabel('Choisis une carte');
+      showError(message);
+    };
 
     cards.forEach((card) => {
       card.addEventListener('click', async () => {
-        if (game.dataset.nlGameState !== 'idle') return;
-        game.dataset.nlGameState = 'revealing';
+        if (game.dataset.nlAct !== 'idle') return;
         clearError();
         cards.forEach((other) => { other.disabled = true; });
 
         // La mise en scene demarre a l'instant du clic et ne depend pas du
-        // reseau : la carte s'avance, les autres se retirent, et la carte
-        // avancee respire tant que le tirage n'est pas revenu. Attendre la
-        // reponse avant de bouger laissait l'interface figee sur un libelle.
-        card.style.removeProperty('--tilt-x');
-        card.style.removeProperty('--tilt-y');
+        // reseau : les cartes ecartees sortent du cadre, la choisie monte sur
+        // scene, et elle flotte tant que le tirage n'est pas revenu. Attendre
+        // la reponse avant de bouger laissait l'interface figee.
+        measureHero();
+
+        // Acte 1 : la dispersion. Le decalage part de la carte choisie, les
+        // deux autres ne quittent donc pas le cadre en meme temps.
+        setAct('disperse');
+        let exitRank = 0;
         cards.forEach((other) => {
-          other.dataset.nlCardState = other === card ? 'picked' : 'faded';
+          if (other === card) {
+            other.dataset.nlCardState = 'picked';
+            other.style.removeProperty('transition-delay');
+            return;
+          }
+          other.dataset.nlCardState = 'faded';
+          other.style.transitionDelay = `${beat(exitRank * 90)}ms`;
+          exitRank += 1;
         });
         setLabel('Ta carte s’avance');
+
+        // Acte 2 : l'ascension. Elle demarre pendant que les autres sortent,
+        // les deux mouvements se recouvrent au lieu de se succeder. La carte
+        // prend sa taille definitive a cet instant precis, avant de monter :
+        // elle est donc nette pendant tout le trajet, pas seulement a
+        // l'arrivee.
+        later(() => {
+          setAct('ascend');
+          growHero(card);
+        }, beat(ASCEND_AT));
+        // Si le tirage traine, la carte reste en vol : rien ne se fige.
+        later(() => {
+          if (prize === null) setAct('hold');
+        }, beat(HERO_SETTLED_AT));
+
         const startedAt = performance.now();
 
         try {
@@ -1433,33 +1870,30 @@ const setupNewsletterGame = () => {
           });
           if (disposed) return;
           prize = Number(result.percentage);
-          cards.forEach((other) => {
-            const value = other.querySelector('[data-nl-card-value]');
-            if (value) value.textContent = String(prize);
-          });
 
-          // Le reste de la sequence repart de la fin du glissement, quel que
-          // soit le temps qu'a pris le tirage.
-          const settle = reduceMotion
-            ? 0
-            : Math.max(0, GLIDE_MS - (performance.now() - startedAt));
-          later(() => {
+          const valueNode = card.querySelector('[data-nl-card-value]');
+
+          // Acte 3 : la rotation, une fois la carte posee sur sa scene, quel
+          // que soit le temps qu'a pris le tirage.
+          const startFlip = () => {
+            // Filet : si le tirage revient avant la fin de l'ascension, la
+            // rotation ne doit pas demarrer sur une carte encore agrandie.
+            crispenHero(card);
+            // Le compteur part de zero : la face ne doit pas devoiler le
+            // resultat final avant de l'avoir fait monter.
+            if (valueNode) valueNode.textContent = '0';
+            setAct('flip');
             card.dataset.nlCardFlipped = 'true';
-            setLabel('Ta carte se retourne');
-          }, settle);
-          later(() => landCard(card), reduceMotion ? 0 : settle + FLIP_LAND_MS);
-          later(revealPrize, reduceMotion ? 0 : settle + FLIP_LAND_MS + 340);
+
+            later(() => countUp(prize, valueNode), beat(VALUE_AT));
+            later(() => celebrate(card, DUST_LEAD_FRAMES), beat(CELEBRATE_AT));
+            later(revealPrize, beat(SETTLED_AT));
+          };
+
+          later(startFlip, beat(Math.max(0, HERO_SETTLED_AT - (performance.now() - startedAt))));
         } catch (error) {
           console.error('Newsletter draw failed:', error);
-          game.dataset.nlGameState = 'idle';
-          prize = null;
-          playId = null;
-          cards.forEach((other) => {
-            other.disabled = false;
-            delete other.dataset.nlCardState;
-          });
-          setLabel('Choisis une carte');
-          showError('Le tirage n’a pas abouti. Réessaie dans quelques instants.');
+          rewind('Le tirage n’a pas abouti. Réessaie dans quelques instants.');
         }
       }, eventOptions);
     });
@@ -1514,13 +1948,20 @@ const setupNewsletterGame = () => {
       playId = null;
       prize = null;
       eventController.abort();
-      timers.forEach((timer) => window.clearTimeout(timer));
-      game.dataset.nlGameState = 'idle';
+      cancelPending();
+      stopFx();
+      if (measureFrame) window.cancelAnimationFrame(measureFrame);
       game.dataset.nlDealt = 'false';
+      game.dataset.nlAct = 'idle';
+      game.style.removeProperty('--hero-scale');
+      game.style.removeProperty('--hero-lift');
       cards.forEach((card) => {
         card.disabled = false;
+        releaseHero(card);
         delete card.dataset.nlCardState;
         delete card.dataset.nlCardFlipped;
+        const value = card.querySelector('[data-nl-card-value]');
+        if (value) value.textContent = '—';
       });
       tiers.forEach((tier) => {
         tier.dataset.nlTierState = 'idle';
