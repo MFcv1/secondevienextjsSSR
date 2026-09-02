@@ -926,8 +926,8 @@ functions/
 
 ## 9. Exports Cloud Functions
 
-Etat courant au 2026-09-02: `functions/index.js` contient 153 exports uniques
-locaux; 150 Functions sont deployees dans le sandbox (3 Gen1, 147 Gen2).
+Etat courant au 2026-09-02: `functions/index.js` contient 160 exports uniques
+locaux; 157 Functions sont deployees dans le sandbox (3 Gen1, 154 Gen2).
 Les trois seules Gen1 sont les triggers Auth
 `grantAdminOnAuth`, `onRegisteredUserCreated` et `onRegisteredUserDeleted`.
 Toutes les autres cibles cloud conservees sont Gen2 `ACTIVE`; les quatre
@@ -1426,6 +1426,10 @@ audit-refund-failed-v2.mjs ............ gate non mutante M12/M13, zero evenement
 
 ```text
 backfill-product-image-*.cjs
+backfill-analytics-session-facts-sandbox.cjs  rejeu borne et idempotent des faits analytics
+bootstrap-financial-history-sandbox.cjs ..... jours/mois/annees admin materialises
+bootstrap-newsletter-summary-sandbox.cjs .... compteur newsletter sans PII
+configure-dashboard-event-invokers.mjs ...... invoker Eventarc ressource par ressource
 backfill-product-thumbnails.cjs
 audit-storage-orphans.cjs
 cleanup-product-image-variants.cjs .... destructif, confirmation forte

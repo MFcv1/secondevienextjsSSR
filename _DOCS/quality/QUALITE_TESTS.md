@@ -619,6 +619,7 @@ npm run test:admin-cache
 npm run test:analytics
 npm run test:observability
 node --test tests/functions-gen2-monitoring.test.mjs
+npm run functions:configure-dashboard-event-invokers
 ```
 
 `test:admin-dashboard` couvre finance absolue, capture/refund/reversal,
@@ -643,6 +644,14 @@ Il verrouille egalement la separation IAM du trigger
 `aggregateAnalyticsSessionGen2`: transport `functions-eventarc-invoker`,
 runtime `analytics-runtime`, `run.invoker` ressource uniquement et aucun
 invoker public.
+
+Les reprises de donnees restent separees des tests: les commandes
+`analytics:backfill-facts`, `admin-dashboard:bootstrap-financial-history` et
+`admin-dashboard:bootstrap-newsletter` sont en dry-run par defaut, bornees et
+idempotentes. Leur mode ecriture exige le token d'approbation sandbox propre au
+script. `functions:configure-dashboard-event-invokers` est egalement un audit
+read-only par defaut: il confirme que les trois services evenementiels sont
+invocables uniquement par `functions-eventarc-invoker`, jamais publiquement.
 
 Les seuils p95 et `commit -> callback onSnapshot` ne sont pas prouvables par un
 test statique. Le code emet `admin-dashboard-listener-to-kpi`,

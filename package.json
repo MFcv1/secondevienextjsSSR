@@ -44,6 +44,7 @@
     "functions:configure-analytics-iam:g4": "node scripts/configure-functions-gen2-g4-analytics-iam.mjs --project=secondevienextjsssr --env=sandbox",
     "functions:configure-analytics-aggregate-trigger": "node scripts/configure-analytics-aggregate-trigger-iam.mjs --project=secondevienextjsssr --env=sandbox",
     "functions:configure-event-commerce-iam": "node scripts/configure-event-driven-commerce-iam.mjs",
+    "functions:configure-dashboard-event-invokers": "node scripts/configure-dashboard-event-invokers.mjs",
     "functions:configure-event-recovery-schedules": "node scripts/configure-event-recovery-schedules.mjs",
     "functions:configure-auth-session-iam:g5": "node scripts/configure-functions-gen2-g5-auth-session-iam.mjs --project secondevienextjsssr --env sandbox",
     "functions:configure-auth-registry-iam:g5": "node scripts/configure-functions-gen2-g5-auth-registry-iam.mjs --project secondevienextjsssr --env sandbox",

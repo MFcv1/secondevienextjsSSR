@@ -61,7 +61,7 @@ function validate(args) {
   });
 }
 
-test('inventaire source courant: 160 exports dont sept event-driven en attente cloud', () => {
+test('inventaire source courant: 160 exports dont sept event-driven actifs sur le sandbox', () => {
   const exports = extractLocalExports(ROOT);
   const expectedCurrentCount = EXPECTED_CURRENT_SOURCE_COUNT;
   assert.equal(exports.length, expectedCurrentCount);

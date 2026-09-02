@@ -24,9 +24,7 @@ export const ACTIVE_OBSERVABILITY_EXPORTS = new Set([
   'aggregateAnalyticsSessionGen2',
   'getAnalyticsAdminGen2',
   'maintainAnalyticsGen2',
-  'projectSystemIncidentGen2'
-]);
-export const PENDING_OBSERVABILITY_EXPORTS = new Set([
+  'projectSystemIncidentGen2',
   'dispatchCommerceOutboxTaskGen2',
   'dispatchCommerceReservationExpiryTaskGen2',
   'onCommerceOutboxWrittenGen2',
@@ -35,6 +33,7 @@ export const PENDING_OBSERVABILITY_EXPORTS = new Set([
   'projectLegacyFinancialHistoryGen2',
   'projectNewsletterSubscriberGen2'
 ]);
+export const PENDING_OBSERVABILITY_EXPORTS = new Set([]);
 
 export const PARALLEL_MIGRATION_EXPORTS = new Set([
   'addAdminUserGen2',

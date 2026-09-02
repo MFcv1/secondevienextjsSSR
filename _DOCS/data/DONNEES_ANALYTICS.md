@@ -426,6 +426,15 @@ repris 406 sessions et confirme zero champ historique e-mail/IP/user-agent et
 zero `expireAt` manquant apres execution. Une sauvegarde Firestore complete a
 ete terminee avant mutation.
 
+Le 2026-09-02, la correction IAM de `aggregateAnalyticsSessionGen2` a separe
+le transport `functions-eventarc-invoker` du runtime `analytics-runtime`.
+Le rejeu borne `analytics:backfill-facts` a ensuite traite 380 sessions fermees:
+214 sessions admin ignorees par contrat, 164 faits clients recalcules et deux
+faits clients crees. Il a compacte 24 jours, deux mois, une annee et le document
+`admin_dashboard/insights`. Le run a estime 760 lectures transactionnelles et
+332 ecritures de faits/shards; il n'a affiche ni identifiant ni donnee
+personnelle. Les nouvelles fermetures sont desormais traitees par evenement.
+
 Les audits securite conservent l'UID brut parce qu'il est la cle
 d'imputabilite, mais e-mail, IP et user-agent y sont hashes. Les sessions
 analytics gardent les donnees minimales necessaires au moteur pendant leur

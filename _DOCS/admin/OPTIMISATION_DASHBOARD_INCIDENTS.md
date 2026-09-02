@@ -45,14 +45,15 @@ messages synthetiques ont prouve la chaine Logging -> Pub/Sub -> Function ->
 Firestore -> UI sans rechargement; les fixtures visibles ont ensuite ete
 retirees et leurs ledgers backend expireront par TTL.
 
-Extension coûts du 2026-09-02, encore locale: la newsletter utilise un compteur
+Extension coûts du 2026-09-02, deployee sur le sandbox: la newsletter utilise un compteur
 événementiel et une liste paginée par 50; le graphique financier lit des
 projections jour/mois/année seulement au clic; outbox et réservations créent
 des Cloud Tasks déterministes à leur échéance. Les schedulers outbox et
 réservation passent de deux minutes à une heure comme reprise, et le contrôle
 catalogue de cinq minutes à une heure. Cela réduit le socle de 1 440 à 48
-réveils commerce par jour et de 288 à 24 réveils catalogue. Déploiement,
-bootstrap et IAM de cette extension restent en attente de la gate cloud.
+réveils commerce par jour et de 288 à 24 réveils catalogue. Les sept Functions,
+les deux queues, l'IAM minimal, Rules/index, les 23 documents de bootstrap et
+App Hosting sont actifs. La mesure facturee consolidee sur 24 h reste ouverte.
 
 Mesures sandbox du 2026-09-01:
 

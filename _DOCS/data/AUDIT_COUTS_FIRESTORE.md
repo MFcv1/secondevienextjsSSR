@@ -429,6 +429,20 @@ Validations passees:
 
 Cette validation a ete fermee le 2026-07-18 par la fenetre Data Access post-retrait legacy de la section 10.2.
 
+### Mesure de cutover evenementiel du 2026-09-02
+
+Le bootstrap reel a coute une lecture et une ecriture pour le resume newsletter,
+puis 18 lectures source et 22 ecritures pour les historiques financiers
+jour/mois/annee. La reprise Analytics exceptionnelle a traite 380 sessions
+fermees, dont 214 admin ignorees, avec environ 760 lectures transactionnelles
+et 332 ecritures de faits/shards; elle n'est pas un cout recurrent.
+
+En regime stable, les deux dispatchers commerce passent de 1 440 a 48 reveils
+par jour et le reconciliateur catalogue de 288 a 24. Les nouveaux traitements
+se declenchent seulement lors d'une vraie ecriture outbox, reservation,
+newsletter ou finance. La comparaison en euros exige encore 24 heures de
+facturation consolidee apres ce cutover.
+
 ## 10. Catalogue materialise deploye le 2026-07-18
 
 Le sandbox sert les lectures publiques catalogue depuis un snapshot immuable Storage via `/api/catalog`. Cette source est unique: les selecteurs legacy/canary et le fallback Firestore ont ete retires du code local le 2026-07-18. Les mutations `furniture` sont regroupees par trigger/outbox/Cloud Tasks; le builder effectue un scan de l'etat final par lot publie, et non un scan par visiteur ou par ecriture.

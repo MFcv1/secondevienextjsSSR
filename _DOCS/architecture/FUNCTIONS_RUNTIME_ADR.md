@@ -12,19 +12,18 @@ la cadence de livraison d'un domaine deviennent un probleme concret.
 
 L'etat autoritaire est:
 
-- 160 exports locaux, dont sept nouveaux projecteurs/tasks en attente de gate cloud;
-- 150 Functions cloud;
-- 147 Gen2 `ACTIVE`;
+- 160 exports locaux;
+- 157 Functions cloud;
+- 154 Gen2 `ACTIVE`;
 - exactement trois Gen1 Auth conservees:
   `grantAdminOnAuth`, `onRegisteredUserCreated` et
   `onRegisteredUserDeleted`;
-- cinq exports Instagram legacy et sept projecteurs/tasks restent uniquement
-  locaux; deux webhooks v2 restent uniquement cloud avec leur source et leur
-  entree de deploiement dediees. L'ecart net local/cloud est donc
-  `148 communs + 5 + 7 / + 2`; aucun
+- cinq exports Instagram legacy restent uniquement locaux; deux webhooks v2
+  restent uniquement cloud avec leur source et leur entree de deploiement
+  dediees. L'ecart net local/cloud est donc `155 communs + 5 / + 2`; aucun
   deploiement global n'est permis;
-- App Hosting sert `build-2026-09-02-004`; la revision precedente immediate
-  est `build-2026-09-02-003`.
+- App Hosting sert le deployment ID `sv-mtk9ag3n-d6c64195f71c`; la revision
+  precedente immediate est `build-2026-09-02-004`.
 
 Les deploiements Functions restent individuels, allowlistes et lies a une
 archive immuable. Production, Stripe live et un selecteur global `functions`

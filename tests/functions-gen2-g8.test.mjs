@@ -63,12 +63,12 @@ test('G8 inventory extractor recognizes every parallel export', () => {
   const exports = extractLocalExports(ROOT);
   assert.equal(exports.length, 160);
   assert.equal(EXPECTED_CURRENT_SOURCE_COUNT, 160);
-  assert.equal(EXPECTED_CURRENT_CLOUD_COUNT, 150);
+  assert.equal(EXPECTED_CURRENT_CLOUD_COUNT, 157);
   assert.equal(PARALLEL_MIGRATION_EXPORTS.size, 120);
   assert.deepEqual(exports.filter(({ name }) => name.endsWith('Gen2') && !PARALLEL_MIGRATION_EXPORTS.has(name) && !PENDING_OBSERVABILITY_EXPORTS.has(name) && !ACTIVE_OBSERVABILITY_EXPORTS.has(name)), []);
 });
 
-test('G8 inventory rebuild accepts the current 150 cloud targets and assigns the real wave', () => {
+test('G8 inventory rebuild accepts the current 157 cloud targets and assigns the real wave', () => {
   const exports = extractLocalExports(ROOT);
   const cloudNames = exports
     .map(({ name }) => name)
@@ -94,9 +94,9 @@ test('G8 inventory rebuild accepts the current 150 cloud targets and assigns the
     operator: 'test'
   });
   assert.equal(inventory.metadata.sourceCount, 160);
-  assert.equal(inventory.metadata.cloudCount, 150);
+  assert.equal(inventory.metadata.cloudCount, 157);
   assert.equal(inventory.metadata.cloudGen1Count, 3);
-  assert.equal(inventory.metadata.cloudGen2Count, 147);
+  assert.equal(inventory.metadata.cloudGen2Count, 154);
   for (const name of TARGETS) assert.equal(waveFor(name, 'MIGRATION_PARALLEL'), 'G8');
 });
 

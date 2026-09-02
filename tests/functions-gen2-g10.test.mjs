@@ -30,7 +30,7 @@ test('G10 manifest preserves its historical counts while current inventory is fu
   assert.equal(Object.keys(exported).length, 160);
   assert.equal(local.length, 160);
   assert.equal(EXPECTED_CURRENT_SOURCE_COUNT, 160);
-  assert.equal(EXPECTED_CURRENT_CLOUD_COUNT, 150);
+  assert.equal(EXPECTED_CURRENT_CLOUD_COUNT, 157);
   assert.equal(waveFor('stripeWebhookV2Gen2', 'MIGRATION_PARALLEL'), 'G10');
   assert.equal(waveFor('stripeConnectWebhookV2Gen2', 'MIGRATION_PARALLEL'), 'G10');
   assert.equal(exported.stripeWebhookV2, undefined);

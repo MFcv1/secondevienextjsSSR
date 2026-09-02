@@ -155,7 +155,7 @@ test('G11 Gen2 est une cible unique, App Check et runtime moindre privilege', ()
   const exports = extractLocalExports(ROOT);
   assert.equal(exports.length, 160);
   assert.equal(EXPECTED_CURRENT_SOURCE_COUNT, 160);
-  assert.equal(EXPECTED_CURRENT_CLOUD_COUNT, 150);
+  assert.equal(EXPECTED_CURRENT_CLOUD_COUNT, 157);
   assert.equal(waveFor('deleteSessionGen2', 'MIGRATION_PARALLEL'), 'G11');
   assert.ok(!exports.some(({ name }) => name === 'deleteSession'));
   assert.ok(exports.some(({ name }) => name === 'deleteSessionGen2'));

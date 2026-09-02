@@ -148,20 +148,20 @@ durables et preuves de qualification sont fusionnees dans les chapitres
 canoniques commerce, admin, client, qualite, infrastructure et exploitation.
 Git conserve l'audit et la roadmap retires.
 
-La topologie Firebase Functions Gen1 vers Gen2 est complete sur le sandbox;
-l'extension événementielle suivante reste locale:
-160 exports locaux, 150 Functions cloud, 147 Gen2 `ACTIVE` et trois triggers
+La topologie Firebase Functions Gen1 vers Gen2 est complete sur le sandbox,
+y compris l'extension evenementielle du dashboard:
+160 exports locaux, 157 Functions cloud, 154 Gen2 `ACTIVE` et trois triggers
 Auth Gen1. L'exercice rollback/reactivation est ferme et la cloture definitive
 observe maintenant la revision finale pendant sept jours selon
 `apphostingaudit/FINALISATION_MIGRATION_GEN2.md`. L'architecture durable est
 dans [FUNCTIONS_RUNTIME_ADR.md](_DOCS/architecture/FUNCTIONS_RUNTIME_ADR.md):
-160 exports locaux dont sept projecteurs/tasks en attente de gate cloud, 150
-Functions cloud, 147 Gen2 `ACTIVE` et uniquement les
+160 exports locaux, 157 Functions cloud, 154 Gen2 `ACTIVE` et uniquement les
 trois triggers Auth limites par Firebase encore en Gen1. Les quatre owners
 Scheduler commerce sont Gen2 `ENABLED`; les endpoints Stripe test actifs sont
-Gen2. App Hosting sert `build-2026-09-02-004`, qui fusionne le dashboard
-materialise, la reception evenementielle des erreurs et le jeu newsletter cinematographique; `build-2026-09-02-003`
-reste la cible de rollback immediate.
+Gen2. App Hosting sert le deployment ID `sv-mtk9ag3n-d6c64195f71c`, qui
+fusionne le dashboard materialise, la reception evenementielle des erreurs,
+le jeu newsletter et les transitions hero; `build-2026-09-02-004` reste la
+cible de rollback immediate.
 
 Les retraits G12-A ont ete individuels, allowlistes, precedes d'appelants,
 trafic, quiet-windows et rollbacks digestes. G12-B a retire le code exclusif
