@@ -6146,10 +6146,19 @@ html.dark .discount-section,
 
 /* Le libelle s'efface des que la carte monte sur scene : a cette taille elle
    couvre la ligne de texte, qui passerait derriere elle. */
-.discount-game:is([data-nl-act='ascend'], [data-nl-act='hold'], [data-nl-act='flip'], [data-nl-act='reveal'])
+/* Le libelle s'efface pendant les mouvements, mais revient pendant l'attente
+   du tirage : en production l'appel passe par App Check puis par une fonction
+   sans instance chaude, ce qui peut prendre plusieurs secondes. Sans un mot a
+   l'ecran, la carte qui flotte se lit comme un blocage. */
+.discount-game:is([data-nl-act='ascend'], [data-nl-act='flip'], [data-nl-act='reveal'])
   .discount-game__label {
   opacity: 0;
   transform: translateY(-12px);
+}
+
+.discount-game[data-nl-act='hold'] .discount-game__label {
+  opacity: 1;
+  transform: none;
 }
 
 .discount-game__cards {
@@ -6385,6 +6394,11 @@ html.dark .discount-section,
   --lift: var(--hero-lift);
   --move-ms: 1200ms;
   --move-ease: var(--nl-ease-hero);
+  /* Maintenue jusqu'au bout de la sequence, et pas seulement pendant le
+     mouvement : c'est la decheance de la couche composee, a la fin de la
+     transition, qui realignait la carte sur la grille de pixels et produisait
+     un dernier micro-recalage. */
+  will-change: transform;
 }
 
 /* Ombre portee au sol, independante du retournement : elle reste a plat
@@ -7462,5 +7476,103 @@ html.dark .discount-shell::before,
   .sales-veil,
   .sales-sheet {
     animation: none !important;
+  }
+}
+
+/* ============================================================
+   HERO — TRANSITION DES IMAGES
+   Langage macOS : echelle + opacite couplees, et surtout AUCUN
+   fondu croise. La nouvelle image passe par-dessus l'ancienne
+   (z-index), qui reste opaque dessous puis disparait hors du champ
+   visible : jamais de moment 50/50 laiteux.
+
+   L'image est STRICTEMENT FIXE entre deux transitions. Le mouvement
+   n'existe qu'au moment du changement.
+
+   Tout est sur transform + opacity, donc entierement sur le
+   compositeur, et aucun JavaScript ne tourne pendant l'animation :
+   l'island ne fait que basculer un attribut, une fois.
+   ============================================================ */
+
+[data-hero-slide] {
+  opacity: 0;
+  z-index: 0;
+  /* etat au repos : hors du compositing, remise a zero instantanee */
+  visibility: hidden;
+  transition: opacity 900ms cubic-bezier(0.4, 0, 1, 1);
+}
+
+/* Slide sortante : reste sous la nouvelle, s'efface a l'abri des regards. */
+[data-hero-slide][data-hero-state='leaving'] {
+  opacity: 0;
+  z-index: 1;
+  visibility: visible;
+}
+
+[data-hero-slide][data-hero-state='active'] {
+  opacity: 1;
+  z-index: 2;
+  visibility: visible;
+  /* Volontairement plus court que la mise en place (1600ms) : l'image
+     est opaque bien avant la fin, donc l'essentiel de la pose se joue
+     sur une image pleine. On voit arriver, puis on regarde se poser. */
+  transition: opacity 820ms cubic-bezier(0.4, 0, 0.3, 1);
+}
+
+.hero-slide-frame {
+  /* 1.05 et non 0.95 : une echelle < 1 decouvrirait les bords du hero
+     pendant l'arrivee. On se pose EN descendant, jamais en montant. */
+  transform: scale(1.05);
+  transform-origin: center center;
+  /* Courbe a demarrage doux : une courbe front-loaded type (0.32,0.72,0,1)
+     joue 70% du mouvement dans le premier quart du temps, ce qui donne un
+     coup sec. Ici l'amplitude est repartie, le mouvement s'installe. */
+  transition: transform 1600ms cubic-bezier(0.44, 0, 0.22, 1);
+}
+
+/* Promotion GPU ciblee : seulement pendant le mouvement. Une fois posee,
+   l'image est fixe, la garder promue serait une couche plein ecran en
+   memoire GPU pour rien. */
+[data-hero-slide][data-hero-state]:not([data-hero-settled]) .hero-slide-frame,
+[data-hero-slide][data-hero-priming] .hero-slide-frame {
+  will-change: transform;
+}
+
+/* Une slide en visibility:hidden n'est jamais rasterisee : la rendre
+   visible ferait payer la rasterisation d'une image plein ecran sur la
+   frame d'entree. On la rend donc visible (mais toujours opacity 0)
+   pendant la preparation, pour que le travail soit deja fait. */
+[data-hero-slide][data-hero-priming] {
+  visibility: visible;
+}
+
+[data-hero-slide][data-hero-state='active'] .hero-slide-frame {
+  transform: scale(1);
+}
+
+/* La sortante continue d'avancer : la camera la depasse. */
+[data-hero-slide][data-hero-state='leaving'] .hero-slide-frame {
+  transform: scale(1.05);
+}
+
+/* Slide au repos : la remise a 1.05 doit etre instantanee, pas animee
+   pendant 1600ms sur une couche invisible. */
+[data-hero-slide]:not([data-hero-state]) .hero-slide-frame {
+  transition: none;
+}
+
+/* La barre reprend la courbe de l'image : un seul systeme de mouvement. */
+.hero-step-track {
+  transition: transform 760ms cubic-bezier(0.44, 0, 0.22, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-hero-slide] {
+    transition: opacity 200ms linear;
+  }
+
+  .hero-slide-frame {
+    transform: none !important;
+    transition: none !important;
   }
 }

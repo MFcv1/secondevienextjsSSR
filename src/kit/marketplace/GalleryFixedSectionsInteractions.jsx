@@ -1259,6 +1259,43 @@ const setupNewsletterGame = () => {
       game.dataset.nlAct = act;
     };
 
+    /* --- Tirage anticipe --------------------------------------------------
+       L'animation ne couvre que HERO_SETTLED_AT, soit 1400 ms de reseau. Une
+       fonction Gen2 tiede repond dans ce budget ; la meme, froide — et avec
+       minInstances a 0 elle l'est presque toujours — demande plusieurs
+       secondes, pendant lesquelles la carte attend a l'ecran.
+
+       On demande donc le lot avant le clic. Le serveur reste seul juge du
+       resultat : il est memorise par playId, et rien de ce que fait le
+       navigateur ne peut en changer la valeur. Seul l'instant de la demande
+       bouge, pas la mecanique. */
+    let pendingDraw = null;
+    let prefetchedCardIndex = 1;
+
+    const prefetchDraw = () => {
+      if (pendingDraw || disposed || game.dataset.nlAct !== 'idle') return;
+      pendingDraw = (async () => {
+        const api = await import('./newsletterRewardClient');
+        playId ||= api.createNewsletterPlayId();
+        return api.drawNewsletterReward({ playId, cardIndex: prefetchedCardIndex });
+      })();
+      // L'echec est traite au clic, pas ici : sans ce filet il remonterait en
+      // rejet non gere, personne n'attendant encore cette promesse.
+      pendingDraw.catch(() => {});
+    };
+
+    // Rend la reponse anticipee, ou `null` si elle manque ou a echoue — auquel
+    // cas le clic refait la demande lui-meme.
+    const settleDraw = async () => {
+      if (!pendingDraw) return null;
+      try {
+        return await pendingDraw;
+      } catch {
+        pendingDraw = null;
+        return null;
+      }
+    };
+
     const labelText = gameLabel?.querySelector('[data-nl-game-label-text]') || gameLabel;
 
     const setLabel = (text) => {
@@ -1347,8 +1384,13 @@ const setupNewsletterGame = () => {
         HERO_MAX_SCALE,
       ));
 
-      const width = baseWidth * scale;
-      const height = baseHeight * scale;
+      /* Tout est arrondi au pixel entier. Pose sur des coordonnees
+         fractionnaires, la carte est positionnee au sous-pixel tant qu'elle
+         vit sur une couche composee, puis alignee sur la grille de pixels
+         quand cette couche est dechue a la fin de la transition : d'ou un
+         leger recalage a la derniere image de l'agrandissement. */
+      const width = Math.round(baseWidth * scale);
+      const height = Math.round(baseHeight * scale);
       const centerInGame = padTop + HERO_TOP_RESERVE + band / 2;
       const wrapTop = cardsWrap?.offsetTop || 0;
       const wrapHeight = cardsWrap?.offsetHeight || baseHeight;
@@ -1358,9 +1400,9 @@ const setupNewsletterGame = () => {
         scale,
         width,
         height,
-        radius: baseRadius * scale,
-        left: wrapWidth / 2 - width / 2,
-        top: centerInGame - wrapTop - height / 2,
+        radius: Math.round(baseRadius * scale),
+        left: Math.round(wrapWidth / 2 - width / 2),
+        top: Math.round(centerInGame - wrapTop - height / 2),
         // Le deplacement precede la mise a l'echelle dans la chaine transform :
         // il se raisonne donc en pixels non mis a l'echelle.
         lift: centerInGame - (wrapTop + wrapHeight / 2),
@@ -1383,10 +1425,10 @@ const setupNewsletterGame = () => {
       if (!geo || !cardsWrap) return false;
       crisped = card;
       card.style.position = 'absolute';
-      card.style.left = `${geo.left.toFixed(1)}px`;
-      card.style.top = `${geo.top.toFixed(1)}px`;
-      card.style.setProperty('--card-w', `${geo.width.toFixed(1)}px`);
-      card.style.setProperty('--card-radius', `${geo.radius.toFixed(1)}px`);
+      card.style.left = `${geo.left}px`;
+      card.style.top = `${geo.top}px`;
+      card.style.setProperty('--card-w', `${geo.width}px`);
+      card.style.setProperty('--card-radius', `${geo.radius}px`);
       card.style.setProperty('--scale', '1');
       card.style.setProperty('--slide', '0px');
       card.style.setProperty('--rise', '0px');
@@ -1796,6 +1838,37 @@ const setupNewsletterGame = () => {
     const DUST_LEAD_FRAMES = Math.round(((DUST_AT - CELEBRATE_AT) / 1000) * 60);
     const SETTLED_AT = TURN_MS;
 
+    /* Deux declencheurs, un par mode de pointage.
+
+       Au pointeur fin, le survol d'une carte : l'intention est nette et il
+       s'ecoule presque toujours plusieurs centaines de millisecondes avant le
+       clic. Au doigt, il n'y a pas de survol ; on attend que le module reste
+       a l'ecran un court moment, ce qui distingue le visiteur qui s'arrete de
+       celui qui defile sans regarder. */
+    if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+      cards.forEach((card) => {
+        card.addEventListener('pointerenter', () => {
+          prefetchedCardIndex = Number(card.dataset.nlCard || 0);
+          prefetchDraw();
+        }, eventOptions);
+      });
+    } else if ('IntersectionObserver' in window && cardsWrap) {
+      let dwellTimer = 0;
+      const dwellObserver = new IntersectionObserver(([entry]) => {
+        if (entry?.isIntersecting) {
+          if (!dwellTimer) dwellTimer = window.setTimeout(prefetchDraw, 1200);
+          return;
+        }
+        window.clearTimeout(dwellTimer);
+        dwellTimer = 0;
+      }, { threshold: 0.6 });
+      dwellObserver.observe(cardsWrap);
+      cleanups.push(() => {
+        window.clearTimeout(dwellTimer);
+        dwellObserver.disconnect();
+      });
+    }
+
     // Echec du tirage : la chorégraphie se rembobine au lieu de se couper net.
     // Retirer l'etat rend leur transform de repos aux trois cartes, qui
     // reviennent donc en eventail par la transition de base.
@@ -1804,6 +1877,7 @@ const setupNewsletterGame = () => {
       stopFx();
       prize = null;
       playId = null;
+      pendingDraw = null;
       setAct('idle');
       cards.forEach((other) => {
         other.disabled = false;
@@ -1854,20 +1928,31 @@ const setupNewsletterGame = () => {
           setAct('ascend');
           growHero(card);
         }, beat(ASCEND_AT));
-        // Si le tirage traine, la carte reste en vol : rien ne se fige.
+        // Si le tirage traine, la carte reste en vol et le libelle revient le
+        // dire. En production l'appel enchaine un jeton App Check et une
+        // fonction sans instance chaude : plusieurs secondes sont possibles, et
+        // une carte qui flotte sans un mot se lit comme un blocage.
         later(() => {
-          if (prize === null) setAct('hold');
+          if (prize !== null) return;
+          setAct('hold');
+          setLabel('Ton tirage se prepare');
         }, beat(HERO_SETTLED_AT));
 
         const startedAt = performance.now();
 
         try {
-          const api = await import('./newsletterRewardClient');
-          playId ||= api.createNewsletterPlayId();
-          const result = await api.drawNewsletterReward({
-            playId,
-            cardIndex: Number(card.dataset.nlCard || 0),
-          });
+          // Le tirage a normalement ete lance avant le clic ; on ne fait ici
+          // que recuperer sa reponse. On ne rappelle la fonction que si
+          // l'anticipation n'a pas eu lieu ou a echoue.
+          let result = await settleDraw();
+          if (!result) {
+            const api = await import('./newsletterRewardClient');
+            playId ||= api.createNewsletterPlayId();
+            result = await api.drawNewsletterReward({
+              playId,
+              cardIndex: Number(card.dataset.nlCard || 0),
+            });
+          }
           if (disposed) return;
           prize = Number(result.percentage);
 
@@ -1947,6 +2032,7 @@ const setupNewsletterGame = () => {
       isSubmitting = false;
       playId = null;
       prize = null;
+      pendingDraw = null;
       eventController.abort();
       cancelPending();
       stopFx();
