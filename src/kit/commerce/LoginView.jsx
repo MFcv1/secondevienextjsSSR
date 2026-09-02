@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Lock } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getGoogleAuthErrorMessage } from '../auth/googleAuthDiagnostics';
+import { LoginBackgroundVideo } from '../auth/LoginBackgroundVideo';
 
 function LoginView({
   onSuccess = () => {},
@@ -57,9 +58,9 @@ function LoginView({
 
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-[#0F0F11] p-0 text-white md:bg-stone-900/80 md:p-6">
-      <div className="relative flex h-[100dvh] w-full animate-in zoom-in-95 overflow-hidden bg-[#0F0F11] shadow-2xl md:h-auto md:min-h-[620px] md:max-w-5xl md:rounded-[2rem]">
+      <div className="relative flex h-[100dvh] w-full transform-gpu overflow-hidden bg-[#0F0F11] shadow-2xl [backface-visibility:hidden] md:h-auto md:min-h-[620px] md:max-w-5xl md:rounded-[2rem]">
         <div className="relative hidden w-1/2 bg-black md:block">
-          <video src="/video/login-bg.mp4" autoPlay loop muted playsInline className="absolute inset-0 h-full w-full object-cover opacity-80" />
+          <LoginBackgroundVideo className="absolute inset-0 h-full w-full object-cover opacity-80" />
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#0F0F11]" />
         </div>
 

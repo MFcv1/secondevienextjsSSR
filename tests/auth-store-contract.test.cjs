@@ -79,6 +79,7 @@ test('Google popup is prepared before the user click and concurrent requests are
   const context = read('src/kit/contexts/AuthContext.jsx');
   const firebaseLazy = read('src/kit/config/firebaseLazy.js');
   const modal = read('src/kit/marketplace/LegacyLoginModalFullIsland.jsx');
+  const loginBackground = read('src/kit/auth/LoginBackgroundVideo.jsx');
 
   assert.match(context, /googleRuntimeRef = React\.useRef/);
   assert.match(context, /preloadGoogleLogin = React\.useCallback/);
@@ -92,8 +93,14 @@ test('Google popup is prepared before the user click and concurrent requests are
   assert.match(context, /recordGoogleAuthDiagnostic/);
   assert.match(firebaseLazy, /setCustomParameters\(\{ prompt: 'select_account' \}\)/);
   assert.match(modal, /pointer-events-none absolute inset-0[\s\S]*md:backdrop-blur-xl/);
-  assert.match(modal, /relative z-\[1\] isolate flex[\s\S]*overflow-hidden/);
+  assert.match(modal, /relative z-\[1\] isolate flex[\s\S]*transform-gpu[\s\S]*overflow-hidden/);
   assert.doesNotMatch(modal, /justify-center bg-\[#0F0F11\][^\n]*backdrop-blur-xl/);
+  assert.match(modal, /<LoginBackgroundVideo/);
+  assert.doesNotMatch(modal, /zoom-in-95/);
+  assert.match(loginBackground, /requestVideoFrameCallback/);
+  assert.match(loginBackground, /context\.drawImage\(video/);
+  assert.match(loginBackground, /src="\/video\/login-bg\.mp4"/);
+  assert.match(loginBackground, /className="hidden"/);
 });
 
 test('Google failures are diagnosed without persisting raw Firebase details', () => {

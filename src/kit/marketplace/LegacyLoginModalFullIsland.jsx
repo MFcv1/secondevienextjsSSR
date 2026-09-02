@@ -8,6 +8,7 @@ import { functions } from '../config/firebase';
 import { getFunctionTarget } from '../config/functionTargets';
 import { getFirebaseAuth, loadAuthModule } from '../config/firebaseLazy';
 import { getGoogleAuthErrorMessage } from '../auth/googleAuthDiagnostics';
+import { LoginBackgroundVideo } from '../auth/LoginBackgroundVideo';
 import { logClientPerf, startClientPerf } from '../shared/clientPerf';
 import { ToastProvider, useToast } from '../ui/Toast';
 
@@ -722,9 +723,9 @@ export function LegacyLoginModalContent({ open, onOpenChange, onAuthenticated })
         <X size={20} />
       </button>
 
-      <div className="relative z-[1] isolate flex h-[100dvh] w-full animate-in zoom-in-95 overflow-hidden bg-[#0F0F11] shadow-2xl md:h-auto md:max-h-[85vh] md:max-w-5xl md:rounded-[2rem]">
+      <div className="relative z-[1] isolate flex h-[100dvh] w-full transform-gpu overflow-hidden bg-[#0F0F11] shadow-2xl [backface-visibility:hidden] md:h-auto md:max-h-[85vh] md:max-w-5xl md:rounded-[2rem]">
         <div className="relative hidden w-1/2 overflow-hidden bg-black md:block">
-          <video src="/video/login-bg.mp4" autoPlay loop muted playsInline className="absolute inset-0 h-full w-full object-cover opacity-80" />
+          <LoginBackgroundVideo className="absolute inset-0 h-full w-full object-cover opacity-80" />
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#0F0F11]" />
         </div>
 

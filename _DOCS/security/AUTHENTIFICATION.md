@@ -152,9 +152,12 @@ Le provider impose `prompt=select_account`: chaque nouvelle ceremonie Google
 affiche donc le selecteur des comptes deja ouverts dans le navigateur au lieu
 de reutiliser silencieusement le dernier compte.
 La video decorative desktop reste conservee. Le voile floute et la fenetre
-sont toutefois deux couches soeurs: la video n'est plus descendante de la
-couche `backdrop-filter`, ce qui evite la surface de compositing fantome
-observee dans Chrome pendant l'initialisation du media.
+sont toutefois deux couches soeurs. Les images de la video sont peintes dans
+un canvas visible depuis un decodeur video masque: Chrome ne peut donc plus
+detacher la surface native du media au chargement ou au rebouclage et afficher
+la surface de compositing fantome observee derriere la modale. La fenetre ne
+subit plus de transformation geometrique a son ouverture afin que la couche
+media conserve toujours les memes limites.
 
 La modale ouverte depuis le bouton `Connexion` de la galerie est l'unique
 porte de connexion visible, pour les clients comme pour les administrateurs.
