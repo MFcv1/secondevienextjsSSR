@@ -59,15 +59,20 @@ La galerie doit:
 
 Le catalogue public est lu par `src/lib/server/products.js` depuis le snapshot Storage valide par `materializedCatalog.js`. Aucun lecteur public Firestore ou Function catalogue parallele ne subsiste.
 
-Le cache repose sur trois niveaux sans double fenetre temporelle:
+Le cache repose sur deux niveaux, sans cache mutable partage entre instances:
 
 - ISR Next a 300 secondes comme unique filet temporel des routes publiques;
-- une lecture fraiche du pointeur Storage `current`, puis `previous`/`last-known-good`, pendant chaque regeneration de page;
-- un cache interne de pointeur API de 15 secondes, invalide par le tag `catalog:api-pointer`;
-- l'invalidation Next 16 utilise `revalidateTag(tag, { expire: 0 })` pour conserver le miss bloquant immediat exige par la preuve de publication;
+- une lecture fraiche des pointeurs Storage mutables `current`, puis `previous`/`last-known-good`, pour chaque requete API et chaque regeneration de page;
 - un cache long non tague des objets de release immuables;
 - `/api/revalidate-catalog` pour revalider uniquement les chemins du plan d'impact;
 - le trigger `onCatalogSourceWrite` et la task de revalidation signee.
+
+Les pointeurs mutables ne doivent jamais passer par `unstable_cache`: sur App
+Hosting, l'invalidation d'un cache Next local a une instance ne garantit pas la
+convergence des autres instances ni celle du CDN. Le faible cout d'une lecture
+Storage du petit pointeur est accepte afin que `/api/catalog/version` compare
+toujours l'`ETag` demande a l'identite courante. Seuls les payloads de release,
+immuables et adresses par hash, restent caches durablement.
 
 Flux attendu:
 
@@ -77,7 +82,7 @@ mutation admin
   -> build et publication du snapshot
   -> impact-plan.json immutable
   -> appel signe HMAC /api/revalidate-catalog
-  -> revalidateTag du pointeur API + revalidatePath cibles
+  -> revalidatePath cibles
   -> preuve exacte /api/catalog/version
   -> signal sys_catalog_live/current aux onglets visibles
   -> galerie hydratee depuis la release API exacte + router.refresh

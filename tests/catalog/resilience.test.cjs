@@ -22,6 +22,8 @@ const {
   assertLease,
   buildRollbackControlUpdate,
   buildRollbackPreparationUpdate,
+  catalogRevalidationTaskId,
+  computeRevalidationRetryNotBefore,
   computeQuietUntil,
   initialPublicationState,
   isRollbackActive,
@@ -141,6 +143,17 @@ test('le debounce catalogue privilegie la publication interactive sans perdre la
     computeQuietUntil({ dirtySince: new Date(nowMs - 4800), nowMs, publicFields: ['name'] }).getTime() - nowMs,
     200
   );
+});
+
+test('les reprises de revalidation ont une identite stable et un backoff borne', () => {
+  const identity = { revision: 42, manifestSha256: 'a'.repeat(64) };
+  assert.equal(catalogRevalidationTaskId(identity, 0), 'catalog-revalidate-r42-aaaaaaaaaaaa-a0');
+  assert.equal(catalogRevalidationTaskId(identity, 3), 'catalog-revalidate-r42-aaaaaaaaaaaa-a3');
+  const now = new Date('2026-09-02T10:00:00.000Z');
+  assert.equal(computeRevalidationRetryNotBefore(1, now).toISOString(), '2026-09-02T10:05:00.000Z');
+  assert.equal(computeRevalidationRetryNotBefore(2, now).toISOString(), '2026-09-02T10:15:00.000Z');
+  assert.equal(computeRevalidationRetryNotBefore(3, now).toISOString(), '2026-09-02T11:00:00.000Z');
+  assert.equal(computeRevalidationRetryNotBefore(99, now).toISOString(), '2026-09-03T10:00:00.000Z');
 });
 
 test('publication CAS conserve current, previous et last-known-good valides', async () => {
@@ -460,6 +473,59 @@ test('le reconciler finalise pointer_committed_control_pending sans creer une au
   assert.equal(bucket.store.size, beforeObjects);
   assert.equal(enqueued[0][0], 'dispatchCatalogRevalidation');
   assert.ok(result.repairs.includes('pointer_commit_finalized'));
+});
+
+test('le reconciler attend le backoff puis ne cree qu une tache stable par tentative', async () => {
+  const bucket = new FakeBucket();
+  const target = await release(bucket, 1);
+  const published = await writePointer(bucket, POINTER_PATHS.current, {
+    revision: 1,
+    manifestPath: target.manifestPath,
+    manifestSha256: target.manifestSha256,
+    aggregateSha256: target.aggregateSha256,
+    impactPlanPath: target.impactPlanPath,
+    impactPlanSha256: target.impactPlanSha256,
+  });
+  const db = new FakeDb({
+    'sys_catalog_publication/secondevie': {
+      ...initialPublicationState(new Date('2026-09-02T09:00:00.000Z')),
+      stateVersion: 4,
+      desiredRevision: 1,
+      publishedRevision: 1,
+      currentManifestPath: target.manifestPath,
+      currentManifestSha256: target.manifestSha256,
+      currentAggregateSha256: target.aggregateSha256,
+      currentPointerGeneration: published.generation,
+      revalidationFailureCount: 2,
+      revalidationRetryNotBefore: new Date('2026-09-02T10:15:00.000Z'),
+      buildState: 'degraded',
+      invalidationState: 'failed',
+    },
+  });
+  const calls = [];
+  const waiting = await reconcileCatalog({
+    db,
+    bucket,
+    now: () => new Date('2026-09-02T10:10:00.000Z'),
+    enqueue: async (...args) => { calls.push(args); return true; },
+    logger: () => {},
+  });
+  assert.equal(waiting.result, 'revalidation_backoff');
+  assert.equal(calls.length, 0);
+
+  const resumed = await reconcileCatalog({
+    db,
+    bucket,
+    now: () => new Date('2026-09-02T10:16:00.000Z'),
+    enqueue: async (...args) => { calls.push(args); return true; },
+    logger: () => {},
+  });
+  assert.equal(resumed.result, 'repaired');
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0][2], catalogRevalidationTaskId({
+    revision: 1,
+    manifestSha256: target.manifestSha256,
+  }, 2));
 });
 
 test('un rollback vivant reste possede par son operation et un rollback expire est repris une seule fois', async () => {

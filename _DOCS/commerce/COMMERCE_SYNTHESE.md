@@ -300,6 +300,16 @@ prouvee, par deux queries indexees `limit(1)` toutes les quinze minutes. Les
 projecteurs et le cutover Stats sont actifs uniquement sur sandbox; Stripe
 reste en test.
 
+Le chemin local outbox/réservation est désormais déclenché par écriture:
+`onCommerceOutboxWrittenGen2` programme une tâche à `nextAttemptAt` et
+`onCommerceReservationWrittenGen2` à `expiresAt`. Les IDs déterministes et les
+préconditions d'état rendent les rejeux et tâches anciennes sans effet. Les
+deux schedulers existants restent une récupération horaire, contre deux
+minutes auparavant; ils ne sont pas supprimés avant la quiet-window sandbox.
+Ce changement n'élargit pas le domaine du paiement: une panne du projecteur de
+tâche n'annule ni ne valide aucune commande et le watchdog horaire reprend les
+éléments durables encore éligibles.
+
 Les commandes portent aussi un `orderNumber` entier, attribue dans la meme
 transaction que la creation via `sys_counters/orders`. Les 131 commandes
 sandbox existantes ont ete numerotees chronologiquement; la prochaine valeur

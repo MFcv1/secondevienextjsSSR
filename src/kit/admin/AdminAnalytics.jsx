@@ -22,10 +22,12 @@ let cachedAnalyticsSessions = null;
 let cachedAnalyticsSessionsLoadedAt = null;
 let cachedAffiliateClicks = null;
 let cachedAffiliateClicksLoadedAt = null;
+const cachedAnalyticsOverviews = new Map();
 
 const ADMIN_ANALYTICS_CACHE_DB = 'sv-admin-analytics-cache-v1';
 const ADMIN_ANALYTICS_CACHE_STORE = 'snapshots';
 const ADMIN_ANALYTICS_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const ADMIN_ANALYTICS_REFRESH_TTL_MS = 5 * 60 * 1000;
 const ADMIN_SESSIONS_CACHE_KEY = 'traffic-sessions';
 const ADMIN_AFFILIATE_CACHE_KEY = 'affiliate-clicks';
 const OMIT_CACHE_FIELDS = new Set(['email', 'syncTokenHash', 'userAgent', 'journey', 'lastEventPreview']);
@@ -1735,7 +1737,7 @@ void BoutiqueAnalytics;
 const AdminAnalytics = ({ darkMode = false, items = [] }) => {
     const [sessions, setSessions] = useState(() => cachedAnalyticsSessions || []);
     const [loading, setLoading] = useState(false);
-    const [restoringSessions, setRestoringSessions] = useState(() => !cachedAnalyticsSessions);
+    const [restoringSessions, setRestoringSessions] = useState(() => cachedAnalyticsSessions === null);
     const [timeFilter, setTimeFilter] = useState('1j'); // Default to 24h // '1h', '1j', '7j', '1mois', '1ans'
     const [expandedSessionId, setExpandedSessionId] = useState(null);
     const [now, setNow] = useState(Date.now());
@@ -1744,7 +1746,7 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
     const DAYS_PER_PAGE = 10;
     const [openVisitors, setOpenVisitors] = useState({});
     const [sessionsRefreshKey, setSessionsRefreshKey] = useState(() => cachedAnalyticsSessionsLoadedAt || 0);
-    const [overview, setOverview] = useState(null);
+    const [overview, setOverview] = useState(() => cachedAnalyticsOverviews.get('1j')?.data || null);
     const [nextBeforeMillis, setNextBeforeMillis] = useState(null);
     const [loadingOlder, setLoadingOlder] = useState(false);
     const initialRecentSyncRef = useRef(false);
@@ -1752,7 +1754,7 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
 
     useEffect(() => {
         let cancelled = false;
-        if (cachedAnalyticsSessions) {
+        if (cachedAnalyticsSessions !== null) {
             setRestoringSessions(false);
             return () => { cancelled = true; };
         }
@@ -1851,10 +1853,16 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
         }
     }, [firstTrafficDayKey]);
 
-    const loadOverview = useCallback(async () => {
+    const loadOverview = useCallback(async ({ force = false } = {}) => {
+        const cached = cachedAnalyticsOverviews.get(timeFilter);
+        if (!force && cached && (Date.now() - cached.loadedAt) < ADMIN_ANALYTICS_REFRESH_TTL_MS) {
+            setOverview(cached.data);
+            return;
+        }
         try {
             const getAnalyticsAdmin = await getCallableFunction('getAnalyticsAdmin');
             const response = await getAnalyticsAdmin({ action: 'overview', period: timeFilter });
+            cachedAnalyticsOverviews.set(timeFilter, { data: response.data, loadedAt: Date.now() });
             setOverview(response.data);
         } catch (error) {
             console.error('Analytics overview load error:', error);
@@ -1909,18 +1917,23 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
     }, [sessions]);
 
     useEffect(() => {
+        setOverview(cachedAnalyticsOverviews.get(timeFilter)?.data || null);
         void loadOverview();
-    }, [loadOverview]);
+    }, [loadOverview, timeFilter]);
 
     useEffect(() => {
         if (restoringSessions || initialRecentSyncRef.current) return;
         initialRecentSyncRef.current = true;
+        if (
+            cachedAnalyticsSessionsLoadedAt
+            && (Date.now() - cachedAnalyticsSessionsLoadedAt) < ADMIN_ANALYTICS_REFRESH_TTL_MS
+        ) return;
         void loadSessions({ incremental: sessions.length > 0 });
     }, [restoringSessions, loadSessions, sessions.length]);
 
     const refreshAnalytics = useCallback(async () => {
         await Promise.all([
-            loadOverview(),
+            loadOverview({ force: true }),
             loadSessions({ incremental: sessions.length > 0 })
         ]);
     }, [loadOverview, loadSessions, sessions.length]);
@@ -1988,15 +2001,14 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
-            {(loading || restoringSessions) && sessions.length === 0 ? (
-                <div className="p-12 text-center text-stone-400 font-bold animate-pulse">Chargement Data...</div>
-            ) : (<>
-
             {/* HEADER FILTERS */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                 <div>
                     <h3 className={`text-2xl font-black tracking-tight ${darkMode ? 'text-white' : 'text-stone-900'}`}>Analytics</h3>
                     <p className="text-[10px] text-stone-500 font-bold uppercase tracking-widest mt-1">Flux & Comportements</p>
+                    {restoringSessions && sessions.length === 0 && (
+                        <p className="mt-2 text-[10px] font-semibold text-stone-400">Restauration des dernières sessions en arrière-plan…</p>
+                    )}
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3">
@@ -2256,7 +2268,6 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
                     </div>
                 ))}
             </div>
-            </>)}
         </div>
     );
 };

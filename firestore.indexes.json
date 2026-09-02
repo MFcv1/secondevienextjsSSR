@@ -168,6 +168,47 @@
       "indexes": []
     },
     {
+      "collectionGroup": "admin_newsletter_summary",
+      "fieldPath": "updatedAt",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "admin_newsletter_subscriber_projections",
+      "fieldPath": "sourceUpdateTime",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "admin_finance_history_days",
+      "fieldPath": "sources",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "admin_finance_history_days",
+      "fieldPath": "updatedAt",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "admin_finance_history_months",
+      "fieldPath": "updatedAt",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "admin_finance_history_years",
+      "fieldPath": "updatedAt",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "admin_system_incident_summary",
+      "fieldPath": "incidents",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "admin_system_incident_events",
+      "fieldPath": "expireAt",
+      "ttl": true,
+      "indexes": []
+    },
+    {
       "collectionGroup": "analytics_sessions",
       "fieldPath": "journey",
       "indexes": []

@@ -19,3 +19,21 @@ test('Incidents reste le dernier item du menu lateral Admin', () => {
   assert.equal(tabIds.at(-1), 'incidents');
   assert.equal(tabIds.filter((id) => id === 'incidents').length, 1);
 });
+
+test('Data affiche son cache immédiatement et espace les synchronisations automatiques', () => {
+  const analytics = read('src/kit/admin/AdminAnalytics.jsx');
+  const island = read('app/admin/AdminAppIsland.jsx');
+  const sidebar = read('app/admin/AdminSidebar.jsx');
+  assert.match(analytics, /ADMIN_ANALYTICS_REFRESH_TTL_MS\s*=\s*5 \* 60 \* 1000/);
+  assert.match(analytics, /cachedAnalyticsSessions === null/);
+  assert.match(analytics, /restoringSessions && sessions\.length === 0/);
+  assert.doesNotMatch(analytics, /\(loading \|\| restoringSessions\) && sessions\.length === 0/);
+  assert.match(island, /loadAdminAnalytics/);
+  assert.match(sidebar, /onPointerEnter=\{\(\) => onIntent\?\.\(tab\.id\)\}/);
+});
+
+test('Système reste monté pendant le passage Commande afin de conserver son listener', () => {
+  const consoleSource = read('src/kit/admin/AdminIncidentConsole.jsx');
+  assert.match(consoleSource, /<div hidden=\{mode !== 'system'\}>/);
+  assert.doesNotMatch(consoleSource, /mode === 'system'\s*\?\s*<SystemIncidentConsole/);
+});

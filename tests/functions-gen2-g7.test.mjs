@@ -50,7 +50,7 @@ test('G7 conserve exactement ses 14 Gen2 apres le retrait des proprietaires Gen1
 test('G7 reconciles the inventory extractor through G6 and the 14 G7 exports', () => {
   const exports = extractLocalExports(ROOT);
   assert.equal(exports.length, EXPECTED_CURRENT_SOURCE_COUNT);
-  assert.equal(PARALLEL_MIGRATION_EXPORTS.size, 119);
+  assert.equal(PARALLEL_MIGRATION_EXPORTS.size, 120);
   assert.deepEqual(
     exports.filter(({ name }) => name.endsWith('Gen2') && !PARALLEL_MIGRATION_EXPORTS.has(name) && !PENDING_OBSERVABILITY_EXPORTS.has(name) && !ACTIVE_OBSERVABILITY_EXPORTS.has(name)),
     []

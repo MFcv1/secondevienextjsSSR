@@ -142,6 +142,17 @@ exports.resumeCheckoutV2Gen2 = resumeCheckoutV2Gen2;
 exports.startStripeConnectOnboardingGen2 = startStripeConnectOnboardingGen2;
 exports.syncStripeConnectAccountGen2 = syncStripeConnectAccountGen2;
 
+const {
+    dispatchCommerceOutboxTaskGen2,
+    dispatchCommerceReservationExpiryTaskGen2,
+    onCommerceOutboxWrittenGen2,
+    onCommerceReservationWrittenGen2
+} = require('./src/commerce/commerceEventDispatch');
+exports.dispatchCommerceOutboxTaskGen2 = dispatchCommerceOutboxTaskGen2;
+exports.dispatchCommerceReservationExpiryTaskGen2 = dispatchCommerceReservationExpiryTaskGen2;
+exports.onCommerceOutboxWrittenGen2 = onCommerceOutboxWrittenGen2;
+exports.onCommerceReservationWrittenGen2 = onCommerceReservationWrittenGen2;
+
 // ── OBSERVABILITE METIER ET TIMELINE ADMIN ──────────────
 const {
     journalCommerceIncidentGen2,
@@ -157,6 +168,9 @@ const {
 const {
     getSystemIncidentsAdminGen2
 } = require('./src/observability/systemIncidents');
+const {
+    projectSystemIncidentGen2
+} = require('./src/observability/systemIncidentProjection');
 exports.journalCommerceIncidentGen2 = journalCommerceIncidentGen2;
 exports.journalFinancialFactGen2 = journalFinancialFactGen2;
 exports.journalInventoryMovementGen2 = journalInventoryMovementGen2;
@@ -165,6 +179,7 @@ exports.journalOutboxStatusGen2 = journalOutboxStatusGen2;
 exports.journalWebhookStatusGen2 = journalWebhookStatusGen2;
 exports.getDiagnosticTimelineAdminGen2 = getDiagnosticTimelineAdminGen2;
 exports.getSystemIncidentsAdminGen2 = getSystemIncidentsAdminGen2;
+exports.projectSystemIncidentGen2 = projectSystemIncidentGen2;
 
 // ── PUBLICATION PRODUIT DURABLE ──────────────────────────
 const {
@@ -307,10 +322,14 @@ const {
     drawNewsletterRewardGen2,
     listMyNewsletterRewardsGen2
 } = require('./src/newsletter/newsletterRewards');
+const {
+    projectNewsletterSubscriberGen2
+} = require('./src/newsletter/newsletterProjection');
 
 exports.claimNewsletterRewardGen2 = claimNewsletterRewardGen2;
 exports.drawNewsletterRewardGen2 = drawNewsletterRewardGen2;
 exports.listMyNewsletterRewardsGen2 = listMyNewsletterRewardsGen2;
+exports.projectNewsletterSubscriberGen2 = projectNewsletterSubscriberGen2;
 
 // ── CODES PROMOTIONNELS SERVEUR ─────────────────────────
 
@@ -337,6 +356,10 @@ const {
 const { trackAdminIPGen2 } = require('./src/analytics/adminIP');
 const { updateUserSessionsGen2 } = require('./src/analytics/updateUserSessions');
 const { onOrderStatsWrite } = require('./src/commerce/orderStats');
+const {
+    projectCommerceFinancialHistoryGen2,
+    projectLegacyFinancialHistoryGen2
+} = require('./src/admin/financialHistoryProjection');
 
 exports.initLiveSessionGen2 = initLiveSessionGen2;
 exports.syncSessionGen2 = syncSessionGen2;
@@ -345,6 +368,8 @@ exports.deleteSessionGen2 = deleteSessionGen2;
 exports.trackAdminIPGen2 = trackAdminIPGen2;
 exports.updateUserSessionsGen2 = updateUserSessionsGen2;
 exports.onOrderStatsWrite = onOrderStatsWrite;
+exports.projectCommerceFinancialHistoryGen2 = projectCommerceFinancialHistoryGen2;
+exports.projectLegacyFinancialHistoryGen2 = projectLegacyFinancialHistoryGen2;
 
 const {
     aggregateAnalyticsSessionGen2,

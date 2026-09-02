@@ -6,7 +6,7 @@ import { buildSearchResponse } from '../../../src/kit/marketplace/searchModel';
 export const dynamic = 'force-dynamic';
 
 const getCatalog = async () => {
-  const result = await queryMaterializedCatalog({ scope: 'cards', limit: 120, pointerCache: 'api' });
+  const result = await queryMaterializedCatalog({ scope: 'cards', limit: 120 });
   return {
     catalogVersion: result.snapshot.catalogVersion,
     aggregateSha256: result.snapshot.aggregateSha256,

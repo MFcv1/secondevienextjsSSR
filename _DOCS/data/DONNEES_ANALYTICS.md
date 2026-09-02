@@ -49,8 +49,15 @@ inventory_stats/{id}
 admin_dashboard/{finance|orders|activity|insights}
 admin_incident_summary/current
 admin_incident_projections/{incidentId}
+admin_system_incident_summary/current
+admin_system_incident_events/{eventId}
 admin_user_stats_projections/{uid}
 admin_finance_capture_projections/{factId}
+admin_newsletter_summary/current
+admin_newsletter_subscriber_projections/{subscriberId}
+admin_finance_history_days/{date}
+admin_finance_history_months/{month}
+admin_finance_history_years/{year}
 ```
 
 Cette carte decrit les collections connues du code. `firestore.rules`, Functions et `map.md` restent les sources pour les permissions et producteurs.
@@ -71,6 +78,19 @@ identifiants produit, vues journalieres et nombres de sessions interessees sont
 des agregats globaux sans identite. Les ledgers incidents et utilisateurs
 restent backend-only et conservent leurs tombstones tant qu'un rejeu source est
 possible.
+
+`admin_newsletter_summary/current` porte uniquement le nombre actif et des
+compteurs de variation depuis le bootstrap. Le ledger abonné est backend-only;
+il conserve seulement l'identifiant technique du document source, son état de
+présence, l'`updateTime` source, l'identifiant d'événement et un tombstone.
+Aucun e-mail n'entre dans la projection globale.
+
+Les collections `admin_finance_history_days|months|years` servent uniquement
+le graphique Stats demandé au clic. Elles additionnent la source legacy
+`sales_stats_daily` (commandes schema < 2) et la source v2
+`commerce_financial_daily` (EUR net) sans double comptage. Une correction ou
+suppression source remplace sa contribution absolue; les mois et années sont
+mis à jour par delta côté serveur. La vue Bilan n'en lit aucun document.
 
 `legacy_order_email_deliveries/{deliveryId}` ne contient ni adresse ni ID de
 commande en clair: seulement un hash, le type de message, le provider, le
@@ -221,6 +241,8 @@ Contrat du moteur:
   nombre de visiteurs uniques inter-produits;
 - le cache IndexedDB ne contient que les projections recentes expurgees; il
   n'est jamais la source des statistiques historiques;
+- le cache Data rend aussi un tableau vide immediatement, espace les refresh
+  automatiques de cinq minutes et ne remplace jamais le refresh manuel;
 - le detail du parcours, borne aux 25 dernieres etapes, est lu uniquement au clic;
 - les erreurs analytics ne bloquent jamais checkout, Auth ou navigation;
 - ne pas stocker plus de donnees personnelles que necessaire.
@@ -312,6 +334,16 @@ huit shards quotidiens; `maintainAnalyticsGen2` compacte les jours, mois et
 annees. Les visiteurs uniques sont une estimation HLL pseudonymisee. La vue
 `Tout` reste donc disponible depuis le debut du site sans relire tous les
 parcours.
+
+Diagnostic read-only du 2026-09-02: le trigger Firestore de
+`aggregateAnalyticsSessionGen2` utilisait a tort `analytics-runtime` comme
+identite de transport Eventarc, alors que le service Cloud Run n'accordait
+aucun `run.invoker`. Les livraisons etaient donc refusees en 403 avant le
+handler et Eventarc les rejouait. Le contrat local separe maintenant
+`functions-eventarc-invoker` (transport: `eventarc.eventReceiver` et
+`run.invoker` uniquement sur ce service) de `analytics-runtime` (lecture et
+ecriture des rollups). Le deploiement cible gcloud et le preflight IAM dedie
+doivent etre utilises ensemble; aucun invoker public n'est admis.
 
 Optimisation de cout locale au 2026-07-17: la cadence visible, le seuil live, le parcours et la securite de reprise restent inchanges. Le cache de hash et l'arbitrage des synchronisations visent uniquement les relectures et appels rapproches observes dans la fenetre Data Access. Leur gain exact doit etre mesure apres deploiement sandbox avec le protocole de [AUDIT_COUTS_FIRESTORE.md](AUDIT_COUTS_FIRESTORE.md).
 

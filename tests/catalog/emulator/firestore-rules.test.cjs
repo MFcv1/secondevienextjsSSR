@@ -4,7 +4,7 @@ const path = require('node:path');
 const { after, before, beforeEach, test } = require('node:test');
 const { assertFails, assertSucceeds, initializeTestEnvironment } = require('@firebase/rules-unit-testing');
 const {
-  collection, doc, documentId, getDoc, getDocs, query, setDoc, updateDoc, where,
+  collection, doc, documentId, getDoc, getDocs, limit, orderBy, query, setDoc, updateDoc, where,
 } = require('firebase/firestore');
 const { PROJECT_ID, assertEmulatorEnvironment } = require('./emulator-guard.cjs');
 
@@ -112,6 +112,12 @@ test('newsletter plays and rewards remain backend-only while subscribers stay ad
     await setDoc(doc(context.firestore(), 'newsletter_subscribers/subscriber_private'), {
       contactInfo: 'client@example.test', status: 'subscribed',
     });
+    await setDoc(doc(context.firestore(), 'admin_newsletter_summary/current'), {
+      schemaVersion: 1, activeCount: 1, revision: 1,
+    });
+    await setDoc(doc(context.firestore(), 'admin_newsletter_subscriber_projections/subscriber_private'), {
+      schemaVersion: 1, present: true,
+    });
   });
   const visitor = environment.unauthenticatedContext().firestore();
   const customer = environment.authenticatedContext('customer-1').firestore();
@@ -129,6 +135,12 @@ test('newsletter plays and rewards remain backend-only while subscribers stay ad
   await assertFails(getDoc(doc(visitor, 'newsletter_subscribers/subscriber_private')));
   await assertFails(getDoc(doc(customer, 'newsletter_subscribers/subscriber_private')));
   await assertSucceeds(getDoc(doc(admin, 'newsletter_subscribers/subscriber_private')));
+  await assertSucceeds(getDoc(doc(admin, 'admin_newsletter_summary/current')));
+  await assertFails(getDocs(collection(admin, 'admin_newsletter_summary')));
+  await assertFails(setDoc(doc(admin, 'admin_newsletter_summary/current'), { activeCount: 99 }));
+  for (const firestore of [visitor, customer, admin]) {
+    await assertFails(getDoc(doc(firestore, 'admin_newsletter_subscriber_projections/subscriber_private')));
+  }
 });
 
 test('active Google or passkey admins can edit back-office content without a time window', async () => {
@@ -208,6 +220,25 @@ test('dashboard projections require strong active admin and remain backend-write
     await setDoc(doc(context.firestore(), 'admin_incident_summary/current'), {
       schemaVersion: 1, activeCritical: 0, activeWarnings: 0, activeTotal: 0,
     });
+    await setDoc(doc(context.firestore(), 'admin_system_incident_summary/current'), {
+      schemaVersion: 1, revision: 1, recentTotal: 1, recentCritical: 0, recentErrors: 1,
+      incidents: [{ schemaVersion: 1, fingerprint: 'runtime-error', occurrenceCount: 1 }],
+    });
+    await setDoc(doc(context.firestore(), 'admin_system_incidents/runtime-error'), {
+      schemaVersion: 1, fingerprint: 'runtime-error', lastSeen: new Date(), occurrenceCount: 1,
+    });
+    await setDoc(doc(context.firestore(), 'admin_system_incident_events/private-ledger'), {
+      schemaVersion: 1, fingerprint: 'runtime-error',
+    });
+    await setDoc(doc(context.firestore(), 'admin_finance_history_days/2026-09-02'), {
+      schemaVersion: 1, dateKey: '2026-09-02', totalRevenueCents: 100,
+    });
+    await setDoc(doc(context.firestore(), 'admin_finance_history_months/2026-09'), {
+      schemaVersion: 1, monthKey: '2026-09', totalRevenueCents: 100,
+    });
+    await setDoc(doc(context.firestore(), 'admin_finance_history_years/2026'), {
+      schemaVersion: 1, yearKey: '2026', totalRevenueCents: 100,
+    });
   });
   const strong = environment.authenticatedContext('admin-strong', {
     admin: true,
@@ -231,13 +262,38 @@ test('dashboard projections require strong active admin and remain backend-write
   await assertSucceeds(getDocs(criticalQuery));
   await assertSucceeds(getDoc(doc(strong, 'admin_dashboard/insights')));
   await assertSucceeds(getDoc(doc(strong, 'admin_incident_summary/current')));
+  await assertSucceeds(getDoc(doc(strong, 'admin_system_incident_summary/current')));
+  await assertSucceeds(getDocs(query(
+    collection(strong, 'admin_finance_history_days'),
+    where('dateKey', '>=', '2026-09-01'),
+    orderBy('dateKey', 'asc'),
+    limit(30)
+  )));
+  await assertSucceeds(getDocs(query(
+    collection(strong, 'admin_finance_history_months'),
+    orderBy('monthKey', 'asc'),
+    limit(12)
+  )));
+  await assertSucceeds(getDocs(query(
+    collection(strong, 'admin_finance_history_years'),
+    orderBy('yearKey', 'desc'),
+    limit(50)
+  )));
+  await assertFails(getDocs(collection(strong, 'admin_system_incidents')));
+  await assertFails(getDoc(doc(strong, 'admin_system_incidents/runtime-error')));
+  await assertFails(getDoc(doc(strong, 'admin_system_incident_events/private-ledger')));
   await assertFails(getDocs(collection(strong, 'admin_dashboard')));
   await assertFails(getDoc(doc(strong, 'admin_dashboard/future')));
   await assertFails(setDoc(doc(strong, 'admin_dashboard/finance'), { schemaVersion: 1, revision: 2 }));
   await assertFails(setDoc(doc(strong, 'admin_incident_summary/current'), { activeTotal: 1 }));
+  await assertFails(setDoc(doc(strong, 'admin_system_incidents/forged'), { occurrenceCount: 999 }));
+  await assertFails(setDoc(doc(strong, 'admin_system_incident_summary/current'), { recentTotal: 999 }));
 
   for (const firestore of [weak, removed, client, anonymous]) {
     await assertFails(getDoc(doc(firestore, 'admin_dashboard/finance')));
     await assertFails(getDoc(doc(firestore, 'admin_incident_summary/current')));
+    await assertFails(getDoc(doc(firestore, 'admin_system_incident_summary/current')));
+    await assertFails(getDoc(doc(firestore, 'admin_system_incidents/runtime-error')));
+    await assertFails(getDoc(doc(firestore, 'admin_finance_history_days/2026-09-02')));
   }
 });

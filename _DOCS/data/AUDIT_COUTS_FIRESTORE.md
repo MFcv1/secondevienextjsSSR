@@ -396,6 +396,24 @@ Apres chaque changement P0:
 - refuser le changement si une session visible met plus de 30 secondes a disparaitre ou si un parcours se perd;
 - ne deployer qu'apres validation du build et du smoke cible sur sandbox.
 
+### 8.1 Réveils périodiques commerce après optimisation locale du 2026-09-02
+
+Les dispatchers outbox et expiration de réservation se réveillaient chacun
+toutes les deux minutes, soit 720 + 720 = 1 440 invocations par jour même sans
+commande. Leur requête vide minimale représentait environ 2 160 lectures de
+requête par jour. La voie nominale locale est désormais événementielle:
+chaque document éligible programme une Cloud Task déterministe à son échéance.
+Les deux schedulers restent des watchdogs de reprise horaires, soit 48
+invocations et environ 72 lectures vides minimales par jour. Le plancher baisse
+donc de 96,7 %, avant même les quotas gratuits; une activité réelle paie
+uniquement la tâche correspondant à son outbox ou sa réservation.
+
+Le reconciliateur catalogue passe parallèlement de 288 à 24 réveils par jour.
+Il reste un filet de réparation: la publication normale continue de partir de
+`onCatalogSourceWrite` et de ses Cloud Tasks. Ces valeurs sont des comptes
+d'opérations exacts du code; la facture monétaire avant/après reste à mesurer
+sur une fenêtre sandbox de 24 heures, séparément des déploiements.
+
 ## 9. Etat historique des lots conservateurs au 2026-07-17
 
 Le lot P0 catalogue/admin avait ete deploye et mesure. A cette date, le lot P1 `public/meta` et analytics etait encore uniquement local; cet etat historique est remplace par le cutover deploye et la preuve finale des sections 10.1 et 10.2.
@@ -503,17 +521,43 @@ est conserve pour eviter un cout fixe sandbox sans trafic representatif.
 
 ### 10.5 Cout borne des erreurs systeme
 
-La vue Systeme ne copie aucun log dans Firestore et n'ajoute aucun listener.
-Elle interroge les logs deja ingeres uniquement a l'ouverture ou au clic sur
-Actualiser: 500 entrees maximum sur 1 h, 6 h, 24 h, 3 j ou 7 j, puis 50
-occurrences maximum pour un detail. Cloud Logging ne facture pas la lecture de
-ces entrees; le cout porte sur leur ingestion et leur retention. La mesure
-read-only du 2026-08-25 totalise environ 0,617 Gio ingere sur trente jours,
-soit environ 1,2 % des 50 Gio mensuels inclus. Le raccord ne justifie donc ni
-export BigQuery, ni Data Access, ni nouvelle metrique log a forte cardinalite.
+Depuis le deploiement sandbox du 2026-09-02, la vue Systeme ne relit plus Cloud
+Logging. Log Router transmet les erreurs utiles au topic Pub/Sub
+`admin-system-incidents`; une Function les expurge et materialise un groupe,
+un ledger TTL et un resume unique contenant au plus 50 groupes. Le shell admin
+ecoute ce document pour le badge et le partage avec la console: ouvrir Systeme
+n'ajoute donc aucune query. Cloud Logging ne
+facture toujours pas les queries ni le routage; Pub/Sub inclut 10 GiB mensuels.
 
-L'alerte critique utilise une condition `LogMatch` directe sur les erreurs
+La mesure read-only de la panne `CATALOG_SERVED_VERSION_STALE` donne 253 stderr
+et 253 request logs. L'ancien ecran en lisait 500 a chaque ouverture. Le sink
+exclut les 253 request logs. Pour les 253 erreurs utiles, le modele executable
+compte 506 lectures et 506 ecritures producteur; avec le listener admin ouvert
+pendant tout le burst, le majorant est 1 012 lectures et 506 ecritures.
+Aux tarifs publics eur3 de 0,06 USD/100 000 lectures et 0,18 USD/100 000
+ecritures, cela represente environ 0,00152 USD avant quotas gratuits, plus
+0,00005 USD de suppressions TTL. Le smoke reel a injecte quatre messages utiles:
+8 lectures et 8 ecritures producteur, au plus 8 lectures listener/rules, une
+suppression manuelle du resume et quatre suppressions TTL futures, soit environ
+0,000025 USD avant quotas gratuits. Le montant facture consolide reste a mesurer
+sur 24 h: ces chiffres sont des operations observees valorisees au tarif public,
+pas un export Billing.
+
+L'alerte critique continue d'utiliser une condition `LogMatch` directe sur les erreurs
 applicatives inattendues. Elle ne cree pas de metrique personnalisee et limite
 les notifications a une par heure, avec fermeture automatique apres six
 heures. Les identifiants de correlation restent des champs de logs existants,
 jamais des labels Monitoring a forte cardinalite.
+
+### 10.6 Retours chauds dans Data
+
+Le code deploye avant le correctif relance deux callables a chaque remontage de
+Data. Avec un cache recent et aucune nouvelle session, un retour represente
+environ cinq lectures Firestore, deux ecritures d'audit et deux invocations;
+dix retours rapproches representent donc environ 50 lectures, 20 ecritures et
+20 invocations. Le correctif local du 2026-09-02 conserve overview et liste
+pendant cinq minutes: ces dix retours deviennent zero operation cloud, tandis
+que le premier acces, l'expiration et le bouton Actualiser gardent le refresh
+serveur. Les latences POST observees le 2026-09-02 allaient de 117 ms a 1,431 s;
+le rendu cache local n'attend aucune de ces requetes. La mesure apres reste a
+confirmer sur App Hosting apres autorisation de deploiement.

@@ -140,8 +140,8 @@ secrets, deploiement et recette Meta reelle restent M4/M5.
   -> CAS current puis previous/LKG [ST]
   -> dispatchCatalogRevalidation [F]
   -> /api/revalidate-catalog HMAC [API]
-  -> tag pointeur API + chemins impactes
-  -> preuve API exacte /api/catalog/version
+  -> chemins impactes revalides
+  -> pointeur mutable Storage relu frais + preuve API exacte /api/catalog/version
   -> sys_catalog_live/current [DB] -> onglets visibles
      -> grilles galerie rechargees depuis la release exacte + router.refresh
   -> preuve HTML versionnee asynchrone (200 courant, 404 ancien chemin retire)
@@ -388,11 +388,13 @@ AnalyticsCollectorIsland + AuthProvider anonyme [C]
   -> rollups quoteSessions + vues produit -> admin_dashboard/insights,
      devis 30 j/3 m/6 m/1 an et top cinq produits 30 j [F/DB]
   -> AdminDashboard: listener allowliste finance/orders/activity, puis insights et catalogue lazy [C/DB]
-  -> AdminAnalytics: historique borne, cache IndexedDB, listener live et frise illustree [C]
+  -> AdminAnalytics: historique borne, cache IndexedDB stale-while-refresh 5 min,
+     prechargement du chunk par intention et frise illustree [C]
   -> AdminIncidentConsole: recherche support CMD/provider/correlation/e-mail,
      timeline expurgee, attemptCount et audit fail-closed via callable AAL2 [C/F]
-     -> vue Systeme: erreurs Cloud Logging groupees par empreinte technique,
-        liste bornee puis occurrences/pile expurgees chargees au clic [C/F/EXT]
+     -> vue Systeme: Log Router -> Pub/Sub -> projectSystemIncidentGen2,
+        ledger de rejeu -> summary current avec 50 groupes bornes [EXT/F/DB]
+        -> un listener partage badge/console, filtres locaux et lien Logs Explorer [C/DB]
      -> Error Reporting et alerte Monitoring directe sur les erreurs inattendues [EXT]
   -> UID/IP, courbe, bandeau live cumulatif, visiteurs et parcours [C]
 ```
@@ -780,6 +782,9 @@ functions/
     |   |-- customerLoginOtp.js
     |   |-- guestCheckoutOtp.js
     |   `-- passkeys.js
+    |-- admin/
+    |   |-- financialHistoryDomain.js . normalisation legacy/v2 en centimes
+    |   `-- financialHistoryProjection.js . jours/mois/années matérialisés
     |-- commerce/
     |   |-- createOrder.js
     |   |-- legacyContainment.js ........ hard-stop backend fail-closed Gate 0B
@@ -851,6 +856,7 @@ functions/
     |   |-- v2ReturnCommands.js ............ callables retours actives sous controle v2
     |   |-- v2CustomerReturnRequests.js .... demande client + decisions admin vers refund/retour existants
     |   |-- v2Webhooks.js ................ webhooks paiement/Connect Gen2 seuls apres G12-B
+    |   |-- commerceEventDispatch.js ...... outbox/réservations vers Cloud Tasks à l'échéance
     |   |-- stripeConnect.js
     |   |-- orderStatus.js
     |   |-- orderStats.js ................. projection orders legacy/v2 et ledger unique idempotent avec tombstones
@@ -875,7 +881,9 @@ functions/
     |-- newsletter/
     |   |-- newsletterRewardDomain.js . validation, tirage et codes serveur
     |   |-- newsletterRewardEmail.js .. confirmation du gain client
-    |   `-- newsletterRewards.js ...... callables jeu, abonnement et espace client
+    |   |-- newsletterRewards.js ...... callables jeu, abonnement et espace client
+    |   |-- newsletterProjectionDomain.js . delta présence idempotent
+    |   `-- newsletterProjection.js ... compteur global + ledger sans PII
     |-- analytics/
     |   |-- constants.js
     |   |-- sessionAuthorizationCache.js ... cache borne/TTL du hash de jeton
@@ -888,7 +896,8 @@ functions/
     |   |-- incidentProjection.js ......... table code/severite/categorie + deltas resume fail-closed
     |   |-- businessEvents.js ........... journal transitions + projections finance/incidents asynchrones
     |   |-- diagnosticTimeline.js ....... recherche admin AAL2, timeline expurgee et audit
-    |   `-- systemIncidents.js .......... lecture Cloud Logging bornee, deduplication et projection expurgee
+    |   |-- systemIncidents.js .......... lecteur Cloud Logging legacy conserve hors chemin UI
+    |   `-- systemIncidentProjection.js . projection Pub/Sub runtime idempotente et expurgee
     |-- onboarding/
     |   |-- billingGuide.js ........... callables, modes, etat backend-only
     |   `-- billingGuideContract.js ... modes, etapes, UID cible et format Billing
@@ -908,8 +917,8 @@ functions/
         |-- impactPlan.js .............. diff immutable cible/full
         |-- catalogRoutes.js ........... chemins produit/categorie purs
         |-- releaseGarbageCollection.js  retention bornee des releases Storage
-        |-- catalogRevalidation.js ..... task HMAC vers App Hosting
-        |-- catalogReconciler.js ....... reprise des publications bloquees
+        |-- catalogRevalidation.js ..... task HMAC, supersession monotone et backoff durable
+        |-- catalogReconciler.js ....... reprise idempotente des publications bloquees
         |-- catalogMaintenance.js ...... statut, rollback valide et reconstruction admin
         |-- mediaGarbageCollection.js .. quarantaine media 90 jours + GC quotidien
         `-- publicProjection.js ........ projection publique canonique
@@ -917,13 +926,13 @@ functions/
 
 ## 9. Exports Cloud Functions
 
-Etat courant au 2026-09-01: `functions/index.js` contient 152 exports uniques
-locaux; 149 Functions sont deployees dans le sandbox (3 Gen1, 146 Gen2).
+Etat courant au 2026-09-02: `functions/index.js` contient 153 exports uniques
+locaux; 150 Functions sont deployees dans le sandbox (3 Gen1, 147 Gen2).
 Les trois seules Gen1 sont les triggers Auth
 `grantAdminOnAuth`, `onRegisteredUserCreated` et `onRegisteredUserDeleted`.
 Toutes les autres cibles cloud conservees sont Gen2 `ACTIVE`; les quatre
 owners Scheduler commerce sont `ENABLED` et les endpoints Stripe test pointent
-uniquement vers les owners Gen2. L'ecart exact est 147 noms communs, cinq
+uniquement vers les owners Gen2. L'ecart exact est 148 noms communs, cinq
 exports uniquement locaux (les cinq Instagram legacy) et deux webhooks v2 uniquement
 cloud (`stripeWebhookV2Gen2`, `stripeConnectWebhookV2Gen2`) avec source et
 entree de deploiement dediees. `commerceWebhookCoverageWatchdogGen2` est
@@ -1294,6 +1303,11 @@ Firestore
 |-- admin_dashboard/insights .......... devis 30 j/3 m/6 m/1 an + top cinq produits 30 j, sans donnees personnelles
 |-- admin_user_stats_projections/{uid}  ledger Auth backend-only avec tombstones
 |-- admin_finance_capture_projections/{factId} . ledger de capture backend-only
+|-- admin_newsletter_summary/current . compteur global sans PII
+|-- admin_newsletter_subscriber_projections/{subscriberId} . ledger/tombstone backend-only
+|-- admin_finance_history_days/{date} . historique legacy + v2 matérialisé
+|-- admin_finance_history_months/{month} . agrégat mensuel au clic
+|-- admin_finance_history_years/{year} . agrégat annuel borné pour Max
 |-- commerce_fixture_scopes/{scopeId}
 |-- commerce_release_manifests/{releaseId}
 |-- sys_commerce_control/current
@@ -1325,7 +1339,7 @@ Firestore
 |-- admin_invoice_sequences/{year} .... numerotation transactionnelle backend-only
 |-- quote_requests/{quoteId} .......... demande, suivi, estimation et pointeurs photos backend-only
 |-- sys_audit_quotes/{auditId} ........ creation et changements de suivi sans contenu libre, expiration 366 j
-|-- sys_catalog_publication/secondevie  mode, lease et revisions
+|-- sys_catalog_publication/secondevie  mode, lease, revisions et backoff revalidation
 |-- sys_catalog_publication_events/{eventHash}
 |   `-- deduplication/outbox catalogue
 |-- sys_catalog_publication_builds/{buildId}
@@ -1433,6 +1447,7 @@ tests/admin-dashboard-projections.test.cjs . projecteurs, reader critique, incid
 tests/admin-data-cache-contract.test.mjs ... purge session et invalidation des lectures en vol
 tests/system-incidents.test.cjs .......... groupes, redaction, bornes et audit Cloud Logging
 tests/performance-route-policy.test.mjs . allowlist Performance et coupure avant route privee
+scripts/configure-analytics-aggregate-trigger-iam.mjs . preflight/apply IAM borne du transport Eventarc de l'agregateur analytics
 tests/billing-onboarding-contract.test.cjs
 tests/smoke.spec.mjs
 tests/catalog/*.test.cjs

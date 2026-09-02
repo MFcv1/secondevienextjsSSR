@@ -1,6 +1,6 @@
 # Annonces, catalogue et recherche
 
-Derniere mise a jour: 2026-08-08
+Derniere mise a jour: 2026-09-02
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Perimetre
@@ -137,8 +137,10 @@ mais leur ecriture directe par le navigateur est interdite.
 Etat code au 2026-08-08: la publication neuve atomique attend la projection et
 la version publiques exactes avant de confirmer le succes et de transmettre
 automatiquement l'interface a la vue Publications. Cette preuve passe par une
-route POST admin non cachee: elle ne depend ni du cache pointeur API de quinze
-secondes, ni de la revalidation HTML. Le debounce du builder est borne a 750 ms
+route POST admin non cachee. Depuis la correction locale du 2026-09-02, aucun
+lecteur ne met plus le pointeur mutable en cache: toutes les preuves lisent sa
+generation Storage courante, tandis que les objets de release immuables restent
+caches. Le debounce du builder est borne a 750 ms
 pour les changements publics et 500 ms pour prix/stock; les payloads immuables
 sont ecrits et verifies en parallele avant checksums, manifeste et CAS. La
 modale exprime des etapes terminees, pas un faux pourcentage de temps; l'attente
@@ -195,7 +197,10 @@ Le lot G2-A5 aligne les deux Cloud Tasks catalogue a un timeout et une deadline
 de 300 secondes. La mesure read-only sur trente jours trouve pour le build 22
 latences HTTP, p99 16,181 s et max 16,181 s; pour la revalidation 446 latences,
 p99 5,667 s et max 9,359 s. Les queues restent a une execution concurrente,
-dix tentatives et backoff 5-300 s. CPU, memoire, concurrence et min-max sont
+dix tentatives et backoff 5-300 s. Cet historique est remplace localement au
+2026-09-02 pour la revalidation seulement: une livraison Cloud Tasks par
+tentative, puis une reprise durable a 5 min, 15 min, 1 h, 6 h et 24 h, plafonnee
+a 24 h. CPU, memoire, concurrence et min-max sont
 explicites dans la source; aucun changement de queue ou de Function cloud n'a
 ete applique.
 
@@ -239,12 +244,14 @@ La passe de synchronisation locale du 2026-07-19 a ferme les ecarts suivants dan
 - chaque mutation publie un `impact-plan.json` immutable, calcule par diff entre releases, qui contient ancienne/nouvelle URL produit, categories feuille/parentes et drapeaux galerie/recherche/sitemap; les depassements de bornes et rollbacks passent par un mode `full` explicitement motive;
 - la resolution d'une fiche compare l'ID direct puis le suffixe canonique contre les IDs reels du snapshot; un ID Firestore contenant des tirets n'est jamais tronque au dernier tiret;
 - `stateVersion`, le token/TTL du lease et l'operation de rollback proprietaire ferment les ecritures tardives; un CAS `current` reussi mais une finalisation Firestore interrompue reste dans un etat reparable par le reconciler;
-- la revalidation HMAC couvre le corps exact, le projet, l'audience et les quatre identites revision/manifeste/agregat/plan; elle invalide les chemins du plan et le seul tag mutable `catalog:api-pointer`, jamais le cache des releases immuables;
+- la revalidation HMAC couvre le corps exact, le projet, l'audience et les quatre identites revision/manifeste/agregat/plan; elle invalide les chemins du plan, jamais les releases immuables;
 - la preuve HTML choisit une categorie canonique du plan signe; un alias tel
   que `/categorie/deco` peut etre invalide mais ne doit pas servir de sonde 200
   puisqu'il redirige vers `/categorie/decorations`;
 - `integrityState`, `sourceLagState`, `invalidationState` et `servedState` remplacent tout booleen sain ambigu; une version n'est marquee servie qu'apres lecture concordante de `/api/catalog/version` et d'un echantillon HTML;
-- les pages ISR lisent le pointeur Storage frais a chaque regeneration; les API utilisent un cache pointeur de 15 secondes explicitement invalide et des releases immuables; ISR 300 reste l'unique filet temporel de page;
+- les pages ISR et les API lisent le pointeur Storage mutable frais; seules les releases adressees par un chemin immutable sont cachees; l'ETag de `/api/catalog/version` peut donc repondre 304 uniquement apres comparaison avec la generation courante, et ISR 300 reste l'unique filet temporel de page;
+- une revalidation dont la revision a deja ete depassee s'arrete en `superseded` avant tout signal ou ecriture d'etat; un rollback exige au contraire l'identite exacte et n'accepte jamais une revision superieure comme preuve;
+- les reprises utilisent un nom Cloud Tasks deterministe par revision, manifeste et numero de tentative. Un echec courant persiste `revalidationFailureCount`, `revalidationRetryNotBefore` et `revalidationLastFailureAt`; le reconciler respecte ce backoff et ne cree plus une nouvelle chaine toutes les cinq minutes;
 - apres acceptation de l'invalidation et preuve exacte de `/api/catalog/version`, le backend remplace le document minimal `sys_catalog_live/current`, avant le controle HTML; il ne contient ni prix, ni stock, ni image et n'est jamais autoritaire pour le commerce;
 - la galerie visible confirme ce signal par l'endpoint version avec des reprises bornees, charge les 48 cartes de la release exacte depuis `/api/catalog` et remplace ses grilles Nouveautes/Petits Prix sans attendre ISR; `router.refresh()` reste lance pour faire converger le document et les autres surfaces;
 - la preuve HTML versionnee reste obligatoire pour `servedState=observed`, les reprises Cloud Tasks et l'exploitation, mais son retard ne bloque plus le signal ni les cartes visibles;

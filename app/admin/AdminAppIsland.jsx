@@ -57,6 +57,8 @@ const loadAdminReturns = () => import('../../src/kit/admin/AdminReturns');
 const loadAdminInvoices = () => import('../../src/kit/admin/AdminInvoices');
 const loadAdminLivraison = () => import('../../src/kit/admin/AdminLivraison');
 const loadAdminQuotes = () => import('../../src/kit/admin/AdminQuotes');
+const loadAdminAnalytics = () => import('../../src/kit/admin/AdminAnalytics');
+const loadAdminIncidentConsole = () => import('../../src/kit/admin/AdminIncidentConsole');
 
 const AdminDashboard = React.lazy(loadAdminDashboard);
 const AdminHomepage = React.lazy(() => import('../../src/kit/admin/AdminHomepage'));
@@ -70,8 +72,8 @@ const AdminStudio = React.lazy(() => import('../../src/kit/admin/AdminStudio'));
 const AdminPublicationWorkspace = React.lazy(() => import('../../src/kit/admin/AdminPublicationWorkspace'));
 const AdminUsers = React.lazy(() => import('../../src/kit/admin/AdminUsers'));
 const AdminNewsletter = React.lazy(() => import('../../src/kit/admin/AdminNewsletter'));
-const AdminAnalytics = React.lazy(() => import('../../src/kit/admin/AdminAnalytics'));
-const AdminIncidentConsole = React.lazy(() => import('../../src/kit/admin/AdminIncidentConsole'));
+const AdminAnalytics = React.lazy(loadAdminAnalytics);
+const AdminIncidentConsole = React.lazy(loadAdminIncidentConsole);
 const AdminSEO = React.lazy(() => import('../../src/kit/admin/AdminSEO'));
 const AdminPaymentSettings = React.lazy(() => import('../../src/kit/admin/AdminPaymentSettings'));
 const AdminPaymentLinks = React.lazy(() => import('../../src/kit/admin/AdminPaymentLinks'));
@@ -164,6 +166,8 @@ function AdminContent() {
   const [catalogState, setCatalogState] = useState({ items: [], status: 'idle', error: null });
   const [billingGate, setBillingGate] = useState({ status: 'idle', data: null, error: null });
   const [incidentSummary, setIncidentSummary] = useState(null);
+  const [systemIncidentState, setSystemIncidentState] = useState({ status: 'idle', data: null });
+  const [systemIncidentSeenRevision, setSystemIncidentSeenRevision] = useState(0);
   const catalogStatusRef = React.useRef('idle');
   const catalogRequestRef = React.useRef(null);
   const deletedProductIdsRef = React.useRef(new Set());
@@ -297,6 +301,54 @@ function AdminContent() {
   }, [backOfficeReady, hasStrongAuth, isAdmin, user?.uid]);
 
   React.useEffect(() => {
+    const storageKey = user?.uid ? `sv-admin-system-incidents-seen:${user.uid}` : null;
+    try {
+      setSystemIncidentSeenRevision(storageKey ? Number(window.localStorage.getItem(storageKey) || 0) : 0);
+    } catch {
+      setSystemIncidentSeenRevision(0);
+    }
+  }, [user?.uid]);
+
+  React.useEffect(() => {
+    setSystemIncidentState({ status: 'idle', data: null });
+    if (!user?.uid || !isAdmin || !hasStrongAuth || !backOfficeReady) return undefined;
+    setSystemIncidentState({ status: 'loading', data: null });
+    return onSnapshot(doc(db, 'admin_system_incident_summary', 'current'), (snapshot) => {
+      if (!snapshot.exists()) {
+        setSystemIncidentState({ status: 'ready', data: { schemaVersion: 1, revision: 0, incidents: [] } });
+        return;
+      }
+      const data = snapshot.data();
+      const valid = data?.schemaVersion === 1
+        && Number.isSafeInteger(data.revision) && data.revision >= 0
+        && Number.isSafeInteger(data.recentTotal) && data.recentTotal >= 0 && data.recentTotal <= 50
+        && Number.isSafeInteger(data.recentCritical) && data.recentCritical >= 0
+        && Number.isSafeInteger(data.recentErrors) && data.recentErrors >= 0
+        && data.recentTotal === data.recentCritical + data.recentErrors
+        && Array.isArray(data.incidents) && data.incidents.length <= 50
+        && data.incidents.every((incident) => (
+          incident?.schemaVersion === 1
+          && typeof incident.fingerprint === 'string'
+          && Number.isSafeInteger(incident.occurrenceCount) && incident.occurrenceCount >= 1
+          && typeof incident.firstSeen?.toMillis === 'function'
+          && typeof incident.lastSeen?.toMillis === 'function'
+          && typeof incident.event === 'string'
+          && typeof incident.errorClass === 'string'
+          && typeof incident.service === 'string'
+        ))
+        && typeof data.updatedAt?.toMillis === 'function';
+      setSystemIncidentState(valid
+        ? { status: 'ready', data }
+        : { status: 'error', data: null });
+    }, (error) => {
+      if (error?.code !== 'permission-denied') {
+        console.error('Admin system incident summary listener failed', error?.code || error?.name);
+      }
+      setSystemIncidentState({ status: 'error', data: null });
+    });
+  }, [backOfficeReady, hasStrongAuth, isAdmin, user?.uid]);
+
+  React.useEffect(() => {
     const handleStepUpRequired = () => setStepUpOpen(true);
     window.addEventListener(ADMIN_STEP_UP_REQUIRED_EVENT, handleStepUpRequired);
     return () => window.removeEventListener(ADMIN_STEP_UP_REQUIRED_EVENT, handleStepUpRequired);
@@ -361,6 +413,14 @@ function AdminContent() {
 
   const selectAdminTab = (tabId) => {
     if (ADMIN_PUBLIC_CATALOG_TABS.has(tabId)) void ensureAdminCatalog();
+    if (tabId === 'incidents' && systemIncidentState.data?.revision) {
+      setSystemIncidentSeenRevision(systemIncidentState.data.revision);
+      try {
+        window.localStorage.setItem(`sv-admin-system-incidents-seen:${user.uid}`, String(systemIncidentState.data.revision));
+      } catch {
+        // Le badge reste fonctionnel en mémoire si le stockage local est indisponible.
+      }
+    }
     setAdminCollection(tabId);
     setEditingItem(null);
     setIsSidebarOpen(false);
@@ -507,9 +567,15 @@ function AdminContent() {
         activeTabId={adminCollection}
         darkMode={darkMode}
         groups={ADMIN_NAV_GROUPS}
-        incidentCount={incidentSummary?.activeTotal || 0}
+        incidentCount={(incidentSummary?.activeTotal || 0) + (
+          (systemIncidentState.data?.revision || 0) > systemIncidentSeenRevision ? 1 : 0
+        )}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
+        onIntent={(tabId) => {
+          if (tabId === 'analytics') void loadAdminAnalytics();
+          if (tabId === 'incidents') void loadAdminIncidentConsole();
+        }}
         onSelect={selectAdminTab}
         tabs={adminTabs}
       />
@@ -602,7 +668,7 @@ function AdminContent() {
               <AdminAnalytics darkMode={darkMode} items={catalogState.items} />
             </div>
           ) : adminCollection === 'incidents' ? (
-            <AdminIncidentConsole darkMode={darkMode} />
+            <AdminIncidentConsole darkMode={darkMode} systemIncidentState={systemIncidentState} />
           ) : adminCollection === 'payment_settings' ? (
             <AdminPaymentSettings darkMode={darkMode} />
           ) : adminCollection === 'payment_links' ? (

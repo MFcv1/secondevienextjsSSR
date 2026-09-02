@@ -545,6 +545,12 @@ test('G2-A Tasks: runtime et deadlines sont alignes a 300 s apres mesure p99', (
     ].map((relativePath) => fs.readFileSync(path.join(ROOT, relativePath), 'utf8')).join('\n');
     assert.equal((catalogSources.match(/dispatchDeadlineSeconds:\s*300/g) || []).length, 6);
     assert.doesNotMatch(catalogSources, /dispatchDeadlineSeconds:\s*1800/);
+    assert.match(revalidation, /retryConfig:\s*\{\s*maxAttempts:\s*1/);
+    assert.match(build, /catalogRevalidationTaskId\(identity,\s*0\)/);
+    assert.doesNotMatch(
+        fs.readFileSync(path.join(ROOT, 'functions/src/catalog/catalogReconciler.js'), 'utf8'),
+        /catalog-reconcile-revalidate[^\n]*timeBucket/
+    );
 });
 
 test('G2-A artefacts: la quarantaine media est idempotente par chemin et generation', async () => {

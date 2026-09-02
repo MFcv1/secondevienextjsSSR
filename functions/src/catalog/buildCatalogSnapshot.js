@@ -9,6 +9,7 @@ const {
     CONTROL_DOCUMENT,
     acquireLease,
     assertLease,
+    catalogRevalidationTaskId,
     cleanError,
     clearLease,
     initialPublicationState,
@@ -202,7 +203,11 @@ async function enqueueRevalidation(identity) {
     const queue = getFunctions().taskQueue(REVALIDATION_TASK);
     await queue.enqueue(
         { schemaVersion: 1, ...identity },
-        { scheduleDelaySeconds: 0, dispatchDeadlineSeconds: 300 }
+        {
+            id: catalogRevalidationTaskId(identity, 0),
+            scheduleDelaySeconds: 0,
+            dispatchDeadlineSeconds: 300
+        }
     );
 }
 
@@ -450,6 +455,9 @@ async function buildCatalog(dependencies, input = {}) {
                         sourceLagState: Number(state.desiredRevision || 0) > requestedRevision ? 'behind' : 'current',
                         invalidationState: 'pending',
                         servedState: 'pending',
+                        revalidationFailureCount: 0,
+                        revalidationRetryNotBefore: null,
+                        revalidationLastFailureAt: null,
                         updatedAt: serverTimestamp()
                     }, { merge: true });
                 });

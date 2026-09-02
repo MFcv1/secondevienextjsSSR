@@ -144,7 +144,6 @@ export const validateCatalogRevalidationBody = (body, { projectId, audience } = 
 };
 
 export const getCatalogRevalidationTargets = ({ mode, plan }) => {
-  const tags = ['catalog:api-pointer'];
   const paths = mode === 'full'
     ? ['/', '/galerie', '/api/catalog', '/api/search', '/sitemap.xml']
     : plan.paths;
@@ -153,5 +152,5 @@ export const getCatalogRevalidationTargets = ({ mode, plan }) => {
     pathEntries.push({ path: '/categorie/[categoryId]', type: 'page' });
     pathEntries.push({ path: '/produit/[slugOrId]', type: 'page' });
   }
-  return { tags, pathEntries };
+  return { pathEntries };
 };

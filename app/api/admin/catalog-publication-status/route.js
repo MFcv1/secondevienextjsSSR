@@ -30,9 +30,7 @@ export async function POST(request) {
   }
 
   try {
-    const { product, snapshot } = await getMaterializedProductResult(productId, {
-      pointerCache: 'fresh'
-    });
+    const { product, snapshot } = await getMaterializedProductResult(productId);
     if (!product) return jsonResponse({ error: 'product_not_found' }, 404);
     return jsonResponse({
       appId: publicEnv.appId,

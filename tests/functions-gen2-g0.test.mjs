@@ -16,12 +16,14 @@ import {
   extractLocalExports
 } from '../scripts/functions-gen2-inventory.mjs';
 import {
+  GCLOUD_GEN2_TARGETS,
   buildFirebaseCliEnv,
   buildFirebaseDeployArgs,
   buildGcloudGen1DeployArgs,
   buildGcloudGen2DeployArgs,
   buildGcloudGen2RollbackArgs,
   buildGcloudSchedulerUpdateArgs,
+  buildGcloudTaskQueueUpdateArgs,
   assertGen2RollbackObject,
   assertTaskQueuePreconditions,
   parseDeployArgs,
@@ -59,7 +61,7 @@ function validate(args) {
   });
 }
 
-test('inventaire source courant: 151 exports dont onze observabilite actives', () => {
+test('inventaire source courant: 160 exports dont sept event-driven en attente cloud', () => {
   const exports = extractLocalExports(ROOT);
   const expectedCurrentCount = EXPECTED_CURRENT_SOURCE_COUNT;
   assert.equal(exports.length, expectedCurrentCount);
@@ -241,7 +243,7 @@ test('le script package Functions ne contient plus de deploy global', () => {
 test('le reconciler G1 epingle son compte runtime dedie', () => {
   const source = fs.readFileSync(path.join(ROOT, 'functions/src/commerce/v2Operations.js'), 'utf8');
   assert.match(source, /COMMERCE_OPERATIONS_RUNTIME_SERVICE_ACCOUNT\s*=\s*\n?\s*['"]commerce-operations-reconciler@secondevienextjsssr\.iam\.gserviceaccount\.com['"]/);
-  const reconciler = source.match(/const commerceOperationsReconciler = regionalFunctions\(\)([\s\S]*?)\.pubsub\.schedule\('every 60 minutes'\)/)?.[1] || '';
+  const reconciler = source.match(/const commerceOperationsReconciler = regionalFunctions\(\)([\s\S]*?)\.pubsub\.schedule\('17 3 \* \* \*'\)/)?.[1] || '';
   assert.match(reconciler, /serviceAccount:\s*COMMERCE_OPERATIONS_RUNTIME_SERVICE_ACCOUNT/);
 });
 
@@ -346,7 +348,7 @@ test('le transport gcloud Gen2 est limite au premier lot stats et explicite IAM 
   for (const expected of [
     'firebase-schedule-catalogReconciler-europe-west1',
     '--project=secondevienextjsssr', '--location=europe-west1',
-    '--schedule=every 5 minutes', '--time-zone=UTC', '--http-method=POST',
+    '--schedule=every 60 minutes', '--time-zone=UTC', '--http-method=POST',
     '--uri=https://europe-west1-secondevienextjsssr.cloudfunctions.net/catalogReconciler',
     '--oidc-service-account-email=catalog-enqueuer@secondevienextjsssr.iam.gserviceaccount.com',
     '--oidc-token-audience=https://europe-west1-secondevienextjsssr.cloudfunctions.net/catalogReconciler',
@@ -524,6 +526,43 @@ test('le transport gcloud Gen2 est limite au premier lot stats et explicite IAM 
     '--update-labels=deployment-tool=codex-targeted,migration-source-commit=f80dc7213a8d738fb1edde11a926028bcb57ab28,deployment-taskqueue=true'
   ]) assert.ok(catalogRevalidationArgs.includes(expected), expected);
   assert.equal(catalogRevalidationArgs.includes('--retry'), false);
+  assert.doesNotThrow(() => assertTaskQueuePreconditions({
+    name: 'projects/secondevienextjsssr/locations/europe-west1/queues/dispatchCatalogRevalidation',
+    state: 'RUNNING',
+    rateLimits: { maxConcurrentDispatches: 1, maxDispatchesPerSecond: 1, maxBurstSize: 10 },
+    retryConfig: { maxAttempts: 1, minBackoff: '5s', maxBackoff: '300s', maxDoublings: 5 }
+  }, {
+    queueName: 'dispatchCatalogRevalidation', queueMaxConcurrentDispatches: 1,
+    queueMaxDispatchesPerSecond: 1, queueMaxBurstSize: 10, queueMaxAttempts: 1,
+    queueMinBackoff: '5s', queueMaxBackoff: '300s', queueMaxDoublings: 5
+  }, []));
+  assert.deepEqual(buildGcloudTaskQueueUpdateArgs(catalogRevalidationRequest), [
+    'tasks', 'queues', 'update', 'dispatchCatalogRevalidation',
+    '--project=secondevienextjsssr', '--location=europe-west1',
+    '--max-concurrent-dispatches=1', '--max-dispatches-per-second=1',
+    '--max-attempts=1', '--min-backoff=5s', '--max-backoff=300s',
+    '--max-doublings=5', '--quiet'
+  ]);
+});
+
+test('l agregateur analytics se deploie avec une identite Eventarc distincte et bornee', () => {
+  const target = GCLOUD_GEN2_TARGETS.aggregateAnalyticsSessionGen2;
+  assert.equal(target.triggerType, 'event');
+  assert.equal(target.eventType, 'google.cloud.firestore.document.v1.written');
+  assert.equal(target.documentPathPattern, 'analytics_sessions/{sessionId}');
+  assert.equal(target.triggerLocation, 'eur3');
+  assert.equal(
+    target.triggerServiceAccount,
+    'functions-eventarc-invoker@secondevienextjsssr.iam.gserviceaccount.com'
+  );
+  assert.equal(
+    target.runtimeServiceAccount,
+    'analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com'
+  );
+  assert.notEqual(target.triggerServiceAccount, target.runtimeServiceAccount);
+  assert.equal(target.minInstances, '0');
+  assert.equal(target.maxInstances, '1');
+  assert.equal(target.concurrency, '1');
 });
 
 test('le rollback G2-B est borne a la revision et a l archive source preservee', () => {

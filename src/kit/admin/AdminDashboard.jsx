@@ -919,6 +919,8 @@ const AdminDashboard = ({
     const [intradayOrdersLoading, setIntradayOrdersLoading] = useState(false);
     const intradayRequestRef = useRef(false);
     const [dailySales, setDailySales] = useState([]);
+    const [financialHistoryLoading, setFinancialHistoryLoading] = useState(false);
+    const [financialHistoryError, setFinancialHistoryError] = useState(false);
     const [recentOrders, setRecentOrders] = useState([]);
     const [insights, setInsights] = useState(cachedInsights || EMPTY_INSIGHTS);
     const [quotePeriod, setQuotePeriod] = useState('30d');
@@ -945,19 +947,48 @@ const AdminDashboard = ({
     const selectTimeFilter = async (filterId) => {
         setTimeFilter(filterId);
         if (!['1hour', '1day'].includes(filterId)) {
-            const days = filterId === '7days' ? 7 : filterId === '1month' ? 30 : filterId === '1year' ? 365 : 3650;
-            const cutoff = new Date(Date.now() - ((days - 1) * 24 * 60 * 60 * 1000)).toISOString().slice(0, 10);
+            setFinancialHistoryLoading(true);
+            setFinancialHistoryError(false);
             try {
-                const snapshot = await getDocs(query(
-                    collection(db, 'sales_stats_daily'),
-                    where('dateKey', '>=', cutoff),
-                    orderBy('dateKey', 'asc'),
-                    limit(Math.min(days, 3650))
-                ));
-                setDailySales(snapshot.docs.map((document) => ({ id: document.id, ...document.data() })));
+                let historyQuery;
+                if (filterId === '7days' || filterId === '1month') {
+                    const days = filterId === '7days' ? 7 : 30;
+                    const cutoff = new Date(Date.now() - ((days - 1) * 24 * 60 * 60 * 1000))
+                        .toISOString().slice(0, 10);
+                    historyQuery = query(
+                        collection(db, 'admin_finance_history_days'),
+                        where('dateKey', '>=', cutoff),
+                        orderBy('dateKey', 'asc'),
+                        limit(days)
+                    );
+                } else if (filterId === '1year') {
+                    const start = new Date();
+                    start.setUTCDate(1);
+                    start.setUTCHours(0, 0, 0, 0);
+                    start.setUTCMonth(start.getUTCMonth() - 11);
+                    const cutoff = start.toISOString().slice(0, 7);
+                    historyQuery = query(
+                        collection(db, 'admin_finance_history_months'),
+                        where('monthKey', '>=', cutoff),
+                        orderBy('monthKey', 'asc'),
+                        limit(12)
+                    );
+                } else {
+                    historyQuery = query(
+                        collection(db, 'admin_finance_history_years'),
+                        orderBy('yearKey', 'desc'),
+                        limit(50)
+                    );
+                }
+                const snapshot = await getDocs(historyQuery);
+                const rows = snapshot.docs.map((document) => ({ id: document.id, ...document.data() }));
+                setDailySales(filterId === 'max' ? rows.reverse() : rows);
             } catch (error) {
                 console.error('Failed to fetch requested financial history', error?.code || error?.name);
                 setDailySales([]);
+                setFinancialHistoryError(true);
+            } finally {
+                setFinancialHistoryLoading(false);
             }
             return;
         }
@@ -1026,6 +1057,25 @@ const AdminDashboard = ({
         }
 
         if (!dailySales.length) return [];
+        if (timeFilter === '1year' || timeFilter === 'max') {
+            return dailySales.map((entry) => {
+                const key = timeFilter === '1year' ? entry.monthKey : entry.yearKey;
+                const date = new Date(timeFilter === '1year' ? `${key}-01T00:00:00Z` : `${key}-01-01T00:00:00Z`);
+                return {
+                    dateKey: key,
+                    axisLabel: timeFilter === '1year'
+                        ? date.toLocaleDateString('fr-FR', { month: 'short', timeZone: 'UTC' })
+                        : key,
+                    label: timeFilter === '1year'
+                        ? date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric', timeZone: 'UTC' })
+                        : key,
+                    tooltipLabel: timeFilter === '1year'
+                        ? date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric', timeZone: 'UTC' })
+                        : `Année ${key}`,
+                    value: Number(entry.totalRevenueCents || 0) / 100
+                };
+            });
+        }
         const now = new Date();
         const endOfTodayUtc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
         const earliestDailyTimestamp = Date.parse(`${dailySales[0]?.dateKey}T00:00:00Z`);
@@ -1038,9 +1088,9 @@ const AdminDashboard = ({
                     : 365;
         const revenueByDate = new Map();
 
-        dailySales.forEach(({ dateKey, totalRevenue }) => {
+        dailySales.forEach(({ dateKey, totalRevenueCents }) => {
             if (!dateKey) return;
-            revenueByDate.set(dateKey, (revenueByDate.get(dateKey) || 0) + Number(totalRevenue || 0));
+            revenueByDate.set(dateKey, (revenueByDate.get(dateKey) || 0) + (Number(totalRevenueCents || 0) / 100));
         });
 
         return Array.from({ length: periodDays }, (_, index) => {
@@ -1069,21 +1119,6 @@ const AdminDashboard = ({
     }, [dailySales, intradayOrders, timeFilter]);
 
     const revenueSummary = useMemo(() => {
-        const dayMs = 24 * 60 * 60 * 1000;
-        const today = new Date();
-        const currentStart = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()) - (29 * dayMs);
-        const previousStart = currentStart - (30 * dayMs);
-        let current30 = 0;
-        let previous30 = 0;
-
-        dailySales.forEach((day) => {
-            const timestamp = Date.parse(`${day.dateKey}T00:00:00Z`);
-            const value = Number(day.totalRevenue || 0);
-            if (!Number.isFinite(timestamp) || !Number.isFinite(value)) return;
-            if (timestamp >= currentStart) current30 += value;
-            else if (timestamp >= previousStart && timestamp < currentStart) previous30 += value;
-        });
-
         const periodTotal = chartData.reduce((sum, point) => sum + Number(point.value || 0), 0);
         const bestPoint = chartData.reduce(
             (best, point) => Number(point.value || 0) > Number(best?.value || 0) ? point : best,
@@ -1091,13 +1126,10 @@ const AdminDashboard = ({
         );
 
         return {
-            current30,
-            previous30,
-            delta: previous30 > 0 ? ((current30 - previous30) / previous30) * 100 : null,
             periodTotal,
             bestPoint
         };
-    }, [chartData, dailySales]);
+    }, [chartData]);
     useEffect(() => {
         revisionsRef.current = {};
         insightsRequestedRef.current = false;
@@ -1106,6 +1138,8 @@ const AdminDashboard = ({
         setCriticalAccessFailed(false);
         setRecentOrders([]);
         setDailySales([]);
+        setFinancialHistoryLoading(false);
+        setFinancialHistoryError(false);
         setIntradayOrders(null);
         if (!user?.uid) return undefined;
         if (typeof performance !== 'undefined') performance.mark('admin-dashboard-listener-start');
@@ -1258,8 +1292,18 @@ const AdminDashboard = ({
         ? 'Vue par 5 minutes'
         : timeFilter === '1day'
             ? 'Vue horaire'
-            : 'Vue quotidienne';
-    const bestPointLabel = ['1hour', '1day'].includes(timeFilter) ? 'Meilleur créneau' : 'Meilleur jour';
+            : timeFilter === '1year'
+                ? 'Vue mensuelle'
+                : timeFilter === 'max'
+                    ? 'Vue annuelle'
+                    : 'Vue quotidienne';
+    const bestPointLabel = ['1hour', '1day'].includes(timeFilter)
+        ? 'Meilleur créneau'
+        : timeFilter === '1year'
+            ? 'Meilleur mois'
+            : timeFilter === 'max'
+                ? 'Meilleure année'
+                : 'Meilleur jour';
     return (
         <motion.div
             initial={reducedMotion ? false : 'hidden'}
@@ -1432,9 +1476,13 @@ const AdminDashboard = ({
                                         <p className={`mt-1 text-sm font-semibold tabular-nums ${textBase}`}>{revenueSummary.bestPoint?.label || '—'}</p>
                                     </div>
                                 </div>
-                                {intradayOrdersLoading && ['1hour', '1day'].includes(timeFilter) ? (
+                                {(intradayOrdersLoading && ['1hour', '1day'].includes(timeFilter)) || financialHistoryLoading ? (
                                     <div className={`flex h-[240px] items-center justify-center rounded-2xl px-6 text-center text-sm ${darkMode ? 'bg-white/[0.03] text-white/38' : 'bg-stone-900/[0.03] text-stone-400'}`}>
                                         Chargement des ventes récentes…
+                                    </div>
+                                ) : financialHistoryError ? (
+                                    <div className={`flex h-[240px] items-center justify-center rounded-2xl px-6 text-center text-sm ${darkMode ? 'bg-white/[0.03] text-white/38' : 'bg-stone-900/[0.03] text-stone-400'}`}>
+                                        Données indisponibles.
                                     </div>
                                 ) : chartData.length > 0 ? (
                                     <RevenueChart data={chartData} darkMode={darkMode} />

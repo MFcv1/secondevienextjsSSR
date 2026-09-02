@@ -245,7 +245,7 @@ function OrderIncidentConsole({ darkMode = false, initialValue = '' }) {
   );
 }
 
-export default function AdminIncidentConsole({ darkMode = false }) {
+export default function AdminIncidentConsole({ darkMode = false, systemIncidentState }) {
   const [mode, setMode] = React.useState('system');
   const [orderValue, setOrderValue] = React.useState('');
   const surface = darkMode ? 'border-white/10 bg-[#111214]' : 'border-black/10 bg-[#f5f5f7]';
@@ -269,9 +269,14 @@ export default function AdminIncidentConsole({ darkMode = false }) {
         </div>
       </header>
 
-      {mode === 'system'
-        ? <SystemIncidentConsole darkMode={darkMode} onOpenOrder={openOrder} />
-        : <OrderIncidentConsole key={orderValue || 'manual'} darkMode={darkMode} initialValue={orderValue} />}
+      <div hidden={mode !== 'system'}>
+        <SystemIncidentConsole
+          darkMode={darkMode}
+          onOpenOrder={openOrder}
+          state={systemIncidentState}
+        />
+      </div>
+      {mode === 'order' && <OrderIncidentConsole key={orderValue || 'manual'} darkMode={darkMode} initialValue={orderValue} />}
     </div>
   );
 }

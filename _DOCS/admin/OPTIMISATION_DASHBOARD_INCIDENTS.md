@@ -1,6 +1,6 @@
 # Optimisation du dashboard et observabilite evenementielle
 
-Derniere mise a jour: 2026-09-01
+Derniere mise a jour: 2026-09-02
 
 Statut: `SANDBOX_CUTOVER_EFFECTUE_QUIET_WINDOW_A_FERMER`
 
@@ -33,9 +33,26 @@ Etat d'execution au 2026-09-01:
 Extension du 2026-09-01: le schema `insights` v2 ajoute les intentions de devis
 sur 30 jours, 3 mois, 6 mois et 1 an, ainsi que le top cinq produits sur 30
 jours. Les tests analytics/dashboard et le build local passent; l'interface est
-presente dans App Hosting `build-2026-09-02-003`, mais le sandbox conserve le
+presente dans App Hosting `build-2026-09-02-004`, mais le sandbox conserve le
 document Firestore v1 tant que les deux Functions analytics ne sont pas
 redeployees par le rail cible gouverne.
+
+Extension runtime du 2026-09-02: a la demande explicite de l'operateur, les
+erreurs techniques disposent d'une projection Firestore separee du metier.
+La gate cloud explicitement autorisee est fermee sur le sandbox: topic, sink,
+IAM minimal, Function cible, Rules/index et App Hosting sont deployes. Deux
+messages synthetiques ont prouve la chaine Logging -> Pub/Sub -> Function ->
+Firestore -> UI sans rechargement; les fixtures visibles ont ensuite ete
+retirees et leurs ledgers backend expireront par TTL.
+
+Extension coûts du 2026-09-02, encore locale: la newsletter utilise un compteur
+événementiel et une liste paginée par 50; le graphique financier lit des
+projections jour/mois/année seulement au clic; outbox et réservations créent
+des Cloud Tasks déterministes à leur échéance. Les schedulers outbox et
+réservation passent de deux minutes à une heure comme reprise, et le contrôle
+catalogue de cinq minutes à une heure. Cela réduit le socle de 1 440 à 48
+réveils commerce par jour et de 288 à 24 réveils catalogue. Déploiement,
+bootstrap et IAM de cette extension restent en attente de la gate cloud.
 
 Mesures sandbox du 2026-09-01:
 
@@ -47,6 +64,21 @@ Mesures sandbox du 2026-09-01:
 - apres trois nouvelles captures Stripe test: 90 faits, 66 captures, 66
   ledgers, source et projection strictement egales a 976 200 centimes nets;
 - aucune ecriture production, aucun Stripe live et aucun `minInstances`.
+
+Mesure read-only et modele local du 2026-09-02:
+
+- la panne `CATALOG_SERVED_VERSION_STALE` a produit 253 stderr et 253 request
+  logs; l'ancienne ouverture en a relu 500, son plafond;
+- dix retours Data chauds en moins de cinq minutes coutaient encore 20
+  invocations, environ 50 lectures Firestore et 20 ecritures d'audit; le cache
+  local ramene ces retours a zero, hors actualisation manuelle;
+- sur le burst reel de 253 erreurs, le nouveau projecteur representerait 506
+  lectures et 506 ecritures producteur; avec le listener admin partage ouvert,
+  le majorant est 1 012 lectures et 506 ecritures, soit environ 0,00152 USD au
+  tarif public eur3 avant quotas gratuits, plus environ 0,00005 USD de TTL;
+- Log Router ne facture pas le routage et ce volume Pub/Sub reste tres inferieur
+  aux 10 GiB mensuels gratuits. Le cout facture apres deploiement n'est pas
+  encore une mesure reelle: il exige la gate cloud puis une fenetre de 24 h.
 
 ## 1. Role et cycle de vie
 
@@ -678,7 +710,8 @@ La console `Incidents` devient l'unique surface detaillee. Elle conserve:
 
 - le mode `Systeme` pour Cloud Logging et Error Reporting;
 - le mode `Commande` pour la timeline metier;
-- les filtres, regroupements, piles expurgees et lectures a la demande.
+- les filtres et regroupements sur une projection runtime expurgee; le detail
+  exhaustif reste a la demande dans Logs Explorer.
 
 Un badge compact peut apparaitre dans la navigation:
 
@@ -727,11 +760,13 @@ match /admin_incident_projections/{incidentId} {
 }
 ```
 
-Le badge compte uniquement les incidents durables, actionnables et
-materialises dans `commerce_incidents`, y compris ceux ouverts par le
-watchdog. Les erreurs runtime presentes uniquement dans Cloud Logging restent
-notifiees par Cloud Monitoring et visibles dans la console Systeme a la
-demande. Elles ne sont pas artificiellement dupliquees dans Firestore.
+Le compteur metier continue de compter uniquement les incidents durables,
+actionnables et materialises dans `commerce_incidents`. Un signal distinct
+`admin_system_incident_summary/current` ajoute seulement un marqueur de nouvelle
+revision runtime non vue. Les lignes techniques sont groupees dans
+le tableau borne de `admin_system_incident_summary/current` et leurs evenements
+sont dedupliques par `admin_system_incident_events/{eventId}`; elles n'ouvrent
+aucun incident metier.
 
 Les incidents actuels ne portent pas tous `severity` et `category`. D1
 introduit donc une table pure, exhaustive et testee `code ->
@@ -1407,9 +1442,10 @@ Le changement reste additif jusqu'a la cloture:
 6. Aucun seuil `insights` n'est affirme avant mesure. Le pire cas nominal
    approche deja 65 minutes si la materialisation manque la compaction du meme
    run; Finance, orders et activity restent evenementiels.
-7. Les erreurs runtime LogMatch/5xx restent Cloud-only. Le badge ne couvre que
-   les incidents actionnables materialises; aucune passerelle
-   Monitoring -> Firestore n'est ajoutee.
+7. Les erreurs runtime LogMatch/5xx restent autoritaires dans Cloud
+   Logging/Monitoring. Un sink pousse seulement une copie technique expurgee
+   vers une projection Firestore separee; elle ne modifie jamais les incidents
+   metier.
 8. Une requete temporelle n'est admise que pour un trou de couverture prouve.
    Reservations, outbox, liens de paiement et heartbeats existants ne sont pas
    rescannes par defaut.
@@ -1419,12 +1455,12 @@ Le changement reste additif jusqu'a la cloture:
 10. D0 doit verifier les destinataires reels. Le Pub/Sub configure n'a pas de
     consommateur local prouve; le rate limit LogMatch d'une heure est un
     anti-repetition a mesurer, pas une detection horaire.
-11. Un incident badge a un contrat de fermeture et un ledger transactionnel.
-    Un incident uniquement Cloud se ferme selon Cloud Monitoring et n'est pas
-    miroir dans Firestore.
-12. Les exact-path projections/ledgers evitent les index inutiles. Pas de TTL
-    sur les documents courants ni les ledgers; TTL eventuel uniquement sur les
-    details d'incidents fermes apres decision de retention.
+11. Un incident metier badge a un contrat de fermeture et un ledger
+    transactionnel. Le marqueur runtime est acquitte localement par revision et
+    ne constitue pas un incident metier ouvert.
+12. Les exact-path projections/ledgers evitent les index inutiles. Les ledgers
+    metier restent sans TTL; les evenements runtime techniques expirent apres
+    huit jours et leurs groupes apres trente jours.
 13. Les gates minimales sont D0 a D5 pour Stats, I1 pour les incidents et I2/I3
     seulement pour les probes/remplacements effectivement retenus.
 14. Les gates bloquantes sont moins de 10 lectures critiques,

@@ -2,6 +2,13 @@ const crypto = require('crypto');
 
 const CONTROL_SCHEMA_VERSION = 2;
 const CONTROL_DOCUMENT = 'sys_catalog_publication/secondevie';
+const REVALIDATION_RETRY_DELAYS_MS = Object.freeze([
+    5 * 60 * 1000,
+    15 * 60 * 1000,
+    60 * 60 * 1000,
+    6 * 60 * 60 * 1000,
+    24 * 60 * 60 * 1000
+]);
 
 function normalizePublicationMode(value) {
     return value === 'paused' ? 'paused' : 'active';
@@ -57,6 +64,9 @@ function initialPublicationState(now = new Date()) {
         servedRevision: null,
         servedAggregateSha256: null,
         lastVerifiedAt: null,
+        revalidationFailureCount: 0,
+        revalidationRetryNotBefore: null,
+        revalidationLastFailureAt: null,
         consecutiveFailures: 0,
         lastError: null,
         updatedAt: now
@@ -78,6 +88,22 @@ function isLeaseActive(state, nowMs = Date.now()) {
 
 function nextStateVersion(state) {
     return Math.max(0, Number(state?.stateVersion || 0)) + 1;
+}
+
+function catalogRevalidationTaskId(identity, attempt = 0) {
+    const revision = Number(identity?.revision || 0);
+    const manifestSha256 = String(identity?.manifestSha256 || '');
+    const normalizedAttempt = Math.max(0, Number(attempt || 0));
+    if (!Number.isInteger(revision) || revision < 1) throw new Error('REVALIDATION_TASK_REVISION_REQUIRED');
+    if (!/^[a-f0-9]{64}$/i.test(manifestSha256)) throw new Error('REVALIDATION_TASK_MANIFEST_SHA256_REQUIRED');
+    if (!Number.isInteger(normalizedAttempt)) throw new Error('REVALIDATION_TASK_ATTEMPT_INVALID');
+    return `catalog-revalidate-r${revision}-${manifestSha256.slice(0, 12)}-a${normalizedAttempt}`;
+}
+
+function computeRevalidationRetryNotBefore(failureCount, now = new Date()) {
+    const normalizedFailureCount = Math.max(1, Number(failureCount || 1));
+    const delayIndex = Math.min(normalizedFailureCount - 1, REVALIDATION_RETRY_DELAYS_MS.length - 1);
+    return new Date(now.getTime() + REVALIDATION_RETRY_DELAYS_MS[delayIndex]);
 }
 
 function isRollbackActive(state, nowMs = Date.now()) {
@@ -187,6 +213,9 @@ function buildRollbackControlUpdate(state, { current, target, currentPointerGene
         servedState: 'pending',
         servedRevision: null,
         servedAggregateSha256: null,
+        revalidationFailureCount: 0,
+        revalidationRetryNotBefore: null,
+        revalidationLastFailureAt: null,
         currentManifestPath: target.manifestPath,
         currentManifestSha256: target.manifestSha256,
         currentAggregateSha256: target.aggregateSha256 || null,
@@ -256,11 +285,13 @@ module.exports = {
     assertLease,
     buildRollbackControlUpdate,
     buildRollbackPreparationUpdate,
+    catalogRevalidationTaskId,
     catalogIdentityMatches,
     catalogReleaseIdentityMatches,
     cleanError,
     clearLease,
     computeQuietUntil,
+    computeRevalidationRetryNotBefore,
     initialPublicationState,
     isLeaseActive,
     isRollbackActive,

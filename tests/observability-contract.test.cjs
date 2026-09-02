@@ -68,6 +68,16 @@ test('la console admin garde Cloud Logging cote serveur et sous projection expur
     assert.match(systemSource, /MAX_SCAN_ENTRIES\s*=\s*500/);
     assert.match(systemSource, /SENSITIVE_KEY/);
     assert.match(rulesSource, /match \/business_events\/\{eventId\}[\s\S]*allow read, write: if false/);
+    const projectionSource = read('functions/src/observability/systemIncidentProjection.js');
+    const realtimeUi = read('src/kit/admin/SystemIncidentConsole.jsx');
+    assert.match(projectionSource, /admin_system_incident_events/);
+    assert.match(projectionSource, /admin_system_incident_summary/);
+    assert.match(projectionSource, /onMessagePublished/);
+    assert.match(read('app/admin/AdminAppIsland.jsx'), /onSnapshot\(doc\(db, 'admin_system_incident_summary', 'current'\)/);
+    assert.doesNotMatch(realtimeUi, /onSnapshot|collection\(/);
+    assert.doesNotMatch(realtimeUi, /getSystemIncidentsAdmin/);
+    assert.match(rulesSource, /match \/admin_system_incident_summary\/\{docId\}[\s\S]*isStrongArtisan\(\)/);
+    assert.match(rulesSource, /match \/admin_system_incidents\/\{incidentId\}[\s\S]*allow read, write: if false/);
 });
 
 test('Error Reporting recoit une pile expurgee seulement pour les erreurs inattendues', () => {

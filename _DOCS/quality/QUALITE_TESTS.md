@@ -70,7 +70,8 @@ npm run test:functions-gen2
 
 Cet agregat local couvre les contrats G0 a G13 et bloque la CI sans appeler le
 cloud. La sous-suite `test:functions-g0` verrouille l'inventaire G0 a 157
-exports/152 cibles cloud, les
+exports historiques/152 cibles cloud, puis la topologie courante a 153 exports
+locaux dont douze exports d'observabilite actifs, les
 classifications par nom, les 13 Gen2, 8 schedulers, 2 queues et 7 triggers
 Eventarc. Elle interdit un nouveau trigger Auth Gen1 hors
 `grantAdminOnAuth`, `onRegisteredUserCreated` et
@@ -339,6 +340,8 @@ Les anciennes gates de micro-cache `public/meta` ont ete retirees avec `publicCa
 | réception devis + admin | `test:quotes`, lint cible, build; envoi Gmail réel uniquement sur demande explicite; contrôle hébergé admin avec `node scripts/with-env.mjs .env.sandbox node scripts/e2e-sandbox-role-session.mjs --role=admin --expect-quote=<reference>` |
 | e-mails transactionnels | `test:email-design`, `test:auth`, tests métier touchés, lint cible; génération locale `node scripts/render-email-previews.cjs`; envoi Gmail réel uniquement sur demande explicite |
 | newsletter + avantages client | `test:newsletter`, lint cible, build; recette Gmail et espace client uniquement sur demande explicite |
+| projections newsletter/historique finance | `test:admin-dashboard`; bootstrap dry-run, Rules Emulator puis comparaison source/projection sandbox |
+| dispatch commerce événementiel | `test:commerce:unit`, `test:functions-gen2`; tâches déterministes, ancienne tâche no-op, schedulers horaires et IAM sans invoker public |
 | codes promo checkout/admin | `test:commerce:unit`, `test:commerce:firebase`, `test:commerce:rules`, lint, build; creation admin et application Stripe test sur sandbox uniquement sur demande explicite |
 | menu/header | `perf:menu-desktop`, `perf:menu-mobile`, `mobile:contract` |
 | Auth | `test:auth`, build, smoke reel selon changement |
@@ -601,8 +604,9 @@ exports actifs. Les tests restent locaux et ne mutent aucune ressource cloud.
 
 `npm run test:observability` ajoute `tests/system-incidents.test.cjs` et
 `tests/performance-route-policy.test.mjs`. La gate prouve le groupement stable,
-les compteurs/dates, l'expurgation des donnees sensibles, les bornes 500/80/50,
-l'audit fail-closed et l'absence de SDK Cloud dans le navigateur. Elle verrouille
+les compteurs/dates, l'expurgation des donnees sensibles, le filtrage des
+request logs, le ledger de rejeu et la query Firestore limitee a 50. Elle
+verrouille l'absence de callable Cloud Logging dans le navigateur et
 aussi Performance Monitoring sur `/`, `/galerie`, `/categorie/*`,
 `/produit/*` et `/a-propos`, avec coupure au debut d'une transition vers toute
 route privee ou sensible.
@@ -623,9 +627,10 @@ merges activity, incidents open/update/close/unknown, absence de callable sante
 et de `analytics_sessions` sur le chemin Stats, query critique a trois IDs,
 reconciliation nocturne et watchdog `limit(1)`. `test:admin-cache` prouve en
 plus qu'une lecture en vol invalidee ne repeuple pas la memoire apres logout.
-La suite Rules Emulator verifie lecture admin fort des quatre documents et du
-resume, puis refuse AAL1, registre retire, client, anonyme, document futur,
-query libre et toute ecriture SDK.
+La suite Rules Emulator verifie lecture admin fort des quatre documents, des
+deux resumes et de la liste runtime `limit(50)`, puis refuse AAL1, registre
+retire, client, anonyme, document futur, query libre, ledger runtime et toute
+ecriture SDK.
 
 `test:analytics` couvre aussi le schema v2 d'`admin_dashboard/insights`: les
 drapeaux devis restent binaires par session, les quatre fenetres sont sommees
@@ -634,6 +639,10 @@ derivees uniquement des etapes `detail`, le classement reste limite a cinq et
 le materialiseur ne lit jamais `analytics_sessions`. `test:admin-dashboard`
 valide les quatre periodes, les tableaux journaliers limites a 30 valeurs et
 la compatibilite de lecture du schema v1 pendant un rollout ordonne.
+Il verrouille egalement la separation IAM du trigger
+`aggregateAnalyticsSessionGen2`: transport `functions-eventarc-invoker`,
+runtime `analytics-runtime`, `run.invoker` ressource uniquement et aucun
+invoker public.
 
 Les seuils p95 et `commit -> callback onSnapshot` ne sont pas prouvables par un
 test statique. Le code emet `admin-dashboard-listener-to-kpi`,
@@ -694,8 +703,8 @@ npm run test:catalog:security
 Couverture locale actuelle:
 
 - `core`: diff prix/stock/vente/remise en vente/titre/categorie/publication/suppression/image/ordre, ancien et nouveau slug, parents, determinisme, bornes `full`, preuve admin fraiche post-publication, parite des routes et hash du plan dans le manifeste;
-- `resilience`: CAS et fallbacks, publication partielle et reprise `pointer_committed_control_pending`, debounce interactif borne, ecriture/verification parallele des payloads immuables, reconciliations concurrentes, rollback vivant/expire/high-water, `stateVersion`/lease/fence, lecture Storage epinglee et retry de generation, GC releases/medias;
-- `security` partie Node: HMAC corps exact/timestamp, projet/audience, plan strict, redirection/JSON incoherent, version N contre N+1, signal exact emis avant une preuve HTML eventuellement stale, preuve HTML servie/reparable, endpoint version 200/304, hydratation galerie exacte et contrats images/navigation/signal;
+- `resilience`: CAS et fallbacks, publication partielle et reprise `pointer_committed_control_pending`, debounce interactif borne, ecriture/verification parallele des payloads immuables, reconciliations concurrentes, rollback vivant/expire/high-water, `stateVersion`/lease/fence, lecture Storage epinglee et retry de generation, identite stable des taches de revalidation, backoff 5 min/15 min/1 h/6 h/24 h et GC releases/medias;
+- `security` partie Node: HMAC corps exact/timestamp, projet/audience, plan strict, redirection/JSON incoherent, lecture fraiche du pointeur mutable, version N depassee par N+1 sans appel inutile, supersession pendant l'invalidation, rollback strict, signal exact emis avant une preuve HTML eventuellement stale, preuve HTML servie/reparable, endpoint version 200/304, hydratation galerie exacte et contrats images/navigation/signal;
 - `security` partie emulateurs: interdiction de lire `furniture`/`public/meta`, controle backend des etats et ecriture client refusee sur `sys_catalog_live/current`. Java reste requis pour executer cette partie.
 
 Les gates `next:routes` et `mobile:contract` protegent en plus ISR/SSG et le shell mobile. La recette cold/warm, la mesure des telechargements et le comportement `router.refresh()` restent des preuves navigateur sandbox et ne doivent pas etre declares par les tests statiques.

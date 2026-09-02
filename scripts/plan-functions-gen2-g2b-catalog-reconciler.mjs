@@ -95,7 +95,7 @@ async function main() {
     cloudFunction.eventTrigger ? 'FUNCTION_TRANSPORT_NOT_HTTP' : null,
     cloudFunction.url !== FUNCTION_URL ? 'FUNCTION_URL_DRIFT' : null,
     schedulerJob.state !== 'ENABLED' ? 'SCHEDULER_DISABLED' : null,
-    schedulerJob.schedule !== 'every 5 minutes' || schedulerJob.timeZone !== 'UTC' ? 'SCHEDULER_CADENCE_DRIFT' : null,
+    !['every 5 minutes', 'every 60 minutes'].includes(schedulerJob.schedule) || schedulerJob.timeZone !== 'UTC' ? 'SCHEDULER_CADENCE_DRIFT' : null,
     schedulerJob.httpTarget?.uri !== FUNCTION_URL || schedulerJob.httpTarget?.oidcToken?.audience !== FUNCTION_URL ? 'SCHEDULER_ENDPOINT_DRIFT' : null,
     schedulerJob.httpTarget?.oidcToken?.serviceAccountEmail !== `catalog-enqueuer@${PROJECT_ID}.iam.gserviceaccount.com` ? 'SCHEDULER_OIDC_DRIFT' : null,
     schedulerJob.attemptDeadline !== '180s' ? 'SCHEDULER_DEADLINE_BASELINE_DRIFT' : null

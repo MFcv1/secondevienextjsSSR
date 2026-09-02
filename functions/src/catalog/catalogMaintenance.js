@@ -12,6 +12,7 @@ const {
 const {
     buildRollbackControlUpdate,
     buildRollbackPreparationUpdate,
+    catalogRevalidationTaskId,
     cleanError,
     clearLease,
     CONTROL_DOCUMENT,
@@ -314,7 +315,10 @@ const rollbackCatalogSnapshot = regionalFunctions()
                     planHash: rollbackImpactPlan.planHash,
                     impactPlan: rollbackImpactPlan
                 }, {
-                    id: `catalog-rollback-revalidate-r${freshTarget.value.revision}-${Date.now()}`,
+                    id: catalogRevalidationTaskId({
+                        revision: freshTarget.value.revision,
+                        manifestSha256: freshTarget.value.manifestSha256
+                    }, 0),
                     dispatchDeadlineSeconds: 300
                 });
             } catch (enqueueError) {

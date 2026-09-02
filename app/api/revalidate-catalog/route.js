@@ -1,4 +1,4 @@
-import { revalidatePath, revalidateTag } from 'next/cache';
+import { revalidatePath } from 'next/cache';
 import { NextResponse } from 'next/server';
 import { authorizeAdminRequest } from '../../../src/lib/server/adminAuthorization';
 import { publicEnv } from '../../../src/lib/server/env';
@@ -49,8 +49,7 @@ export async function POST(request) {
   } catch (error) {
     return NextResponse.json({ error: error?.message || 'invalid_contract' }, { status: 400 });
   }
-  const { tags, pathEntries } = getCatalogRevalidationTargets(contract);
-  tags.forEach((tag) => revalidateTag(tag, { expire: 0 }));
+  const { pathEntries } = getCatalogRevalidationTargets(contract);
   pathEntries.forEach(({ path, type }) => {
     if (type) revalidatePath(path, type);
     else revalidatePath(path);
@@ -64,7 +63,6 @@ export async function POST(request) {
     aggregateSha256: contract.aggregateSha256,
     planHash: contract.planHash,
     mode: contract.mode,
-    tags,
     paths: pathEntries.map(({ path }) => path),
     pathEntries,
     reason: machineAuthenticated ? 'catalog_publication' : 'admin_update',

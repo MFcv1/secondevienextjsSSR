@@ -6,7 +6,6 @@ import { publicEnv } from './env';
 import catalogValidation from './materializedCatalogValidation.cjs';
 
 const SNAPSHOT_ROOT = 'catalog-projection/v1';
-const API_POINTER_REVALIDATE_SECONDS = 15;
 const RELEASE_REVALIDATE_SECONDS = 31536000;
 let lastFallbackLog = { key: '', at: 0 };
 let buildFixturePromise = null;
@@ -31,24 +30,6 @@ const readObject = async (path) => {
   return { body, value: JSON.parse(body), path };
 };
 
-const readCurrentApiPointerCached = unstable_cache(
-  async () => (await readObject(`${SNAPSHOT_ROOT}/pointers/current.json`)).value,
-  ['catalog-materialized-pointer'],
-  { revalidate: API_POINTER_REVALIDATE_SECONDS, tags: ['catalog:api-pointer'] }
-);
-
-const readPreviousApiPointerCached = unstable_cache(
-  async () => (await readObject(`${SNAPSHOT_ROOT}/pointers/previous.json`)).value,
-  ['catalog-materialized-previous-pointer'],
-  { revalidate: API_POINTER_REVALIDATE_SECONDS, tags: ['catalog:api-pointer'] }
-);
-
-const readLastKnownGoodApiPointerCached = unstable_cache(
-  async () => (await readObject(`${SNAPSHOT_ROOT}/pointers/last-known-good.json`)).value,
-  ['catalog-materialized-last-known-good-pointer'],
-  { revalidate: API_POINTER_REVALIDATE_SECONDS, tags: ['catalog:api-pointer'] }
-);
-
 const readReleaseObjectCached = unstable_cache(
   async (path) => readObject(path),
   ['catalog-materialized-release'],
@@ -61,17 +42,11 @@ export const readFreshFallbackPointer = async (name) => {
   return (await readObject(`${SNAPSHOT_ROOT}/pointers/${name}.json`)).value;
 };
 
-const pointerReaders = (pointerCache) => pointerCache === 'api'
-  ? [
-    ['current', readCurrentApiPointerCached],
-    ['previous', readPreviousApiPointerCached],
-    ['last-known-good', readLastKnownGoodApiPointerCached],
-  ]
-  : [
-    ['current', readFreshCurrentPointer],
-    ['previous', () => readFreshFallbackPointer('previous')],
-    ['last-known-good', () => readFreshFallbackPointer('last-known-good')],
-  ];
+const pointerReaders = () => [
+  ['current', readFreshCurrentPointer],
+  ['previous', () => readFreshFallbackPointer('previous')],
+  ['last-known-good', () => readFreshFallbackPointer('last-known-good')],
+];
 
 const loadRelease = async (pointer) => {
   if (!pointer?.manifestPath) throw new Error('CATALOG_POINTER_INVALID');
@@ -95,11 +70,11 @@ const loadRelease = async (pointer) => {
   return snapshot;
 };
 
-export const getMaterializedCatalogSnapshot = async ({ pointerCache = 'fresh' } = {}) => {
+export const getMaterializedCatalogSnapshot = async () => {
   const buildFixture = await getBuildFixture();
   if (buildFixture) return buildFixture;
 
-  const candidates = pointerReaders(pointerCache);
+  const candidates = pointerReaders();
   const failures = [];
   for (const [name, readPointer] of candidates) {
     try {
@@ -158,11 +133,11 @@ const isAfterCursor = (product, cursor) => {
   return cursor.id ? String(product.id).localeCompare(cursor.id) > 0 : false;
 };
 
-export const queryMaterializedCatalog = async ({ scope = 'full', limit = null, categories = [], cursor = '', pointerCache = 'fresh' } = {}) => {
+export const queryMaterializedCatalog = async ({ scope = 'full', limit = null, categories = [], cursor = '' } = {}) => {
   const normalizedCategories = [...new Set(categories.map((value) => String(value || '').trim()).filter(Boolean))].slice(0, 10);
   const parsedCursor = decodeCursor(cursor);
   if (cursor && !parsedCursor) throw new Error('INVALID_CATALOG_CURSOR');
-  const snapshot = await getMaterializedCatalogSnapshot({ pointerCache });
+  const snapshot = await getMaterializedCatalogSnapshot();
   let products = scope === 'cards' ? snapshot.cards : snapshot.full;
   if (normalizedCategories.length) {
     const allowed = new Set(normalizedCategories);
@@ -183,8 +158,8 @@ export const queryMaterializedCatalog = async ({ scope = 'full', limit = null, c
   };
 };
 
-export const getMaterializedProductResult = async (id, { pointerCache = 'fresh' } = {}) => {
-  const snapshot = await getMaterializedCatalogSnapshot({ pointerCache });
+export const getMaterializedProductResult = async (id) => {
+  const snapshot = await getMaterializedCatalogSnapshot();
   return {
     snapshot,
     product: snapshot.full.find((product) => product.id === id) || null,

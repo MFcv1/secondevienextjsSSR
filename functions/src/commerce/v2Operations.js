@@ -489,6 +489,7 @@ function createOutboxRuntime() {
         maxPages: 4
     });
     return {
+        worker,
         due: sweeper(queries.listDueOutbox),
         expiredLeases: sweeper(queries.listExpiredOutboxLeases)
     };
@@ -1033,7 +1034,7 @@ const commerceOutboxDispatcher = regionalFunctions()
         memory: '512MB',
         maxInstances: 1
     })
-    .pubsub.schedule('every 2 minutes')
+    .pubsub.schedule('every 60 minutes')
     .onRun(runOutboxDispatcher);
 
 const commerceOperationsReconciler = regionalFunctions()
@@ -1179,6 +1180,7 @@ module.exports = {
     cleanupFixtureRunAdmin,
     commerceOperationsReconciler,
     commerceOutboxDispatcher,
+    createOutboxRuntime,
     getCommerceOperationsStatusAdmin,
     messageFor,
     refundSuccessOutboxIsCurrent,

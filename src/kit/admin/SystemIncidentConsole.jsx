@@ -10,12 +10,69 @@ import {
   ExternalLink,
   Filter,
   Layers3,
-  RefreshCw,
   Search,
   TerminalSquare,
   X,
 } from 'lucide-react';
-import { getCallableFunction } from '../config/firebaseLazy';
+
+const timestampMillis = (value) => {
+  if (typeof value?.toMillis === 'function') return value.toMillis();
+  const millis = new Date(value || 0).getTime();
+  return Number.isFinite(millis) ? millis : 0;
+};
+
+const normalizeProjectedIncident = (data) => {
+  if (
+    data?.schemaVersion !== 1
+    || typeof data.fingerprint !== 'string'
+    || !Number.isSafeInteger(data.occurrenceCount)
+    || data.occurrenceCount < 1
+    || !timestampMillis(data.firstSeen)
+    || !timestampMillis(data.lastSeen)
+    || typeof data.event !== 'string'
+    || typeof data.errorClass !== 'string'
+    || typeof data.service !== 'string'
+  ) return null;
+  const latest = {
+    id: data.logInsertId || data.fingerprint,
+    timestamp: new Date(timestampMillis(data.lastSeen)).toISOString(),
+    severity: data.severity || 'ERROR',
+    event: data.event,
+    errorClass: data.errorClass,
+    service: data.service,
+    functionName: data.functionName || data.service,
+    region: data.region || null,
+    revision: data.revision || null,
+    retryable: data.retryable === true,
+    durationMs: Number.isFinite(data.durationMs) ? data.durationMs : null,
+    message: data.message || data.event,
+    stack: data.stack || null,
+    correlationId: data.correlationId || null,
+    orderId: data.orderId || null,
+    commandId: data.commandId || null,
+    traceId: data.traceId || null,
+  };
+  return {
+    id: data.fingerprint,
+    severity: latest.severity,
+    event: data.event,
+    errorClass: data.errorClass,
+    service: data.service,
+    functionName: latest.functionName,
+    region: latest.region,
+    revision: latest.revision,
+    expected: false,
+    retryable: latest.retryable,
+    count: data.occurrenceCount,
+    firstSeen: new Date(timestampMillis(data.firstSeen)).toISOString(),
+    lastSeen: latest.timestamp,
+    latest,
+    links: {
+      logs: typeof data.logsExplorerUrl === 'string' ? data.logsExplorerUrl : null,
+      errors: `https://console.cloud.google.com/errors;time=P1D?project=secondevienextjsssr`,
+    },
+  };
+};
 
 const WINDOWS = [
   { value: 1, label: '1 h' },
@@ -76,7 +133,7 @@ function CopyValue({ label, value, darkMode }) {
   );
 }
 
-function IncidentInspector({ group, detail, detailStatus, darkMode, onClose, onOpenOrder }) {
+function IncidentInspector({ group, detail, darkMode, onClose, onOpenOrder }) {
   const occurrence = detail?.occurrences?.[0] || group?.latest || null;
   const surface = darkMode ? 'border-white/10 bg-[#151515]' : 'border-black/10 bg-[#fbfbfc]';
   return (
@@ -119,9 +176,7 @@ function IncidentInspector({ group, detail, detailStatus, darkMode, onClose, onO
 
         <section className="mt-5">
           <h3 className="text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-500">Pile expurgée</h3>
-          {detailStatus === 'loading' ? (
-            <p className="mt-3 text-xs text-stone-500">Chargement du détail Cloud Logging…</p>
-          ) : occurrence?.stack ? (
+          {occurrence?.stack ? (
             <pre className={`mt-2 overflow-x-auto whitespace-pre-wrap break-words rounded-xl border p-3 font-mono text-[10px] leading-5 ${darkMode ? 'border-white/[0.08] bg-black/30 text-stone-300' : 'border-black/[0.08] bg-white text-stone-700'}`}>{occurrence.stack}</pre>
           ) : (
             <p className="mt-2 text-xs text-stone-500">Aucune pile sûre disponible pour cette entrée.</p>
@@ -151,46 +206,29 @@ function IncidentInspector({ group, detail, detailStatus, darkMode, onClose, onO
   );
 }
 
-export default function SystemIncidentConsole({ darkMode = false, onOpenOrder }) {
+export default function SystemIncidentConsole({ darkMode = false, onOpenOrder, state = { status: 'loading', data: null } }) {
   const [windowHours, setWindowHours] = React.useState(24);
   const [severity, setSeverity] = React.useState('error');
   const [query, setQuery] = React.useState('');
-  const [state, setState] = React.useState({ status: 'loading', data: null, error: null });
   const [selected, setSelected] = React.useState(null);
-  const [detail, setDetail] = React.useState({ status: 'idle', data: null, error: null });
+  const [detail, setDetail] = React.useState({ data: null });
 
-  const load = React.useCallback(async () => {
-    setState((current) => ({ status: 'loading', data: current.data, error: null }));
-    try {
-      const callable = await getCallableFunction('getSystemIncidentsAdmin');
-      const response = await callable({ action: 'list', windowHours, severity });
-      setState({ status: 'ready', data: response.data, error: null });
-    } catch (error) {
-      setState((current) => ({ status: 'error', data: current.data, error }));
-    }
-  }, [severity, windowHours]);
-
-  React.useEffect(() => { load(); }, [load]);
-
-  const openDetail = async (group) => {
+  const openDetail = (group) => {
     setSelected(group);
-    setDetail({ status: 'loading', data: null, error: null });
-    try {
-      const callable = await getCallableFunction('getSystemIncidentsAdmin');
-      const response = await callable({ action: 'detail', fingerprint: group.id, windowHours, severity });
-      setDetail({ status: 'ready', data: response.data, error: null });
-    } catch (error) {
-      setDetail({ status: 'error', data: null, error });
-    }
+    setDetail({ data: { occurrences: [group.latest], links: group.links } });
   };
 
   const groups = React.useMemo(() => {
     const normalized = query.trim().toLowerCase();
-    const source = state.data?.groups || [];
+    const minimumTimestamp = Date.now() - (windowHours * 60 * 60 * 1000);
+    const source = (state.data?.incidents || []).map(normalizeProjectedIncident).filter(Boolean).filter((group) => (
+      timestampMillis(group.lastSeen) >= minimumTimestamp
+      && (severity !== 'critical' || severityTone(group.severity) === 'critical')
+    ));
     if (!normalized) return source;
     return source.filter((group) => [group.event, group.errorClass, group.service, group.functionName, group.latest?.correlationId, group.latest?.orderId]
       .filter(Boolean).some((value) => String(value).toLowerCase().includes(normalized)));
-  }, [query, state.data?.groups]);
+  }, [query, severity, state.data?.incidents, windowHours]);
 
   const surface = darkMode ? 'border-white/10 bg-[#111214]' : 'border-black/10 bg-[#f5f5f7]';
   const control = darkMode ? 'border-white/10 bg-white/[0.05] text-stone-200' : 'border-black/10 bg-white text-stone-700';
@@ -203,7 +241,7 @@ export default function SystemIncidentConsole({ darkMode = false, onOpenOrder })
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-red-500/10 text-red-500"><Cloud size={16} /></span>
             <div className="min-w-0">
               <p className="text-sm font-semibold">Erreurs système</p>
-              <p className="truncate text-[10px] text-stone-500">Cloud Error Reporting + Cloud Logging, données expurgées</p>
+              <p className="truncate text-[10px] text-stone-500">Résumé Firestore en temps réel, données expurgées</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -222,7 +260,7 @@ export default function SystemIncidentConsole({ darkMode = false, onOpenOrder })
             <div className={`flex h-9 rounded-lg border p-0.5 ${control}`}>
               {WINDOWS.map((item) => <button key={item.value} type="button" onClick={() => setWindowHours(item.value)} className={`rounded-md px-2 text-[10px] font-semibold transition-colors ${windowHours === item.value ? (darkMode ? 'bg-white text-black' : 'bg-black text-white') : 'text-stone-500'}`}>{item.label}</button>)}
             </div>
-            <IconButton darkMode={darkMode} disabled={state.status === 'loading'} label="Actualiser" onClick={load}><RefreshCw className={state.status === 'loading' ? 'animate-spin' : ''} size={14} /></IconButton>
+            <span className="inline-flex h-9 items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Temps réel</span>
           </div>
         </header>
 
@@ -232,9 +270,9 @@ export default function SystemIncidentConsole({ darkMode = false, onOpenOrder })
               <span>Dernière</span><span>Origine</span><span className="text-right">Nombre</span><span />
             </div>
 
-            {state.status === 'error' && !state.data && <div role="alert" className="p-10 text-center text-sm text-red-500"><AlertCircle className="mx-auto mb-3" size={22} />Lecture Cloud Logging indisponible. Réessayez dans quelques instants.</div>}
-            {state.status === 'loading' && !state.data && <div className="p-10 text-center text-sm text-stone-500"><RefreshCw className="mx-auto mb-3 animate-spin" size={20} />Regroupement des erreurs en cours…</div>}
-            {state.status !== 'loading' && groups.length === 0 && <div className="p-12 text-center"><Bug className="mx-auto text-emerald-500" size={24} /><p className="mt-3 text-sm font-semibold">Aucune erreur dans cette fenêtre</p><p className="mt-1 text-xs text-stone-500">Les erreurs identiques apparaîtraient sur une seule ligne avec leur compteur.</p></div>}
+            {state.status === 'error' && !state.data && <div role="alert" className="p-10 text-center text-sm text-red-500"><AlertCircle className="mx-auto mb-3" size={22} />Données indisponibles. La connexion temps réel sera rétablie automatiquement.</div>}
+            {state.status === 'loading' && !state.data && <div className="p-10 text-center text-sm text-stone-500">Connexion au résumé temps réel…</div>}
+            {state.status === 'ready' && groups.length === 0 && <div className="p-12 text-center"><Bug className="mx-auto text-emerald-500" size={24} /><p className="mt-3 text-sm font-semibold">Aucune erreur dans cette fenêtre</p><p className="mt-1 text-xs text-stone-500">Les erreurs identiques apparaîtraient sur une seule ligne avec leur compteur.</p></div>}
 
             <ol className={darkMode ? 'divide-y divide-white/[0.07]' : 'divide-y divide-black/[0.07]'}>
               {groups.map((group) => (
@@ -254,19 +292,17 @@ export default function SystemIncidentConsole({ darkMode = false, onOpenOrder })
                 </li>
               ))}
             </ol>
-            {state.data?.truncated && <p className="border-t border-amber-500/20 bg-amber-500/10 px-4 py-2 text-[10px] text-amber-700 dark:text-amber-300">Fenêtre plafonnée à 500 logs. Ouvrez Logs Explorer pour une analyse exhaustive.</p>}
           </div>
 
           {selected ? (
             <div className="p-3">
-              <IncidentInspector group={selected} detail={detail.data} detailStatus={detail.status} darkMode={darkMode} onClose={() => { setSelected(null); setDetail({ status: 'idle', data: null, error: null }); }} onOpenOrder={onOpenOrder} />
-              {detail.status === 'error' && <p role="alert" className="mt-2 rounded-lg bg-red-500/10 p-3 text-xs text-red-500">Le détail à la demande n’a pas pu être chargé.</p>}
+              <IncidentInspector group={selected} detail={detail.data} darkMode={darkMode} onClose={() => { setSelected(null); setDetail({ data: null }); }} onOpenOrder={onOpenOrder} />
             </div>
           ) : (
             <aside className={`hidden p-8 text-center xl:flex xl:flex-col xl:items-center xl:justify-center ${darkMode ? 'text-stone-500' : 'text-stone-500'}`}>
               <TerminalSquare size={26} />
               <p className="mt-3 text-xs font-semibold">Sélectionnez une ligne</p>
-              <p className="mt-1 max-w-52 text-[10px] leading-4">La pile expurgée et les occurrences exactes ne sont chargées qu’à la demande.</p>
+              <p className="mt-1 max-w-52 text-[10px] leading-4">Le résumé expurgé s’affiche sans nouvelle lecture de Cloud Logging.</p>
             </aside>
           )}
         </div>
@@ -274,7 +310,7 @@ export default function SystemIncidentConsole({ darkMode = false, onOpenOrder })
 
       <div className={`flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2 text-[10px] text-stone-500 ${darkMode ? 'border-white/[0.08]' : 'border-black/[0.08]'}`}>
         <span className="inline-flex items-center gap-1.5"><Layers3 size={12} /> Déduplication : une ligne par origine technique, compteur d’occurrences conservé.</span>
-        <span>{state.data?.scannedCount ?? 0} logs inspectés · aucun payload brut affiché</span>
+        <span>{state.data?.incidents?.length ?? 0} erreurs matérialisées · aucun payload brut affiché</span>
       </div>
     </div>
   );

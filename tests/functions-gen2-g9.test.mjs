@@ -89,9 +89,9 @@ function createFakeDb() {
   };
 }
 
-test('G9 exposes exactly 24 Gen2 targets after retirement of every matching Gen1', () => {
+test('G9 exposes its 24 Gen2 targets beside the pending event-driven projections', () => {
   const exported = require(path.join(ROOT, 'functions/index.js'));
-  assert.equal(Object.keys(exported).length, 151);
+  assert.equal(Object.keys(exported).length, 160);
   assert.equal(LOGICAL.length, 24);
   for (const name of LOGICAL) {
     assert.equal(exported[name], undefined, `${name} Gen1 encore exportee`);
@@ -102,10 +102,10 @@ test('G9 exposes exactly 24 Gen2 targets after retirement of every matching Gen1
 
 test('G9 inventory counts are recalculated from the complete source set', () => {
   const exports = extractLocalExports(ROOT);
-  assert.equal(exports.length, 151);
-  assert.equal(EXPECTED_CURRENT_SOURCE_COUNT, 151);
-  assert.equal(EXPECTED_CURRENT_CLOUD_COUNT, 148);
-  assert.equal(PARALLEL_MIGRATION_EXPORTS.size, 119);
+  assert.equal(exports.length, 160);
+  assert.equal(EXPECTED_CURRENT_SOURCE_COUNT, 160);
+  assert.equal(EXPECTED_CURRENT_CLOUD_COUNT, 150);
+  assert.equal(PARALLEL_MIGRATION_EXPORTS.size, 120);
   assert.deepEqual(
     exports.filter(({ name }) => name.endsWith('Gen2') && !PARALLEL_MIGRATION_EXPORTS.has(name) && !PENDING_OBSERVABILITY_EXPORTS.has(name) && !ACTIVE_OBSERVABILITY_EXPORTS.has(name)),
     []

@@ -200,13 +200,17 @@ exports d'observabilite encore en attente. Les trois seules Gen1 sont `grantAdmi
 `onRegisteredUserCreated` et `onRegisteredUserDeleted`.
 
 Depuis le 2026-08-24, l'observabilite et les rollups analytics sont actifs sur
-le sandbox. Apres le dashboard materialise du 2026-09-01, la topologie courante
-vaut 152 exports locaux / 149 Functions cloud / 146 Gen2 / 3 triggers Auth
+le sandbox. Apres le dashboard materialise et la projection d'incidents systeme
+du 2026-09-02, la topologie courante vaut 153 exports locaux / 150 Functions
+cloud / 147 Gen2 / 3 triggers Auth
 Gen1. App Hosting `secondevie-next-sandbox` a recu son rollout Stats le
 2026-09-01 a 18:32 Europe/Paris; son rollout immediatement precedent reste la
 cible de rollback. Le bucket prive europeen
 `secondevienextjsssr-analytics-archive-eu` porte les archives pseudonymisees et
 les sauvegardes Firestore, avec acces uniforme et prevention d'acces public.
+Le 153e export, `projectSystemIncidentGen2`, est actif en `europe-west1` sur le
+topic `admin-system-incidents`. Le sink Log Router publie sur ce topic et
+l'identite runtime dediee possede uniquement l'invocation Cloud Run necessaire.
 
 La fenetre historique G13 couvre sept jours mais seulement environ douze
 minutes apres la fin de G12-A; elle ne prouve pas sept jours de la revision
@@ -316,6 +320,22 @@ Catalogue materialise:
 - runtime App Hosting: lecture d'objets uniquement sur le bucket catalogue;
 - secret runtime: `CATALOG_REVALIDATION_HMAC_SECRET`;
 - source publique unique: snapshot Storage, sans variable de selection ni fallback Firestore.
+
+Les files commerce `dispatchCommerceOutboxTaskGen2` et
+`dispatchCommerceReservationExpiryTaskGen2` sont privées. Les triggers
+Firestore utilisent respectivement `commerce-outbox-dispatcher` et
+`commerce-reservation-expiry` pour créer une tâche déterministe; chaque file
+n'accepte que cette même identité comme invoker. Le Cloud Tasks service agent
+peut seulement signer pour ces deux identités, qui n'ont aucune clé gérée par
+l'utilisateur. Les schedulers historiques restent actifs à cadence horaire
+comme filet de récupération et non comme voie nominale.
+
+Le bucket géré des sources App Hosting
+`firebaseapphosting-sources-231220287936-europe-west4` contenait 96 archives,
+soit 5,97 Gio, lors du contrôle read-only du 2026-09-02 et aucune lifecycle
+policy. Aucune suppression automatique n'est appliquée: le faible gain de
+stockage ne justifie pas de modifier un bucket géré tant que la dépendance des
+rollbacks App Hosting n'est pas garantie par le fournisseur.
 
 IAM reste ressource/cible autant que possible: l'enqueuer peut publier les tasks et invoquer les workers autorises; le builder peut lire Firestore, ecrire les releases/pointeurs, invoquer la revalidation et lire le secret HMAC. `firebase-app-hosting-compute` a `secretAccessor` et `secretmanager.viewer` uniquement sur le secret HMAC, ainsi que `objectViewer` sur le bucket catalogue. Ne pas elargir ces bindings au projet sans nouvelle justification.
 
@@ -829,6 +849,15 @@ Depuis G0, tout deploiement Functions passe par
 allowlist non vide de dix noms maximum. Les cibles finance, webhook et
 scheduler restent seules dans leur lot. `firebase deploy --only functions`,
 y compris en dry-run, n'est plus un chemin autorise.
+
+`aggregateAnalyticsSessionGen2` est une cible evenementielle explicite du
+wrapper: trigger `eur3`, document `analytics_sessions/{sessionId}`, transport
+`functions-eventarc-invoker`, runtime `analytics-runtime`, concurrence et max
+instances a 1, min instances a 0. Le preflight
+`scripts/configure-analytics-aggregate-trigger-iam.mjs` verifie puis, sur gate
+explicite uniquement, ajoute `eventarc.eventReceiver` au transport et
+`run.invoker` au seul service Cloud Run. Il n'accorde aucun acces public, role
+Editor/Owner, secret ou cle utilisateur.
 
 Deploiement de cloture recette du 2026-08-13: apres verification explicite du
 projet `secondevienextjsssr`, `listMyOrdersV2` a ete mise a jour seule en

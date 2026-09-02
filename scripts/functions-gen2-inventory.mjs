@@ -23,9 +23,18 @@ export const ACTIVE_OBSERVABILITY_EXPORTS = new Set([
   'journalWebhookStatusGen2',
   'aggregateAnalyticsSessionGen2',
   'getAnalyticsAdminGen2',
-  'maintainAnalyticsGen2'
+  'maintainAnalyticsGen2',
+  'projectSystemIncidentGen2'
 ]);
-export const PENDING_OBSERVABILITY_EXPORTS = new Set();
+export const PENDING_OBSERVABILITY_EXPORTS = new Set([
+  'dispatchCommerceOutboxTaskGen2',
+  'dispatchCommerceReservationExpiryTaskGen2',
+  'onCommerceOutboxWrittenGen2',
+  'onCommerceReservationWrittenGen2',
+  'projectCommerceFinancialHistoryGen2',
+  'projectLegacyFinancialHistoryGen2',
+  'projectNewsletterSubscriberGen2'
+]);
 
 export const PARALLEL_MIGRATION_EXPORTS = new Set([
   'addAdminUserGen2',
@@ -128,6 +137,7 @@ export const PARALLEL_MIGRATION_EXPORTS = new Set([
   'commerceOperationsReconcilerGen2',
   'commerceOutboxDispatcherGen2',
   'commerceReservationExpiryDispatcherGen2',
+  'commerceWebhookCoverageWatchdogGen2',
   'confirmStripeConnectReconnectGen2',
   'createAdminPaymentLinkGen2',
   'createCheckoutV2Gen2',
@@ -177,7 +187,8 @@ export const CLEANED_G12B_REMAINING_TARGETS = new Set(Object.values(G12_REMAININ
 
 export const EXPECTED_CURRENT_SOURCE_COUNT = EXPECTED_SOURCE_COUNT +
   PARALLEL_MIGRATION_EXPORTS.size - CLEANED_G12B_GEN1_TARGETS.size - CLEANED_G12B_G3_TARGETS.size -
-  CLEANED_G12B_REMAINING_TARGETS.size + ACTIVE_OBSERVABILITY_EXPORTS.size;
+  CLEANED_G12B_REMAINING_TARGETS.size + ACTIVE_OBSERVABILITY_EXPORTS.size +
+  PENDING_OBSERVABILITY_EXPORTS.size;
 export const EXPECTED_CURRENT_CLOUD_COUNT = EXPECTED_CLOUD_COUNT +
   PARALLEL_MIGRATION_EXPORTS.size + CLOUD_ONLY_PARALLEL_TARGETS.size -
   CLEANED_G12B_GEN1_TARGETS.size - RETIRED_G12A_G3_TARGETS.size - CLEANED_G12B_REMAINING_TARGETS.size +
@@ -279,6 +290,7 @@ const WAVE_GROUPS = [
   ['G9', new Set([
     'cancelAdminPaymentLink', 'cleanupFixtureRunAdmin', 'commerceOperationsReconciler',
     'commerceOutboxDispatcher', 'commerceReservationExpiryDispatcher',
+    'commerceWebhookCoverageWatchdog',
     'confirmStripeConnectReconnect', 'createAdminPaymentLink', 'createCheckoutV2',
     'expireAdminPaymentLinks', 'extendAdminPaymentLink', 'getAdminPaymentLinkPublic',
     'getCommerceOperationsStatusAdmin', 'getStripeConnectStatus', 'listAdminPaymentLinks',

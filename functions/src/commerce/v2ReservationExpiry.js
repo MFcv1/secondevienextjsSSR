@@ -61,11 +61,12 @@ const commerceReservationExpiryDispatcher = regionalFunctions()
         maxInstances: 1,
         secrets: [STRIPE_SECRET_KEY]
     })
-    .pubsub.schedule('every 2 minutes')
+    .pubsub.schedule('every 60 minutes')
     .onRun(runReservationExpiryDispatcher);
 
 module.exports = {
     commerceReservationExpiryDispatcher,
     createReservationExpiryHandler,
+    reservationExpiryRuntime,
     runReservationExpiryDispatcher
 };

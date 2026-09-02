@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
 const {
+  classifyServedCatalogVersion,
   markCatalogRevalidationFailure,
   revalidateCatalog,
   signRevalidationBody,
@@ -56,18 +57,21 @@ test('Firestore public ne lit pas les meubles et public/meta a disparu', () => {
   assert.doesNotMatch(rules, /public\/meta/);
 });
 
-test('la confirmation admin lit le pointeur frais sans ouvrir un contournement public du cache', () => {
+test('tous les lecteurs lisent le pointeur mutable frais sans ouvrir un contournement public', () => {
   const route = read('app/api/admin/catalog-publication-status/route.js');
   const authorization = read('src/lib/server/adminAuthorization.js');
   const publicRoute = read('app/api/catalog/route.js');
+  const materializedCatalog = read('src/lib/server/materializedCatalog.js');
   assert.match(route, /authorizeAdminRequest\(request\)/);
   assert.match(authorization, /verifyIdToken\(token, true\)/);
   assert.match(authorization, /verifyToken\(appCheckToken\)/);
   assert.match(authorization, /sys_admin_access/);
   assert.match(authorization, /hasAal2/);
-  assert.match(route, /pointerCache: 'fresh'/);
   assert.match(route, /cache-control': 'no-store/);
   assert.doesNotMatch(publicRoute, /searchParams\.get\('fresh'\)/);
+  assert.doesNotMatch(materializedCatalog, /catalog-materialized-pointer|catalog:api-pointer|API_POINTER_REVALIDATE_SECONDS/);
+  assert.match(materializedCatalog, /const pointerReaders = \(\) => \[/);
+  assert.match(materializedCatalog, /readReleaseObjectCached = unstable_cache/);
 });
 
 test('signature HMAC est stable et lie timestamp et corps', () => {
@@ -160,8 +164,17 @@ test('dispatcher refuse redirection et JSON incoherent, et N ne peut pas marquer
     }
     return response({ contentType: 'text/html', text: `<main data-catalog-version="${aggregateSha256}"></main>` });
   };
-  const result = await revalidateCatalog({ ...base, db: newerDb, fetchImpl }, input);
-  assert.equal(result.result, 'stale');
+  let obsoleteFetches = 0;
+  const result = await revalidateCatalog({
+    ...base,
+    db: newerDb,
+    fetchImpl: async (...args) => {
+      obsoleteFetches += 1;
+      return fetchImpl(...args);
+    },
+  }, input);
+  assert.equal(result.result, 'superseded');
+  assert.equal(obsoleteFetches, 0);
   assert.equal(newerDb.values.get('sys_catalog_publication/secondevie').publishedRevision, 8);
   assert.equal(newerDb.values.has('sys_catalog_live/current'), false);
 
@@ -193,6 +206,83 @@ test('dispatcher refuse redirection et JSON incoherent, et N ne peut pas marquer
     full: false,
     publishedAt: true,
   });
+});
+
+test('une version servie plus recente rend une ancienne preuve obsolete sans erreur', () => {
+  const identity = { revision: 7, aggregateSha256: 'a'.repeat(64) };
+  assert.deepEqual(classifyServedCatalogVersion({
+    revision: 8,
+    aggregateSha256: 'b'.repeat(64),
+  }, identity), {
+    result: 'superseded',
+    actualRevision: 8,
+    actualAggregateSha256: 'b'.repeat(64),
+  });
+  assert.throws(
+    () => classifyServedCatalogVersion({ revision: 6, aggregateSha256: 'c'.repeat(64) }, identity),
+    /CATALOG_SERVED_VERSION_STALE/,
+  );
+  assert.throws(
+    () => classifyServedCatalogVersion(
+      { revision: 8, aggregateSha256: 'b'.repeat(64) },
+      { ...identity, newerRevisionSatisfies: false },
+    ),
+    /CATALOG_SERVED_VERSION_STALE/,
+  );
+  assert.throws(
+    () => classifyServedCatalogVersion({ revision: 7, aggregateSha256: 'c'.repeat(64) }, identity),
+    /CATALOG_SERVED_VERSION_IDENTITY_MISMATCH/,
+  );
+});
+
+test('une nouvelle publication pendant l invalidation arrete l ancienne tache avant toute preuve', async () => {
+  const { aggregateSha256, impactPlan } = buildSignedPlan(7);
+  const input = {
+    revision: 7,
+    manifestSha256: 'a'.repeat(64),
+    aggregateSha256,
+    impactPlanSha256: 'b'.repeat(64),
+    planHash: impactPlan.planHash,
+    impactPlan,
+  };
+  const db = new FakeDb({
+    stateVersion: 4,
+    publishedRevision: 7,
+    currentManifestSha256: input.manifestSha256,
+  });
+  let getCount = 0;
+  const result = await revalidateCatalog({
+    db,
+    endpoint: 'https://example.test/api/revalidate-catalog',
+    secret: 'secret',
+    projectId: 'secondevienextjsssr',
+    now: () => new Date('2026-09-02T10:00:00.000Z'),
+    delayImpl: async () => {},
+    logger: () => {},
+    fetchImpl: async (_url, options = {}) => {
+      if (options.method === 'POST') {
+        db.values.set('sys_catalog_publication/secondevie', {
+          stateVersion: 5,
+          publishedRevision: 8,
+          currentManifestSha256: 'd'.repeat(64),
+        });
+        return response({ json: {
+          ok: true,
+          projectId: 'secondevienextjsssr',
+          acceptedRevision: 7,
+          manifestSha256: input.manifestSha256,
+          aggregateSha256,
+          planHash: impactPlan.planHash,
+          mode: impactPlan.mode,
+        } });
+      }
+      getCount += 1;
+      return response({ json: { revision: 8, aggregateSha256: 'e'.repeat(64) } });
+    },
+  }, input);
+  assert.equal(result.result, 'superseded');
+  assert.equal(getCount, 0);
+  assert.equal(db.values.has('sys_catalog_live/current'), false);
 });
 
 test('preuve HTML ancienne reste served failed et reparable', async () => {
@@ -246,11 +336,13 @@ test('preuve HTML ancienne reste served failed et reparable', async () => {
 
   await markCatalogRevalidationFailure(db, { revision: 7, manifestSha256: 'a'.repeat(64) }, {
     code: 'CATALOG_SERVED_ROUTE_STALE', message: 'CATALOG_SERVED_ROUTE_STALE',
-  });
+  }, () => new Date('2026-09-02T10:00:00.000Z'));
   const state = db.values.get('sys_catalog_publication/secondevie');
   assert.equal(state.invalidationState, 'accepted');
   assert.equal(state.servedState, 'failed');
   assert.equal(state.buildState, 'degraded');
+  assert.equal(state.revalidationFailureCount, 1);
+  assert.equal(state.revalidationRetryNotBefore.toISOString(), '2026-09-02T10:05:00.000Z');
 });
 
 test('archivage accepte la disparition 404 de l ancienne fiche et verifie les surfaces restantes', async () => {
@@ -348,9 +440,9 @@ test('aucun moteur catalogue legacy ne subsiste dans le code executable', () => 
   const revalidationRoute = read('app/api/revalidate-catalog/route.js');
   assert.match(revalidationRoute, /validateCatalogRevalidationBody/);
   assert.match(revalidationRoute, /audience: publicEnv\.siteUrl/);
-  assert.match(revalidationRoute, /revalidateTag\(tag,\s*\{\s*expire:\s*0\s*\}\)/);
+  assert.doesNotMatch(revalidationRoute, /revalidateTag/);
   assert.doesNotMatch(revalidationRoute, /audience: new URL\(request\.url\)\.origin/);
-  assert.match(read('src/lib/server/catalogRevalidationContract.js'), /catalog:api-pointer/);
+  assert.doesNotMatch(read('src/lib/server/catalogRevalidationContract.js'), /catalog:api-pointer/);
   assert.doesNotMatch(revalidationRoute, /revalidatePath\([^\n]+,\s*'route'\)/);
 });
 

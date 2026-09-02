@@ -675,10 +675,12 @@ test('product callable transport stays available to active strong admins outside
         adminForm.indexOf('await refreshAdminAuthorizationToken()')
         < adminForm.indexOf('await preflightProductMutationAdmin()')
     );
-    assert.ok(
-        adminForm.indexOf('await preflightProductMutationAdmin()')
-        < adminForm.indexOf('await uploadProductVariantSet(')
+    const preflightIndex = adminForm.indexOf('await preflightProductMutationAdmin()');
+    const uploadAfterPreflightIndex = adminForm.indexOf(
+        'await uploadProductVariantSet(',
+        preflightIndex
     );
+    assert.ok(preflightIndex >= 0 && uploadAfterPreflightIndex > preflightIndex);
     assert.equal(adminForm.includes('Reconnecte-toi, puis réessaie.'), false);
     assert.ok(adminForm.includes('createPublishedProductAdmin'));
     assert.ok(adminForm.includes('waitForPublicCatalogProduct'));

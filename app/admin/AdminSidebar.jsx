@@ -10,6 +10,7 @@ export default function AdminSidebar({
   incidentCount = 0,
   isOpen,
   onClose,
+  onIntent,
   onSelect,
   tabs,
 }) {
@@ -64,6 +65,9 @@ export default function AdminSidebar({
                       key={tab.id}
                       type="button"
                       onClick={() => onSelect(tab.id)}
+                      onFocus={() => onIntent?.(tab.id)}
+                      onPointerEnter={() => onIntent?.(tab.id)}
+                      onTouchStart={() => onIntent?.(tab.id)}
                       aria-current={isActive ? 'page' : undefined}
                       className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[11px] font-bold tracking-wide transition duration-200 active:translate-y-px ${isActive ? (darkMode ? 'bg-white text-stone-950' : 'bg-stone-950 text-white') : (darkMode ? 'text-stone-400 hover:bg-white/5 hover:text-white' : 'text-stone-600 hover:bg-white hover:text-stone-950')}`}
                     >

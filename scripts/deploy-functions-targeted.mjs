@@ -154,6 +154,94 @@ const G11_GEN2_TARGETS = Object.freeze({
     secrets: []
   })
 });
+const dashboardEventTarget = ({ name, documentPathPattern, runtimeServiceAccount }) => Object.freeze({
+  create: true,
+  triggerType: 'event',
+  region: 'europe-west1',
+  runtime: 'nodejs22',
+  entryPoint: name,
+  eventType: 'google.cloud.firestore.document.v1.written',
+  eventFilters: 'type=google.cloud.firestore.document.v1.written,database=(default),namespace=(default)',
+  documentPathPattern,
+  eventPathPattern: `document=${documentPathPattern}`,
+  triggerLocation: 'eur3',
+  triggerServiceAccount: 'functions-eventarc-invoker@secondevienextjsssr.iam.gserviceaccount.com',
+  runtimeServiceAccount,
+  buildServiceAccount: G8_BUILD_SERVICE_ACCOUNT,
+  memory: '256Mi',
+  cpu: '167m',
+  timeout: '60s',
+  concurrency: '1',
+  minInstances: '0',
+  maxInstances: '1',
+  ingressSettings: 'all'
+});
+const commerceTaskTarget = ({ name, runtimeServiceAccount, secrets, maxAttempts }) => Object.freeze({
+  create: true,
+  triggerType: 'http-task',
+  region: 'europe-west1',
+  runtime: 'nodejs22',
+  entryPoint: name,
+  functionUrl: `https://europe-west1-secondevienextjsssr.cloudfunctions.net/${name}`,
+  queueName: name,
+  queueLocation: 'europe-west1',
+  queueMaxConcurrentDispatches: 1,
+  queueMaxDispatchesPerSecond: 2,
+  queueMaxBurstSize: 10,
+  queueMaxAttempts: maxAttempts,
+  queueMinBackoff: '10s',
+  queueMaxBackoff: maxAttempts === 1 ? '60s' : '120s',
+  queueMaxDoublings: maxAttempts === 1 ? 2 : 3,
+  runtimeServiceAccount,
+  buildServiceAccount: G8_BUILD_SERVICE_ACCOUNT,
+  memory: '512Mi',
+  cpu: '167m',
+  timeout: '300s',
+  concurrency: '1',
+  minInstances: '0',
+  maxInstances: '1',
+  ingressSettings: 'all',
+  secrets
+});
+const DASHBOARD_EVENT_TARGETS = Object.freeze({
+  projectNewsletterSubscriberGen2: dashboardEventTarget({
+    name: 'projectNewsletterSubscriberGen2',
+    documentPathPattern: 'newsletter_subscribers/{subscriberId}',
+    runtimeServiceAccount: 'newsletter-runtime@secondevienextjsssr.iam.gserviceaccount.com'
+  }),
+  projectLegacyFinancialHistoryGen2: dashboardEventTarget({
+    name: 'projectLegacyFinancialHistoryGen2',
+    documentPathPattern: 'sales_stats_daily/{dateKey}',
+    runtimeServiceAccount: 'order-stats-projector@secondevienextjsssr.iam.gserviceaccount.com'
+  }),
+  projectCommerceFinancialHistoryGen2: dashboardEventTarget({
+    name: 'projectCommerceFinancialHistoryGen2',
+    documentPathPattern: 'commerce_financial_daily/{dayId}',
+    runtimeServiceAccount: 'order-stats-projector@secondevienextjsssr.iam.gserviceaccount.com'
+  }),
+  onCommerceOutboxWrittenGen2: dashboardEventTarget({
+    name: 'onCommerceOutboxWrittenGen2',
+    documentPathPattern: 'commerce_outbox/{outboxId}',
+    runtimeServiceAccount: 'commerce-outbox-dispatcher@secondevienextjsssr.iam.gserviceaccount.com'
+  }),
+  onCommerceReservationWrittenGen2: dashboardEventTarget({
+    name: 'onCommerceReservationWrittenGen2',
+    documentPathPattern: 'inventory_reservations/{reservationId}',
+    runtimeServiceAccount: 'commerce-reservation-expiry@secondevienextjsssr.iam.gserviceaccount.com'
+  }),
+  dispatchCommerceOutboxTaskGen2: commerceTaskTarget({
+    name: 'dispatchCommerceOutboxTaskGen2',
+    runtimeServiceAccount: 'commerce-outbox-dispatcher@secondevienextjsssr.iam.gserviceaccount.com',
+    secrets: G9_OUTBOX_SECRETS,
+    maxAttempts: 1
+  }),
+  dispatchCommerceReservationExpiryTaskGen2: commerceTaskTarget({
+    name: 'dispatchCommerceReservationExpiryTaskGen2',
+    runtimeServiceAccount: 'commerce-reservation-expiry@secondevienextjsssr.iam.gserviceaccount.com',
+    secrets: G8_STRIPE_SECRET,
+    maxAttempts: 3
+  })
+});
 const g9Http = ({
   name,
   triggerType = 'http-callable',
@@ -218,22 +306,25 @@ const G9_GEN2_TARGETS = Object.freeze({
   commerceOperationsReconcilerGen2: g9Http({
     name: 'commerceOperationsReconcilerGen2', triggerType: 'http-scheduler',
     runtimeServiceAccount: 'commerce-operations-reconciler@secondevienextjsssr.iam.gserviceaccount.com',
-    memory: '512Mi', timeout: '300s', schedule: 'every 60 minutes'
+    memory: '512Mi', timeout: '300s', schedule: '17 3 * * *'
   }),
   commerceOutboxDispatcherGen2: g9Http({
     name: 'commerceOutboxDispatcherGen2', triggerType: 'http-scheduler',
     runtimeServiceAccount: 'commerce-outbox-dispatcher@secondevienextjsssr.iam.gserviceaccount.com',
-    memory: '512Mi', timeout: '300s', schedule: 'every 2 minutes', secrets: G9_OUTBOX_SECRETS,
+    memory: '512Mi', timeout: '300s', schedule: 'every 60 minutes', secrets: G9_OUTBOX_SECRETS,
     environmentVariables: [
       'SITE_URL=https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app'
     ],
     expectedSchedulerAudience: 'https://commerceoutboxdispatchergen2-evkkvyaaga-ew.a.run.app',
+    expectedSchedulerSchedules: ['every 2 minutes', 'every 60 minutes'],
     schedulerUpdateRequired: false
   }),
   commerceReservationExpiryDispatcherGen2: g9Http({
     name: 'commerceReservationExpiryDispatcherGen2', triggerType: 'http-scheduler',
     runtimeServiceAccount: 'commerce-reservation-expiry@secondevienextjsssr.iam.gserviceaccount.com',
-    memory: '512Mi', timeout: '300s', schedule: 'every 2 minutes', secrets: G8_STRIPE_SECRET
+    memory: '512Mi', timeout: '300s', schedule: 'every 60 minutes', secrets: G8_STRIPE_SECRET,
+    expectedSchedulerSchedules: ['every 2 minutes', 'every 60 minutes'],
+    schedulerUpdateRequired: false
   }),
   expireAdminPaymentLinksGen2: g9Http({
     name: 'expireAdminPaymentLinksGen2', triggerType: 'http-scheduler',
@@ -422,6 +513,7 @@ export const GCLOUD_GEN2_TARGETS = Object.freeze({
   ...G9_GEN2_TARGETS,
   ...G10_GEN2_TARGETS,
   ...G11_GEN2_TARGETS,
+  ...DASHBOARD_EVENT_TARGETS,
   removeAdminUserGen2: Object.freeze({
     create: true,
     triggerType: 'http-callable',
@@ -761,6 +853,27 @@ export const GCLOUD_GEN2_TARGETS = Object.freeze({
     maxInstances: '1',
     ingressSettings: 'all'
   }),
+  aggregateAnalyticsSessionGen2: Object.freeze({
+    triggerType: 'event',
+    region: 'europe-west1',
+    runtime: 'nodejs22',
+    entryPoint: 'aggregateAnalyticsSessionGen2',
+    eventType: 'google.cloud.firestore.document.v1.written',
+    eventFilters: 'type=google.cloud.firestore.document.v1.written,database=(default),namespace=(default)',
+    documentPathPattern: 'analytics_sessions/{sessionId}',
+    eventPathPattern: 'document=analytics_sessions/{sessionId}',
+    triggerLocation: 'eur3',
+    triggerServiceAccount: 'functions-eventarc-invoker@secondevienextjsssr.iam.gserviceaccount.com',
+    runtimeServiceAccount: 'analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com',
+    buildServiceAccount: 'projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    memory: '512Mi',
+    cpu: '333m',
+    timeout: '120s',
+    concurrency: '1',
+    minInstances: '0',
+    maxInstances: '1',
+    ingressSettings: 'all'
+  }),
   onOrderStatsWrite: Object.freeze({
     triggerType: 'event',
     region: 'europe-west1',
@@ -810,7 +923,8 @@ export const GCLOUD_GEN2_TARGETS = Object.freeze({
     entryPoint: 'catalogReconciler',
     functionUrl: 'https://europe-west1-secondevienextjsssr.cloudfunctions.net/catalogReconciler',
     schedulerJob: 'firebase-schedule-catalogReconciler-europe-west1',
-    schedule: 'every 5 minutes',
+    schedule: 'every 60 minutes',
+    expectedSchedulerSchedules: ['every 5 minutes', 'every 60 minutes'],
     timeZone: 'UTC',
     schedulerServiceAccount: 'catalog-enqueuer@secondevienextjsssr.iam.gserviceaccount.com',
     schedulerAttemptDeadline: '540s',
@@ -1046,7 +1160,8 @@ export const GCLOUD_GEN2_TARGETS = Object.freeze({
     queueMaxConcurrentDispatches: 1,
     queueMaxDispatchesPerSecond: 1,
     queueMaxBurstSize: 10,
-    queueMaxAttempts: 10,
+    queueMaxAttempts: 1,
+    queueExpectedMaxAttemptsBeforeTransition: 10,
     queueMinBackoff: '5s',
     queueMaxBackoff: '300s',
     queueMaxDoublings: 5,
@@ -1630,6 +1745,25 @@ export function buildGcloudSchedulerUpdateArgs(validation, options = {}) {
   ];
 }
 
+export function buildGcloudTaskQueueUpdateArgs(validation) {
+  const target = GCLOUD_GEN2_TARGETS[validation.allowlist[0]];
+  if (validation.transport !== 'gcloud-gen2' || target?.triggerType !== 'http-task') {
+    fail('Mise a jour Cloud Tasks Gen2 non autorisee');
+  }
+  return [
+    'tasks', 'queues', 'update', target.queueName,
+    `--project=${validation.project}`,
+    `--location=${target.queueLocation}`,
+    `--max-concurrent-dispatches=${target.queueMaxConcurrentDispatches}`,
+    `--max-dispatches-per-second=${target.queueMaxDispatchesPerSecond}`,
+    `--max-attempts=${target.queueMaxAttempts}`,
+    `--min-backoff=${target.queueMinBackoff}`,
+    `--max-backoff=${target.queueMaxBackoff}`,
+    `--max-doublings=${target.queueMaxDoublings}`,
+    '--quiet'
+  ];
+}
+
 export function buildGcloudGen2RollbackArgs(validation, options = {}) {
   const name = validation.allowlist[0];
   const target = GCLOUD_GEN2_TARGETS[name];
@@ -1738,8 +1872,8 @@ function assertGcloudGen2Preconditions(before, validation) {
   ) fail('Trigger cloud Gen2 inattendu avant deploiement');
 }
 
-export function assertTaskQueuePreconditions(queue, target, tasks) {
-  if (
+function taskQueueConfigMatches(queue, target) {
+  return !(
     queue.name?.split('/').at(-1) !== target.queueName || queue.state !== 'RUNNING' ||
     Number(queue.rateLimits?.maxConcurrentDispatches) !== target.queueMaxConcurrentDispatches ||
     Number(queue.rateLimits?.maxDispatchesPerSecond) !== target.queueMaxDispatchesPerSecond ||
@@ -1748,7 +1882,11 @@ export function assertTaskQueuePreconditions(queue, target, tasks) {
     queue.retryConfig?.minBackoff !== target.queueMinBackoff ||
     queue.retryConfig?.maxBackoff !== target.queueMaxBackoff ||
     Number(queue.retryConfig?.maxDoublings) !== target.queueMaxDoublings
-  ) fail('Configuration Cloud Tasks inattendue avant deploiement');
+  );
+}
+
+export function assertTaskQueuePreconditions(queue, target, tasks) {
+  if (!taskQueueConfigMatches(queue, target)) fail('Configuration Cloud Tasks inattendue avant deploiement');
   if (!Array.isArray(tasks) || tasks.length !== 0) fail('Cloud Tasks en vol avant deploiement');
 }
 
@@ -1761,7 +1899,8 @@ function assertSchedulerPreconditions(
 ) {
   if (
     job.name?.split('/').at(-1) !== target.schedulerJob || job.state !== 'ENABLED' ||
-    job.schedule !== target.schedule || job.timeZone !== target.timeZone ||
+    !(target.expectedSchedulerSchedules || [target.schedule]).includes(job.schedule) ||
+    job.timeZone !== target.timeZone ||
     job.httpTarget?.httpMethod !== 'POST' || job.httpTarget?.uri !== target.functionUrl ||
     job.httpTarget?.oidcToken?.audience !== expectedAudience ||
     job.httpTarget?.oidcToken?.serviceAccountEmail !== expectedServiceAccount ||
@@ -1863,7 +2002,32 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
         'tasks', 'list', `--queue=${target.queueName}`,
         `--location=${target.queueLocation}`, `--project=${validation.project}`, '--format=json'
       ], { cwd: rootDir }));
-      assertTaskQueuePreconditions(queueBefore, target, tasksBefore);
+      const queueNeedsTransition = !taskQueueConfigMatches(queueBefore, target);
+      if (queueNeedsTransition) {
+        const expectedAttempts = target.queueExpectedMaxAttemptsBeforeTransition;
+        if (!Number.isInteger(expectedAttempts)) fail('Transition Cloud Tasks non autorisee');
+        assertTaskQueuePreconditions(queueBefore, {
+          ...target,
+          queueMaxAttempts: expectedAttempts
+        }, tasksBefore);
+        const queueUpdate = spawnSync('gcloud', buildGcloudTaskQueueUpdateArgs(validation), {
+          cwd: rootDir,
+          env: process.env,
+          stdio: 'inherit'
+        });
+        if (queueUpdate.error) fail(queueUpdate.error.message);
+        if (queueUpdate.status !== 0) {
+          process.exitCode = queueUpdate.status || 1;
+          return;
+        }
+        const queueAfter = JSON.parse(run('gcloud', [
+          'tasks', 'queues', 'describe', target.queueName,
+          `--location=${target.queueLocation}`, `--project=${validation.project}`, '--format=json'
+        ], { cwd: rootDir }));
+        assertTaskQueuePreconditions(queueAfter, target, []);
+      } else {
+        assertTaskQueuePreconditions(queueBefore, target, tasksBefore);
+      }
     }
     if (target.triggerType === 'http-scheduler') {
       const schedulerBefore = JSON.parse(run('gcloud', [

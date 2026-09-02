@@ -115,6 +115,20 @@ test('le rail admin lit des rollups et charge le detail seulement a la demande',
     assert.ok(ttlGroups.has('summary_shards'));
 });
 
+test('le transport Eventarc de l agregateur analytics est repare sans invoker public', () => {
+    const deploy = read('scripts/deploy-functions-targeted.mjs');
+    const iam = read('scripts/configure-analytics-aggregate-trigger-iam.mjs');
+    const target = deploy.match(/aggregateAnalyticsSessionGen2: Object\.freeze\([\s\S]*?\n[ ]{2}\}\),/)?.[0] || '';
+    assert.match(target, /triggerServiceAccount: 'functions-eventarc-invoker@secondevienextjsssr\.iam\.gserviceaccount\.com'/);
+    assert.match(target, /runtimeServiceAccount: 'analytics-runtime@secondevienextjsssr\.iam\.gserviceaccount\.com'/);
+    assert.match(target, /documentPathPattern: 'analytics_sessions\/\{sessionId\}'/);
+    assert.match(iam, /roles\/eventarc\.eventReceiver/);
+    assert.match(iam, /roles\/run\.invoker/);
+    assert.match(iam, /FIX_ANALYTICS_AGGREGATE_TRIGGER_IAM/);
+    assert.match(iam, /userManagedKeyCount === 0/);
+    assert.doesNotMatch(iam, /allUsers|roles\/owner|roles\/editor/);
+});
+
 test('les commandes ont un compteur transactionnel et un affichage lisible', () => {
     const repository = read('functions/src/commerce/domain/checkoutRepository.js');
     const state = read('functions/src/commerce/domain/orderState.js');

@@ -47,7 +47,7 @@ export async function GET(request) {
   try {
     const id = String(searchParams.get('id') || '').trim();
     if (id) {
-      const { product, snapshot } = await getMaterializedProductResult(id, { pointerCache: 'api' });
+      const { product, snapshot } = await getMaterializedProductResult(id);
       if (!product) return jsonResponse(request, { error: 'product_not_found' }, 404);
       return jsonResponse(request, {
         appId: publicEnv.appId,
@@ -59,7 +59,7 @@ export async function GET(request) {
     }
     const scope = searchParams.get('scope') === 'cards' ? 'cards' : 'full';
     const categories = parseCategories(searchParams);
-    const result = await queryMaterializedCatalog({ scope, limit: parsedLimit.value, categories, cursor, pointerCache: 'api' });
+    const result = await queryMaterializedCatalog({ scope, limit: parsedLimit.value, categories, cursor });
     const segmented = Boolean(parsedLimit.value || categories.length || cursor || scope === 'cards');
     const payload = segmented ? {
       appId: publicEnv.appId,

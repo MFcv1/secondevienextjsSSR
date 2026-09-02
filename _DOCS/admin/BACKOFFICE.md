@@ -42,36 +42,42 @@ renvoyer leur payload, et affiche le nombre de tentatives worker lorsqu'il est
 connu. Aucun bouton de reprise financiere directe n'est expose dans cette
 console.
 
-La vue `Systeme` de ce meme onglet appelle `getSystemIncidentsAdminGen2` sous
-les memes controles App Check, claim, registre et AAL2. Elle lit Cloud Logging
-cote serveur sur une fenetre explicite de 1 heure a 7 jours, au plus 500
-entrees et 80 groupes. Une empreinte stable `service + function + event +
-errorClass + premiere frame` rassemble les repetitions de la meme panne sur
-une seule ligne: le nombre, la premiere occurrence et la derniere occurrence
-restent visibles. Cette deduplication ne supprime aucun log; elle evite
-simplement de presenter des centaines de lignes identiques a l'operateur.
+La vue `Systeme` n'appelle plus Cloud Logging a son montage. Un sink Log Router
+borne transmet seulement les erreurs runtime inattendues, hors request logs et
+alertes Monitoring, au topic `admin-system-incidents`. La Function
+`projectSystemIncidentGen2` valide et expurge chaque message, absorbe les rejeux
+avec `admin_system_incident_events/{eventId}`, puis maintient dans l'unique
+document `admin_system_incident_summary/current` un flux borne de 50 groupes.
+Une empreinte stable `service +
+function + event + errorClass + premiere frame` conserve le nombre, la premiere
+occurrence et la derniere occurrence sans scan global.
 
 La liste ne renvoie que des champs allowlistes. E-mail, telephone, adresse,
 headers, cookies, tokens, secrets, corps de requete/reponse et payloads provider
-ne sont jamais projetes. La pile est expurgee et les occurrences exactes, au
-plus 50, ne sont relues qu'au clic. `correlationId`, `orderId`, `commandId` et
+ne sont jamais projetes. La pile et le message sont expurges; aucun payload brut
+n'est stocke. `correlationId`, `orderId`, `commandId` et
 `traceId` permettent de remonter a l'action d'origine; un `orderId` ouvre la
 vue Commande pre-remplie. Des liens explicites ouvrent Logs Explorer et Error
 Reporting dans Google Cloud pour l'analyse exhaustive.
 
-L'interface reprend une console systeme epuree: barre de filtres compacte,
-une erreur par ligne datee, compteur tabulaire et inspecteur lateral. Elle ne
-poll pas Cloud Logging; l'ouverture et le bouton Actualiser sont les seules
-lectures. Chaque liste et chaque detail sont audites fail-closed.
+Le shell admin ecoute ce seul document Firestore en temps reel et le partage
+entre le badge et la console. La console filtre localement les fenetres et
+severites, et garde les donnees pendant le passage
+`Systeme -> Commande -> Systeme`. Le retour est donc instantane et ne relance
+aucune callable. Un snapshot absent ou refuse affiche `Donnees indisponibles`;
+le lien exact Logs Explorer reste l'unique chemin vers le detail exhaustif.
 
 Le shell ecoute en plus le seul document expurge
-`admin_incident_summary/current` apres resolution de l'admin fort. La sidebar
-affiche un badge uniquement lorsque `activeTotal > 0`; elle ne poll aucune
+`admin_incident_summary/current` et le signal runtime separe
+`admin_system_incident_summary/current` apres resolution de l'admin fort. La sidebar
+affiche les incidents metier actifs et un marqueur lorsqu'une nouvelle revision
+runtime n'a pas encore ete vue; elle ne poll aucune
 collection d'incidents. Le resume est maintenu transactionnellement par
 `journalCommerceIncidentGen2` sur `onDocumentWritten` et son ledger backend-only
-`admin_incident_projections/{incidentId}`. Les erreurs runtime restent dans
-Cloud Logging/Monitoring et ne sont pas dupliquees artificiellement dans ce
-resume metier.
+`admin_incident_projections/{incidentId}`. Les erreurs runtime restent
+distinctes des incidents metier: leur projection technique ne peut ni ouvrir
+ni fermer un incident commerce et Cloud Monitoring demeure le canal d'alerte
+immediate.
 
 La qualification resilience D2-D4 a verrouille par tests la recherche humaine
 courante et legacy, les inbox webhook historiques, l'audit fail-closed, le hash des
@@ -136,11 +142,11 @@ Le regroupement est porte par `ADMIN_NAV_GROUPS` dans `AdminAppIsland`; `AdminSi
 | `livraison` | Livraison | `AdminLivraison` | tarifs et configuration livraison |
 | `users` | Clients | `AdminUsers` | comptes et acces admin |
 | `seo` | SEO | `AdminSEO` | controle contenu/indexation |
-| `newsletter` | Infos | `AdminNewsletter` | abonnés issus notamment du jeu galerie, recherche et export |
+| `newsletter` | Infos | `AdminNewsletter` | total matérialisé, liste paginée par 50, recherche et export de la page courante |
 | `payment_settings` | Paiement | `AdminPaymentSettings` | Stripe Connect et activation carte |
 | `account` | Mon compte | `AdminAccount`, `BillingOnboardingOperator` | identite admin et pilotage de l'onboarding facturation |
 | `maintenance` | Maintenance | `AdminMaintenance` | outils destructifs controles |
-| `incidents` | Incidents | `AdminIncidentConsole`, `SystemIncidentConsole` | erreurs systeme dedupliquees, detail Cloud a la demande, timeline commande et verdict de reprise |
+| `incidents` | Incidents | `AdminIncidentConsole`, `SystemIncidentConsole` | erreurs systeme materialisees en temps reel, lien Cloud direct, timeline commande et verdict de reprise |
 
 Les labels peuvent evoluer; les ID sont des contrats de navigation et ne doivent pas etre renommes sans migration.
 
@@ -424,6 +430,15 @@ Function. L'onglet `Infos` conserve sa liste administrateur et son export; le
 code promotionnel reste séparé dans `newsletter_rewards`, inaccessible au SDK
 navigateur. Le tirage est serveur, la partie est temporaire, la réclamation
 est idempotente et le client relit ses codes par callable authentifiée.
+
+Le compteur global de l'onglet ne rescane jamais les abonnés: le trigger
+`projectNewsletterSubscriberGen2` applique chaque création ou suppression une
+seule fois dans `admin_newsletter_summary/current`, avec un ledger et des
+tombstones backend-only. Le document global ne contient aucun e-mail ni UID.
+La liste nominative est chargée uniquement à l'ouverture de l'onglet, par pages
+de 50; précédent/suivant réutilisent des curseurs Firestore et l'export porte
+volontairement sur la page visible. Chargement, liste vide et indisponibilité
+technique sont trois états distincts.
 
 La recette sandbox du 2026-08-10 a confirme que la reduction et le code
 durable sont strictement identiques dans la galerie, l'e-mail client et le
@@ -871,6 +886,13 @@ est charge uniquement via le callable admin AAL2 au clic sur `Tracer`; aucune
 lecture directe de `analytics_sessions` ou IP brute n'est autorisee au
 navigateur. Le cache local accelere la liste mais ne conditionne jamais
 l'historique affiche a une nouvelle administratrice.
+
+La liste Data applique un stale-while-refresh local: un tableau vide est un
+cache valide, le dernier snapshot IndexedDB est rendu avant toute synchronisation
+et les retours dans les cinq minutes ne relancent ni overview ni liste. Au-dela,
+la synchronisation est silencieuse; seul un premier acces sans cache attend la
+lecture IndexedDB. Le chunk Data est precharge au survol, au focus ou au toucher
+de son entree de navigation.
 
 Le parcours reste vertical sous 1024 px et devient une frise en grille sur desktop: les etapes occupent une ligne tant que la largeur le permet, puis reprennent naturellement a la ligne suivante, sans barre de defilement horizontale. Chaque etape desktop reserve un media 66x84 px: les etapes `detail` affichent la premiere variante `thumb320` du produit lorsqu'elle existe; les sous-categories `buffets`, `armoires`, `miroirs` et `commodes` reprennent les memes images `*-config-rail.webp` que les quatre cartes sous le hero de la galerie; les categories parentes `meubles`, `assises`, `eclairage` et `decorations` utilisent les illustrations WebP dediees de `public/images/analytics`; Galerie, A propos et Devis utilisent des visuels editoriaux differencies. Les images sont resolues depuis les assets ou le catalogue deja charges et n'alourdissent pas les documents analytics.
 

@@ -2,7 +2,13 @@ const crypto = require('crypto');
 const admin = require('firebase-admin');
 const { defineSecret } = require('firebase-functions/params');
 const { onTaskDispatched } = require('firebase-functions/v2/tasks');
-const { CONTROL_DOCUMENT, catalogIdentityMatches, cleanError, nextStateVersion } = require('./publicationState');
+const {
+    CONTROL_DOCUMENT,
+    catalogIdentityMatches,
+    cleanError,
+    computeRevalidationRetryNotBefore,
+    nextStateVersion
+} = require('./publicationState');
 const { validateImpactPlan } = require('./impactPlan');
 const { catalogLog } = require('./structuredLog');
 const { CATALOG_BUILDER_SERVICE_ACCOUNT, CATALOG_REVALIDATION_URL } = require('./catalogConfig');
@@ -16,7 +22,7 @@ function signRevalidationBody(secret, timestamp, body) {
     return crypto.createHmac('sha256', secret).update(`${timestamp}.${bodyHash}`).digest('hex');
 }
 
-async function markCatalogRevalidationFailure(db, input, error) {
+async function markCatalogRevalidationFailure(db, input, error, now = () => new Date()) {
     const revision = Number(input?.revision || 0);
     const manifestSha256 = String(input?.manifestSha256 || '');
     return db.runTransaction(async (transaction) => {
@@ -25,12 +31,17 @@ async function markCatalogRevalidationFailure(db, input, error) {
         const state = snap.data() || {};
         if (!catalogIdentityMatches(state, revision, manifestSha256)) return false;
         const servedFailure = String(error?.code || error?.message || '').startsWith('CATALOG_SERVED');
+        const failureCount = Math.max(0, Number(state.revalidationFailureCount || 0)) + 1;
+        const failedAt = now();
         transaction.set(controlRef, {
             buildState: 'degraded',
             stateVersion: nextStateVersion(state),
             ...(servedFailure
                 ? { servedState: 'failed' }
                 : { invalidationState: 'failed' }),
+            revalidationFailureCount: failureCount,
+            revalidationRetryNotBefore: computeRevalidationRetryNotBefore(failureCount, failedAt),
+            revalidationLastFailureAt: failedAt,
             lastError: cleanError(error),
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
@@ -44,6 +55,36 @@ async function readJsonResponse(response, errorCode) {
     const contentType = response.headers?.get?.('content-type') || '';
     if (!contentType.includes('application/json')) throw new Error(`${errorCode}_NON_JSON`);
     try { return await response.json(); } catch { throw new Error(`${errorCode}_INVALID_JSON`); }
+}
+
+function classifyServedCatalogVersion(version, identity) {
+    const actualRevision = Number(version?.revision);
+    const expectedRevision = Number(identity?.revision);
+    const actualAggregateSha256 = String(version?.aggregateSha256 || '');
+    const expectedAggregateSha256 = String(identity?.aggregateSha256 || '');
+    if (!Number.isInteger(actualRevision) || actualRevision < 1) {
+        throw Object.assign(new Error('CATALOG_SERVED_VERSION_INVALID'), {
+            code: 'CATALOG_SERVED_VERSION_INVALID'
+        });
+    }
+    if (actualRevision > expectedRevision && identity?.newerRevisionSatisfies !== false) {
+        return { result: 'superseded', actualRevision, actualAggregateSha256 };
+    }
+    if (actualRevision !== expectedRevision) {
+        throw Object.assign(new Error('CATALOG_SERVED_VERSION_STALE'), {
+            code: 'CATALOG_SERVED_VERSION_STALE',
+            actualRevision,
+            expectedRevision
+        });
+    }
+    if (actualAggregateSha256 !== expectedAggregateSha256) {
+        throw Object.assign(new Error('CATALOG_SERVED_VERSION_IDENTITY_MISMATCH'), {
+            code: 'CATALOG_SERVED_VERSION_IDENTITY_MISMATCH',
+            actualRevision,
+            expectedRevision
+        });
+    }
+    return { result: 'observed', actualRevision, actualAggregateSha256 };
 }
 
 async function verifyPublishedCatalogVersion(fetchImpl, endpoint, identity, delayImpl = delay) {
@@ -60,11 +101,7 @@ async function verifyPublishedCatalogVersion(fetchImpl, endpoint, identity, dela
             });
             if (!response.ok) throw new Error(`CATALOG_SERVED_VERSION_HTTP_${response.status}`);
             const version = await readJsonResponse(response, 'CATALOG_SERVED_VERSION');
-            if (Number(version.revision) !== Number(identity.revision)
-                || String(version.aggregateSha256 || '') !== String(identity.aggregateSha256)) {
-                throw new Error('CATALOG_SERVED_VERSION_STALE');
-            }
-            return true;
+            return classifyServedCatalogVersion(version, identity);
         } catch (error) {
             lastError = error;
         }
@@ -110,7 +147,8 @@ async function verifyServedCatalog(fetchImpl, endpoint, identity, impactPlan, de
     for (const waitMs of attempts) {
         if (waitMs) await delayImpl(waitMs);
         try {
-            await verifyPublishedCatalogVersion(fetchImpl, endpoint, identity, async () => {});
+            const versionResult = await verifyPublishedCatalogVersion(fetchImpl, endpoint, identity, async () => {});
+            if (versionResult.result === 'superseded') return versionResult;
             for (const { path, expectedStatus } of routeExpectations) {
                 const routeResponse = await fetchImpl(new URL(path, origin), {
                     redirect: 'manual',
@@ -126,7 +164,7 @@ async function verifyServedCatalog(fetchImpl, endpoint, identity, impactPlan, de
                     throw new Error('CATALOG_SERVED_ROUTE_STALE');
                 }
             }
-            return true;
+            return versionResult;
         } catch (error) {
             lastError = error;
         }
@@ -157,10 +195,20 @@ async function revalidateCatalog(dependencies, input) {
     const aggregateSha256 = String(input.aggregateSha256 || '');
     if (!/^[a-f0-9]{64}$/i.test(aggregateSha256)) throw new Error('REVALIDATION_AGGREGATE_SHA256_REQUIRED');
     const impactPlan = validateImpactPlan(input.impactPlan, { revision, aggregateSha256 });
+    const newerRevisionSatisfies = impactPlan.fullReason !== 'rollback';
     const planHash = String(input.planHash || impactPlan.planHash || '');
     if (planHash !== impactPlan.planHash) throw new Error('REVALIDATION_PLAN_HASH_MISMATCH');
     const impactPlanSha256 = input.impactPlanSha256 ? String(input.impactPlanSha256) : null;
     if (impactPlanSha256 && !/^[a-f0-9]{64}$/i.test(impactPlanSha256)) throw new Error('REVALIDATION_IMPACT_SHA256_INVALID');
+    const currentIdentity = await db.runTransaction(async (transaction) => {
+        const snap = await transaction.get(db.doc(CONTROL_DOCUMENT));
+        const state = snap.data() || {};
+        return catalogIdentityMatches(state, revision, manifestSha256);
+    });
+    if (!currentIdentity) {
+        logger('info', { phase: 'revalidate', targetRevision: revision, result: 'superseded_before_dispatch' });
+        return { result: 'superseded', revision, aggregateSha256, planHash };
+    }
     const body = JSON.stringify({
         schemaVersion: 1,
         projectId,
@@ -200,11 +248,11 @@ async function revalidateCatalog(dependencies, input) {
         throw new Error('CATALOG_REVALIDATION_RESPONSE_IDENTITY_MISMATCH');
     }
 
-    await db.runTransaction(async (transaction) => {
+    const invalidationAcceptedForCurrentIdentity = await db.runTransaction(async (transaction) => {
         const controlRef = db.doc(CONTROL_DOCUMENT);
         const snap = await transaction.get(controlRef);
         const state = snap.data() || {};
-        if (!catalogIdentityMatches(state, revision, manifestSha256)) return;
+        if (!catalogIdentityMatches(state, revision, manifestSha256)) return false;
         transaction.set(controlRef, {
             stateVersion: nextStateVersion(state),
             invalidationState: 'accepted',
@@ -213,21 +261,33 @@ async function revalidateCatalog(dependencies, input) {
             lastError: null,
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
+        return true;
     });
+    if (!invalidationAcceptedForCurrentIdentity) {
+        logger('info', { phase: 'revalidate', targetRevision: revision, result: 'superseded_after_dispatch' });
+        return { result: 'superseded', revision, aggregateSha256, planHash };
+    }
 
-    await verifyPublishedCatalogVersion(
+    const publishedVersion = await verifyPublishedCatalogVersion(
         fetchImpl,
         endpoint,
-        { revision, manifestSha256, aggregateSha256 },
+        { revision, manifestSha256, aggregateSha256, newerRevisionSatisfies },
         delayImpl
     );
+    if (publishedVersion.result === 'superseded') {
+        logger('info', {
+            phase: 'revalidate', targetRevision: revision,
+            observedRevision: publishedVersion.actualRevision, result: 'superseded_after_dispatch'
+        });
+        return { result: 'superseded', revision, aggregateSha256, planHash };
+    }
 
-    await db.runTransaction(async (transaction) => {
+    const currentIdentityAccepted = await db.runTransaction(async (transaction) => {
         const controlRef = db.doc(CONTROL_DOCUMENT);
         const signalRef = db.doc('sys_catalog_live/current');
         const snap = await transaction.get(controlRef);
         const state = snap.data() || {};
-        if (!catalogIdentityMatches(state, revision, manifestSha256)) return;
+        if (!catalogIdentityMatches(state, revision, manifestSha256)) return false;
         const signalSnap = await transaction.get(signalRef);
         const currentSignal = signalSnap.exists ? signalSnap.data() : {};
         transaction.set(controlRef, {
@@ -248,9 +308,27 @@ async function revalidateCatalog(dependencies, input) {
                 publishedAt: admin.firestore.FieldValue.serverTimestamp()
             });
         }
+        return true;
     });
+    if (!currentIdentityAccepted) {
+        logger('info', { phase: 'revalidate', targetRevision: revision, result: 'superseded_before_signal' });
+        return { result: 'superseded', revision, aggregateSha256, planHash };
+    }
 
-    await verifyServedCatalog(fetchImpl, endpoint, { revision, manifestSha256, aggregateSha256 }, impactPlan, delayImpl);
+    const servedVersion = await verifyServedCatalog(
+        fetchImpl,
+        endpoint,
+        { revision, manifestSha256, aggregateSha256, newerRevisionSatisfies },
+        impactPlan,
+        delayImpl
+    );
+    if (servedVersion.result === 'superseded') {
+        logger('info', {
+            phase: 'revalidate', targetRevision: revision,
+            observedRevision: servedVersion.actualRevision, result: 'superseded_before_html_proof'
+        });
+        return { result: 'superseded', revision, aggregateSha256, planHash };
+    }
 
     const currentIdentityRevalidated = await db.runTransaction(async (transaction) => {
         const controlRef = db.doc(CONTROL_DOCUMENT);
@@ -267,6 +345,9 @@ async function revalidateCatalog(dependencies, input) {
             servedState: 'observed',
             servedRevision: revision,
             servedAggregateSha256: aggregateSha256,
+            revalidationFailureCount: 0,
+            revalidationRetryNotBefore: null,
+            revalidationLastFailureAt: null,
             pendingRevalidationPlan: null,
             pendingRevalidationPlanHash: null,
             pendingRevalidationRevision: null,
@@ -279,7 +360,7 @@ async function revalidateCatalog(dependencies, input) {
         }, { merge: true });
         return true;
     });
-    const result = currentIdentityRevalidated ? 'revalidated' : 'stale';
+    const result = currentIdentityRevalidated ? 'revalidated' : 'superseded';
     logger('info', { phase: 'revalidate', targetRevision: revision, result });
     return { result, revision, aggregateSha256, planHash };
 }
@@ -295,7 +376,7 @@ const dispatchCatalogRevalidation = onTaskDispatched(
         maxInstances: 1,
         memory: '256MiB',
         timeoutSeconds: 300,
-        retryConfig: { maxAttempts: 10, minBackoffSeconds: 5, maxBackoffSeconds: 300, maxDoublings: 5 },
+        retryConfig: { maxAttempts: 1, minBackoffSeconds: 5, maxBackoffSeconds: 300, maxDoublings: 5 },
         rateLimits: { maxConcurrentDispatches: 1, maxDispatchesPerSecond: 1 }
     },
     async (request) => {
@@ -316,6 +397,7 @@ module.exports = {
     CATALOG_REVALIDATION_HMAC_SECRET,
     REVALIDATION_REGION,
     dispatchCatalogRevalidation,
+    classifyServedCatalogVersion,
     markCatalogRevalidationFailure,
     revalidateCatalog,
     signRevalidationBody,

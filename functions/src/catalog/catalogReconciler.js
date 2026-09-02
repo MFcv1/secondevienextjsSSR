@@ -3,13 +3,15 @@ const { getFunctions } = require('firebase-admin/functions');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const {
     CONTROL_DOCUMENT,
+    catalogRevalidationTaskId,
     clearLease,
     initialPublicationState,
     isLeaseActive,
     isRollbackActive,
     needsCatalogRevalidation,
     nextStateVersion,
-    normalizePublicationMode
+    normalizePublicationMode,
+    toMillis
 } = require('./publicationState');
 const {
     POINTER_PATHS,
@@ -352,6 +354,9 @@ async function reconcileCatalog(dependencies) {
                 sourceLagState: Number(workingState.desiredRevision || 0) > Number(pointer.value.revision) ? 'behind' : 'current',
                 invalidationState: 'pending',
                 servedState: 'pending',
+                revalidationFailureCount: 0,
+                revalidationRetryNotBefore: null,
+                revalidationLastFailureAt: null,
                 lastError: null
             }, (fresh) => fresh.buildState === 'pointer_committed_control_pending');
             repairs.push('pointer_commit_finalized');
@@ -406,7 +411,10 @@ async function reconcileCatalog(dependencies) {
             currentAggregateSha256: currentInspection.manifest?.aggregateSha256 || workingState.currentAggregateSha256 || null,
             currentImpactPlanPath: pointer?.value?.impactPlanPath || workingState.currentImpactPlanPath || null,
             currentImpactPlanSha256: currentInspection.manifest?.impactPlanSha256 || workingState.currentImpactPlanSha256 || null,
-            integrityState: 'valid'
+            integrityState: 'valid',
+            revalidationFailureCount: 0,
+            revalidationRetryNotBefore: null,
+            revalidationLastFailureAt: null
         });
         await applyRepair(pointerControlUpdate);
         repairs.push('firestore_from_pointer');
@@ -461,6 +469,7 @@ async function reconcileCatalog(dependencies) {
 
     const effectiveState = workingState;
     const published = Number(pointer?.value?.revision || effectiveState.publishedRevision || 0);
+    let revalidationStatus = null;
     if (pointer?.value && needsCatalogRevalidation(effectiveState, pointer.value)) {
         let impactPlan = null;
         const pendingPlanDeclared = Number(effectiveState.pendingRevalidationRevision || 0) === published
@@ -489,28 +498,37 @@ async function reconcileCatalog(dependencies) {
             await applyRepair(missingPlan);
             repairs.push('impact_plan_missing');
         } else {
-        const identity = String(pointer.value.manifestSha256).slice(0, 12);
-        const timeBucket = Math.floor(now().getTime() / (5 * 60 * 1000));
-        await enqueue('dispatchCatalogRevalidation', {
-            schemaVersion: 1,
-            revision: published,
-            manifestSha256: pointer.value.manifestSha256,
-            aggregateSha256: currentInspection.manifest?.aggregateSha256 || impactPlan.aggregateSha256,
-            impactPlanPath: pendingPlanDeclared
-                ? null
-                : pointer.value.impactPlanPath || `${pointer.value.manifestPath.replace(/\/manifest\.json$/, '')}/impact-plan.json`,
-            impactPlanSha256: pendingPlanDeclared
-                ? null
-                : currentInspection.manifest?.impactPlanSha256 || pointer.value.impactPlanSha256,
-            planHash: impactPlan.planHash,
-            impactPlan
-        }, `catalog-reconcile-revalidate-r${published}-${identity}-g${pointer.generation}-t${timeBucket}`);
-        repairs.push('revalidation_enqueued');
+            const failureCount = Math.max(0, Number(effectiveState.revalidationFailureCount || 0));
+            const retryNotBeforeMs = toMillis(effectiveState.revalidationRetryNotBefore);
+            if (retryNotBeforeMs > now().getTime()) {
+                revalidationStatus = 'backoff';
+            } else {
+                const taskId = catalogRevalidationTaskId(pointer.value, failureCount);
+                const enqueued = await enqueue('dispatchCatalogRevalidation', {
+                    schemaVersion: 1,
+                    revision: published,
+                    manifestSha256: pointer.value.manifestSha256,
+                    aggregateSha256: currentInspection.manifest?.aggregateSha256 || impactPlan.aggregateSha256,
+                    impactPlanPath: pendingPlanDeclared
+                        ? null
+                        : pointer.value.impactPlanPath || `${pointer.value.manifestPath.replace(/\/manifest\.json$/, '')}/impact-plan.json`,
+                    impactPlanSha256: pendingPlanDeclared
+                        ? null
+                        : currentInspection.manifest?.impactPlanSha256 || pointer.value.impactPlanSha256,
+                    planHash: impactPlan.planHash,
+                    impactPlan
+                }, taskId);
+                if (enqueued) repairs.push('revalidation_enqueued');
+                else revalidationStatus = 'already_queued';
+            }
         }
     }
 
     if (mode === 'paused') {
-        logger('info', { phase: 'reconcile', targetRevision: Number(effectiveState.desiredRevision || 0), result: repairs.join(',') || 'paused' });
+        logger('info', {
+            phase: 'reconcile', targetRevision: Number(effectiveState.desiredRevision || 0),
+            result: repairs.join(',') || (revalidationStatus ? `revalidation_${revalidationStatus}` : 'paused')
+        });
         return { result: repairs.length ? 'repaired_paused' : 'paused', repairs };
     }
 
@@ -526,8 +544,9 @@ async function reconcileCatalog(dependencies) {
         repairs.push('build_enqueued');
     }
 
-    logger('info', { phase: 'reconcile', targetRevision: desired, result: repairs.join(',') || 'healthy' });
-    return { result: repairs.length ? 'repaired' : 'healthy', repairs };
+    const result = repairs.length ? 'repaired' : revalidationStatus ? `revalidation_${revalidationStatus}` : 'healthy';
+    logger('info', { phase: 'reconcile', targetRevision: desired, result: repairs.join(',') || result });
+    return { result, repairs };
 }
 
 async function reconcileCatalogWithStateRetry(dependencies, options = {}) {
@@ -555,7 +574,7 @@ function serverTimestamp() {
 
 const catalogReconciler = onSchedule(
     {
-        schedule: 'every 5 minutes',
+        schedule: 'every 60 minutes',
         region: RECONCILER_REGION,
         serviceAccount: CATALOG_BUILDER_SERVICE_ACCOUNT,
         cpu: 1,

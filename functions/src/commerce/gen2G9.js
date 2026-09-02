@@ -119,14 +119,14 @@ const exported = {
     }),
     commerceOutboxDispatcherGen2: scheduled({
         schedulerName: 'commerceOutboxDispatcher',
-        schedule: 'every 2 minutes',
+        schedule: 'every 60 minutes',
         serviceAccount: 'commerce-outbox-dispatcher@secondevienextjsssr.iam.gserviceaccount.com',
         secrets: OUTBOX_SECRETS,
         handler: operations.runOutboxDispatcher
     }),
     commerceReservationExpiryDispatcherGen2: scheduled({
         schedulerName: 'commerceReservationExpiryDispatcher',
-        schedule: 'every 2 minutes',
+        schedule: 'every 60 minutes',
         serviceAccount: 'commerce-reservation-expiry@secondevienextjsssr.iam.gserviceaccount.com',
         secrets: STRIPE_SECRET,
         handler: reservations.runReservationExpiryDispatcher

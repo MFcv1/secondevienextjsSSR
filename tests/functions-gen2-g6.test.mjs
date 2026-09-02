@@ -31,7 +31,7 @@ const TARGETS = [...CALLABLES, TRIGGER].map((name) => `${name}Gen2`);
 
 test('G6 exports exactly 24 Gen2 functions after Gen1 retirement', () => {
   const exported = require(path.join(root, 'functions/index.js'));
-  assert.equal(Object.keys(exported).length, 151);
+  assert.equal(Object.keys(exported).length, 160);
   for (const name of [...CALLABLES, TRIGGER]) {
     assert.equal(exported[name], undefined, `${name} Gen1 encore exportee`);
     assert.equal(typeof exported[`${name}Gen2`], 'function', `${name}Gen2 absent`);

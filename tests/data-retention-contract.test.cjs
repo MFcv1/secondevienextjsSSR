@@ -147,6 +147,7 @@ test('les producteurs sensibles ecrivent une expiration et ne journalisent pas l
     );
     for (const collectionName of [
         'analytics_sessions',
+        'admin_system_incident_events',
         'sys_ratelimit',
         'sys_idempotency',
         'sys_audit_security',

@@ -1,7 +1,16 @@
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, query, orderBy, deleteDoc, doc } from 'firebase/firestore';
+import {
+    collection,
+    deleteDoc,
+    doc,
+    limit,
+    onSnapshot,
+    orderBy,
+    query,
+    startAfter
+} from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { Mail, Trash2, Download, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Mail, Trash2, Download, Search } from 'lucide-react';
 import { getMillis } from '../../utils/time';
 import { downloadCsv } from './exportCsv';
 import {
@@ -12,16 +21,36 @@ import {
     PageHeader
 } from './adminUiKit';
 
+const NEWSLETTER_PAGE_SIZE = 50;
+
 const AdminNewsletter = ({ darkMode }) => {
     const [subscribers, setSubscribers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [pageIndex, setPageIndex] = useState(0);
+    const [pageCursors, setPageCursors] = useState([null]);
+    const [lastVisible, setLastVisible] = useState(null);
+    const [activeCount, setActiveCount] = useState(null);
+
+    useEffect(() => onSnapshot(
+        doc(db, 'admin_newsletter_summary', 'current'),
+        (snapshot) => {
+            const count = Number(snapshot.data()?.activeCount);
+            setActiveCount(snapshot.exists() && Number.isSafeInteger(count) && count >= 0 ? count : null);
+        },
+        () => setActiveCount(null)
+    ), []);
 
     useEffect(() => {
-        const q = query(
+        setLoading(true);
+        const constraints = [
             collection(db, 'newsletter_subscribers'),
-            orderBy('createdAt', 'desc')
-        );
+            orderBy('createdAt', 'desc'),
+        ];
+        const cursor = pageCursors[pageIndex];
+        const q = cursor
+            ? query(...constraints, startAfter(cursor), limit(NEWSLETTER_PAGE_SIZE))
+            : query(...constraints, limit(NEWSLETTER_PAGE_SIZE));
 
         const unsub = onSnapshot(q, (snapshot) => {
             const subs = snapshot.docs.map(doc => ({
@@ -29,14 +58,34 @@ const AdminNewsletter = ({ darkMode }) => {
                 ...doc.data()
             }));
             setSubscribers(subs);
+            setLastVisible(snapshot.docs.at(-1) || null);
             setLoading(false);
         }, (err) => {
             console.error("Error fetching newsletter subscribers:", err);
+            setSubscribers([]);
+            setLastVisible(null);
             setLoading(false);
         });
 
         return () => unsub();
-    }, []);
+    }, [pageCursors, pageIndex]);
+
+    const showNextPage = () => {
+        if (!lastVisible || subscribers.length < NEWSLETTER_PAGE_SIZE) return;
+        setPageCursors((current) => {
+            const next = current.slice(0, pageIndex + 1);
+            next[pageIndex + 1] = lastVisible;
+            return next;
+        });
+        setPageIndex((current) => current + 1);
+        setSearchTerm('');
+    };
+
+    const showPreviousPage = () => {
+        if (pageIndex === 0) return;
+        setPageIndex((current) => current - 1);
+        setSearchTerm('');
+    };
 
     const handleDelete = async (id, email) => {
         if (!window.confirm(`Voulez-vous vraiment supprimer l'abonné ${email} ?`)) return;
@@ -56,7 +105,7 @@ const AdminNewsletter = ({ darkMode }) => {
             'Date Inscription': sub.createdAt ? new Date(getMillis(sub.createdAt)).toLocaleDateString('fr-FR') : 'N/A',
             'Source': sub.source || 'Inconnu'
         }));
-        downloadCsv(data, 'Newsletter');
+        downloadCsv(data, `Newsletter-page-${pageIndex + 1}`);
     };
 
     const filteredSubscribers = subscribers.filter(sub =>
@@ -73,7 +122,9 @@ const AdminNewsletter = ({ darkMode }) => {
         <div className="space-y-5">
             <PageHeader
                 darkMode={darkMode}
-                description="Base des personnes inscrites à la newsletter de la boutique."
+                description={activeCount === null
+                    ? 'Base newsletter paginée — total indisponible.'
+                    : `${activeCount.toLocaleString('fr-FR')} abonné${activeCount > 1 ? 's' : ''} — 50 contacts maximum chargés par page.`}
                 title="Abonnés"
                 actions={(
                     <>
@@ -83,7 +134,7 @@ const AdminNewsletter = ({ darkMode }) => {
                             <input
                                 className="min-w-0 flex-1 bg-transparent text-sm font-semibold outline-none"
                                 onChange={(event) => setSearchTerm(event.target.value)}
-                                placeholder="E-mail, nom…"
+                                placeholder="Rechercher sur cette page…"
                                 value={searchTerm}
                             />
                         </label>
@@ -94,7 +145,7 @@ const AdminNewsletter = ({ darkMode }) => {
                             type="button"
                         >
                             <Download size={15} />
-                            Exporter CSV
+                            Exporter cette page
                         </button>
                     </>
                 )}
@@ -112,7 +163,7 @@ const AdminNewsletter = ({ darkMode }) => {
                     <div className={`flex items-center justify-between border-b px-5 py-3.5 ${surfaces.divider}`}>
                         <h3 className="text-sm font-black">Liste des abonnés</h3>
                         <span className={`text-xs tabular-nums ${surfaces.muted}`}>
-                            {filteredSubscribers.length} / {subscribers.length}
+                            Page {pageIndex + 1} · {filteredSubscribers.length} affiché{filteredSubscribers.length > 1 ? 's' : ''}
                         </span>
                     </div>
                     <div className={`divide-y ${surfaces.hairline}`}>
@@ -154,6 +205,25 @@ const AdminNewsletter = ({ darkMode }) => {
                                 </article>
                             );
                         })}
+                    </div>
+                    <div className={`flex items-center justify-between border-t px-5 py-3 ${surfaces.divider}`}>
+                        <button
+                            className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold disabled:opacity-40 ${surfaces.secondaryButton}`}
+                            disabled={pageIndex === 0}
+                            onClick={showPreviousPage}
+                            type="button"
+                        >
+                            <ChevronLeft size={14} /> Précédente
+                        </button>
+                        <span className={`text-xs ${surfaces.muted}`}>50 lectures maximum par page</span>
+                        <button
+                            className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold disabled:opacity-40 ${surfaces.secondaryButton}`}
+                            disabled={!lastVisible || subscribers.length < NEWSLETTER_PAGE_SIZE}
+                            onClick={showNextPage}
+                            type="button"
+                        >
+                            Suivante <ChevronRight size={14} />
+                        </button>
                     </div>
                 </section>
             )}

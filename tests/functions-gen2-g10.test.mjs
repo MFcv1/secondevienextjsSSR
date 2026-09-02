@@ -27,10 +27,10 @@ test('G10 manifest preserves its historical counts while current inventory is fu
   const g10 = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g10.json'));
   assert.equal(g10.metadata.sourceCountAfter, 275);
   assert.equal(g10.metadata.cloudCountObserved, 272);
-  assert.equal(Object.keys(exported).length, 151);
-  assert.equal(local.length, 151);
-  assert.equal(EXPECTED_CURRENT_SOURCE_COUNT, 151);
-  assert.equal(EXPECTED_CURRENT_CLOUD_COUNT, 148);
+  assert.equal(Object.keys(exported).length, 160);
+  assert.equal(local.length, 160);
+  assert.equal(EXPECTED_CURRENT_SOURCE_COUNT, 160);
+  assert.equal(EXPECTED_CURRENT_CLOUD_COUNT, 150);
   assert.equal(waveFor('stripeWebhookV2Gen2', 'MIGRATION_PARALLEL'), 'G10');
   assert.equal(waveFor('stripeConnectWebhookV2Gen2', 'MIGRATION_PARALLEL'), 'G10');
   assert.equal(exported.stripeWebhookV2, undefined);

@@ -100,6 +100,17 @@ service cloud.firestore {
       allow update, delete: if isStrongArtisan();
     }
 
+    // Total global sans donnee personnelle. Les contacts restent dans la liste
+    // paginee ci-dessus; le ledger absorbe les rejeux Eventarc cote backend.
+    match /admin_newsletter_summary/{docId} {
+      allow get: if docId == 'current' && isStrongArtisan();
+      allow list, write: if false;
+    }
+
+    match /admin_newsletter_subscriber_projections/{subscriberId} {
+      allow read, write: if false;
+    }
+
     // Tirages et codes promotionnels: lecture/ecriture uniquement via Functions.
     // L'espace client recoit une projection bornee par callable apres verification
     // de l'adresse e-mail authentifiee.
@@ -383,12 +394,44 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Series financieres materialisees. La granularite decroit avec la duree:
+    // jours (30 max), mois (12 max), annees (50 max).
+    match /admin_finance_history_days/{dateKey} {
+      allow read: if isStrongArtisan();
+      allow write: if false;
+    }
+
+    match /admin_finance_history_months/{monthKey} {
+      allow read: if isStrongArtisan();
+      allow write: if false;
+    }
+
+    match /admin_finance_history_years/{yearKey} {
+      allow read: if isStrongArtisan();
+      allow write: if false;
+    }
+
     match /admin_incident_summary/{docId} {
       allow get: if docId == 'current' && isStrongArtisan();
       allow list, write: if false;
     }
 
     match /admin_incident_projections/{incidentId} {
+      allow read, write: if false;
+    }
+
+    // Erreurs runtime expurgees et materialisees par le sink Cloud Logging.
+    // Le navigateur ne lit jamais les logs bruts et ne peut rien ecrire.
+    match /admin_system_incident_summary/{docId} {
+      allow get: if docId == 'current' && isStrongArtisan();
+      allow list, write: if false;
+    }
+
+    match /admin_system_incidents/{incidentId} {
+      allow read, write: if false;
+    }
+
+    match /admin_system_incident_events/{eventId} {
       allow read, write: if false;
     }
 

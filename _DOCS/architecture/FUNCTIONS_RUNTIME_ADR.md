@@ -1,6 +1,6 @@
 # ADR - Architecture Firebase Functions apres migration Gen2
 
-Derniere mise a jour: 2026-09-01
+Derniere mise a jour: 2026-09-02
 Statut: `ACCEPTE - TOPOLOGIE_COMPLETE - FINALISATION_POST_AUDIT_EN_COURS`
 
 ## Decision
@@ -12,19 +12,19 @@ la cadence de livraison d'un domaine deviennent un probleme concret.
 
 L'etat autoritaire est:
 
-- 152 exports locaux;
-- 149 Functions cloud;
-- 146 Gen2 `ACTIVE`;
+- 160 exports locaux, dont sept nouveaux projecteurs/tasks en attente de gate cloud;
+- 150 Functions cloud;
+- 147 Gen2 `ACTIVE`;
 - exactement trois Gen1 Auth conservees:
   `grantAdminOnAuth`, `onRegisteredUserCreated` et
   `onRegisteredUserDeleted`;
-- cinq exports Instagram legacy et le watchdog dashboard local non autorise
-  restent uniquement locaux; deux webhooks v2
-  restent uniquement cloud avec leur source et leur entree de deploiement
-  dediees. L'ecart net local/cloud est donc `146 communs + 6 / + 2`; aucun
+- cinq exports Instagram legacy et sept projecteurs/tasks restent uniquement
+  locaux; deux webhooks v2 restent uniquement cloud avec leur source et leur
+  entree de deploiement dediees. L'ecart net local/cloud est donc
+  `148 communs + 5 + 7 / + 2`; aucun
   deploiement global n'est permis;
-- App Hosting sert `build-2026-08-25-002`; la revision precedente immediate
-  est `build-2026-08-25-001`.
+- App Hosting sert `build-2026-09-02-004`; la revision precedente immediate
+  est `build-2026-09-02-003`.
 
 Les deploiements Functions restent individuels, allowlistes et lies a une
 archive immuable. Production, Stripe live et un selecteur global `functions`
@@ -33,7 +33,7 @@ restent interdits sans decision distincte.
 ## Observation et capacite
 
 La fenetre historique G13 couvre sept jours de metriques et confirme, a sa fin,
-les 134 Gen2 de la migration historique. La topologie courante ajoute onze
+les 134 Gen2 de la migration historique. La topologie courante ajoute douze
 Functions d'observabilite, dix alertes Monitoring actives et un dashboard. G12-A
 s'est toutefois terminee environ douze minutes avant la fin de cette fenetre et
 le tuning est posterieur: cette preuve n'est pas un soak de sept jours de la
