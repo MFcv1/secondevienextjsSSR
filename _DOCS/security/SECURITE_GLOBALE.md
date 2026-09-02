@@ -1,6 +1,6 @@
 # Securite globale
 
-Derniere mise a jour: 2026-08-12
+Derniere mise a jour: 2026-09-01
 Statut: `PREPROD_READY`
 Reference Auth associee: `AUTHENTIFICATION.md`
 Suivi temporaire de cloture: `STABILISATION_SECURITE_SANDBOX.md`
@@ -70,9 +70,20 @@ d'un autre administrateur exige en plus le role `owner` du registre.
 | `sys_audit_security`, `sys_audit_stripe_connect` | aucune lecture client | serveur uniquement |
 | `product_publication_sessions` | aucune lecture client | serveur uniquement |
 | analytics et rollups | admin selon besoin | serveur |
+| `admin_dashboard/{finance,orders,activity,insights}` | admin fort AAL2 + registre actif, IDs allowlistes | serveur uniquement |
+| `admin_incident_summary/current` | chemin exact, admin fort AAL2 + registre actif | serveur uniquement |
+| ledgers `admin_*_projections` | aucune lecture client | serveur uniquement |
 | `sys_meta_connections`, `sys_meta_oauth_states`, `sys_meta_asset_choices`, `sys_social_publications`, `sys_audit_meta` | aucune lecture client | serveur uniquement |
 
 Toute nouvelle collection doit avoir une decision explicite dans les rules avant son utilisation. Le fallback final doit rester deny-by-default.
+
+Les projections globales admin sont strictement expurgees: aucune donnee
+personnelle, detail de commande, payload Stripe, token ou correlation sensible.
+Les Rules refusent une query libre sur `admin_dashboard`, tout document futur
+hors allowlist et toute ecriture SDK, y compris pour un super-admin. La suite
+Emulator couvre admin fort, AAL1, registre retire, client et anonyme. Ces Rules
+ont ete deployees sur le sandbox le 2026-09-01 et revalidees 7/7 avec Firestore
+et Storage Emulator; production reste hors perimetre.
 
 Le document racine `users/{uid}` est materialise exclusivement par les
 Functions: ni le proprietaire ni un admin via SDK client ne peut y injecter un
@@ -385,6 +396,12 @@ nom evoque token, secret, cookie, e-mail, telephone, adresse, payload, requete,
 reponse ou carte sont exclues; les textes restants passent par redaction et
 borne de taille. Liste et detail ecrivent un audit hashe et echouent fermes si
 cet audit est indisponible. Aucun droit Logs n'est donne au bundle navigateur.
+
+Les incidents metier materialises dans `commerce_incidents` alimentent le seul
+resume badgeable Firestore. Les erreurs runtime inattendues restent dans Cloud
+Logging et declenchent les policies LogMatch/Cloud Run existantes; elles ne
+sont pas recopies dans Firestore. Le rate limit local cible des notifications
+LogMatch est cinq minutes, sans polling ni ajout de `minInstances`.
 
 Performance Monitoring applique une allowlist positive de routes vitrine. Les
 tunnels prives, le checkout, les liens `/payer/*`, le compte, l'admin, la

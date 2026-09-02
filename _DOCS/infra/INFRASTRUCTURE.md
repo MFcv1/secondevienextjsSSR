@@ -1,6 +1,6 @@
 # Infrastructure Firebase, Next.js et environnements
 
-Derniere mise a jour: 2026-08-23
+Derniere mise a jour: 2026-09-01
 Statut: `PREPROD_READY - PRODUCTION_DEFERRED`
 
 ## 1. Runtime et gestionnaire de paquets
@@ -200,10 +200,11 @@ exports d'observabilite encore en attente. Les trois seules Gen1 sont `grantAdmi
 `onRegisteredUserCreated` et `onRegisteredUserDeleted`.
 
 Depuis le 2026-08-24, l'observabilite et les rollups analytics sont actifs sur
-le sandbox. La topologie courante vaut 151 exports locaux / 148 Functions cloud
-/ 145 Gen2 / 3 triggers Auth Gen1. App Hosting sert
-`build-2026-08-25-002`, avec `build-2026-08-25-001` comme revision precedente
-immediate. Le bucket prive europeen
+le sandbox. Apres le dashboard materialise du 2026-09-01, la topologie courante
+vaut 152 exports locaux / 149 Functions cloud / 146 Gen2 / 3 triggers Auth
+Gen1. App Hosting `secondevie-next-sandbox` a recu son rollout Stats le
+2026-09-01 a 18:32 Europe/Paris; son rollout immediatement precedent reste la
+cible de rollback. Le bucket prive europeen
 `secondevienextjsssr-analytics-archive-eu` porte les archives pseudonymisees et
 les sauvegardes Firestore, avec acces uniforme et prevention d'acces public.
 

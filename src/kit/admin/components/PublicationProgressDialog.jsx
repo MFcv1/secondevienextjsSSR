@@ -16,6 +16,7 @@ export default function PublicationProgressDialog({
   phase,
   message,
   productName,
+  batchCount = 0,
 }) {
   if (!open) return null;
 
@@ -26,6 +27,7 @@ export default function PublicationProgressDialog({
     ? phases.length
     : Math.max(0, phases.findIndex((entry) => entry.id === phase));
   const complete = phase === 'complete';
+  const isBatch = batchCount > 0;
   const stepLabel = complete ? 'Terminé' : `Étape ${Math.min(activeIndex + 1, phases.length)}/${phases.length}`;
 
   return (
@@ -39,8 +41,8 @@ export default function PublicationProgressDialog({
       <div className={`w-full max-w-[430px] rounded-[22px] border p-5 shadow-[0_24px_70px_rgba(28,25,23,0.24)] sm:p-6 ${darkMode ? 'border-white/10 bg-[#171714] text-white' : 'border-stone-200 bg-white text-stone-950'}`}>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className={`text-[9px] font-extrabold uppercase tracking-[0.14em] ${complete ? 'text-emerald-600' : (darkMode ? 'text-stone-500' : 'text-stone-400')}`}>{complete ? 'Publication réussie' : 'Publication en cours'}</p>
-            <h3 id="publication-progress-title" className="mt-1.5 text-[18px] font-extrabold tracking-[-0.035em]">{complete ? 'Le meuble est en ligne' : 'Mise en ligne de l’ouvrage'}</h3>
+            <p className={`text-[9px] font-extrabold uppercase tracking-[0.14em] ${complete ? 'text-emerald-600' : (darkMode ? 'text-stone-500' : 'text-stone-400')}`}>{complete ? 'Publication réussie' : isBatch ? `${batchCount} publications en cours` : 'Publication en cours'}</p>
+            <h3 id="publication-progress-title" className="mt-1.5 text-[18px] font-extrabold tracking-[-0.035em]">{complete ? (isBatch ? 'Le lot est en ligne' : 'Le meuble est en ligne') : (isBatch ? 'Mise en ligne du lot' : 'Mise en ligne de l’ouvrage')}</h3>
             {complete && productName ? <p className={`mt-1 text-[11px] font-semibold ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>{productName}</p> : null}
           </div>
           <span className={`rounded-full px-3 py-1.5 text-[11px] font-extrabold tabular-nums ${darkMode ? 'bg-white/[0.07] text-stone-300' : 'bg-stone-100 text-stone-600'}`}>{stepLabel}</span>
@@ -55,7 +57,7 @@ export default function PublicationProgressDialog({
                 <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full ${done ? 'bg-emerald-500 text-white' : active ? 'bg-emerald-500/12 text-emerald-600 ring-1 ring-emerald-500/25' : (darkMode ? 'bg-white/[0.05]' : 'bg-stone-100')}`}>
                   {done ? <Check size={12} strokeWidth={2.8} /> : active ? <Loader2 size={12} strokeWidth={2.2} className="animate-spin" /> : index + 1}
                 </span>
-                {entry.label}
+                {isBatch && entry.id === 'record' ? 'Enregistrement des meubles' : entry.label}
               </li>
             );
           })}
@@ -66,7 +68,7 @@ export default function PublicationProgressDialog({
         </p>
         <p className={`mt-2 text-[9px] leading-4 ${darkMode ? 'text-stone-600' : 'text-stone-400'}`}>
           {complete
-            ? 'Ouverture automatique de la vue Publications…'
+            ? `Ouverture automatique de la vue Publications${isBatch ? ` · ${batchCount} meubles` : ''}…`
             : 'Chaque coche correspond à une opération terminée. La durée varie selon les photos et la mise à jour du catalogue.'}
         </p>
       </div>

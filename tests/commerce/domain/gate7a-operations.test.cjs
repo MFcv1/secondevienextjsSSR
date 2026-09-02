@@ -124,7 +124,10 @@ test('Gate 7A: le rollup journalier applique des deltas signes et dates', () => 
         capturedCents: 10000,
         refundedCents: 0,
         netCents: 10000,
-        factCount: 1
+        factCount: 1,
+        captureCount: 1,
+        refundCount: 0,
+        refundReversalCount: 0
     });
     assert.deepEqual(buildFinancialRollupDelta(fact({
         type: 'refund',
@@ -136,7 +139,10 @@ test('Gate 7A: le rollup journalier applique des deltas signes et dates', () => 
         capturedCents: 0,
         refundedCents: 2500,
         netCents: -2500,
-        factCount: 1
+        factCount: 1,
+        captureCount: 0,
+        refundCount: 1,
+        refundReversalCount: 0
     });
     assert.deepEqual(buildFinancialRollupDelta(fact({
         type: 'refund_reversal',
@@ -148,7 +154,10 @@ test('Gate 7A: le rollup journalier applique des deltas signes et dates', () => 
         capturedCents: 0,
         refundedCents: -2500,
         netCents: 2500,
-        factCount: 1
+        factCount: 1,
+        captureCount: 0,
+        refundCount: 0,
+        refundReversalCount: 1
     });
 });
 
@@ -702,11 +711,11 @@ test('Gate 7A: le dashboard consomme les montants qualifies sans exposer les con
         path.join(repositoryRoot, 'functions/src/commerce/v2Operations.js'),
         'utf8'
     );
-    assert.match(adminIsland, /getCommerceOperationsStatusAdmin/);
-    assert.match(adminIsland, /commerceStatus=\{commerceStatus\}/);
-    assert.match(dashboard, /commerceStatus\.data\?\.operations\?\.projection/);
-    assert.match(dashboard, /commerceStatus\.data\?\.financialSummary\?\.currencies\?\.EUR/);
-    assert.match(dashboard, /commerceStatus\.data\?\.orderSummary/);
+    assert.doesNotMatch(adminIsland, /getCommerceOperationsStatusAdmin/);
+    assert.match(adminIsland, /admin_incident_summary/);
+    assert.match(dashboard, /collection\(db, 'admin_dashboard'\)/);
+    assert.match(dashboard, /includeMetadataChanges:\s*true/);
+    assert.doesNotMatch(dashboard, /commerceStatus\.data|analytics_sessions/);
     assert.match(dashboard, /Bilan des ventes/);
     assert.match(dashboard, /Affichage des ventes/);
     assert.match(dashboard, /Évolution du chiffre d’affaires/);
@@ -714,7 +723,8 @@ test('Gate 7A: le dashboard consomme les montants qualifies sans exposer les con
     assert.match(dashboard, /\{ id: '1hour', label: '1h' \}/);
     assert.match(dashboard, /\{ id: '1day', label: '24h' \}/);
     assert.match(dashboard, /\{ id: 'max', label: 'Max' \}/);
-    assert.doesNotMatch(dashboard, /paymentStatusLabel|'À jour'/);
+    assert.doesNotMatch(dashboard, /paymentStatusLabel/);
+    assert.match(dashboard, /'À jour'/);
     assert.match(dashboard, /aria-label="Période du graphique"/);
     assert.match(dashboard, /margin = \{ top: 48/);
     assert.doesNotMatch(dashboard, /-translate-y-\[65%\]/);
@@ -724,17 +734,16 @@ test('Gate 7A: le dashboard consomme les montants qualifies sans exposer les con
     assert.match(dashboard, /Répartition de \$\{total\} commandes/);
     assert.match(dashboard, /Panier moyen/);
     assert.doesNotMatch(dashboard, /Fraîcheur :|Faits :|Divergences :|Mode :/);
-    assert.match(dashboard, /Santé commerce/);
-    assert.match(dashboard, /Dernière évaluation/);
-    assert.match(dashboard, /primaryOpenIncidentCount/);
-    assert.match(dashboard, /incidentHistogram/);
+    assert.doesNotMatch(dashboard, /Santé commerce|Dernière évaluation|primaryOpenIncidentCount|incidentHistogram/);
     assert.match(email, />= V2_EMAIL_OUTBOX_REQUIRED/);
     assert.match(stats, />= V2_STATS_PROJECTION_REQUIRED/);
     assert.match(operations, /buildAdminOrderSummary/);
     assert.match(operations, /commerce_financial_totals\/EUR/);
     assert.match(operations, /commerce_financial_daily/);
-    assert.match(operations, /\.pubsub\.schedule\('every 60 minutes'\)/);
+    assert.match(operations, /\.pubsub\.schedule\('17 3 \* \* \*'\)/);
     assert.match(operations, /orderSummary,/);
     assert.match(operations, /financialSummary,/);
     assert.match(operations, /financialDaily,/);
+    assert.match(operations, /projectionHash: hashPayload\(projectionContent\)/);
+    assert.doesNotMatch(operations, /projectionHash: undefined/);
 });

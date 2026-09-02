@@ -208,6 +208,11 @@ function applyNumberMapDelta(current = {}, delta = {}) {
     return result;
 }
 
+function normalizeProductId(value) {
+    const id = String(value || '').trim();
+    return id && id.length <= 160 && /^[A-Za-z0-9_-]+$/.test(id) ? id : null;
+}
+
 function contributionFor(sessionId, session) {
     const startedAt = toMillis(session.startedAt) || toMillis(session.lastActivityAt) || Date.now();
     const duration = Math.max(0, Math.min(86400, Math.round(Number(session.duration) || 0)));
@@ -227,6 +232,21 @@ function contributionFor(sessionId, session) {
             actionCounts[key] = (actionCounts[key] || 0) + 1;
         }
     }
+    const quoteSessions = {
+        visits: Number((pageCounts.quote || 0) > 0),
+        starts: Number((actionCounts.quote_start || 0) > 0),
+        submitted: Number((actionCounts.quote_submitted || 0) > 0)
+    };
+    const productViews = {};
+    for (const step of journey) {
+        if (step?.page !== 'detail') continue;
+        const productId = normalizeProductId(step.itemId);
+        if (!productId) continue;
+        productViews[productId] = (productViews[productId] || 0) + 1;
+    }
+    const productViewSessions = Object.fromEntries(
+        Object.keys(productViews).map((productId) => [productId, 1])
+    );
     const identitySource = String(session.visitorIdentity?.source || (session.userId ? 'auth_uid' : 'session')).slice(0, 40);
     const subject = hashOpaque(session.userId || sessionId);
     return {
@@ -240,6 +260,9 @@ function contributionFor(sessionId, session) {
         journeySteps: journeyCount,
         pageCounts,
         actionCounts,
+        quoteSessions,
+        productViews,
+        productViewSessions,
         identitySources: { [identitySource]: 1 }
     };
 }
@@ -271,6 +294,9 @@ function applyContributionDelta(shard, next, previous) {
         journeySteps: Math.max(0, (Number(shard.journeySteps) || 0) + delta.journeySteps),
         pageCounts: applyNumberMapDelta(shard.pageCounts, diffNumberMaps(next.pageCounts, previous?.pageCounts)),
         actionCounts: applyNumberMapDelta(shard.actionCounts, diffNumberMaps(next.actionCounts, previous?.actionCounts)),
+        quoteSessions: applyNumberMapDelta(shard.quoteSessions, diffNumberMaps(next.quoteSessions, previous?.quoteSessions)),
+        productViews: applyNumberMapDelta(shard.productViews, diffNumberMaps(next.productViews, previous?.productViews)),
+        productViewSessions: applyNumberMapDelta(shard.productViewSessions, diffNumberMaps(next.productViewSessions, previous?.productViewSessions)),
         identitySources: applyNumberMapDelta(shard.identitySources, diffNumberMaps(next.identitySources, previous?.identitySources)),
         uniqueHll: addHll(shard.uniqueHll, next.subject),
         hours: { ...(shard.hours || {}) }
@@ -346,6 +372,9 @@ function emptyAggregate() {
         journeySteps: 0,
         pageCounts: {},
         actionCounts: {},
+        quoteSessions: {},
+        productViews: {},
+        productViewSessions: {},
         identitySources: {},
         hours: {},
         uniqueHllValues: []
@@ -358,6 +387,9 @@ function mergeAggregate(target, source) {
     }
     mergeNumberMaps(target.pageCounts, source?.pageCounts);
     mergeNumberMaps(target.actionCounts, source?.actionCounts);
+    mergeNumberMaps(target.quoteSessions, source?.quoteSessions);
+    mergeNumberMaps(target.productViews, source?.productViews);
+    mergeNumberMaps(target.productViewSessions, source?.productViewSessions);
     mergeNumberMaps(target.identitySources, source?.identitySources);
     if (source?.uniqueHll) target.uniqueHllValues.push(source.uniqueHll);
     for (const [hourKey, hour] of Object.entries(source?.hours || {})) {
@@ -391,6 +423,9 @@ function finalizeAggregate(value) {
         journeySteps: value.journeySteps,
         pageCounts: value.pageCounts,
         actionCounts: value.actionCounts,
+        quoteSessions: value.quoteSessions,
+        productViews: value.productViews,
+        productViewSessions: value.productViewSessions,
         identitySources: value.identitySources,
         hours,
         uniqueHll,
@@ -404,15 +439,123 @@ async function compactDay(key, db = admin.firestore()) {
     const aggregate = emptyAggregate();
     for (const shard of shards.docs) mergeAggregate(aggregate, shard.data());
     const compact = finalizeAggregate(aggregate);
-    await db.doc(`analytics_rollup_days/${key}`).set({
+    const ref = db.doc(`analytics_rollup_days/${key}`);
+    const current = await ref.get();
+    const stableContent = {
         schemaVersion: 1,
         dateKey: key,
         ...compact,
         sourceShards: shards.size,
-        provisional: key >= dateKey(Date.now() - DAY_MS),
+        provisional: key >= dateKey(Date.now() - DAY_MS)
+    };
+    const currentContent = current.exists ? current.data() : null;
+    const unchanged = currentContent && contributionHash(stableContent) === contributionHash({
+        ...stableContent,
+        ...Object.fromEntries(Object.keys(stableContent).map((field) => [field, currentContent[field]]))
+    });
+    if (!unchanged) await ref.set({
+        ...stableContent,
         compactedAt: admin.firestore.FieldValue.serverTimestamp()
     });
-    return compact;
+    return { ...compact, changed: !unchanged };
+}
+
+const INSIGHT_QUOTE_PERIODS = Object.freeze({
+    '30d': { months: 0, label: '30 jours' },
+    '3m': { months: 3, label: '3 mois' },
+    '6m': { months: 6, label: '6 mois' },
+    '1y': { months: 12, label: '1 an' }
+});
+
+function emptyQuote() {
+    return { visits: 0, starts: 0, submitted: 0 };
+}
+
+function sumQuote(rollups) {
+    const quote = emptyQuote();
+    for (const data of rollups) {
+        for (const key of Object.keys(quote)) {
+            quote[key] += Math.max(0, Number(data?.quoteSessions?.[key] || 0));
+        }
+    }
+    return quote;
+}
+
+function buildDashboardInsightsContent(dailyRollups, monthlyRollups) {
+    const days = dailyRollups.filter(Boolean).sort((a, b) => String(a.dateKey).localeCompare(String(b.dateKey)));
+    const months = monthlyRollups.filter(Boolean).sort((a, b) => String(b.monthKey).localeCompare(String(a.monthKey)));
+    const quoteWindows = {
+        '30d': sumQuote(days),
+        '3m': sumQuote(months.slice(0, 3)),
+        '6m': sumQuote(months.slice(0, 6)),
+        '1y': sumQuote(months.slice(0, 12))
+    };
+    const productIds = new Set(days.flatMap((day) => Object.keys(day.productViews || {})));
+    const products = Array.from(productIds, (id) => {
+        const dailyViews = days.map((day) => Math.max(0, Number(day.productViews?.[id] || 0)));
+        return {
+            id,
+            name: id,
+            views: dailyViews.reduce((sum, value) => sum + value, 0),
+            viewers: days.reduce((sum, day) => sum + Math.max(0, Number(day.productViewSessions?.[id] || 0)), 0),
+            dailyViews
+        };
+    }).filter((product) => product.views > 0)
+        .sort((a, b) => b.views - a.views || b.viewers - a.viewers || a.id.localeCompare(b.id))
+        .slice(0, 5);
+    return {
+        quoteWindows,
+        products,
+        productViewCount: products.reduce((sum, product) => sum + product.views, 0),
+        productViewingSessions: products.reduce((sum, product) => sum + product.viewers, 0)
+    };
+}
+
+async function materializeDashboardInsights(db = admin.firestore(), nowMillis = Date.now()) {
+    const dayKeys = Array.from({ length: 30 }, (_, index) => dateKey(nowMillis - ((29 - index) * DAY_MS)));
+    const monthKeys = Array.from({ length: 12 }, (_, offset) => {
+        const value = new Date(Date.UTC(new Date(nowMillis).getUTCFullYear(), new Date(nowMillis).getUTCMonth() - offset, 1));
+        return monthKey(value.getTime());
+    });
+    const [daySnapshots, monthSnapshots] = await Promise.all([
+        getAllRefs(db, dayKeys.map((key) => db.doc(`analytics_rollup_days/${key}`))),
+        getAllRefs(db, monthKeys.map((key) => db.doc(`analytics_rollup_months/${key}`)))
+    ]);
+    const dailyRollups = daySnapshots.filter((snapshot) => snapshot.exists).map((snapshot) => snapshot.data());
+    const monthlyRollups = monthSnapshots.filter((snapshot) => snapshot.exists).map((snapshot) => snapshot.data());
+    const content = buildDashboardInsightsContent(dailyRollups, monthlyRollups);
+    const source = {
+        days: dailyRollups.map((data) => ({
+            dateKey: data.dateKey,
+            quoteSessions: data.quoteSessions || {},
+            productViews: data.productViews || {},
+            productViewSessions: data.productViewSessions || {}
+        })),
+        months: monthlyRollups.map((data) => ({ monthKey: data.monthKey, quoteSessions: data.quoteSessions || {} }))
+    };
+    const sourceDigest = contributionHash(source);
+    const ref = db.doc('admin_dashboard/insights');
+    const current = await ref.get();
+    if (current.exists && current.data()?.sourceDigest === sourceDigest) {
+        return { changed: false, sourceDays: dailyRollups.length, sourceMonths: monthlyRollups.length };
+    }
+    await ref.set({
+        schemaVersion: 2,
+        windowDays: 30,
+        quote: content.quoteWindows['30d'],
+        quoteWindows: content.quoteWindows,
+        quotePeriods: INSIGHT_QUOTE_PERIODS,
+        productsState: 'ready',
+        products: content.products,
+        productViewCount: content.productViewCount,
+        productViewingSessions: content.productViewingSessions,
+        coverageThrough: admin.firestore.Timestamp.fromMillis(nowMillis),
+        source: 'analytics_rollups',
+        sourceDigest,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        revision: Math.max(0, Number(current.data()?.revision || 0)) + 1
+    });
+    return { changed: true, sourceDays: dailyRollups.length, sourceMonths: monthlyRollups.length };
 }
 
 function keysInMonth(key) {
@@ -606,10 +749,14 @@ async function maintainAnalytics() {
     const today = dateKey(Date.now());
     const yesterday = dateKey(Date.now() - DAY_MS);
     const finalized = await finalizeInactiveSessions(db);
-    await Promise.all([compactDay(today, db), compactDay(yesterday, db)]);
+    const [todayCompaction, yesterdayCompaction] = await Promise.all([
+        compactDay(today, db),
+        compactDay(yesterday, db)
+    ]);
     const stateRef = db.doc('sys_analytics_maintenance/compaction');
     const state = await stateRef.get();
-    if (state.data()?.lastDailyKey !== today) {
+    const dayChanged = state.data()?.lastDailyKey !== today;
+    if (dayChanged) {
         const currentMonth = monthKey(Date.now());
         const previousMonth = monthKey(Date.UTC(
             new Date().getUTCFullYear(),
@@ -624,9 +771,16 @@ async function maintainAnalytics() {
         }
         await stateRef.set({ lastDailyKey: today, updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
     }
+    const insights = (dayChanged || todayCompaction.changed || yesterdayCompaction.changed)
+        ? await materializeDashboardInsights(db)
+        : { changed: false, skipped: true };
     const archive = await archiveNextEligibleDay(db);
-    structuredLog('info', 'analytics_maintenance_completed', { finalized, archiveDateKey: archive?.key || null });
-    return { finalized, archive };
+    structuredLog('info', 'analytics_maintenance_completed', {
+        finalized,
+        archiveDateKey: archive?.key || null,
+        insightsChanged: insights.changed === true
+    });
+    return { finalized, archive, insights };
 }
 
 function projectionForAdmin(document) {
@@ -838,6 +992,7 @@ module.exports = {
     analyticsOverview,
     archiveDay,
     archiveNextEligibleDay,
+    buildDashboardInsightsContent,
     compactDay,
     compactMonth,
     compactYear,
@@ -849,6 +1004,7 @@ module.exports = {
     maintainAnalytics,
     maintainAnalyticsGen2,
     materializeSessionFact,
+    materializeDashboardInsights,
     mergeHll,
     sessionDetail
 };

@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, ArrowRight, ArrowUpRight, Check, Facebook, Globe, Instagram, Loader2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUpRight, Check, Facebook, Globe, Instagram, Layers3, Loader2 } from 'lucide-react';
 
 /** Puce compacte du resume : une valeur, sa legende, rien de plus. */
 function SummaryChip({ label, value, darkMode, tone = 'neutral' }) {
@@ -90,6 +90,9 @@ export default function PublicationActionBar({
   onCancelEdit,
   publishLabel,
   retryMode = false,
+  batchMode = false,
+  batchCount = 0,
+  onFinishBatch,
 }) {
   const instagramOn = Boolean(targets?.instagram) && Boolean(connection?.connected) && connection?.instagramAvailable !== false;
   const facebookOn = Boolean(targets?.facebook) && Boolean(connection?.facebookAvailable);
@@ -162,14 +165,25 @@ export default function PublicationActionBar({
               />
             </>
           ) : (
-            <PrimaryAction
-              darkMode={darkMode}
-              label="Suivant"
-              Icon={ArrowRight}
-              onClick={onNext}
-              busy={uploading}
-              disabled={uploading}
-            />
+            <>
+              {batchMode && batchCount > 0 && (
+                <GhostAction
+                  darkMode={darkMode}
+                  label={`Terminer le lot (${batchCount})`}
+                  Icon={Layers3}
+                  onClick={onFinishBatch}
+                  disabled={uploading}
+                />
+              )}
+              <PrimaryAction
+                darkMode={darkMode}
+                label="Suivant"
+                Icon={ArrowRight}
+                onClick={onNext}
+                busy={uploading}
+                disabled={uploading}
+              />
+            </>
           )}
         </div>
 

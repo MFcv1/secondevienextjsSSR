@@ -34,7 +34,7 @@ test('les metriques commerce ne peuvent pas compter les journaux de leurs propre
   assert.equal(filters.get('secondevie_commerce_health_unhealthy'), applicationLogFilter('commerce_health_unhealthy'));
 });
 
-test('les alertes applicatives sont directes, severisees et limitees a une notification par heure', () => {
+test('les alertes applicatives sont directes, severisees et limitees a une notification par cinq minutes', () => {
   const definitions = POLICIES.filter((policy) => policy.logMatchFilter);
   assert.equal(definitions.length, 4);
 
@@ -42,7 +42,7 @@ test('les alertes applicatives sont directes, severisees et limitees a une notif
     const policy = buildLogMatchPolicy(definition, CHANNELS);
     assert.equal(policy.conditions.length, 1);
     assert.equal(policy.conditions[0].conditionMatchedLog.filter, definition.logMatchFilter);
-    assert.equal(policy.alertStrategy.notificationRateLimit.period, '3600s');
+    assert.equal(policy.alertStrategy.notificationRateLimit.period, '300s');
     assert.equal(policy.alertStrategy.autoClose, '21600s');
     assert.deepEqual(policy.alertStrategy.notificationPrompts, ['OPENED']);
     assert.ok(['ERROR', 'WARNING'].includes(policy.severity));
@@ -50,7 +50,7 @@ test('les alertes applicatives sont directes, severisees et limitees a une notif
     assert.equal(logMatchPolicyIsCurrent(policy, definition, [...CHANNELS].reverse()), true);
   }
 
-  assert.equal(LOG_ALERT_RATE_LIMIT, '3600s');
+  assert.equal(LOG_ALERT_RATE_LIMIT, '300s');
   assert.equal(LOG_ALERT_AUTO_CLOSE, '21600s');
 });
 

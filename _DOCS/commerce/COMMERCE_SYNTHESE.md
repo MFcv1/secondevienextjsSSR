@@ -1,6 +1,6 @@
 # Synthese du noyau commerce
 
-Derniere mise a jour: 2026-08-25
+Derniere mise a jour: 2026-09-01
 Statut: `POINT_ENTREE_COMMERCE`
 Qualification actuelle: `PREPROD_TRANSACTIONAL_READY`
 
@@ -58,6 +58,15 @@ webhooks et outboxes v2. Apres la fermeture du game day du 2026-08-24, le
 controle a ete rouvert durablement sur autorisation explicite le 2026-08-25.
 L'etat courant est `v2_all/v2` revision 77 avec la policy
 `sandbox_transactional_policy_20260802`; Stripe reste exclusivement en mode test.
+
+Le contrat local du dashboard admin projette des valeurs absolues expurgees
+dans `admin_dashboard`. Le fait financier et ses rollups restent commits dans
+la transaction commerce autoritaire; la copie UI `finance` intervient ensuite
+dans un trigger asynchrone et ne peut donc jamais bloquer paiement ou refund.
+Les transitions de commandes alimentent `orders` via le ledger idempotent
+existant, avec tombstones et ordre total par `updateTime`. Ces writers restent
+fail-closed sur baseline absente. Le bootstrap D3 et le shadow ont ete fermes
+sur sandbox le 2026-09-01; aucune activation production n'en decoule.
 
 La migration Functions G8 du 2026-08-19 duplique en Gen2 les 35 callables
 commerce hors checkout/webhooks/workers et deux legacy encore appelees (`createOrder` et
@@ -280,13 +289,16 @@ ete detruits.
 
 ## 10. Sources de detail
 
-L'observabilite active du 2026-08-24 ne change aucune source de verite
-commerce. Six triggers Gen2 projettent uniquement les transitions
-critiques vers `business_events`; les faits, commandes, mouvements, inbox et
-outbox restent autoritaires. Le reconciler lit les rollups atomiques et repare
-25 commandes par passage avec curseur, au lieu de tronquer silencieusement les
-faits a 5 000 et les commandes a 500. Ces exports sont actifs sur le sandbox;
-Stripe reste exclusivement en mode test.
+L'observabilite ne change aucune source de verite commerce: faits, commandes,
+mouvements, inbox et outbox restent autoritaires. Le code local passe le
+journal d'incidents a `onDocumentWritten`, filtre les transitions sans effet et
+maintient un resume idempotent backend-only. La reconciliation cible compare
+nocturnement quatre compteurs orders et le total finance; elle ne scanne plus
+366 jours ni ne repare automatiquement des commandes. Le watchdog deploye
+observe seulement les deux deadlines webhook sans recuperation scheduler
+prouvee, par deux queries indexees `limit(1)` toutes les quinze minutes. Les
+projecteurs et le cutover Stats sont actifs uniquement sur sandbox; Stripe
+reste en test.
 
 Les commandes portent aussi un `orderNumber` entier, attribue dans la meme
 transaction que la creation via `sys_counters/orders`. Les 131 commandes

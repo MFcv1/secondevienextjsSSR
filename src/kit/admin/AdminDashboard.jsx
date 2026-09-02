@@ -1,18 +1,26 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, animate, useReducedMotion } from 'framer-motion';
 import {
-    TrendingUp, TrendingDown, ShoppingBag, AlertTriangle, RefreshCw,
+    TrendingUp, TrendingDown, ShoppingBag, RefreshCw,
     Archive, Users, Eye, FileText, Send, CircleDollarSign, PackageCheck
 } from 'lucide-react';
-import { collection, doc, getDoc, getDocs, limit, orderBy, query, where, Timestamp } from 'firebase/firestore';
+import {
+    collection, doc, documentId, getDoc, getDocs, limit, onSnapshot,
+    orderBy, query, where, Timestamp
+} from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { getCallableFunction } from '../config/firebaseLazy';
-import { getAdminCachedData, loadAdminCachedData } from './adminDataCache';
+import { getAdminCachedData, invalidateAdminCachedData, loadAdminCachedData } from './adminDataCache';
 import { getProductImageItems } from '../../utils/imageUtils';
 import { getProductUrl } from '../../utils/slug';
 import { getMillis } from '../../utils/time';
 import { downloadCsv } from './exportCsv';
 import orderReferenceModule from '../../../shared/orderReference.cjs';
+import {
+    CRITICAL_DOCUMENT_IDS,
+    validateCriticalSnapshot,
+    validateInsights
+} from './adminDashboardProjection';
 
 const { getOrderReference } = orderReferenceModule;
 
@@ -425,9 +433,16 @@ const KpiCard = ({
     </PanelFrame>
 );
 
-const StatusDonut = ({ counts, darkMode }) => {
-    const total = counts.paid + counts.pending + counts.shipped;
+const StatusDonut = ({ counts, darkMode, unavailable = false }) => {
     const reducedMotion = useReducedMotion();
+    if (unavailable) {
+        return (
+            <div className={`flex min-h-[286px] items-center justify-center rounded-2xl text-sm font-semibold ring-1 ${darkMode ? 'bg-white/[0.025] text-white/42 ring-white/[0.055]' : 'bg-[#f6f3ee] text-stone-400 ring-stone-900/[0.045]'}`}>
+                Indisponible
+            </div>
+        );
+    }
+    const total = counts.paid + counts.pending + counts.shipped;
     const segments = [
         { key: 'paid', label: 'Payées', value: counts.paid, color: '#4f9870', radius: 62 },
         { key: 'shipped', label: 'Expédiées', value: counts.shipped, color: '#4e88c7', radius: 51 },
@@ -529,7 +544,7 @@ const StatusDonut = ({ counts, darkMode }) => {
     );
 };
 
-const QuoteFunnel = ({ quote, loading, error, darkMode }) => {
+const QuoteFunnel = ({ quote, loading, error, periodLabel, darkMode }) => {
     const stages = [
         { key: 'visits', label: 'Visites de la page', value: quote.visits, icon: Eye },
         { key: 'starts', label: 'Formulaires démarrés', value: quote.starts, icon: FileText },
@@ -546,6 +561,20 @@ const QuoteFunnel = ({ quote, loading, error, darkMode }) => {
         return (
             <div className={`flex min-h-44 items-center justify-center rounded-2xl px-6 text-center text-sm ${darkMode ? 'bg-white/[0.035] text-white/45' : 'bg-stone-900/[0.035] text-stone-500'}`}>
                 Les signaux devis sont temporairement indisponibles.
+            </div>
+        );
+    }
+
+    if (stages.every((stage) => stage.value === 0)) {
+        return (
+            <div className={`flex min-h-44 flex-col items-center justify-center rounded-2xl px-6 text-center ${darkMode ? 'bg-white/[0.035]' : 'bg-stone-900/[0.035]'}`}>
+                <FileText size={22} strokeWidth={1.35} className={darkMode ? 'text-white/28' : 'text-stone-300'} />
+                <p className={`mt-3 text-sm font-semibold ${darkMode ? 'text-white/58' : 'text-stone-600'}`}>
+                    Aucune intention de devis sur {periodLabel}
+                </p>
+                <p className={`mt-1 text-[10px] ${darkMode ? 'text-white/32' : 'text-stone-400'}`}>
+                    Les visites et démarrages apparaîtront automatiquement ici.
+                </p>
             </div>
         );
     }
@@ -717,7 +746,7 @@ const TrendingProducts = ({ products, loading, error, darkMode }) => {
                             </p>
                             <div className="mt-1 flex min-w-0 items-center gap-1.5">
                                 <span className={`truncate text-[9px] font-medium ${darkMode ? 'text-white/38' : 'text-stone-500'}`}>
-                                    {product.viewers} visiteur{product.viewers > 1 ? 's' : ''}
+                                    {product.viewers} session{product.viewers > 1 ? 's' : ''} intéressée{product.viewers > 1 ? 's' : ''}
                                 </span>
                                 {product.price !== null && (
                                     <>
@@ -763,24 +792,6 @@ const DashboardSkeleton = ({ darkMode }) => (
     </div>
 );
 
-const getTrackedProduct = (rawValue) => {
-    const raw = String(rawValue || '').trim();
-    if (!raw) return null;
-    const clean = raw.replace(/\s*\[(depuis|source):\s*[^\]]+\]\s*$/i, '').trim();
-    const [rawId, ...labelParts] = clean.split('|');
-    const id = rawId.trim();
-    if (!id) return null;
-    const label = (labelParts.join('|') || rawId).trim();
-    const priceMatch = label.match(/\(([\d\s.,]+)\s*EUR\)\s*$/i);
-    const parsedPrice = priceMatch ? Number(priceMatch[1].replace(/\s/g, '').replace(',', '.')) : null;
-    const name = label.replace(/\s*\(([\d\s.,]+)\s*EUR\)\s*$/i, '').trim() || id;
-    return {
-        id,
-        name,
-        price: Number.isFinite(parsedPrice) ? parsedPrice : null
-    };
-};
-
 const buildDashboardProductVisualMap = (items) => {
     const products = new Map();
     (Array.isArray(items) ? items : []).forEach((item) => {
@@ -810,14 +821,6 @@ const buildDashboardProductVisualMap = (items) => {
     return products;
 };
 
-const getSessionVisitorKey = (session) => {
-    const userId = String(session?.userId || '').trim();
-    if (userId && userId !== 'unknown') return `uid:${userId}`;
-    const ip = String(session?.ip || '').trim();
-    if (ip) return `ip:${ip}`;
-    return `session:${session?.id || 'unknown'}`;
-};
-
 const getOrderStatus = (status) => {
     if (status === 'shipped') return { label: 'Expédiée', tone: 'info' };
     if (status === 'completed' || status === 'paid') return { label: 'Payée', tone: 'success' };
@@ -834,248 +837,54 @@ const getRelativeOrderDate = (value) => {
     return new Date(timestamp).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
 };
 
-const DASHBOARD_CORE_CACHE_KEY = 'admin-dashboard:core';
 const DASHBOARD_INSIGHTS_CACHE_KEY = 'admin-dashboard:insights';
+const QUOTE_PERIODS = Object.freeze([
+    { id: '30d', label: '30 jours', shortLabel: '30 j' },
+    { id: '3m', label: '3 mois', shortLabel: '3 mois' },
+    { id: '6m', label: '6 mois', shortLabel: '6 mois' },
+    { id: '1y', label: '1 an', shortLabel: '1 an' }
+]);
+const EMPTY_QUOTE_WINDOWS = Object.freeze(Object.fromEntries(
+    QUOTE_PERIODS.map(({ id }) => [id, Object.freeze({ visits: 0, starts: 0, submitted: 0 })])
+));
 
-const buildDailySalesFromOrders = (orders) => {
-    const totalsByDay = {};
-    orders
-        .filter((order) => order.status !== 'cancelled' && order.status !== 'cancelled_by_client')
-        .forEach((order) => {
-            const timestamp = getMillis(order.createdAt);
-            if (!timestamp) return;
-            const dateKey = new Date(timestamp).toISOString().split('T')[0];
-            totalsByDay[dateKey] = (totalsByDay[dateKey] || 0) + Number(order.total || 0);
-        });
-
-    return Object.keys(totalsByDay)
-        .sort()
-        .map((dateKey) => ({ dateKey, totalRevenue: totalsByDay[dateKey] }));
-};
-
-const loadAdminDashboardCoreData = ({ force = false } = {}) => loadAdminCachedData(
-    DASHBOARD_CORE_CACHE_KEY,
-    async () => {
-        const today = new Date();
-        const rollupCutoffUtc = Date.UTC(
-            today.getUTCFullYear(),
-            today.getUTCMonth(),
-            today.getUTCDate() - 364
-        );
-        const rollupCutoffKey = new Date(rollupCutoffUtc).toISOString().slice(0, 10);
-        const [
-            dashboardSnap,
-            inventorySnap,
-            salesSnap,
-            recentOrdersSnap
-        ] = await Promise.all([
-            getDoc(doc(db, 'dashboard_stats', 'commerce')),
-            getDoc(doc(db, 'inventory_stats', 'overview')),
-            getDocs(query(
-                collection(db, 'sales_stats_daily'),
-                where('dateKey', '>=', rollupCutoffKey),
-                orderBy('dateKey', 'asc'),
-                limit(366)
-            )),
-            getDocs(query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(5)))
-        ]);
-
-        let revenue = 0;
-        let orderCount = 0;
-        let paid = 0;
-        let pending = 0;
-        let shipped = 0;
-        let stockValue = 0;
-        let allOrders = [];
-        let dailySales = salesSnap.docs
-            .map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
-            .sort((left, right) => String(left.dateKey).localeCompare(String(right.dateKey)));
-
-        if (dashboardSnap.exists()) {
-            const data = dashboardSnap.data();
-            revenue = Number(data.totalRevenue || 0);
-            orderCount = Number(data.totalOrders || 0);
-            paid = Number(data.paidOrders || 0);
-            pending = Number(data.pendingOrders || 0);
-            shipped = Number(data.shippedOrders || 0);
-        }
-
-        if (inventorySnap.exists()) {
-            stockValue = Number(inventorySnap.data().totalStockValue || 0);
-        }
-
-        if (!dashboardSnap.exists() || !inventorySnap.exists() || dailySales.length === 0) {
-            console.warn('Dashboard stats docs missing; using capped legacy orders fallback.');
-            const ordersSnapshot = await getDocs(query(
-                collection(db, 'orders'),
-                orderBy('createdAt', 'desc'),
-                limit(300)
-            ));
-            let legacyRevenue = 0;
-            let legacyOrderCount = 0;
-            let legacyPaid = 0;
-            let legacyPending = 0;
-            let legacyShipped = 0;
-
-            allOrders = ordersSnapshot.docs.map((docSnap) => ({
-                id: docSnap.id,
-                ...docSnap.data()
-            }));
-            allOrders.forEach((order) => {
-                const isCancelled = order.status === 'cancelled'
-                    || order.status === 'cancelled_by_client';
-                if (isCancelled) return;
-                legacyRevenue += Number(order.total || 0);
-                legacyOrderCount += 1;
-                if (order.status === 'completed' || order.status === 'paid') legacyPaid += 1;
-                else if (order.status === 'shipped') legacyShipped += 1;
-                else legacyPending += 1;
-            });
-
-            if (!dashboardSnap.exists()) {
-                revenue = legacyRevenue;
-                orderCount = legacyOrderCount;
-                paid = legacyPaid;
-                pending = legacyPending;
-                shipped = legacyShipped;
-            }
-            if (dailySales.length === 0) {
-                dailySales = buildDailySalesFromOrders(allOrders);
-            }
-        }
-
-        return {
-            stats: {
-                totalRevenue: revenue,
-                totalOrders: orderCount,
-                averageOrderValue: orderCount > 0 ? Math.round(revenue / orderCount) : 0,
-                totalStockValue: stockValue,
-                registeredUsers: getAdminCachedData('registered-user-count')
-            },
-            statusCounts: { paid, pending, shipped },
-            recentOrders: recentOrdersSnap.docs
-                .map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
-                .filter((order) => order.status !== 'cancelled' && order.status !== 'cancelled_by_client'),
-            dailySales,
-            allOrders,
-            inventoryStatsAvailable: inventorySnap.exists()
-        };
-    },
-    { maxAgeMs: 120_000, force }
-);
-
-const loadRegisteredUserCount = ({ force = false } = {}) => loadAdminCachedData(
-    'registered-user-count',
-    async () => {
-        const getUserStats = await getCallableFunction('getUserStats');
-        const result = await getUserStats({ includeUsers: false });
-        return result.data.count;
-    },
-    { maxAgeMs: 300_000, force }
-);
+const EMPTY_INSIGHTS = Object.freeze({
+    loading: true,
+    error: false,
+    productsState: 'not_materialized',
+    quote: { visits: 0, starts: 0, submitted: 0 },
+    quoteWindows: EMPTY_QUOTE_WINDOWS,
+    products: [],
+    totalProductViews: 0,
+    productViewingSessions: 0
+});
 
 const loadAdminDashboardInsightsData = ({ force = false } = {}) => loadAdminCachedData(
     DASHBOARD_INSIGHTS_CACHE_KEY,
     async () => {
-        const now = Date.now();
-        const dayMs = 24 * 60 * 60 * 1000;
-        const cutoff = Timestamp.fromMillis(now - (30 * dayMs));
-        const sessionsSnap = await getDocs(query(
-            collection(db, 'analytics_sessions'),
-            where('startedAt', '>=', cutoff),
-            orderBy('startedAt', 'desc'),
-            limit(500)
-        ));
-        const sessions = sessionsSnap.docs
-            .map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
-            .filter((session) => session.type !== 'admin');
-        const quoteVisits = new Set();
-        const quoteStarts = new Set();
-        const quoteSubmitted = new Set();
-        const productMap = new Map();
-        const allProductViewers = new Set();
-        let totalProductViews = 0;
-        const recentDayKeys = Array.from({ length: 7 }, (_, index) => (
-            new Date(now - ((6 - index) * dayMs)).toISOString().slice(0, 10)
-        ));
-
-        sessions.forEach((session) => {
-            const sessionId = session.id;
-            const visitorKey = getSessionVisitorKey(session);
-            const journey = Array.isArray(session.journey) ? session.journey : [];
-            const eventActions = new Set(
-                (Array.isArray(session.lastEventPreview) ? session.lastEventPreview : [])
-                    .map((event) => event?.action)
-                    .filter(Boolean)
-            );
-            if (journey.some((step) => step?.page === 'quote')) quoteVisits.add(sessionId);
-            if (eventActions.has('quote_start')) quoteStarts.add(sessionId);
-            if (eventActions.has('quote_submitted') || eventActions.has('quote_email_opened')) quoteSubmitted.add(sessionId);
-
-            journey.forEach((step) => {
-                if (step?.page !== 'detail') return;
-                const tracked = getTrackedProduct(step.itemId);
-                if (!tracked) return;
-                const stepTimestamp = Number(step.timestampMs)
-                    || getMillis(session.startedAt)
-                    || now;
-                const dayKey = new Date(stepTimestamp).toISOString().slice(0, 10);
-                const entry = productMap.get(tracked.id) || {
-                    ...tracked,
-                    views: 0,
-                    viewers: new Set(),
-                    viewsByDay: new Map()
-                };
-                entry.views += 1;
-                entry.viewers.add(visitorKey);
-                entry.viewsByDay.set(dayKey, (entry.viewsByDay.get(dayKey) || 0) + 1);
-                if (entry.name === entry.id && tracked.name !== tracked.id) entry.name = tracked.name;
-                if (entry.price === null && tracked.price !== null) entry.price = tracked.price;
-                productMap.set(tracked.id, entry);
-                allProductViewers.add(visitorKey);
-                totalProductViews += 1;
-            });
-        });
-
+        const snapshot = await getDoc(doc(db, 'admin_dashboard', 'insights'));
+        const data = snapshot.exists() ? validateInsights(snapshot.data()) : null;
+        if (!data) throw new Error('ADMIN_DASHBOARD_INSIGHTS_UNAVAILABLE');
         return {
             loading: false,
             error: false,
-            coverageLimited: sessionsSnap.size >= 500,
-            quote: {
-                visits: quoteVisits.size,
-                starts: quoteStarts.size,
-                submitted: quoteSubmitted.size
+            productsState: data.productsState,
+            quote: data.quote,
+            quoteWindows: data.quoteWindows || {
+                ...EMPTY_QUOTE_WINDOWS,
+                '30d': data.quote
             },
-            products: Array.from(productMap.values())
-                .sort((left, right) => (
-                    right.views - left.views
-                    || right.viewers.size - left.viewers.size
-                    || left.name.localeCompare(right.name, 'fr')
-                ))
-                .map((product) => ({
-                    id: product.id,
-                    name: product.name,
-                    price: product.price,
-                    views: product.views,
-                    viewers: product.viewers.size,
-                    dailyViews: recentDayKeys.map((dayKey) => product.viewsByDay.get(dayKey) || 0)
-                })),
-            totalProductViews,
-            uniqueProductViewers: allProductViewers.size
+            products: data.productsState === 'ready' ? data.products : [],
+            totalProductViews: data.products.reduce((sum, product) => sum + Number(product.views || 0), 0),
+            productViewingSessions: Number(data.productViewingSessions || 0)
         };
     },
     { maxAgeMs: 120_000, force }
 );
 
-export const preloadAdminDashboardData = async ({ force = false } = {}) => {
-    await Promise.allSettled([
-        loadAdminDashboardCoreData({ force }),
-        loadAdminDashboardInsightsData({ force }),
-        loadRegisteredUserCount({ force })
-    ]);
-};
-
-
+// The Stats data path is listener-driven. This export remains a code-preload
+// compatibility hook and deliberately performs no Firestore read.
+export const preloadAdminDashboardData = async () => undefined;
 // ─── ADMIN DASHBOARD ───
 
 const AdminDashboard = ({
@@ -1083,45 +892,36 @@ const AdminDashboard = ({
     darkMode = false,
     isSuperAdmin = false,
     items = [],
+    onLoadCatalog = null,
+    strongAuthReadyAt = null,
+    backOfficeReadyAt = null,
     commerceStatus = { status: 'loading', data: null, error: null }
 }) => {
-    void user;
     void isSuperAdmin;
-    const cachedCore = getAdminCachedData(DASHBOARD_CORE_CACHE_KEY);
+    void commerceStatus;
     const cachedInsights = getAdminCachedData(DASHBOARD_INSIGHTS_CACHE_KEY);
-    const cachedUserCount = getAdminCachedData('registered-user-count');
-    const [stats, setStats] = useState(cachedCore?.stats || {
-        totalRevenue: 0,
-        totalOrders: 0,
-        averageOrderValue: 0,
-        totalStockValue: 0,
-        registeredUsers: cachedUserCount
+    const unavailableDomains = () => Object.fromEntries(
+        CRITICAL_DOCUMENT_IDS.map((id) => [id, { status: 'unavailable', data: null }])
+    );
+    const [projection, setProjection] = useState({
+        loading: true,
+        fromCache: false,
+        serverConfirmed: false,
+        domains: unavailableDomains()
     });
-
+    const [criticalAccessFailed, setCriticalAccessFailed] = useState(false);
+    const revisionsRef = useRef({});
+    const insightsAnchorRef = useRef(null);
+    const insightsRequestedRef = useRef(false);
     const [salesPanelView, setSalesPanelView] = useState('summary');
     const [timeFilter, setTimeFilter] = useState('1month');
     const [intradayOrders, setIntradayOrders] = useState(null);
     const [intradayOrdersLoading, setIntradayOrdersLoading] = useState(false);
     const intradayRequestRef = useRef(false);
-    const [, setAllOrders] = useState(cachedCore?.allOrders || []);
-    const [dailySales, setDailySales] = useState(cachedCore?.dailySales || []);
-    const [recentOrders, setRecentOrders] = useState(cachedCore?.recentOrders || []);
-    const [statusCounts, setStatusCounts] = useState(
-        cachedCore?.statusCounts || { paid: 0, pending: 0, shipped: 0 }
-    );
-    const [loading, setLoading] = useState(!cachedCore);
-    const [inventoryStatsAvailable, setInventoryStatsAvailable] = useState(
-        cachedCore?.inventoryStatsAvailable ?? true
-    );
-    const [insights, setInsights] = useState(cachedInsights || {
-        loading: true,
-        error: false,
-        coverageLimited: false,
-        quote: { visits: 0, starts: 0, submitted: 0 },
-        products: [],
-        totalProductViews: 0,
-        uniqueProductViewers: 0
-    });
+    const [dailySales, setDailySales] = useState([]);
+    const [recentOrders, setRecentOrders] = useState([]);
+    const [insights, setInsights] = useState(cachedInsights || EMPTY_INSIGHTS);
+    const [quotePeriod, setQuotePeriod] = useState('30d');
     const trendingProducts = useMemo(() => {
         const visuals = buildDashboardProductVisualMap(items);
         return insights.products
@@ -1144,7 +944,24 @@ const AdminDashboard = ({
 
     const selectTimeFilter = async (filterId) => {
         setTimeFilter(filterId);
-        if (!['1hour', '1day'].includes(filterId) || intradayOrders !== null || intradayRequestRef.current) return;
+        if (!['1hour', '1day'].includes(filterId)) {
+            const days = filterId === '7days' ? 7 : filterId === '1month' ? 30 : filterId === '1year' ? 365 : 3650;
+            const cutoff = new Date(Date.now() - ((days - 1) * 24 * 60 * 60 * 1000)).toISOString().slice(0, 10);
+            try {
+                const snapshot = await getDocs(query(
+                    collection(db, 'sales_stats_daily'),
+                    where('dateKey', '>=', cutoff),
+                    orderBy('dateKey', 'asc'),
+                    limit(Math.min(days, 3650))
+                ));
+                setDailySales(snapshot.docs.map((document) => ({ id: document.id, ...document.data() })));
+            } catch (error) {
+                console.error('Failed to fetch requested financial history', error?.code || error?.name);
+                setDailySales([]);
+            }
+            return;
+        }
+        if (intradayOrders !== null || intradayRequestRef.current) return;
 
         intradayRequestRef.current = true;
         setIntradayOrdersLoading(true);
@@ -1281,73 +1098,104 @@ const AdminDashboard = ({
             bestPoint
         };
     }, [chartData, dailySales]);
+    useEffect(() => {
+        revisionsRef.current = {};
+        insightsRequestedRef.current = false;
+        setInsights(EMPTY_INSIGHTS);
+        setProjection({ loading: true, fromCache: false, serverConfirmed: false, domains: unavailableDomains() });
+        setCriticalAccessFailed(false);
+        setRecentOrders([]);
+        setDailySales([]);
+        setIntradayOrders(null);
+        if (!user?.uid) return undefined;
+        if (typeof performance !== 'undefined') performance.mark('admin-dashboard-listener-start');
+        const criticalQuery = query(
+            collection(db, 'admin_dashboard'),
+            where(documentId(), 'in', CRITICAL_DOCUMENT_IDS)
+        );
+        return onSnapshot(criticalQuery, { includeMetadataChanges: true }, (snapshot) => {
+            const validated = validateCriticalSnapshot(snapshot, revisionsRef.current);
+            revisionsRef.current = validated.revisions;
+            setCriticalAccessFailed(false);
+            setProjection({ ...validated, loading: false });
+            if (validated.serverConfirmed && typeof performance !== 'undefined') {
+                const measuredAt = performance.now();
+                performance.mark('admin-dashboard-kpi-server', {
+                    detail: { criticalProjectionDocuments: snapshot.size }
+                });
+                performance.measure(
+                    'admin-dashboard-listener-to-kpi',
+                    'admin-dashboard-listener-start',
+                    'admin-dashboard-kpi-server'
+                );
+                if (Number.isFinite(backOfficeReadyAt)) {
+                    performance.measure('admin-dashboard-backoffice-ready-to-kpi', {
+                        start: backOfficeReadyAt,
+                        end: measuredAt,
+                        detail: { criticalProjectionDocuments: snapshot.size }
+                    });
+                }
+                if (Number.isFinite(strongAuthReadyAt)) {
+                    performance.measure('admin-dashboard-strong-auth-to-kpi', {
+                        start: strongAuthReadyAt,
+                        end: measuredAt,
+                        detail: { criticalProjectionDocuments: snapshot.size }
+                    });
+                }
+            }
+        }, (error) => {
+            console.error('Admin dashboard projection listener failed', error?.code || error?.name);
+            revisionsRef.current = {};
+            setRecentOrders([]);
+            setDailySales([]);
+            setIntradayOrders(null);
+            setInsights(EMPTY_INSIGHTS);
+            invalidateAdminCachedData(DASHBOARD_INSIGHTS_CACHE_KEY);
+            setCriticalAccessFailed(true);
+            setProjection({ loading: false, fromCache: false, serverConfirmed: false, domains: unavailableDomains() });
+        });
+    }, [backOfficeReadyAt, strongAuthReadyAt, user?.uid]);
 
     useEffect(() => {
+        if (projection.loading || criticalAccessFailed || !user?.uid) return undefined;
+        const recentOrdersQuery = query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(5));
+        return onSnapshot(recentOrdersQuery, (snapshot) => {
+            setRecentOrders(snapshot.docs
+                .map((document) => ({ id: document.id, ...document.data() }))
+                .filter((order) => !['cancelled', 'cancelled_by_client', 'canceled'].includes(order.status)));
+        }, () => setRecentOrders([]));
+    }, [criticalAccessFailed, projection.loading, user?.uid]);
+
+    useEffect(() => {
+        const anchor = insightsAnchorRef.current;
+        if (!anchor || criticalAccessFailed || insightsRequestedRef.current) return undefined;
         let cancelled = false;
-        void loadAdminDashboardCoreData()
-            .then((data) => {
-                if (cancelled) return;
-                setStats((previous) => ({
-                    ...data.stats,
-                    registeredUsers: previous.registeredUsers
-                        ?? data.stats.registeredUsers
-                }));
-                setStatusCounts(data.statusCounts);
-                setRecentOrders(data.recentOrders);
-                setDailySales(data.dailySales);
-                setAllOrders(data.allOrders);
-                setInventoryStatsAvailable(data.inventoryStatsAvailable);
-                setLoading(false);
-            })
-            .catch((error) => {
-                console.error('Error fetching dashboard data:', error);
-                if (!cancelled) setLoading(false);
-            });
-
-        void loadRegisteredUserCount()
-            .then((count) => {
-                if (!cancelled) {
-                    setStats((previous) => ({ ...previous, registeredUsers: count }));
-                }
-            })
-            .catch((error) => console.error('Failed to fetch user stats', error));
-
+        const requestInsights = () => {
+            if (insightsRequestedRef.current) return;
+            insightsRequestedRef.current = true;
+            void Promise.resolve(onLoadCatalog?.()).catch(() => {});
+            void loadAdminDashboardInsightsData()
+                .then((data) => { if (!cancelled) setInsights(data); })
+                .catch(() => {
+                    if (!cancelled) setInsights((previous) => ({ ...previous, loading: false, error: true }));
+                });
+        };
+        if (typeof IntersectionObserver !== 'function') {
+            requestInsights();
+            return () => { cancelled = true; };
+        }
+        const observer = new IntersectionObserver(([entry]) => {
+            if (entry?.isIntersecting) {
+                observer.disconnect();
+                requestInsights();
+            }
+        }, { rootMargin: '240px 0px' });
+        observer.observe(anchor);
         return () => {
             cancelled = true;
+            observer.disconnect();
         };
-    }, []);
-
-    useEffect(() => {
-        const financialDaily = commerceStatus.data?.financialDaily;
-        if (!Array.isArray(financialDaily) || financialDaily.length === 0) return;
-        setDailySales(financialDaily
-            .filter((day) => day.currency === 'EUR' && day.dateKey)
-            .map((day) => ({
-                dateKey: day.dateKey,
-                totalRevenue: Number(day.netCents || 0) / 100,
-                capturedRevenue: Number(day.capturedCents || 0) / 100,
-                refundedRevenue: Number(day.refundedCents || 0) / 100
-            }))
-            .sort((left, right) => String(left.dateKey).localeCompare(String(right.dateKey))));
-    }, [commerceStatus.data?.financialDaily]);
-
-    useEffect(() => {
-        let cancelled = false;
-        void loadAdminDashboardInsightsData()
-            .then((data) => {
-                if (!cancelled) setInsights(data);
-            })
-            .catch((error) => {
-                console.error('Error fetching dashboard commercial insights:', error);
-                if (!cancelled) {
-                    setInsights((previous) => ({ ...previous, loading: false, error: true }));
-                }
-            });
-        return () => {
-            cancelled = true;
-        };
-    }, []);
-
+    }, [criticalAccessFailed, onLoadCatalog, user?.uid]);
     // ─── ACTIONS ───
     const handleExportUsers = async () => {
         setExportingUsers(true);
@@ -1369,10 +1217,33 @@ const AdminDashboard = ({
         finally { setExportingUsers(false); }
     };
 
-    if (loading) return <DashboardSkeleton darkMode={darkMode} />;
+    if (projection.loading) return <DashboardSkeleton darkMode={darkMode} />;
 
     const textBase = darkMode ? 'text-white' : 'text-stone-900';
     const textMuted = darkMode ? 'text-white/40' : 'text-stone-400';
+    const financeDomain = projection.domains.finance;
+    const ordersDomain = projection.domains.orders;
+    const activityDomain = projection.domains.activity;
+    const financialAmounts = financeDomain.data;
+    const orderSummary = ordersDomain.data;
+    const activity = activityDomain.data;
+    const financialUnavailable = financeDomain.status !== 'ready';
+    const ordersUnavailable = ordersDomain.status !== 'ready';
+    const activityUnavailable = activityDomain.status !== 'ready';
+    const capturedRevenue = financialAmounts?.capturedCents / 100 || 0;
+    const refundedRevenue = financialAmounts?.refundedCents / 100 || 0;
+    const netRevenue = financialAmounts?.netCents / 100 || 0;
+    const displayedStatusCounts = {
+        paid: Number(orderSummary?.paidOrders || 0),
+        shipped: Number(orderSummary?.shippedOrders || 0),
+        pending: Number(orderSummary?.pendingOrders || 0)
+    };
+    const displayedOrderCount = Number(orderSummary?.totalOrders || 0);
+    const paidOrderCount = Number(financialAmounts?.capturedOrderCount || 0);
+    const averagePaidOrderValue = paidOrderCount > 0 ? capturedRevenue / paidOrderCount : 0;
+    const projectionFreshnessLabel = projection.serverConfirmed ? 'À jour' : 'Actualisation…';
+    const selectedQuotePeriod = QUOTE_PERIODS.find(({ id }) => id === quotePeriod) || QUOTE_PERIODS[0];
+    const selectedQuote = insights.quoteWindows?.[selectedQuotePeriod.id] || EMPTY_QUOTE_WINDOWS[selectedQuotePeriod.id];
 
     const getFilterLabel = () => {
         if (timeFilter === '1hour') return "la dernière heure";
@@ -1389,86 +1260,15 @@ const AdminDashboard = ({
             ? 'Vue horaire'
             : 'Vue quotidienne';
     const bestPointLabel = ['1hour', '1day'].includes(timeFilter) ? 'Meilleur créneau' : 'Meilleur jour';
-    const financialAmounts = commerceStatus.data?.financialSummary?.currencies?.EUR
-        || commerceStatus.data?.operations?.projection?.currencies?.EUR;
-    const financialLoading = ['idle', 'loading'].includes(commerceStatus.status);
-    const financialUnavailable = commerceStatus.status === 'error'
-        || (commerceStatus.status === 'ready' && !financialAmounts);
-    const capturedRevenue = Number.isSafeInteger(financialAmounts?.capturedCents)
-        ? financialAmounts.capturedCents / 100
-        : 0;
-    const refundedRevenue = Number.isSafeInteger(financialAmounts?.refundedCents)
-        ? financialAmounts.refundedCents / 100
-        : 0;
-    const netRevenue = Number.isSafeInteger(financialAmounts?.netCents)
-        ? financialAmounts.netCents / 100
-        : 0;
-    const freshOrderSummary = commerceStatus.data?.orderSummary;
-    const displayedStatusCounts = freshOrderSummary
-        ? {
-            paid: Number(freshOrderSummary.paidOrders || 0),
-            shipped: Number(freshOrderSummary.shippedOrders || 0),
-            pending: Number(freshOrderSummary.pendingOrders || 0)
-        }
-        : statusCounts;
-    const displayedOrderCount = freshOrderSummary
-        ? Number(freshOrderSummary.totalOrders || 0)
-        : stats.totalOrders;
-    const paidOrderCount = displayedStatusCounts.paid + displayedStatusCounts.shipped;
-    const averagePaidOrderValue = paidOrderCount > 0 ? capturedRevenue / paidOrderCount : 0;
-    const operationsHealth = commerceStatus.data?.operations;
-    const effectiveHealthStatus = operationsHealth?.effective?.effectiveStatus
-        || operationsHealth?.status
-        || 'unknown';
-    const healthIsHealthy = effectiveHealthStatus === 'healthy';
-    const healthIsWarning = effectiveHealthStatus === 'warning';
-    const healthAgeMinutes = Number.isSafeInteger(operationsHealth?.effective?.ageSeconds)
-        ? Math.floor(operationsHealth.effective.ageSeconds / 60)
-        : null;
-    const primaryIncidentCount = Number(operationsHealth?.primaryOpenIncidentCount || 0);
-    const primaryIncidentCodes = Object.keys(operationsHealth?.incidentHistogram || {});
     return (
         <motion.div
             initial={reducedMotion ? false : 'hidden'}
             animate="visible"
             className="space-y-5 pb-20 font-sans sm:space-y-6"
         >
-            {commerceStatus.status === 'ready' && (
-                <motion.div
-                    custom={0}
-                    variants={sectionVariants}
-                    role={healthIsHealthy ? 'status' : 'alert'}
-                    className={`flex flex-col gap-3 rounded-2xl border px-4 py-4 sm:flex-row sm:items-center sm:justify-between ${
-                        healthIsHealthy
-                            ? (darkMode ? 'border-emerald-400/20 bg-emerald-400/5' : 'border-emerald-200 bg-emerald-50')
-                            : healthIsWarning
-                                ? (darkMode ? 'border-amber-400/30 bg-amber-400/10' : 'border-amber-300 bg-amber-50')
-                                : (darkMode ? 'border-red-400/30 bg-red-400/10' : 'border-red-300 bg-red-50')
-                    }`}
-                >
-                    <div className="flex min-w-0 items-start gap-3">
-                        <AlertTriangle
-                            aria-hidden="true"
-                            size={20}
-                            className={healthIsHealthy ? 'text-emerald-500' : (healthIsWarning ? 'text-amber-500' : 'text-red-500')}
-                        />
-                        <div className="min-w-0">
-                            <p className={`text-xs font-black uppercase tracking-[0.18em] ${textBase}`}>
-                                Santé commerce : {effectiveHealthStatus}
-                            </p>
-                            <p className={`mt-1 text-xs ${textMuted}`}>
-                                {primaryIncidentCount} incident financier ouvert
-                                {primaryIncidentCount > 1 ? 's' : ''}
-                                {primaryIncidentCodes.length > 0 ? ` · ${primaryIncidentCodes.join(', ')}` : ''}
-                                {operationsHealth?.truncated ? ' · liste tronquée' : ''}
-                            </p>
-                        </div>
-                    </div>
-                    <p className={`shrink-0 text-[11px] font-bold ${textMuted}`}>
-                        Dernière évaluation : {healthAgeMinutes === null ? 'inconnue' : `il y a ${healthAgeMinutes} min`}
-                    </p>
-                </motion.div>
-            )}
+            <p aria-live="polite" className={`text-right text-[10px] font-semibold ${textMuted}`}>
+                KPI · {projectionFreshnessLabel}
+            </p>
             <motion.div custom={0} variants={sectionVariants} className="grid gap-5 lg:grid-cols-12">
                 <KpiCard
                     label="Ventes nettes"
@@ -1478,7 +1278,7 @@ const AdminDashboard = ({
                     meta={refundedRevenue > 0 ? `${formatEuroAmount(refundedRevenue)} remboursés` : 'Après remboursements'}
                     delta={null}
                     darkMode={darkMode}
-                    loading={financialLoading}
+                    loading={false}
                     unavailable={financialUnavailable}
                     accent
                     className="lg:col-span-3"
@@ -1489,6 +1289,7 @@ const AdminDashboard = ({
                     icon={ShoppingBag}
                     meta={`${paidOrderCount} encaissées`}
                     darkMode={darkMode}
+                    unavailable={ordersUnavailable}
                     className="lg:col-span-3"
                 />
                 <KpiCard
@@ -1498,17 +1299,20 @@ const AdminDashboard = ({
                     icon={PackageCheck}
                     meta={paidOrderCount > 0 ? `Sur ${paidOrderCount} commandes encaissées` : 'Aucune commande encaissée'}
                     darkMode={darkMode}
-                    loading={financialLoading}
+                    loading={false}
                     unavailable={financialUnavailable}
                     className="lg:col-span-3"
                 />
                 <KpiCard
                     label="Clients inscrits"
-                    value={stats.registeredUsers}
+                    value={activity?.users?.registeredUsers || 0}
                     icon={Users}
-                    meta={inventoryStatsAvailable ? `Catalogue : ${Math.round(stats.totalStockValue).toLocaleString('fr-FR')} €` : 'Valeur catalogue : —'}
+                    meta={activityUnavailable
+                        ? 'Valeur catalogue : —'
+                        : `Catalogue : ${(activity.catalog.stockValueCents / 100).toLocaleString('fr-FR')} €`}
                     darkMode={darkMode}
-                    loading={stats.registeredUsers == null}
+                    loading={false}
+                    unavailable={activityUnavailable}
                     className="lg:col-span-3"
                     action={(
                         <button
@@ -1554,7 +1358,10 @@ const AdminDashboard = ({
                                         <button
                                             type="button"
                                             key={view.id}
-                                            onClick={() => setSalesPanelView(view.id)}
+                                            onClick={() => {
+                                                setSalesPanelView(view.id);
+                                                if (view.id === 'chart') void selectTimeFilter(timeFilter);
+                                            }}
                                             aria-pressed={salesPanelView === view.id}
                                             className={`rounded-lg px-4 py-1.5 text-[8px] font-bold uppercase tracking-[0.08em] transition-[transform,background-color,color] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#62816c] ${
                                                 salesPanelView === view.id
@@ -1646,23 +1453,47 @@ const AdminDashboard = ({
                         <p className={`text-[9px] font-bold uppercase tracking-[0.18em] ${textMuted}`}>Flux des commandes</p>
                         <h2 className={`mt-2 text-xl font-semibold tracking-[-0.03em] ${textBase}`}>Répartition des statuts</h2>
                     </div>
-                    <StatusDonut counts={displayedStatusCounts} darkMode={darkMode} />
+                    <StatusDonut counts={displayedStatusCounts} darkMode={darkMode} unavailable={ordersUnavailable} />
                 </PanelFrame>
             </motion.div>
 
-            <motion.div custom={2} variants={sectionVariants} className="grid min-w-0 max-w-full gap-5 lg:grid-cols-12">
+            <motion.div ref={insightsAnchorRef} custom={2} variants={sectionVariants} className="grid min-w-0 max-w-full gap-5 lg:grid-cols-12">
                 <PanelFrame darkMode={darkMode} className="min-w-0 lg:col-span-5" innerClassName="overflow-hidden p-5 sm:p-7">
-                    <div className="mb-6 flex items-start justify-between gap-4">
+                    <div className="mb-5 flex items-start justify-between gap-4">
                         <div>
                             <p className={`text-[9px] font-bold uppercase tracking-[0.18em] ${textMuted}`}>Restauration</p>
                             <h2 className={`mt-2 text-xl font-semibold tracking-[-0.03em] ${textBase}`}>Intentions de devis</h2>
-                            <p className={`mt-1 text-[11px] ${textMuted}`}>Parcours mesuré sur 30 jours</p>
+                            <p className={`mt-1 text-[11px] ${textMuted}`}>Parcours pré-calculé, sans session brute</p>
                         </div>
                         <span className={`flex h-10 w-10 items-center justify-center rounded-xl ring-1 ${darkMode ? 'bg-white/[0.045] text-white/54 ring-white/[0.065]' : 'bg-[#eee9e2] text-stone-600 ring-stone-900/[0.05]'}`}>
                             <FileText size={17} strokeWidth={1.4} />
                         </span>
                     </div>
-                    <QuoteFunnel quote={insights.quote} loading={insights.loading} error={insights.error} darkMode={darkMode} />
+                    <div className={`mb-5 grid grid-cols-4 rounded-xl p-1 ring-1 ${darkMode ? 'bg-white/[0.025] ring-white/[0.055]' : 'bg-[#f3efe9] ring-stone-900/[0.045]'}`} aria-label="Période des intentions de devis">
+                        {QUOTE_PERIODS.map((period) => {
+                            const active = period.id === selectedQuotePeriod.id;
+                            return (
+                                <button
+                                    key={period.id}
+                                    type="button"
+                                    onClick={() => setQuotePeriod(period.id)}
+                                    aria-pressed={active}
+                                    className={`rounded-lg px-1.5 py-2 text-[9px] font-bold transition-colors ${active
+                                        ? (darkMode ? 'bg-white/10 text-white' : 'bg-white text-stone-900 shadow-sm')
+                                        : (darkMode ? 'text-white/38 hover:text-white/65' : 'text-stone-400 hover:text-stone-600')}`}
+                                >
+                                    {period.shortLabel}
+                                </button>
+                            );
+                        })}
+                    </div>
+                    <QuoteFunnel
+                        quote={selectedQuote}
+                        loading={insights.loading}
+                        error={insights.error}
+                        periodLabel={selectedQuotePeriod.label}
+                        darkMode={darkMode}
+                    />
                 </PanelFrame>
 
                 <PanelFrame darkMode={darkMode} className="min-w-0 lg:col-span-7" innerClassName="overflow-hidden p-5 sm:p-7">
@@ -1678,15 +1509,28 @@ const AdminDashboard = ({
                                     Échantillon plafonné
                                 </span>
                             )}
-                            <span className={`rounded-xl px-3 py-2 text-[9px] font-semibold tabular-nums ring-1 ${darkMode ? 'bg-white/[0.035] text-white/48 ring-white/[0.055]' : 'bg-[#f1ede7] text-stone-500 ring-stone-900/[0.045]'}`}>
-                                {insights.totalProductViews} vues
-                            </span>
-                            <span className={`rounded-xl px-3 py-2 text-[9px] font-semibold tabular-nums ring-1 ${darkMode ? 'bg-white/[0.035] text-white/48 ring-white/[0.055]' : 'bg-[#f1ede7] text-stone-500 ring-stone-900/[0.045]'}`}>
-                                {insights.uniqueProductViewers} visiteurs
-                            </span>
+                            {insights.productsState === 'ready' ? (
+                                <>
+                                    <span className={`rounded-xl px-3 py-2 text-[9px] font-semibold tabular-nums ring-1 ${darkMode ? 'bg-white/[0.035] text-white/48 ring-white/[0.055]' : 'bg-[#f1ede7] text-stone-500 ring-stone-900/[0.045]'}`}>
+                                        {insights.totalProductViews} vues
+                                    </span>
+                                    <span className={`rounded-xl px-3 py-2 text-[9px] font-semibold tabular-nums ring-1 ${darkMode ? 'bg-white/[0.035] text-white/48 ring-white/[0.055]' : 'bg-[#f1ede7] text-stone-500 ring-stone-900/[0.045]'}`}>
+                                        {insights.productViewingSessions} sessions
+                                    </span>
+                                </>
+                            ) : (
+                                <span className={`rounded-xl px-3 py-2 text-[9px] font-semibold ring-1 ${darkMode ? 'bg-white/[0.035] text-white/42 ring-white/[0.055]' : 'bg-[#f1ede7] text-stone-500 ring-stone-900/[0.045]'}`}>
+                                    Données indisponibles
+                                </span>
+                            )}
                         </div>
                     </div>
-                    <TrendingProducts products={trendingProducts} loading={insights.loading} error={insights.error} darkMode={darkMode} />
+                    <TrendingProducts
+                        products={trendingProducts}
+                        loading={insights.loading}
+                        error={insights.error || insights.productsState !== 'ready'}
+                        darkMode={darkMode}
+                    />
                 </PanelFrame>
             </motion.div>
 

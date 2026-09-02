@@ -149,16 +149,16 @@ canoniques commerce, admin, client, qualite, infrastructure et exploitation.
 Git conserve l'audit et la roadmap retires.
 
 La topologie Firebase Functions Gen1 vers Gen2 est complete sur le sandbox:
-151 exports locaux, 148 Functions cloud, 145 Gen2 `ACTIVE` et trois triggers
+152 exports locaux, 149 Functions cloud, 146 Gen2 `ACTIVE` et trois triggers
 Auth Gen1. L'exercice rollback/reactivation est ferme et la cloture definitive
 observe maintenant la revision finale pendant sept jours selon
 `apphostingaudit/FINALISATION_MIGRATION_GEN2.md`. L'architecture durable est
 dans [FUNCTIONS_RUNTIME_ADR.md](_DOCS/architecture/FUNCTIONS_RUNTIME_ADR.md):
-151 exports locaux, 148 Functions cloud, 145 Gen2 `ACTIVE` et uniquement les
+152 exports locaux, 149 Functions cloud, 146 Gen2 `ACTIVE` et uniquement les
 trois triggers Auth limites par Firebase encore en Gen1. Les quatre owners
 Scheduler commerce sont Gen2 `ENABLED`; les endpoints Stripe test actifs sont
-Gen2. App Hosting sert `build-2026-08-25-002`; `build-2026-08-25-001`
-reste la revision precedente immediate.
+Gen2. App Hosting a recu le rollout sandbox Stats du 2026-09-01; le rollout
+immediatement precedent reste la cible de rollback.
 
 Les retraits G12-A ont ete individuels, allowlistes, precedes d'appelants,
 trafic, quiet-windows et rollbacks digestes. G12-B a retire le code exclusif
@@ -188,6 +188,12 @@ Plans temporaires de reprise encore actifs:
   cloture contradictoire bornee des gates locales, du rollback G13, de la
   qualification des erreurs et du soak final; aucune ecriture cloud implicite;
   fusion canonique et suppression au plus tard le 2026-09-01.
+- [OPTIMISATION_DASHBOARD_INCIDENTS.md](_DOCS/admin/OPTIMISATION_DASHBOARD_INCIDENTS.md):
+  projections KPI et incidents evenementiels; D1-D3 et I1 fermes, cutover D5
+  actif sur sandbox, shadow exact; D0/D4/D5/I2/I3 restent ouverts uniquement
+  pour les fenetres longues, mesures segmentaires/cout et rollback final;
+  production et Stripe live interdits; suppression seulement apres fermeture
+  reelle des preuves restantes.
 - [STABILISATION_SECURITE_SANDBOX.md](_DOCS/security/STABILISATION_SECURITE_SANDBOX.md):
   campagne finale bornee S0 a S4 fermee sur le socle `05f4830`, statut
   `SANDBOX_SECURITY_STABILIZED`; production, domaine, Resend, Stripe live et

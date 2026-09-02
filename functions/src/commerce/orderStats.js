@@ -9,6 +9,12 @@ const {
     timestampFromNow,
     getDateKeyFromTimestamp
 } = require('../analytics/constants');
+const {
+    compareTimestamps,
+    diffOrderSummaries,
+    summarizeAdminOrder,
+    validateOrderPartition
+} = require('../admin/dashboardProjection');
 
 const db = admin.firestore();
 const V2_STATS_PROJECTION_REQUIRED = 2;
@@ -125,6 +131,14 @@ function correlationId(eventId) {
         .digest('hex').slice(0, 16);
 }
 
+function deletionEventTimestamp(event) {
+    const value = event?.time;
+    const date = value ? new Date(value) : null;
+    return date && Number.isFinite(date.getTime())
+        ? admin.firestore.Timestamp.fromDate(date)
+        : (event.data?.before?.updateTime || null);
+}
+
 function requiresProjectionBaseline({ currentOrder, eventBefore, previousProjection }) {
     if (previousProjection) return false;
     const currentIsLegacy = currentOrder &&
@@ -134,21 +148,44 @@ function requiresProjectionBaseline({ currentOrder, eventBefore, previousProject
     return Boolean((currentIsLegacy && eventBefore) || (!currentOrder && beforeIsLegacy));
 }
 
+function orderProjectionInputChanged(before, after) {
+    if (!before && !after) return false;
+    if (!before || !after) return true;
+    let beforeAdmin;
+    let afterAdmin;
+    try {
+        beforeAdmin = summarizeAdminOrder(before);
+        afterAdmin = summarizeAdminOrder(after);
+    } catch {
+        return true;
+    }
+    if (Object.keys(diffOrderSummaries(afterAdmin, beforeAdmin)).length > 0) return true;
+    const beforeLegacy = Number(before.schemaVersion || 0) < V2_STATS_PROJECTION_REQUIRED;
+    const afterLegacy = Number(after.schemaVersion || 0) < V2_STATS_PROJECTION_REQUIRED;
+    if (beforeLegacy !== afterLegacy) return true;
+    if (!beforeLegacy) return false;
+    return JSON.stringify(summarizeOrder(before)) !== JSON.stringify(summarizeOrder(after)) ||
+        getDateKeyFromTimestamp(before.createdAt) !== getDateKeyFromTimestamp(after.createdAt);
+}
+
 async function projectOrderStats(event) {
+    const projectionStartedAt = Date.now();
+    const eventBefore = event.data?.before?.exists ? event.data.before.data() : null;
+    const eventAfter = event.data?.after?.exists ? event.data.after.data() : null;
+    if (!orderProjectionInputChanged(eventBefore, eventAfter)) return null;
     const orderId = event.params.orderId;
     const orderRef = db.doc(`orders/${orderId}`);
     const projectionRef = db.doc(`order_stats_projections/${orderId}`);
     const result = await db.runTransaction(async (transaction) => {
-        const [orderSnapshot, projectionSnapshot] = await Promise.all([
+        const adminSummaryRef = db.doc('admin_dashboard/orders');
+        const [orderSnapshot, projectionSnapshot, adminSummarySnapshot] = await Promise.all([
             transaction.get(orderRef),
-            transaction.get(projectionRef)
+            transaction.get(projectionRef),
+            transaction.get(adminSummaryRef)
         ]);
         const currentOrder = orderSnapshot.exists ? orderSnapshot.data() : null;
         const previousProjection = projectionSnapshot.exists
             ? projectionSnapshot.data()
-            : null;
-        const eventBefore = event.data?.before?.exists
-            ? event.data.before.data()
             : null;
         if (requiresProjectionBaseline({
             currentOrder,
@@ -158,16 +195,34 @@ async function projectOrderStats(event) {
             throw new Error('ORDER_STATS_PROJECTION_BASELINE_MISSING');
         }
         const sourceUpdateTime = orderSnapshot.exists
-            ? orderSnapshot.updateTime.toMillis()
-            : null;
-        if (
-            previousProjection?.sourceUpdateTime === sourceUpdateTime &&
-            currentOrder !== null
-        ) {
-            return { outcome: 'already_current', dailyWrites: 0 };
+            ? orderSnapshot.updateTime
+            : deletionEventTimestamp(event);
+        if (compareTimestamps(sourceUpdateTime, previousProjection?.sourceUpdateTime) <= 0) {
+            return { outcome: 'already_current', dailyWrites: 0, sourceUpdateTime };
         }
 
         const plan = buildProjectionPlan({ currentOrder, previousProjection });
+        const previousAdminSummary = previousProjection?.adminSummary || ZERO_SUMMARY;
+        const nextAdminSummary = summarizeAdminOrder(currentOrder);
+        const adminDelta = diffOrderSummaries(nextAdminSummary, previousAdminSummary);
+        if (Object.keys(adminDelta).length > 0) {
+            if (!adminSummarySnapshot.exists) {
+                throw new Error('ADMIN_ORDERS_PROJECTION_BASELINE_MISSING');
+            }
+            const existing = adminSummarySnapshot.data();
+            const absolute = validateOrderPartition(Object.fromEntries(
+                ['totalOrders', 'paidOrders', 'shippedOrders', 'pendingOrders', 'cancelledOrders']
+                    .map((key) => [key, Number(existing[key] || 0) + Number(adminDelta[key] || 0)])
+            ));
+            transaction.set(adminSummaryRef, {
+                schemaVersion: 1,
+                ...absolute,
+                source: 'orders_all_schemas_projector',
+                latestObservedSourceUpdateTime: sourceUpdateTime,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                revision: Math.max(0, Number(existing.revision || 0)) + 1
+            });
+        }
         if (Object.keys(plan.dashboardDelta).length > 0) {
             transaction.set(
                 db.doc('dashboard_stats/commerce'),
@@ -181,21 +236,22 @@ async function projectOrderStats(event) {
                 dateKey: daily.dateKey
             }, { merge: true });
         }
-        if (plan.nextProjection) {
-            transaction.set(projectionRef, {
-                schemaVersion: 1,
-                orderId,
-                sourceUpdateTime,
-                ...plan.nextProjection,
-                updatedAt: admin.firestore.FieldValue.serverTimestamp()
-            });
-        } else if (projectionSnapshot.exists) {
-            transaction.delete(projectionRef);
-        }
+        transaction.set(projectionRef, {
+            schemaVersion: 2,
+            orderId,
+            sourceUpdateTime,
+            deleted: currentOrder === null,
+            adminSummary: nextAdminSummary,
+            dateKey: plan.nextProjection?.dateKey || null,
+            summary: plan.nextProjection?.summary || ZERO_SUMMARY,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
         return {
             outcome: Object.keys(plan.dashboardDelta).length > 0 ||
-                plan.dailyDeltas.length > 0 ? 'projected' : 'no_change',
-            dailyWrites: plan.dailyDeltas.length
+                plan.dailyDeltas.length > 0 || Object.keys(adminDelta).length > 0
+                ? 'projected' : 'no_change',
+            dailyWrites: plan.dailyDeltas.length,
+            sourceUpdateTime
         };
     });
 
@@ -205,7 +261,11 @@ async function projectOrderStats(event) {
         revision: process.env.K_REVISION || null,
         correlationId: correlationId(event.id),
         outcome: result.outcome,
-        dailyWrites: result.dailyWrites
+        dailyWrites: result.dailyWrites,
+        durationMs: Date.now() - projectionStartedAt,
+        sourceLagMs: result.sourceUpdateTime
+            ? Math.max(0, Date.now() - result.sourceUpdateTime.toMillis())
+            : null
     });
     return null;
 }
@@ -235,6 +295,7 @@ module.exports = {
     diffMetrics,
     normalizeSummary,
     onOrderStatsWrite,
+    orderProjectionInputChanged,
     projectOrderStats,
     requiresProjectionBaseline,
     summarizeOrder

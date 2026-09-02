@@ -1,6 +1,6 @@
 # Back-office
 
-Derniere mise a jour: 2026-08-25
+Derniere mise a jour: 2026-09-01
 Statut: `PREPROD_READY`
 
 Etat actif:
@@ -22,10 +22,9 @@ du header. Cette discretion ne participe pas a la decision de securite, qui
 reste appliquee par claims, registre actif, AAL2, App Check, Rules et Functions.
 Les grandes vues sont chargees avec `React.lazy` pour ne pas placer tout le
 back-office dans le bundle initial. La route ne lit jamais le catalogue public
-avant l'authentification. Une fois l'acces admin fort etabli, Stats charge le
-catalogue public court en parallele de ses agregats afin de resoudre les
-miniatures des meubles en tendance; ce chargement visuel ne bloque pas les
-statistiques.
+avant l'authentification. Une fois l'acces admin fort etabli, Stats attache
+d'abord son listener KPI; le catalogue public court et les insights ne sont
+charges que lorsque leur panneau approche du viewport.
 
 Le sandbox expose l'onglet lazy `Incidents`. Il appelle uniquement
 `getDiagnosticTimelineAdminGen2`, exige l'admin fort AAL2 et retourne une
@@ -64,6 +63,15 @@ L'interface reprend une console systeme epuree: barre de filtres compacte,
 une erreur par ligne datee, compteur tabulaire et inspecteur lateral. Elle ne
 poll pas Cloud Logging; l'ouverture et le bouton Actualiser sont les seules
 lectures. Chaque liste et chaque detail sont audites fail-closed.
+
+Le shell ecoute en plus le seul document expurge
+`admin_incident_summary/current` apres resolution de l'admin fort. La sidebar
+affiche un badge uniquement lorsque `activeTotal > 0`; elle ne poll aucune
+collection d'incidents. Le resume est maintenu transactionnellement par
+`journalCommerceIncidentGen2` sur `onDocumentWritten` et son ledger backend-only
+`admin_incident_projections/{incidentId}`. Les erreurs runtime restent dans
+Cloud Logging/Monitoring et ne sont pas dupliquees artificiellement dans ce
+resume metier.
 
 La qualification resilience D2-D4 a verrouille par tests la recherche humaine
 courante et legacy, les inbox webhook historiques, l'audit fail-closed, le hash des
@@ -209,6 +217,18 @@ Le renouvellement force du jeton reprend au maximum deux erreurs transitoires
 erreurs Auth ne sont jamais rejouees. En cas d'echec final, formulaire et
 photos restent montes pour une reprise explicite, sans dupliquer une commande
 produit.
+
+Le mode Lot est un opt-in de `AdminForm`, indisponible pendant l'edition d'un
+meuble existant. Chaque clic sur Suivant valide la composition courante,
+conserve localement ses fichiers prepares et remet un formulaire vierge sans
+ecriture Firestore ni upload. `PublicationBatchControl` affiche le nombre de
+publications pretes; Terminer le lot ouvre Diffusion et son selecteur ordonne
+permet de verifier le rendu et les destinations de chaque meuble. Publier le
+lot renouvelle une seule fois l'autorisation, execute des commandes produit
+idempotentes distinctes avec deux meubles au maximum en preparation simultanee,
+puis confirme jusqu'a trois projections catalogue en parallele. Cette borne
+consolide les mutations proches sans transformer le navigateur en source
+autoritaire et une reprise reutilise les identites des meubles deja crees.
 
 La liste classe d'abord `status: draft` comme Brouillon, meme si une ancienne
 donnee incoherente porte encore `sold: true`. Seuls les produits publies dont
@@ -769,36 +789,32 @@ Cette recette n'autorise aucun rattachement du vrai sandbox ou d'une future prod
 
 ## 7. Analytics et statistiques
 
-Le dashboard lit les agregats:
+Le chemin critique Stats lit une query Firestore allowlistee contenant
+exactement `admin_dashboard/finance`, `orders` et `activity`. Les trois
+documents globaux sont expurges et ne portent aucune donnee personnelle. Le
+listener utilise `includeMetadataChanges`: un snapshot cache valide porte
+`Actualisation...`, et seul un snapshot serveur porte `A jour`. Un document
+absent, invalide ou de revision regressive affiche `Indisponible`; aucun
+fallback client couteux n'est reactive.
 
-- `dashboard_stats/commerce`;
-- `inventory_stats/overview`;
-- `sales_stats_daily`;
-- `order_stats_projections/{orderId}` comme ledger backend-only idempotent;
-- commandes recentes bornees.
-
-Les cartes `Ventes nettes`, `Commandes`, `Panier moyen` et la repartition des
-statuts ne dependent plus seules du rollup legacy. Chaque nouveau fait
-financier met a jour atomiquement `commerce_financial_totals/{currency}` et
-`commerce_financial_daily/{date}_{currency}`. A chaque nouvelle consultation
-authentifiee de `/admin`, `getCommerceOperationsStatusAdmin` lit le total
-materialise et au plus 366 jours, sans rescanner les faits financiers. Les
-nombres de commandes payees, expediees, en attente et annulees restent
-calcules par des agregations `count`.
-
-La valeur deja connue reste affichee pendant cet aller-retour puis est
-remplacee par la synthese serveur complete. Le navigateur ne l'ajoute jamais
-localement a l'ancienne valeur, ce qui evite le double comptage.
+`finance` est une projection absolue de `commerce_financial_totals/EUR`, mise
+a jour asynchronement apres le commit du fait financier et jamais dans le
+chemin de paiement. `orders` couvre explicitement les statuts legacy et v2 via
+le ledger durable `order_stats_projections/{orderId}`, avec timestamp complet,
+tombstone et partition exacte. `activity` fusionne deux sous-revisions
+independantes: comptes Auth eligibles et derniere publication catalogue.
+Les baselines manquantes font echouer les writers fermes plutot que de
+fabriquer un zero.
 
 Le dashboard consomme les claims admin deja resolus par `AuthContext`. Il ne
 force pas de renouvellement du jeton Firebase a son montage: un rafraichissement
 de claims en arriere-plan ne doit jamais demonter puis remonter Stats en boucle.
 
-Les montants financiers conservent un etat `loading/error/ready`: une valeur
-absente n'est jamais rendue comme un vrai `0 EUR`. Le compteur clients utilise
-`sys_user_stats/current`, maintenu par les triggers Auth create/delete; le
-premier appel apres migration initialise ce document par un scan borne aux
-pages Firebase Auth, puis les ouvertures suivantes lisent le compteur.
+Les callables `getCommerceOperationsStatusAdmin` et `getUserStats` ne sont
+plus lancees par le reader Stats. `getUserStats` reste reservee a l'export
+explicite des utilisateurs. La callable de sante reste disponible uniquement
+aux surfaces Maintenance/diagnostic. La purge du cache et des etats derives
+est imposee au logout, au changement d'UID et sur refus Rules.
 
 La surface Stats affiche les ventes nettes, les montants encaisses et
 rembourses ainsi que le panier moyen des commandes encaissees. La carte
@@ -817,17 +833,22 @@ Les champs de controle internes de la projection (source, mode, faits,
 divergences et date de construction) restent disponibles cote serveur pour
 l'exploitation mais ne sont pas exposes a la cliente.
 
-Restriction commerce: le rollup legacy conserve uniquement le repli historique
-tant que la projection v2 n'a pas encore ete initialisee. Les cartes et le
-graphique quotidien utilisent les faits immuables qualifies via leurs rollups
-materialises. Un encaissement ou remboursement confirme actualise ces rollups
-dans la meme transaction idempotente; l'ecran n'attend donc aucun scheduler.
-Le reconciliateur horaire reconstruit les valeurs absolues uniquement comme
-filet de securite et moyen de reprise.
+Les cinq commandes recentes sont ecoutees seulement apres le premier rendu KPI.
+`admin_dashboard/insights` est lu une fois lorsque son panneau approche du
+viewport. Son schema v2 materialise dans un seul document les intentions de
+devis pour `30 jours`, `3 mois`, `6 mois` et `1 an`; le selecteur client reste
+sur 30 jours par defaut. La fenetre 30 jours et le top cinq produits viennent
+de 30 rollups journaliers, tandis que les periodes longues reutilisent au plus
+12 rollups mensuels. Les vues et sessions interessees par produit sont
+comptees dans les rollups, sans identite ni lecture directe de
+`analytics_sessions`. L'historique quotidien ne charge qu'au clic sur
+`Graphique`; 1 h/24 h restent bornes a 300 commandes.
 
-Un fallback historique borne existe encore pour les commandes si leurs agregats manquent. Stats ne scanne plus `furniture` lorsque `inventory_stats/overview` est absent: la valeur catalogue affiche alors un tiret jusqu'a la prochaine publication snapshot, dont le builder regenere l'agregat. Ce garde-fou evite jusqu'a 300 lectures produit a chaque ouverture de Stats sans afficher un faux zero comme une valeur autoritaire.
-
-Les modules `Intentions de devis` et `Meubles en tendance` lisent separement au maximum 500 documents `analytics_sessions` commences dans les 30 derniers jours, sans listener temps reel. Les sessions admin sont exclues cote client. Les tendances comptent les etapes `detail`, dedupliquent les visiteurs par UID puis IP puis session et reprennent le nom/prix deja embarque dans `journey.itemId`. Le tunnel devis compte les sessions ayant visite `quote`, emis `quote_start` ou emis `quote_email_opened`. Les images du classement sont resolues par identifiant ou slug depuis le snapshot catalogue public court deja utilise par l'admin; elles n'ajoutent aucune lecture Firestore produit et restent purement representatives.
+Les deux cartes distinguent strictement trois etats: squelette pendant la
+lecture, message `Aucune activite sur cette periode` lorsque la projection
+valide vaut zero, et `Donnees indisponibles` si le document manque, est invalide
+ou si la lecture echoue. Aucun squelette decoratif ne subsiste apres la fin du
+chargement et aucun fallback client couteux n'est autorise.
 
 Sur mobile, les libelles et la note du tunnel devis reviennent a la ligne sans
 elargir la carte. Le classement des meubles reste borne a la largeur du panneau
@@ -838,7 +859,10 @@ La repartition des commandes utilise trois anneaux ouverts concentriques:
 Payees, Expediees et En attente. Le total reste au centre; la legende compacte
 affiche pour chaque statut son volume et sa part, sans grandes lignes empilees.
 
-Cette lecture analytics est non bloquante: son echec laisse les agregats commerce, l'inventaire et les commandes recentes disponibles. Une couverture de 500 documents est signalee comme plafonnee. `quote_email_opened` reste libelle comme ouverture d'un brouillon e-mail; Stats ne presente jamais ce signal comme un devis recu, envoye ou accepte.
+Cette lecture analytics est non bloquante: son echec laisse les trois domaines
+critiques et les commandes recentes disponibles. `quote_email_opened` reste
+un signal historique d'intention de session et n'alimente pas le compteur
+`submitted`; seul `quote_submitted`, emis apres reception durable, l'alimente.
 
 `AdminAnalytics` lit maintenant les rollups serveur permanents pour les KPI et
 graphiques, y compris la periode `Tout`. La liste recente est independante:
@@ -916,15 +940,10 @@ n'existait; les identites partagees ont ete preservees.
 ## 9. Performance du back-office
 
 - garder les vues lourdes lazy;
-- lancer le chargement utile de Stats puis precharger les donnees Ventes et
-  Retours des que l'acces admin fort est valide, sans attendre une periode idle;
-- partager une seule premiere page commandes entre Ventes et Retours via
-  `adminCommerceData`, au lieu de refaire le meme appel serveur dans chaque vue;
-- conserver deux minutes les agregats Stats, tendances et premieres pages
-  Ventes/Retours dans `adminDataCache`; une donnee connue reste affichee
-  pendant son rafraichissement, mais l'entree dans une nouvelle session admin
-  force une synthese serveur fraiche des montants, commandes et statuts;
-  le cache de session est vide a la deconnexion ou au changement de compte;
+- ne precharger ni les donnees Ventes/Retours, ni Factures, Livraison ou Devis
+  depuis Stats; chaque onglet invisible possede son propre chargement lazy;
+- conserver en memoire uniquement l'insight differe; une promesse invalidee ne
+  peut pas repeupler le cache apres logout;
 - ne jamais afficher `0` comme resultat tant que la premiere lecture Ventes ou
   Retours n'est pas terminee; utiliser un squelette ou un tiret neutre;
 - borner listeners, requetes et exports;
@@ -952,9 +971,15 @@ src/kit/admin/analyticsReliability.js
 src/kit/admin/adminCommerceData.js
 src/kit/admin/adminPublicCatalog.js
 src/kit/admin/adminDataCache.js
+src/kit/admin/adminDashboardProjection.js
 src/kit/config/constants.js
 functions/src/auth/adminManagement.js
 functions/src/auth/userStats.js
+functions/src/admin/dashboardProjection.js
+functions/src/observability/incidentProjection.js
+functions/src/observability/businessEvents.js
+functions/src/commerce/orderStats.js
+functions/src/commerce/v2Operations.js
 functions/src/onboarding/billingGuide.js
 functions/src/onboarding/billingGuideContract.js
 functions/src/integrations/meta.js
@@ -974,6 +999,7 @@ storage.rules
 | politique de roles plus fine qu'admin/super-admin | `CONCEPTION` | plusieurs operateurs metier confirmes |
 | suppression des outils E2E/etude embarquee | `DEBT` | decision produit apres stabilisation preprod |
 | incidents/reconciliation sandbox | `PREPROD_READY` | surveiller les compteurs avant toute nouvelle fenetre fixture |
+| dashboard materialise | `SANDBOX_ACTIVE_QUIET_WINDOW` | fermer p95 segmente, cout 24 h, premiere reconciliation naturelle et rollback final |
 | alert policies, SLO, astreinte et runbooks live | `PRODUCTION_DEFERRED` | rail production et SLO approuves |
 
 ## 12. Validation
@@ -987,3 +1013,11 @@ Pour une passe back-office complete:
 5. absence de lecture non bornee;
 6. smoke mobile uniquement si le back-office mobile est dans le scope;
 7. build et tests du domaine touche.
+
+Qualification dashboard du 2026-09-01: Rules/indices, projecteurs et App
+Hosting sont deployes uniquement sur `secondevienextjsssr`. La query critique
+fait trois lectures; dix reloads chauds atteignent `KPI · A jour` en mediane
+589 ms et p95/max 822 ms, sans appel a la callable de sante ni a `getUserStats`.
+Le badge incidents a suivi open puis close sans reload. Le critere global chaud
+< 2 s est prouve; la mesure instrumentee du seul segment
+`backOfficeReady -> KPI` < 700 ms reste necessaire avant cloture du plan.

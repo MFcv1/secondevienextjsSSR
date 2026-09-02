@@ -508,7 +508,7 @@ async function upsertImmutableDocument(reference, document) {
     }
 }
 
-async function rebuildDocuments(_facts = [], { cursor = null } = {}) {
+async function _rebuildDocuments(_facts = [], { cursor = null } = {}) {
     let query = db.collection('orders')
         .orderBy(admin.firestore.FieldPath.documentId())
         .limit(DOCUMENT_REPAIR_PAGE_SIZE);
@@ -585,10 +585,7 @@ async function rebuildDocuments(_facts = [], { cursor = null } = {}) {
 }
 
 async function buildProjectionFromRollups(builtAt) {
-    const [totalsSnapshot, dailySnapshot] = await Promise.all([
-        db.collection('commerce_financial_totals').limit(20).get(),
-        db.collection('commerce_financial_daily').orderBy('dateKey', 'desc').limit(366).get()
-    ]);
+    const totalsSnapshot = await db.collection('commerce_financial_totals').limit(20).get();
     const currencies = {};
     let factCount = 0;
     for (const document of totalsSnapshot.docs) {
@@ -601,30 +598,16 @@ async function buildProjectionFromRollups(builtAt) {
         };
         factCount += Number(data.factCount || 0);
     }
-    const days = {};
-    for (const document of dailySnapshot.docs) {
-        const data = document.data();
-        const currency = String(data.currency || 'EUR').toUpperCase();
-        const date = String(data.dateKey || '').slice(0, 10);
-        if (!date) continue;
-        days[`${date}:${currency}`] = {
-            date,
-            currency,
-            capturedCents: Number(data.capturedCents || 0),
-            refundedCents: Number(data.refundedCents || 0),
-            netCents: Number(data.netCents || 0)
-        };
-    }
     const content = {
         schemaVersion: 2,
         source: 'commerce_financial_incremental_rollups',
         factCount,
         currencies,
-        days,
+        days: {},
         orders: {},
         accounts: {},
         divergences: [],
-        validationMode: 'atomic_rollups_plus_primary_incidents'
+        validationMode: 'bounded_totals_plus_primary_incidents'
     };
     return {
         ...content,
@@ -820,14 +803,39 @@ async function persistFinancialRollups(facts, projection, builtAt) {
 
 async function runOperationsRebuild() {
     const builtAt = new Date().toISOString();
-    const previousOperations = await db.doc('sys_commerce_operations/current').get();
-    const projection = await buildProjectionFromRollups(builtAt);
+    const baseProjection = await buildProjectionFromRollups(builtAt);
+    const [absoluteOrders, projectedOrdersSnapshot, projectedFinanceSnapshot] = await Promise.all([
+        buildAdminOrderSummary(),
+        db.doc('admin_dashboard/orders').get(),
+        db.doc('admin_dashboard/finance').get()
+    ]);
+    const divergences = [];
+    const projectedOrders = projectedOrdersSnapshot.exists ? projectedOrdersSnapshot.data() : null;
+    for (const key of ['totalOrders', 'paidOrders', 'shippedOrders', 'pendingOrders', 'cancelledOrders']) {
+        if (!projectedOrders || Number(projectedOrders[key]) !== Number(absoluteOrders[key])) {
+            divergences.push({ domain: 'orders', field: key });
+        }
+    }
+    const totalEur = baseProjection.currencies.EUR;
+    const projectedFinance = projectedFinanceSnapshot.exists ? projectedFinanceSnapshot.data() : null;
+    for (const key of ['capturedCents', 'refundedCents', 'netCents']) {
+        if (!projectedFinance || Number(projectedFinance[key]) !== Number(totalEur?.[key])) {
+            divergences.push({ domain: 'finance', field: key });
+        }
+    }
+    const projectionContent = { ...baseProjection, divergences };
+    const projection = {
+        ...projectionContent,
+        projectionHash: hashPayload(projectionContent)
+    };
     await db.doc('commerce_financial_projections/current').set(projection);
-    const documents = await rebuildDocuments([], {
-        cursor: previousOperations.exists
-            ? previousOperations.data()?.documents?.cursor || null
-            : null
-    });
+    const documents = {
+        mode: 'manual_or_targeted_only',
+        scannedOrders: 0,
+        created: 0,
+        reused: 0,
+        cursor: null
+    };
     const financialRollups = {
         source: 'atomic_incremental_writes',
         rebuilt: false,
@@ -888,6 +896,59 @@ async function runOutboxDispatcher({
     else logger.info('commerce_worker_completed', summary);
     assertWorkerRunComplete(summary);
     return { due, expiredLeases };
+}
+
+async function runWebhookCoverageWatchdog({ nowMillis = () => Date.now() } = {}) {
+    const observedAtMillis = nowMillis();
+    const inbox = db.collection('commerce_webhook_inbox');
+    const probes = [
+        {
+            incidentId: 'operations-dueInbox',
+            code: 'operations_dueInbox',
+            query: inbox
+                .where('status', 'in', ['received', 'failed'])
+                .where('nextAttemptAt', '<=', observedAtMillis)
+                .limit(1)
+        },
+        {
+            incidentId: 'operations-expiredInboxLeases',
+            code: 'operations_expiredInboxLeases',
+            query: inbox
+                .where('status', '==', 'processing')
+                .where('processingUntil', '<=', observedAtMillis)
+                .limit(1)
+        }
+    ];
+    const results = await Promise.all(probes.map((probe) => probe.query.get()));
+    const incidentReferences = probes.map((probe) => (
+        db.doc(`commerce_incidents/${probe.incidentId}`)
+    ));
+    const currentIncidents = await db.getAll(...incidentReferences);
+    const batch = db.batch();
+    let changed = 0;
+    probes.forEach((probe, index) => {
+        const open = !results[index].empty;
+        const current = currentIncidents[index].exists ? currentIncidents[index].data() : null;
+        const nextStatus = open ? 'open' : 'closed';
+        if (current?.status === nextStatus && current?.code === probe.code) return;
+        changed += 1;
+        batch.set(incidentReferences[index], {
+            schemaVersion: 2,
+            code: probe.code,
+            severity: 'critical',
+            category: 'webhook',
+            status: nextStatus,
+            count: open ? 1 : 0,
+            source: 'webhook_coverage_watchdog',
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+    });
+    if (changed > 0) await batch.commit();
+    return {
+        changed,
+        dueInbox: results[0].empty ? 0 : 1,
+        expiredInboxLeases: results[1].empty ? 0 : 1
+    };
 }
 
 const PAID_ORDER_STATUSES = [
@@ -982,7 +1043,7 @@ const commerceOperationsReconciler = regionalFunctions()
         memory: '512MB',
         maxInstances: 1
     })
-    .pubsub.schedule('every 60 minutes')
+    .pubsub.schedule('17 3 * * *')
     .onRun(runOperationsRebuild);
 
 const getCommerceOperationsStatusAdmin = regionalFunctions()
@@ -1124,5 +1185,6 @@ module.exports = {
     rebuildCommerceOperationsAdmin,
     persistFinancialRollups,
     runOperationsRebuild,
-    runOutboxDispatcher
+    runOutboxDispatcher,
+    runWebhookCoverageWatchdog
 };

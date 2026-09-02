@@ -95,6 +95,7 @@ const {
     commerceOperationsReconcilerGen2,
     commerceOutboxDispatcherGen2,
     commerceReservationExpiryDispatcherGen2,
+    commerceWebhookCoverageWatchdogGen2,
     confirmStripeConnectReconnectGen2,
     createAdminPaymentLinkGen2,
     createCheckoutV2Gen2,
@@ -120,6 +121,7 @@ exports.cleanupFixtureRunAdminGen2 = cleanupFixtureRunAdminGen2;
 exports.commerceOperationsReconcilerGen2 = commerceOperationsReconcilerGen2;
 exports.commerceOutboxDispatcherGen2 = commerceOutboxDispatcherGen2;
 exports.commerceReservationExpiryDispatcherGen2 = commerceReservationExpiryDispatcherGen2;
+exports.commerceWebhookCoverageWatchdogGen2 = commerceWebhookCoverageWatchdogGen2;
 exports.confirmStripeConnectReconnectGen2 = confirmStripeConnectReconnectGen2;
 exports.createAdminPaymentLinkGen2 = createAdminPaymentLinkGen2;
 exports.createCheckoutV2Gen2 = createCheckoutV2Gen2;

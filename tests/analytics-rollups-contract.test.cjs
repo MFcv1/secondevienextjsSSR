@@ -7,6 +7,7 @@ const test = require('node:test');
 
 const {
     addHll,
+    buildDashboardInsightsContent,
     contributionFor,
     estimateHll,
     mergeHll
@@ -45,6 +46,51 @@ test('une session produit uniquement des compteurs bornes et un sujet pseudonymi
     assert.equal(contribution.actionCounts.cart_add, 2);
     assert.equal(contribution.actionCounts.unknown, 8);
     assert.notEqual(contribution.subject, 'uid-secret');
+});
+
+test('les intentions devis sont des drapeaux de session et insights reste borne aux rollups', () => {
+    const contribution = contributionFor('quote-session', {
+        startedAt: Date.UTC(2026, 8, 1, 12),
+        duration: 50,
+        journeyCount: 4,
+        pageCounts: { quote: 3 },
+        actionCounts: { quote_start: 4, quote_submitted: 2, quote_email_opened: 2 }
+    });
+    assert.deepEqual(contribution.quoteSessions, { visits: 1, starts: 1, submitted: 1 });
+    const legacyEmailOnly = contributionFor('legacy-quote-session', {
+        startedAt: Date.UTC(2026, 8, 1, 12),
+        pageCounts: { quote: 1 },
+        actionCounts: { quote_email_opened: 1 }
+    });
+    assert.deepEqual(legacyEmailOnly.quoteSessions, { visits: 1, starts: 0, submitted: 0 });
+    const productContribution = contributionFor('product-session', {
+        startedAt: Date.UTC(2026, 8, 1, 12),
+        journey: [
+            { page: 'detail', itemId: 'chaise-bleue' },
+            { page: 'detail', itemId: 'chaise-bleue' },
+            { page: 'detail', itemId: '../invalide' }
+        ]
+    });
+    assert.deepEqual(productContribution.productViews, { 'chaise-bleue': 2 });
+    assert.deepEqual(productContribution.productViewSessions, { 'chaise-bleue': 1 });
+    const insights = buildDashboardInsightsContent([
+        { dateKey: '2026-08-31', quoteSessions: { visits: 2, starts: 1 }, productViews: { a: 2 }, productViewSessions: { a: 1 } },
+        { dateKey: '2026-09-01', quoteSessions: { visits: 3, submitted: 1 }, productViews: { a: 1, b: 4 }, productViewSessions: { a: 1, b: 2 } }
+    ], [
+        { monthKey: '2026-09', quoteSessions: { visits: 5, starts: 1, submitted: 1 } },
+        { monthKey: '2026-08', quoteSessions: { visits: 8, starts: 3, submitted: 2 } }
+    ]);
+    assert.deepEqual(insights.quoteWindows['30d'], { visits: 5, starts: 1, submitted: 1 });
+    assert.deepEqual(insights.quoteWindows['3m'], { visits: 13, starts: 4, submitted: 3 });
+    assert.equal(insights.products[0].id, 'b');
+    assert.deepEqual(insights.products[1].dailyViews, [2, 1]);
+    const source = read('functions/src/analytics/rollups.js');
+    const materializer = source.match(/async function materializeDashboardInsights[\s\S]*?\n}\n\nfunction keysInMonth/)?.[0] || '';
+    assert.match(materializer, /Array\.from\(\{ length: 30 \}/);
+    assert.match(materializer, /Array\.from\(\{ length: 12 \}/);
+    assert.match(materializer, /sourceDigest/);
+    assert.match(materializer, /productsState: 'ready'/);
+    assert.doesNotMatch(materializer, /analytics_sessions/);
 });
 
 test('le rail admin lit des rollups et charge le detail seulement a la demande', () => {

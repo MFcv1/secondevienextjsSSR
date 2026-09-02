@@ -4,12 +4,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import tls from 'node:tls';
 import { createRequire } from 'node:module';
-import admin from 'firebase-admin';
 import { chromium } from '@playwright/test';
 
 const requireFromFunctions = createRequire(
   new URL('../functions/package.json', import.meta.url)
 );
+const admin = requireFromFunctions('firebase-admin');
 const Stripe = requireFromFunctions('stripe');
 const {
   createCancellationRuntime,
@@ -72,7 +72,8 @@ function accessSecret(name) {
 }
 
 async function callable(name, data, tokens) {
-  const response = await fetch(`${FUNCTIONS_BASE}/${name}`, {
+  const deployedName = name.endsWith('Gen2') ? name : `${name}Gen2`;
+  const response = await fetch(`${FUNCTIONS_BASE}/${deployedName}`, {
     method: 'POST',
     headers: {
       authorization: `Bearer ${tokens.idToken}`,
@@ -83,7 +84,10 @@ async function callable(name, data, tokens) {
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok || payload.error) {
-    const error = new Error(`GATE7B_CALLABLE_FAILED:${name}:${response.status}`);
+    const error = new Error(
+      `GATE7B_CALLABLE_FAILED:${name}:${response.status}:${String(payload.error?.message || 'unknown').slice(0, 160)}:` +
+      `${String(payload.error?.details?.reason || 'no_reason').slice(0, 120)}`
+    );
     error.details = payload.error?.details || null;
     throw error;
   }
@@ -102,12 +106,18 @@ async function tokenForUid(
     `https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${apiKey}`,
     {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: {
+        'content-type': 'application/json',
+        'X-Firebase-AppCheck': appCheckToken
+      },
       body: JSON.stringify({ token: customToken, returnSecureToken: true })
     }
   );
   const payload = await response.json().catch(() => ({}));
-  invariant(response.ok && payload.idToken, 'GATE7B_AUTH_TOKEN_EXCHANGE_FAILED');
+  invariant(
+    response.ok && payload.idToken,
+    `GATE7B_AUTH_TOKEN_EXCHANGE_FAILED:${String(payload.error?.message || response.status).slice(0, 120)}`
+  );
   return { idToken: payload.idToken, appCheckToken };
 }
 
@@ -115,7 +125,8 @@ function refs(db) {
   return {
     order: (orderId) => db.doc(`orders/${orderId}`),
     commandResult: (commandId) => db.doc(`commerce_command_results/${commandId}`),
-    auditEvent: (orderId, eventId) => db.doc(`orders/${orderId}/events/${eventId}`)
+    auditEvent: (orderId, eventId) => db.doc(`orders/${orderId}/events/${eventId}`),
+    outbox: (outboxId) => db.doc(`commerce_outbox/${outboxId}`)
   };
 }
 
@@ -310,11 +321,14 @@ async function main() {
   const scope = scopeSnap.data();
   const operations = operationsSnap.data();
   const release = releaseSnap.data();
+  const fixtureWindow = control.newCheckoutMode === 'v2_fixture' &&
+    control.fixtureScopeVersion === SCOPE_ID &&
+    control.adminMutationMode === 'read_only';
+  const durableSandboxWindow = control.newCheckoutMode === 'v2_all' &&
+    control.adminMutationMode === 'v2';
   invariant(
-    control.newCheckoutMode === 'v2_fixture' &&
-      control.fixtureScopeVersion === SCOPE_ID &&
+    (fixtureWindow || durableSandboxWindow) &&
       control.releaseManifestId === releaseId &&
-      control.adminMutationMode === 'read_only' &&
       control.offlinePaymentMode === 'off' &&
       scope.active === true &&
       scope.projectId === PROJECT_ID &&
@@ -380,14 +394,18 @@ async function main() {
   invariant(products['1'] && products['2'] && products['10'],
     'GATE7B_FIXTURE_PRODUCTS_INCOMPLETE');
 
-  const createCheckout = (label, product, quantity = 1) => callable(
-    'createCheckoutV2',
-    {
-      input: checkoutInput(product, runId, label, quantity),
-      fixture: { runId, fixtureScopeVersion: SCOPE_ID }
-    },
-    fixtureTokens
-  );
+  const createdCheckoutIds = [];
+  const createCheckout = async (label, product, quantity = 1) => {
+    const checkout = await callable('createCheckoutV2', {
+      input: {
+        ...checkoutInput(product, runId, label, quantity),
+        deliveryModeId: fixtureWindow ? 'fixture_delivery_fr' : 'delivery-pickup'
+      },
+      ...(fixtureWindow ? { fixture: { runId, fixtureScopeVersion: SCOPE_ID } } : {})
+    }, fixtureTokens);
+    createdCheckoutIds.push(checkout.orderId);
+    return checkout;
+  };
   const orderData = async (orderId) => {
     const snapshot = await db.doc(`orders/${orderId}`).get();
     return snapshot.exists ? { ...snapshot.data(), id: snapshot.id } : null;
@@ -417,7 +435,7 @@ async function main() {
       payload: raw,
       secret: connectWebhookSecret
     });
-    const response = await fetch(`${FUNCTIONS_BASE}/stripeConnectWebhookV2`, {
+    const response = await fetch(`${FUNCTIONS_BASE}/stripeConnectWebhookV2Gen2`, {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
@@ -452,9 +470,14 @@ async function main() {
     const runOrders = await db.collection('orders')
       .where('testContext.runId', '==', runId)
       .get();
+    const explicitOrders = createdCheckoutIds.length
+      ? await db.getAll(...createdCheckoutIds.map((orderId) => db.doc(`orders/${orderId}`)))
+      : [];
+    const cleanupOrders = new Map(runOrders.docs.map((document) => [document.id, document]));
+    for (const document of explicitOrders) if (document.exists) cleanupOrders.set(document.id, document);
     let canceledCount = 0;
     let preservedCount = 0;
-    for (const document of runOrders.docs) {
+    for (const document of cleanupOrders.values()) {
       const order = document.data();
       if (order.checkout?.status !== 'active') {
         preservedCount += 1;
@@ -494,16 +517,17 @@ async function main() {
 
   const accepted = await createCheckout('accepted', products['10']);
   const acceptedPaid = await pay(accepted);
-  const resumed = await callable(
-    'resumeCheckoutV2',
-    { orderId: accepted.orderId },
-    fixtureTokens
-  );
-  invariant(
-    resumed.orderId === accepted.orderId &&
-      resumed.paymentIntentId === accepted.paymentIntentId,
-    'GATE7B_RESUME_IDENTITY_CHANGED'
-  );
+  let paidResumeTerminal = false;
+  try {
+    await callable(
+      'resumeCheckoutV2',
+      { orderId: accepted.orderId },
+      fixtureTokens
+    );
+  } catch (error) {
+    paidResumeTerminal = error?.details?.reason === 'COMMERCE_CHECKOUT_TERMINAL_PAID';
+  }
+  invariant(paidResumeTerminal, 'GATE7B_PAID_RESUME_NOT_TERMINAL');
   const clientOrders = await callable('listMyOrdersV2', { limit: 50 }, fixtureTokens);
   invariant(
     JSON.stringify(clientOrders).includes(accepted.orderId),
@@ -514,7 +538,7 @@ async function main() {
     paymentIntentId: accepted.paymentIntentId,
     accountId: accepted.connectedAccountId,
     durableStatus: acceptedPaid.payment.status,
-    sameResumeIdentity: true
+    paidResumeTerminal
   });
 
   const retryCheckout = await createCheckout('decline_retry', products['10']);

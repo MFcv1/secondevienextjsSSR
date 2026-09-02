@@ -31,6 +31,7 @@ const {
 const { runReleaseGarbageCollection } = require('./releaseGarbageCollection');
 const { catalogLog } = require('./structuredLog');
 const { CATALOG_BUILDER_SERVICE_ACCOUNT, CATALOG_SNAPSHOT_BUCKET } = require('./catalogConfig');
+const { mergeActivityProjection } = require('../admin/dashboardProjection');
 
 const BUILD_REGION = 'europe-west1';
 const SOURCE_PATH = `artifacts/${APP_ID}/public/data/furniture`;
@@ -39,6 +40,26 @@ const REVALIDATION_TASK = `locations/${BUILD_REGION}/functions/dispatchCatalogRe
 
 function serverTimestamp() {
     return admin.firestore.FieldValue.serverTimestamp();
+}
+
+async function projectCatalogActivity(db, { inventory, catalogRevision, sourceUpdatedAt }) {
+    const activityRef = db.doc('admin_dashboard/activity');
+    await db.runTransaction(async (transaction) => {
+        const snapshot = await transaction.get(activityRef);
+        if (!snapshot.exists) throw new Error('ADMIN_ACTIVITY_PROJECTION_BASELINE_MISSING');
+        const current = snapshot.data();
+        if (Number(current.catalog?.sourceRevision || 0) >= Number(catalogRevision)) return;
+        transaction.set(activityRef, mergeActivityProjection(current, {
+            catalog: {
+                stockValueCents: Math.round(Number(inventory.totalStockValue || 0) * 100),
+                sourceRevision: Number(catalogRevision),
+                sourceUpdatedAt
+            }
+        }, {
+            updatedAt: serverTimestamp(),
+            revision: Math.max(0, Number(current.revision || 0)) + 1
+        }));
+    });
 }
 
 async function acquireBuildLease(db, { targetRevision, owner, token, now = new Date() }) {
@@ -444,13 +465,20 @@ async function buildCatalog(dependencies, input = {}) {
         const previousPointer = published.previousPointer;
         const lastKnownGoodPointer = published.lastKnownGoodPointer;
 
-        await db.doc('inventory_stats/overview').set({
+        const inventoryStatsRef = db.doc('inventory_stats/overview');
+        await inventoryStatsRef.set({
             ...inventory,
             lastUpdatedAt: serverTimestamp(),
             expireAt: new Date(now().getTime() + (90 * 24 * 60 * 60 * 1000)),
             catalogRevision: requestedRevision,
             source: 'materialized_catalog'
         }, { merge: true });
+        const inventoryStatsSnapshot = await inventoryStatsRef.get();
+        await projectCatalogActivity(db, {
+            inventory,
+            catalogRevision: requestedRevision,
+            sourceUpdatedAt: inventoryStatsSnapshot.updateTime
+        });
 
         await finalizeControlState(db, {
             leaseToken: token,
@@ -637,6 +665,7 @@ module.exports = {
     dispatchBuildRequest,
     dispatchCatalogBuild,
     finalizeControlState,
+    projectCatalogActivity,
     renewBuildLease,
     releaseBuildLease,
     updateOwnedBuildState

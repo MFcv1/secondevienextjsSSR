@@ -106,6 +106,9 @@ secrets, deploiement et recette Meta reelle restent M4/M5.
 /admin [C]
   -> AdminPublicationWorkspace (vues Creer / Publications plein viewport)
   -> AdminForm / StoryEditor / AdminItemList
+  -> PublicationBatchControl [C] (composition locale ordonnee, apercu meuble par meuble)
+     -> uploads bornes a deux meubles puis confirmations catalogue bornees a trois
+     -> commandes produit idempotentes distinctes, publication groupee sans ecriture client autoritaire
   -> MetaConnectionBadge + useMetaConnection [C]
      -> start/get/select/verify Meta OAuth [F]
      -> popup Meta [EXT] -> metaOAuthCallback [F]
@@ -382,7 +385,9 @@ AnalyticsCollectorIsland + AuthProvider anonyme [C]
   -> heartbeat adaptatif + raisons init/route/visible/beacon [C]
   -> initLiveSession/syncSession/beacon + cache borne du hash de jeton [F]
   -> analytics_sessions/{sessionId} sans e-mail/IP/user-agent, journey recent borne a 25 et compteurs de raisons [DB]
-  -> AdminDashboard: intentions/tendances 30 jours + miniatures du snapshot public court [C]
+  -> rollups quoteSessions + vues produit -> admin_dashboard/insights,
+     devis 30 j/3 m/6 m/1 an et top cinq produits 30 j [F/DB]
+  -> AdminDashboard: listener allowliste finance/orders/activity, puis insights et catalogue lazy [C/DB]
   -> AdminAnalytics: historique borne, cache IndexedDB, listener live et frise illustree [C]
   -> AdminIncidentConsole: recherche support CMD/provider/correlation/e-mail,
      timeline expurgee, attemptCount et audit fail-closed via callable AAL2 [C/F]
@@ -668,7 +673,8 @@ src/kit/vitrine/
 
 ```text
 src/kit/admin/
-|-- AdminDashboard.jsx ................ pilotage commerce, devis/tendances analytics bornes, miniatures du snapshot public, exports et maintenance rapide
+|-- AdminDashboard.jsx ................ listener KPI a trois documents, fail-closed, historiques/insights/commandes recentes lazy
+|-- adminDashboardProjection.js ....... validateurs purs snapshots finance/orders/activity/insights
 |-- AdminQuotes.jsx ................... réception et suivi des demandes de restauration
 |-- quoteAdminClient.js ............... cache court et callables protégées Devis
 |-- AdminAnalytics.jsx ................ moteur Data canonique: UID pseudonyme, live, parcours bornes, courbes
@@ -676,6 +682,7 @@ src/kit/admin/
 |-- SystemIncidentConsole.jsx ......... lignes Cloud dedupliquees et inspecteur a la demande
 |-- AdminForm.jsx ..................... creation/edition annonces
 |   |-- productPublicationClient.js ... nettoyage local de reprise obsolete + attente de la release publique exacte
+|   |-- components/PublicationBatchControl.jsx .... mode lot, compteur et selecteur d'apercu ordonne
 |   |-- components/InstagramPublicationPreview.jsx .. apercu prive Instagram iPhone 17 Pro
 |   |-- components/MetaConnectionBadge.jsx ........ gestion des connexions Instagram direct et Facebook
 |   |-- components/useMetaConnection.js ........... etat OAuth agrege des deux fournisseurs
@@ -712,8 +719,8 @@ src/kit/admin/
 |-- BillingOnboardingOperator.jsx ..... validation/reinitialisation admin forte
 |-- analyticsReliability.js ........... fiabilite/checkpoints
 |-- exportCsv.js ...................... exports
-|-- adminCommerceData.js .............. premiere page commandes/demandes/retours et prechargement de session
-|-- adminDataCache.js ................. cache memoire borne Stats/Ventes/Retours
+|-- adminCommerceData.js .............. premiere page commandes/demandes/retours chargee par leurs onglets
+|-- adminDataCache.js ................. cache memoire invalidable, sans repeuplement apres logout
 |-- adminPublicCatalog.js ............. lecture snapshot admin sans cache persistant
 `-- components/
     |-- AdminImageCard.jsx
@@ -765,6 +772,8 @@ functions/
 |   |-- secrets.js .................... definitions Secret Manager
 |   `-- config.js ..................... config serveur
 `-- src/
+    |-- admin/
+    |   `-- dashboardProjection.js .... contrats purs finance/orders/activity et ordre Timestamp complet
     |-- auth/
     |   |-- grantAdmin.js
     |   |-- adminManagement.js
@@ -835,7 +844,7 @@ functions/
     |   |-- v2Checkout.js .................. create/resume limites au scope fixture
     |   |-- v2AdminPaymentLinks.js ......... callables admin/public + expiration planifiee
     |   |-- v2DeliveryPolicyAdmin.js ....... lecture + versionnement immutable des tarifs livraison
-    |   |-- v2Operations.js ................ schedulers, exploitation et synthese Stats fraiche par agregations
+    |   |-- v2Operations.js ................ reconciliation finance/orders nocturne + watchdog inbox cible
     |   |-- v2OrderQueries.js .............. lecteurs UID/admin exportes et actifs
     |   |-- v2DocumentDelivery.js .......... acces PDF proprietaire + outbox bornee
     |   |-- v2RefundCommands.js ............ callable refund active sous controle v2
@@ -844,7 +853,7 @@ functions/
     |   |-- v2Webhooks.js ................ webhooks paiement/Connect Gen2 seuls apres G12-B
     |   |-- stripeConnect.js
     |   |-- orderStatus.js
-    |   |-- orderStats.js ................. projection legacy transactionnelle et ledger idempotent G2-A
+    |   |-- orderStats.js ................. projection orders legacy/v2 et ledger unique idempotent avec tombstones
     |   `-- legacyContainment.js .......... barriere de compatibilite sans export legacy
     |-- email/
     |   |-- emailDesignSystem.js .......... shell HTML/texte systeme epure partage
@@ -874,9 +883,10 @@ functions/
     |   |-- sessionMaintenance.js ....... contrat G11 dry-run/precondition/audit/reprise ciblee
     |   |-- updateUserSessions.js
     |   |-- adminIP.js
-    |   `-- rollups.js .................. agregats jour/mois/annee, HLL, archive Storage et callable admin
+    |   `-- rollups.js .................. agregats jour/mois/annee, HLL, insights 30 j sur digest et archive Storage
     |-- observability/
-    |   |-- businessEvents.js ........... projection append-only des transitions critiques
+    |   |-- incidentProjection.js ......... table code/severite/categorie + deltas resume fail-closed
+    |   |-- businessEvents.js ........... journal transitions + projections finance/incidents asynchrones
     |   |-- diagnosticTimeline.js ....... recherche admin AAL2, timeline expurgee et audit
     |   `-- systemIncidents.js .......... lecture Cloud Logging bornee, deduplication et projection expurgee
     |-- onboarding/
@@ -907,17 +917,18 @@ functions/
 
 ## 9. Exports Cloud Functions
 
-Etat courant au 2026-08-25: `functions/index.js` contient 151 exports uniques
-locaux; 148 Functions sont deployees dans le sandbox (3 Gen1, 145 Gen2).
+Etat courant au 2026-09-01: `functions/index.js` contient 152 exports uniques
+locaux; 149 Functions sont deployees dans le sandbox (3 Gen1, 146 Gen2).
 Les trois seules Gen1 sont les triggers Auth
 `grantAdminOnAuth`, `onRegisteredUserCreated` et `onRegisteredUserDeleted`.
 Toutes les autres cibles cloud conservees sont Gen2 `ACTIVE`; les quatre
 owners Scheduler commerce sont `ENABLED` et les endpoints Stripe test pointent
-uniquement vers les owners Gen2. L'ecart exact est 146 noms communs, cinq
-exports Instagram legacy uniquement locaux et deux webhooks v2 uniquement
+uniquement vers les owners Gen2. L'ecart exact est 147 noms communs, cinq
+exports uniquement locaux (les cinq Instagram legacy) et deux webhooks v2 uniquement
 cloud (`stripeWebhookV2Gen2`, `stripeConnectWebhookV2Gen2`) avec source et
-entree de deploiement dediees. Les cinq legacy Instagram restent explicitement
-hors deploy global.
+entree de deploiement dediees. `commerceWebhookCoverageWatchdogGen2` est
+desormais deploye et `ENABLED` toutes les quinze minutes. Les cinq legacy
+Instagram restent explicitement hors deploy global.
 
 Les dix retraits maintenance, les six G3 et les neuf cohortes restantes ont
 ete supprimes individuellement apres appelants, trafic, quiet-windows et
@@ -932,9 +943,8 @@ max 1 en `getcatalogpublicationstatusgen2-00003-mol`, puis la reactivation max
 2 en revision finale `getcatalogpublicationstatusgen2-00004-hiv`, avec deux
 sources immuables digestees et sous hold. Le wrapper local refuse toute autre
 revision/generation/digest; le soak final en cours reste dans
-`apphostingaudit/FINALISATION_MIGRATION_GEN2.md`. App Hosting sert
-`build-2026-08-25-002`; la revision precedente immediate est
-`build-2026-08-25-001`. L'ADR canonique est
+`apphostingaudit/FINALISATION_MIGRATION_GEN2.md`. App Hosting a recu le rollout
+Stats du 2026-09-01; `build-2026-08-25-002` est son rollback precedent. L'ADR canonique est
 `_DOCS/architecture/FUNCTIONS_RUNTIME_ADR.md`.
 
 Le collecteur read-only `scripts/functions-gen2-final-observe.mjs`, expose par
@@ -970,7 +980,9 @@ Le script `scripts/configure-functions-gen2-g1-monitoring.mjs` maintient les
 cinq metriques, huit policies et deux canaux G1. Les deux alertes commerce
 lisent uniquement les payloads applicatifs et excluent les logs `Violation*`;
 elles sont limitees a une notification par heure afin qu'une notification
-Monitoring ne puisse plus recreer son propre signal.
+Monitoring ne puisse plus recreer son propre signal. Le contrat local dashboard
+abaisse cet anti-repetition a cinq minutes; il n'est pas applique au cloud sans
+gate de monitoring explicitement autorisee.
 Les plans read-only P1/P2 sont dans
 `apphostingaudit/manifests/functions-gen2-g1-data-plan.json`. G2-A local est
 fermee pour les treize Gen2; son runtime/IAM/retry/data/rollback consolide est
@@ -1231,7 +1243,7 @@ ouvert.
 | codes promotionnels | `previewPromotionCodeV2`, `listPromotionCodesAdmin`, `createPromotionCodeAdmin`, `setPromotionCodeStatusAdmin` |
 | liens de paiement admin | `createAdminPaymentLink`, `listAdminPaymentLinks`, `extendAdminPaymentLink`, `regenerateAdminPaymentLink`, `recreateAdminPaymentLink`, `cancelAdminPaymentLink`, `getAdminPaymentLinkPublic`, `prepareAdminPaymentLinkPayment`, `resumeAdminPaymentLinkPayment`, `expireAdminPaymentLinks` |
 | commerce v2 retours client | `decideCustomerReturnRequestAdmin`, puis commandes refund/retour v2 existantes selon le parcours choisi |
-| commerce v2 operations | `commerceOutboxDispatcher`, `commerceOperationsReconciler`, `commerceReservationExpiryDispatcher`, `getCommerceOperationsStatusAdmin`, `rebuildCommerceOperationsAdmin`, `cleanupFixtureRunAdmin` |
+| commerce v2 operations | `commerceOutboxDispatcher`, `commerceOperationsReconciler` (03:17 UTC), `commerceWebhookCoverageWatchdog` (15 min), `commerceReservationExpiryDispatcher`, `getCommerceOperationsStatusAdmin`, `rebuildCommerceOperationsAdmin`, `cleanupFixtureRunAdmin` |
 | commerce v2 produit | `preflightProductMutationAdmin`, `createProductAdmin`, `createPublishedProductAdmin`, `updateProductOfferAdmin`, `publishProductAdmin`, `adjustInventoryAdmin`, `deleteProductAdmin` |
 | publication produit durable historique, inactive dans AdminForm | `startProductPublicationAdmin`, `getProductPublicationSessionAdmin`, `reportProductPublicationClientErrorAdmin`, `retryProductPublicationFinalizationAdmin`, `processProductPublicationImage`, `reconcileProductPublicationSessions`, `cleanupProductPublicationSessions` |
 | Meta OAuth/publication | `startMetaOAuthAdmin`, `metaOAuthCallback`, `getMetaConnectionStatusAdmin`, `selectMetaAssetAdmin`, `verifyMetaConnectionAdmin`, `disconnectMetaConnectionAdmin`, `prepareSocialPublicationAdmin`, `runSocialPublicationAdmin`, `getSocialPublicationStatusAdmin` |
@@ -1274,6 +1286,14 @@ Firestore
 |-- legacy_order_email_deliveries/{sha256(orderId,type)} . claim e-mail legacy, TTL 90 j planifie G2-B
 |-- commerce_webhook_inbox/{eventId}
 |-- commerce_incidents/{incidentId}
+|-- admin_incident_summary/current .... resume badge expurge, lecture admin forte exacte
+|-- admin_incident_projections/{incidentId} . ledger backend-only avec tombstones
+|-- admin_dashboard/finance ........... projection EUR absolue expurgee
+|-- admin_dashboard/orders ............ partition orders legacy/v2 expurgee
+|-- admin_dashboard/activity .......... revisions independantes Auth/catalogue
+|-- admin_dashboard/insights .......... devis 30 j/3 m/6 m/1 an + top cinq produits 30 j, sans donnees personnelles
+|-- admin_user_stats_projections/{uid}  ledger Auth backend-only avec tombstones
+|-- admin_finance_capture_projections/{factId} . ledger de capture backend-only
 |-- commerce_fixture_scopes/{scopeId}
 |-- commerce_release_manifests/{releaseId}
 |-- sys_commerce_control/current
@@ -1409,6 +1429,8 @@ tests/data-retention-contract.test.cjs ... dry-run, expirations et minimisation 
 tests/security-client-ip.test.cjs ........ identite reseau bornee pour OTP/passkeys/devis/newsletter
 tests/security-output-encoding.test.cjs .. encodage HTML/script/PDF + erreurs internes generiques
 tests/observability-contract.test.cjs .... correlation, minimisation et frontiere serveur
+tests/admin-dashboard-projections.test.cjs . projecteurs, reader critique, incidents, watchdog et reconciliation
+tests/admin-data-cache-contract.test.mjs ... purge session et invalidation des lectures en vol
 tests/system-incidents.test.cjs .......... groupes, redaction, bornes et audit Cloud Logging
 tests/performance-route-policy.test.mjs . allowlist Performance et coupure avant route privee
 tests/billing-onboarding-contract.test.cjs

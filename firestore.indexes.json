@@ -133,6 +133,41 @@
   ],
   "fieldOverrides": [
     {
+      "collectionGroup": "admin_dashboard",
+      "fieldPath": "updatedAt",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "admin_dashboard",
+      "fieldPath": "source",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "admin_dashboard",
+      "fieldPath": "users",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "admin_dashboard",
+      "fieldPath": "catalog",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "admin_incident_projections",
+      "fieldPath": "sourceUpdateTime",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "admin_user_stats_projections",
+      "fieldPath": "sourceEventTime",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "admin_finance_capture_projections",
+      "fieldPath": "sourceUpdateTime",
+      "indexes": []
+    },
+    {
       "collectionGroup": "analytics_sessions",
       "fieldPath": "journey",
       "indexes": []

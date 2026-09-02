@@ -807,7 +807,7 @@ test('Gate 4/5 consumers contain no direct commerce writer on v2 surfaces', () =
     assert.ok(adminDelivery.includes('getAdminCachedData'));
     assert.equal(adminDelivery.includes('if (loading)'), false);
     assert.ok(adminIsland.includes('React.lazy(loadAdminLivraison)'));
-    assert.ok(adminIsland.includes('preloadAdminDeliveryData'));
+    assert.equal(adminIsland.includes('preloadAdminDeliveryData'), false);
     assert.equal(adminDelivery.includes('COMMERCE_V2_POLICY_COMMANDS_OFF'), false);
     assert.equal(adminDelivery.includes('Policy v2 en lecture seule'), false);
     assert.ok(functionsIndex.includes('getDeliveryPolicyAdmin'));
@@ -843,10 +843,10 @@ test('Gate 4/5 consumers contain no direct commerce writer on v2 surfaces', () =
     assert.ok(adminOrders.includes('loadAdminOrdersFirstPage({ force: true })'));
     assert.ok(adminOrders.includes("case 'fulfillment_prepare'"));
     assert.ok(adminReturns.includes('loadAdminReturnsFirstPage()'));
-    assert.ok(adminIsland.includes('preloadAdminCommerceData'));
-    assert.ok(adminIsland.includes('preloadAdminDashboardData'));
+    assert.equal(adminIsland.includes('preloadAdminCommerceData'), false);
+    assert.equal(adminIsland.includes('preloadAdminDashboardData'), false);
     assert.equal(adminIsland.includes('requestIdleCallback(preload'), false);
-    assert.ok(adminDashboard.includes("DASHBOARD_CORE_CACHE_KEY = 'admin-dashboard:core'"));
+    assert.equal(adminDashboard.includes("DASHBOARD_CORE_CACHE_KEY = 'admin-dashboard:core'"), false);
     assert.ok(adminDashboard.includes("DASHBOARD_INSIGHTS_CACHE_KEY = 'admin-dashboard:insights'"));
     assert.ok(adminReturns.includes('handleResumeRefund(order)'));
     assert.ok(adminReturns.includes('attempt.refundRequestId'));

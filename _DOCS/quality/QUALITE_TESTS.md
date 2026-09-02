@@ -1,6 +1,6 @@
 # Qualite, tests et gates
 
-Derniere mise a jour: 2026-08-25
+Derniere mise a jour: 2026-09-01
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Principe de proportion
@@ -606,6 +606,45 @@ l'audit fail-closed et l'absence de SDK Cloud dans le navigateur. Elle verrouill
 aussi Performance Monitoring sur `/`, `/galerie`, `/categorie/*`,
 `/produit/*` et `/a-propos`, avec coupure au debut d'une transition vers toute
 route privee ou sensible.
+
+Le dashboard materialise ajoute les gates locales suivantes:
+
+```bash
+npm run test:admin-dashboard
+npm run test:admin-cache
+npm run test:analytics
+npm run test:observability
+node --test tests/functions-gen2-monitoring.test.mjs
+```
+
+`test:admin-dashboard` couvre finance absolue, capture/refund/reversal,
+partition orders legacy/v2, timestamps nanosecondes, rejeu/desordre/tombstones,
+merges activity, incidents open/update/close/unknown, absence de callable sante
+et de `analytics_sessions` sur le chemin Stats, query critique a trois IDs,
+reconciliation nocturne et watchdog `limit(1)`. `test:admin-cache` prouve en
+plus qu'une lecture en vol invalidee ne repeuple pas la memoire apres logout.
+La suite Rules Emulator verifie lecture admin fort des quatre documents et du
+resume, puis refuse AAL1, registre retire, client, anonyme, document futur,
+query libre et toute ecriture SDK.
+
+`test:analytics` couvre aussi le schema v2 d'`admin_dashboard/insights`: les
+drapeaux devis restent binaires par session, les quatre fenetres sont sommees
+depuis des rollups bornes, les vues produit et sessions interessees sont
+derivees uniquement des etapes `detail`, le classement reste limite a cinq et
+le materialiseur ne lit jamais `analytics_sessions`. `test:admin-dashboard`
+valide les quatre periodes, les tableaux journaliers limites a 30 valeurs et
+la compatibilite de lecture du schema v1 pendant un rollout ordonne.
+
+Les seuils p95 et `commit -> callback onSnapshot` ne sont pas prouvables par un
+test statique. Le code emet `admin-dashboard-listener-to-kpi`,
+`admin-dashboard-backoffice-ready-to-kpi`,
+`admin-dashboard-strong-auth-to-kpi` et des logs projecteur expurges avec
+`durationMs/sourceLagMs`. La passe D5 sandbox du 2026-09-01 a mesure dix
+reloads chauds jusqu'a `KPI · A jour` (mediane 589 ms, p95/max 822 ms), trois
+lectures critiques, zero callable sante/utilisateur et des callbacks incidents
+et orders sous une seconde sur les echantillons observes. La fermeture exige
+encore la mesure instrumentee separee `Auth forte -> backOfficeReady` puis
+`backOfficeReady -> KPI`, une fenetre longue et le cout consolide sur 24 h.
 
 La couverture durable de resilience checkout comprend
 `tests/commerce/resilience/checkout-boundaries.test.cjs`,

@@ -1,6 +1,6 @@
 # Donnees, Firestore et analytics
 
-Derniere mise a jour: 2026-08-12
+Derniere mise a jour: 2026-09-01
 Statut: `REFERENCE_ACTIVE`
 
 Deploiement sandbox: moteur actif depuis le 2026-07-15 sur App Hosting et Functions `europe-west1`.
@@ -46,16 +46,31 @@ sales_stats_daily/{id}
 order_stats_projections/{orderId}
 legacy_order_email_deliveries/{deliveryId}
 inventory_stats/{id}
+admin_dashboard/{finance|orders|activity|insights}
+admin_incident_summary/current
+admin_incident_projections/{incidentId}
+admin_user_stats_projections/{uid}
+admin_finance_capture_projections/{factId}
 ```
 
 Cette carte decrit les collections connues du code. `firestore.rules`, Functions et `map.md` restent les sources pour les permissions et producteurs.
 
-`order_stats_projections/{orderId}` est un ledger backend-only sans TTL propre:
+`order_stats_projections/{orderId}` est le ledger durable unique des projections
+legacy et v2, backend-only et sans TTL propre:
 sa retention suit celle de la commande comptable. `onOrderStatsWrite` relit la
 commande autoritaire et ce ledger dans une transaction avant tout increment;
 un doublon Eventarc ou un evenement ancien recalcule donc la meme projection
 au lieu d'ajouter une seconde fois. Le passage d'une commande legacy vers v2
 ou sa suppression retire une seule fois sa contribution.
+
+`admin_dashboard/*` ne contient aucune identite, adresse, e-mail, IP, payload
+provider ou detail de commande. `finance`, `orders` et `activity` sont les KPI
+globaux critiques; `insights` porte les compteurs de sessions devis sur 30
+jours, 3 mois, 6 mois et 1 an ainsi qu'un top cinq produits sur 30 jours. Les
+identifiants produit, vues journalieres et nombres de sessions interessees sont
+des agregats globaux sans identite. Les ledgers incidents et utilisateurs
+restent backend-only et conservent leurs tombstones tant qu'un rejeu source est
+possible.
 
 `legacy_order_email_deliveries/{deliveryId}` ne contient ni adresse ni ID de
 commande en clair: seulement un hash, le type de message, le provider, le
@@ -112,11 +127,19 @@ la commande d'un UID different.
 
 Les faits financiers v2 sont append-only. Le total par devise et la serie
 quotidienne sont des projections reconstruisibles, maintenues dans la meme
-transaction que chaque nouveau fait puis rapprochees par le reconciliateur
-horaire. Ces quatre collections sont backend-only dans `firestore.rules`;
-l'admin les consomme par callable fort. La serie quotidienne utilise l'index
-simple automatique `dateKey`, sans index composite. Aucun TTL ne s'applique:
-les rollups suivent la retention des faits et commandes dont ils derivent.
+transaction que chaque nouveau fait. Apres ce commit, un projecteur asynchrone
+copie une valeur absolue EUR vers `admin_dashboard/finance`; son echec ne peut
+jamais annuler ni retarder un paiement. La reconciliation est nocturne et
+compare les totaux sans relire 366 jours; aucun scan financier complet horaire
+ne subsiste. Ces collections restent backend-only hors des quatre projections
+admin explicitement lisibles par admin fort.
+
+Le nombre de captures est possede par le projecteur asynchrone, pas par la
+transaction de paiement. `admin_finance_capture_projections/{factId}` absorbe
+les rejeux avant l'increment du total; le backfill du 2026-09-01 a produit 66
+ledgers pour 66 captures et la projection absolue correspond exactement aux 90
+faits financiers presents. Cette collection ne contient qu'un identifiant de
+fait technique et des timestamps, aucune donnee personnelle.
 
 ## 6. Metadata systeme
 
@@ -185,8 +208,17 @@ Contrat du moteur:
 - une session explicitement fermee ne peut etre reprise que pendant une grace de 15 secondes, afin de tolerer un rechargement immediat sans fusionner un retour plusieurs minutes plus tard;
 - l'admin lit les rollups permanents jour/mois/annee pour les statistiques et
   au maximum 1 000 projections de sessions recentes, par pages de 250;
-- l'onglet Stats effectue une lecture distincte, sans listener, bornee a 500 sessions commencees dans les 30 derniers jours pour les intentions devis et tendances produits; une erreur de cette lecture ne bloque pas les agregats commerce;
-- les vues et visiteurs restent calcules exclusivement depuis `analytics_sessions`; le classement « Meubles en tendance » est ensuite filtre par les identifiants/slugs du catalogue public courant, afin qu'un meuble supprime disparaisse immediatement sans effacer l'historique de visite; le catalogue ne sert aussi qu'a resoudre les miniatures, sans lecture de `furniture`;
+- l'onglet Stats ne lit jamais `analytics_sessions`; il charge une fois
+  `admin_dashboard/insights` lorsque le panneau approche du viewport;
+- chaque fait de session et rollup journalier porte les drapeaux de session
+  `quoteSessions.visits/starts/submitted`; le document v2 materialise les
+  fenetres 30 jours, 3 mois, 6 mois et 1 an avec au plus 30 rollups journaliers
+  et 12 mensuels, seulement quand leur digest change ou au changement de jour;
+- les rollups portent `productViews` et `productViewSessions` derives des
+  etapes `detail`; le document v2 expose au plus cinq produits sur 30 jours,
+  leurs vues journalieres et leurs nombres de sessions interessees;
+- la somme des sessions interessees du top est une somme par produit et non un
+  nombre de visiteurs uniques inter-produits;
 - le cache IndexedDB ne contient que les projections recentes expurgees; il
   n'est jamais la source des statistiques historiques;
 - le detail du parcours, borne aux 25 dernieres etapes, est lu uniquement au clic;
@@ -302,11 +334,17 @@ La vue `Data` distingue strictement la demande de devis du tunnel d'achat direct
 
 - `quote_request` : consultation de la page, portee par une etape de parcours;
 - `quote_start` : premier changement explicite dans le formulaire;
-- `quote_email_opened` : ouverture du brouillon e-mail pre-rempli apres validation locale.
+- `quote_submitted` : demande durablement recue par le back-office;
+- `quote_email_opened` : ancien signal d'ouverture d'un brouillon e-mail, conserve
+  pour compatibilite historique mais exclu du compteur `submitted`.
 
 `quote_email_opened` exprime une intention d'envoi, pas une demande effectivement recue ni un devis accepte: le formulaire actuel ouvre `mailto:`. Les etats metier `recu`, `qualifie`, `envoye` et `accepte` devront provenir d'un workflow de demande/CRM distinct avant d'etre affiches comme conversions commerciales.
 
-Dans Stats, ce signal est donc affiche comme `Brouillons e-mail ouverts`. Le tunnel compte une fois chaque session par etape et affiche la conversion entre visites, demarrages et ouvertures. Les evenements reposent sur `lastEventPreview`, borne aux 16 derniers evenements de la session: il s'agit d'un indicateur d'intention, pas d'un registre commercial exhaustif.
+Dans Stats, le tunnel compte une fois chaque session pour la visite, le
+demarrage et la demande recue, puis affiche la conversion entre ces etapes.
+`quote_email_opened` n'augmente jamais `submitted`. Les evenements reposent sur
+`lastEventPreview`, borne aux 16 derniers evenements de la session: il s'agit
+d'un indicateur d'intention, pas du registre commercial autoritaire.
 
 ## 8. Retention
 

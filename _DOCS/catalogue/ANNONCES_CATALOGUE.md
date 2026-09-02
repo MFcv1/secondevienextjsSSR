@@ -100,6 +100,17 @@ visible:
    `sessionStorage` conserve cette destination si l'ile admin est remontee
    pendant la transition.
 
+Le meme contrat atomique s'applique au mode Lot du back-office. Les
+compositions restent uniquement en memoire tant que l'operatrice n'a pas
+confirme Publier le lot. Chaque element recoit sa propre session et sa propre
+cle idempotente; les preparations de deux meubles au maximum sont lancees
+ensemble, puis les preuves publiques sont attendues avec une concurrence
+bornee a trois. Un meuble deja cree lors d'une tentative partielle conserve son
+identite pour la reprise et n'est pas duplique. Le lot ne constitue ni une
+ecriture Firestore multiple depuis le client, ni un nouveau modele catalogue:
+il orchestre les commandes unitaires existantes et conserve les memes
+invariants de stock, medias, publication et preuve de release.
+
 L'apercu de diffusion n'affiche jamais un slug seul comme s'il s'agissait
 d'une URL publique valide. Pour une creation qui ne possede pas encore d'ID,
 il montre explicitement le suffixe `id-apres-publication`; pour une edition,

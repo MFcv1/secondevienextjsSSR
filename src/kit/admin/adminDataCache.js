@@ -24,9 +24,11 @@ export const loadAdminCachedData = async (
   }
   if (current?.promise) return current.promise;
 
-  const promise = Promise.resolve()
+  let promise;
+  promise = Promise.resolve()
     .then(loader)
     .then((data) => {
+      if (runtime.entries.get(key)?.promise !== promise) return data;
       runtime.entries.set(key, {
         data,
         updatedAt: Date.now(),
@@ -35,6 +37,7 @@ export const loadAdminCachedData = async (
       return data;
     })
     .catch((error) => {
+      if (runtime.entries.get(key)?.promise !== promise) throw error;
       runtime.entries.set(key, {
         data: current?.data ?? null,
         updatedAt: current?.updatedAt ?? 0,

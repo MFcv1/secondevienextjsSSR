@@ -3,6 +3,7 @@
 import React, { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { doc, onSnapshot } from 'firebase/firestore';
 import {
   Activity,
   BarChart3,
@@ -40,11 +41,9 @@ import {
 } from '../../src/kit/config/firebaseLazy';
 import {
   clearAdminDataCache,
-  getAdminCachedData,
   invalidateAdminCachedData,
-  loadAdminCachedData,
 } from '../../src/kit/admin/adminDataCache';
-import { preloadAdminCommerceData } from '../../src/kit/admin/adminCommerceData';
+import { db } from '../../src/kit/config/firebase';
 import {
   ADMIN_PUBLIC_CATALOG_INVALIDATED_EVENT,
   clearAdminPublicCatalogCache,
@@ -109,7 +108,7 @@ const adminTabs = KIT_CONFIG.adminTabs.map((tab, index) => ({
   icon: TAB_ICONS[tab.id] ?? COLLECTION_ICONS[index % COLLECTION_ICONS.length],
 }));
 
-const ADMIN_PUBLIC_CATALOG_TABS = new Set(['dashboard', 'analytics', 'inventory', 'payment_links', 'promotions']);
+const ADMIN_PUBLIC_CATALOG_TABS = new Set(['analytics', 'inventory', 'payment_links', 'promotions']);
 const readAdminOrderTarget = () => {
   if (typeof window === 'undefined') return null;
   const orderId = new URLSearchParams(window.location.search).get('order_id');
@@ -164,15 +163,13 @@ function AdminContent() {
   const [deploymentVerified, setDeploymentVerified] = useState(false);
   const [catalogState, setCatalogState] = useState({ items: [], status: 'idle', error: null });
   const [billingGate, setBillingGate] = useState({ status: 'idle', data: null, error: null });
-  const [commerceStatus, setCommerceStatus] = useState(() => ({
-    status: getAdminCachedData('commerce-status') ? 'ready' : 'idle',
-    data: getAdminCachedData('commerce-status'),
-    error: null,
-  }));
+  const [incidentSummary, setIncidentSummary] = useState(null);
   const catalogStatusRef = React.useRef('idle');
   const catalogRequestRef = React.useRef(null);
   const deletedProductIdsRef = React.useRef(new Set());
   const cachedAdminUidRef = React.useRef(null);
+  const strongAuthReadyAtRef = React.useRef(null);
+  const backOfficeReadyAtRef = React.useRef(null);
 
   const shouldRedirectToGallery = !loading && (
     !user
@@ -267,43 +264,37 @@ function AdminContent() {
   }, [hasStrongAuth, isAdmin, isSuperAdmin, refreshBillingGate, user]);
 
   const backOfficeReady = isSuperAdmin || (billingGate.status === 'ready' && billingGate.data?.required !== true);
+  const perfNow = typeof performance !== 'undefined' ? performance.now() : null;
+  if (user?.uid && isAdmin && hasStrongAuth) {
+    if (strongAuthReadyAtRef.current === null) strongAuthReadyAtRef.current = perfNow;
+  } else {
+    strongAuthReadyAtRef.current = null;
+  }
+  if (backOfficeReady) {
+    if (backOfficeReadyAtRef.current === null) backOfficeReadyAtRef.current = perfNow;
+  } else {
+    backOfficeReadyAtRef.current = null;
+  }
   React.useEffect(() => {
-    if (!user || !isAdmin || !hasStrongAuth) return undefined;
-    let cancelled = false;
-    const cachedStatus = getAdminCachedData('commerce-status');
-    if (!cachedStatus) {
-      setCommerceStatus((current) => ({ ...current, status: 'loading', error: null }));
-    }
-    void loadAdminCachedData('commerce-status', async () => {
-      const getCommerceStatus = await getCallableFunction('getCommerceOperationsStatusAdmin');
-      let lastError = null;
-      for (const delayMs of [0, 500, 1500]) {
-        if (delayMs > 0) {
-          await new Promise((resolve) => window.setTimeout(resolve, delayMs));
-        }
-        try {
-          const result = await getCommerceStatus({});
-          return result.data;
-        } catch (error) {
-          lastError = error;
-        }
+    setIncidentSummary(null);
+    if (!user?.uid || !isAdmin || !hasStrongAuth || !backOfficeReady) return undefined;
+    return onSnapshot(doc(db, 'admin_incident_summary', 'current'), (snapshot) => {
+      const data = snapshot.exists() ? snapshot.data() : null;
+      const valid = data?.schemaVersion === 1 &&
+        Number.isSafeInteger(data.activeTotal) && data.activeTotal >= 0 &&
+        Number.isSafeInteger(data.activeCritical) && data.activeCritical >= 0 &&
+        Number.isSafeInteger(data.activeWarnings) && data.activeWarnings >= 0 &&
+        data.activeTotal === data.activeCritical + data.activeWarnings &&
+        Number.isSafeInteger(data.revision) && data.revision >= 0 &&
+        typeof data.updatedAt?.toMillis === 'function';
+      setIncidentSummary(valid ? data : null);
+    }, (error) => {
+      if (error?.code !== 'permission-denied') {
+        console.error('Admin incident summary listener failed', error?.code || error?.name);
       }
-      throw lastError;
-    }, { force: true }).then((data) => {
-      if (!cancelled) setCommerceStatus({ status: 'ready', data, error: null });
-    }).catch((error) => {
-      if (!cancelled) {
-        setCommerceStatus((current) => (
-          current.data
-            ? { ...current, status: 'ready', error }
-            : { ...current, status: 'error', error }
-        ));
-      }
+      setIncidentSummary(null);
     });
-    return () => {
-      cancelled = true;
-    };
-  }, [hasStrongAuth, isAdmin, user]);
+  }, [backOfficeReady, hasStrongAuth, isAdmin, user?.uid]);
 
   React.useEffect(() => {
     const handleStepUpRequired = () => setStepUpOpen(true);
@@ -311,31 +302,7 @@ function AdminContent() {
     return () => window.removeEventListener(ADMIN_STEP_UP_REQUIRED_EVENT, handleStepUpRequired);
   }, []);
 
-  React.useEffect(() => {
-    if (!user || !isAdmin || !hasStrongAuth || !backOfficeReady) return undefined;
-    let cancelled = false;
-    const preload = async () => {
-      const [dashboardModule, invoicesModule, deliveryModule, quotesModule] = await Promise.all([
-        loadAdminDashboard(),
-        loadAdminInvoices(),
-        loadAdminLivraison(),
-        loadAdminQuotes(),
-      ]);
-      if (cancelled) return;
-      void dashboardModule.preloadAdminDashboardData?.({ force: true }).catch(() => {});
-      void invoicesModule.preloadAdminInvoicesData?.({ force: true }).catch(() => {});
-      void deliveryModule.preloadAdminDeliveryData?.({ force: true }).catch(() => {});
-      void quotesModule.preloadAdminQuotesData?.({ force: true }).catch(() => {});
-      void preloadAdminCommerceData({ force: true }).catch(() => {});
-      void loadAdminOrders();
-      void loadAdminReturns();
-    };
-    void preload().catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [backOfficeReady, hasStrongAuth, isAdmin, user]);
-
+  // Data for invisible tabs is loaded by each lazy view only after selection.
   const ensureAdminCatalog = React.useCallback(async () => {
     if (catalogStatusRef.current === 'loaded') return;
     if (catalogRequestRef.current) return catalogRequestRef.current;
@@ -540,6 +507,7 @@ function AdminContent() {
         activeTabId={adminCollection}
         darkMode={darkMode}
         groups={ADMIN_NAV_GROUPS}
+        incidentCount={incidentSummary?.activeTotal || 0}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         onSelect={selectAdminTab}
@@ -583,7 +551,9 @@ function AdminContent() {
               darkMode={darkMode}
               isSuperAdmin={isSuperAdmin}
               items={catalogState.items}
-              commerceStatus={commerceStatus}
+              onLoadCatalog={ensureAdminCatalog}
+              strongAuthReadyAt={strongAuthReadyAtRef.current}
+              backOfficeReadyAt={backOfficeReadyAtRef.current}
             />
           ) : adminCollection === 'account' ? (
             <AdminAccount darkMode={darkMode} isSuperAdmin={isSuperAdmin} user={user} />

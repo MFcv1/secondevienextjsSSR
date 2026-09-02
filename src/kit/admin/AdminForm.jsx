@@ -7,6 +7,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { PRODUCT_IMAGE_VARIANT_SPECS, compressImage, createProductImageVariantFiles, getImageFileMetadata } from '../../utils/imageUtils'; // [NEW] Import compression utility
 import ImageCropperModal from './components/ImageCropperModal';
 import MetaConnectionBadge from './components/MetaConnectionBadge';
+import PublicationBatchControl from './components/PublicationBatchControl';
 import PublicationActionBar from './components/PublicationActionBar';
 import PublicationProgressDialog from './components/PublicationProgressDialog';
 import PublicationReviewStep from './components/PublicationReviewStep';
@@ -62,6 +63,22 @@ const STYLE_OPTIONS = [
 ];
 
 const MAX_PRODUCT_IMAGES = 23;
+const DEFAULT_HASHTAGS = '#secondevie #mobilierancien #artisanat';
+const createEmptyFormData = () => ({
+  name: '',
+  description: '',
+  startingPrice: 0,
+  material: '',
+  color: '',
+  dimensions: '',
+  width: '',
+  depth: '',
+  height: '',
+  category: '',
+  style: '',
+  stock: 1,
+  priceOnRequest: false
+});
 
 const isStorageAuthorizationError = (error) => (
   error?.code === 'storage/unauthorized'
@@ -194,21 +211,7 @@ const AdminForm = ({
   darkMode = false,
   mutationsBlocked = false
 }) => {
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    startingPrice: 0,
-    material: '',
-    color: '',
-    dimensions: '',
-    width: '',
-    depth: '',
-    height: '',
-    category: '', // Catégorie — source : KIT_CONFIG.productCategories
-    style: '', // Style (Vintage, Industriel, etc.)
-    stock: 1,
-    priceOnRequest: false
-  });
+  const [formData, setFormData] = useState(createEmptyFormData);
 
   // Unified state for images
   const [galleryItems, setGalleryItems] = useState([]);
@@ -224,10 +227,13 @@ const AdminForm = ({
   const [progress, setProgress] = useState(0);
   const [publicationPhase, setPublicationPhase] = useState('authorization');
   const [completedProduct, setCompletedProduct] = useState(null);
-  const [instagramHashtags, setInstagramHashtags] = useState('#secondevie #mobilierancien #artisanat');
+  const [instagramHashtags, setInstagramHashtags] = useState(DEFAULT_HASHTAGS);
   const [metaConnection, setMetaConnection] = useState({ status: 'loading', connected: false });
   const [socialTargets, setSocialTargets] = useState({ instagram: false, facebook: false });
   const [socialPublication, setSocialPublication] = useState(null);
+  const [batchMode, setBatchMode] = useState(false);
+  const [batchEntries, setBatchEntries] = useState([]);
+  const [selectedBatchIndex, setSelectedBatchIndex] = useState(0);
   const fileInputRef = useRef();
   const categoryGroupRef = useRef(null);
   const nameInputRef = useRef(null);
@@ -238,6 +244,8 @@ const AdminForm = ({
   const heightInputRef = useRef(null);
   const productCommandSessionRef = useRef(null);
   const publishedProductRef = useRef(null);
+  const batchSessionsRef = useRef(new Map());
+  const batchPublishedProductsRef = useRef(new Map());
   const imagePreparationJobsRef = useRef(0);
 
   // New state for drag reordering
@@ -266,11 +274,29 @@ const AdminForm = ({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const selectedBatchEntry = batchEntries[selectedBatchIndex] || null;
+  const reviewFormData = batchMode && step === 'review' && selectedBatchEntry
+    ? selectedBatchEntry.formData
+    : formData;
+  const reviewGalleryItems = batchMode && step === 'review' && selectedBatchEntry
+    ? selectedBatchEntry.galleryItems
+    : galleryItems;
+  const activeSocialTargets = batchMode && step === 'review' && selectedBatchEntry
+    ? selectedBatchEntry.targets
+    : socialTargets;
+  const activeHashtags = batchMode && step === 'review' && selectedBatchEntry
+    ? selectedBatchEntry.hashtags
+    : instagramHashtags;
+
   // Une destination n'est retenue que si le compte Meta la rend reellement possible.
   const metaConnected = Boolean(metaConnection.connected);
-  const instagramTarget = Boolean(socialTargets.instagram) && metaConnected && metaConnection.instagramAvailable !== false;
-  const facebookTarget = Boolean(socialTargets.facebook) && Boolean(metaConnection.facebookAvailable);
+  const instagramTarget = Boolean(activeSocialTargets.instagram) && metaConnected && metaConnection.instagramAvailable !== false;
+  const facebookTarget = Boolean(activeSocialTargets.facebook) && Boolean(metaConnection.facebookAvailable);
   const socialEnabled = instagramTarget || facebookTarget;
+  const batchHasSocialTargets = batchMode && batchEntries.some((entry) => (
+    (Boolean(entry.targets.instagram) && metaConnected && metaConnection.instagramAvailable !== false)
+    || (Boolean(entry.targets.facebook) && Boolean(metaConnection.facebookAvailable))
+  ));
 
   useEffect(() => {
     productCommandSessionRef.current = null;
@@ -278,7 +304,7 @@ const AdminForm = ({
     setStep('compose');
     setProgress(0);
     setCompletedProduct(null);
-    setInstagramHashtags('#secondevie #mobilierancien #artisanat');
+    setInstagramHashtags(DEFAULT_HASHTAGS);
     setSocialTargets({ instagram: false, facebook: false });
     setSocialPublication(null);
     if (editData) {
@@ -317,21 +343,7 @@ const AdminForm = ({
         isExisting: true
       })));
     } else {
-      setFormData({
-        name: '',
-        description: '',
-        startingPrice: 0,
-        stock: 1,
-        material: '',
-        color: '',
-        dimensions: '',
-        width: '',
-        depth: '',
-        height: '',
-        category: '',
-        style: '',
-        priceOnRequest: false
-      });
+      setFormData(createEmptyFormData());
       galleryItemsRef.current.forEach(item => {
         if (item.preview && !item.isExisting) URL.revokeObjectURL(item.preview);
       });
@@ -340,9 +352,12 @@ const AdminForm = ({
       setCategoryError(false);
       setStep('compose');
       setProgress(0);
-      setInstagramHashtags('#secondevie #mobilierancien #artisanat');
+      setInstagramHashtags(DEFAULT_HASHTAGS);
       setSocialTargets({ instagram: false, facebook: false });
       setSocialPublication(null);
+      setBatchMode(false);
+      setBatchEntries([]);
+      setSelectedBatchIndex(0);
     }
   }, [editData]);
 
@@ -498,7 +513,7 @@ const AdminForm = ({
   const uploadProductVariantSet = async (sourceFile, progressPrefix, slotIndex, onVariantUploaded) => {
     setMsg(`${progressPrefix} Création des formats responsive...`);
     const variantFiles = await createProductImageVariantFiles(sourceFile);
-    const uploadStamp = Date.now();
+    const uploadStamp = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const uploaded = {};
     const storage = await getStorageInstance();
 
@@ -588,6 +603,217 @@ const AdminForm = ({
   const goToReview = () => {
     if (!validateComposition()) return;
     setStep('review');
+  };
+
+  const resetBatchComposer = () => {
+    setFormData(createEmptyFormData());
+    setGalleryItems([]);
+    setIsCustomMaterial(false);
+    setCategoryError(false);
+    setInstagramHashtags(DEFAULT_HASHTAGS);
+    setSocialTargets({ instagram: false, facebook: false });
+    setSocialPublication(null);
+    setMsg('Publication ajoutée au lot. Le formulaire est prêt pour la suivante.');
+    window.requestAnimationFrame(() => categoryGroupRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  };
+
+  const createBatchEntry = () => ({
+    id: `batch-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    formData: { ...formData },
+    galleryItems: [...galleryItems],
+    hashtags: instagramHashtags,
+    targets: { instagram: false, facebook: false },
+    status: 'ready'
+  });
+
+  const addCurrentPublicationToBatch = () => {
+    if (!validateComposition()) return;
+    setBatchEntries((current) => [...current, createBatchEntry()]);
+    resetBatchComposer();
+  };
+
+  const finishBatch = () => {
+    const hasCurrentDraft = galleryItems.length > 0 || Object.entries(formData).some(([key, value]) => (
+      key !== 'stock' && key !== 'startingPrice' && key !== 'priceOnRequest' && String(value || '').trim()
+    ));
+    if (hasCurrentDraft) {
+      if (!validateComposition()) return;
+      setBatchEntries((current) => [...current, createBatchEntry()]);
+      setFormData(createEmptyFormData());
+      setGalleryItems([]);
+    } else if (batchEntries.length === 0) {
+      return;
+    }
+    setSelectedBatchIndex(0);
+    setMsg('');
+    setStep('review');
+  };
+
+  const updateSelectedBatchEntry = (patch) => {
+    setBatchEntries((entries) => entries.map((entry, index) => (
+      index === selectedBatchIndex ? { ...entry, ...patch } : entry
+    )));
+  };
+
+  const toggleBatchMode = () => {
+    if (editData) return;
+    if (batchMode && batchEntries.length > 0) {
+      setMsg('Le lot contient déjà des publications. Termine-le avant de revenir au mode unitaire.');
+      return;
+    }
+    setBatchMode((active) => !active);
+    setMsg(batchMode ? '' : 'Mode lot activé : « Suivant » mémorisera chaque meuble.');
+  };
+
+  const buildDraftPayload = async (draft, session, batchPosition, onVariantUploaded) => {
+    const finalImageUrls = [];
+    const finalThumbnails = [];
+    const finalImageVariants = [];
+    const finalImageMetadata = [];
+
+    for (let index = 0; index < draft.galleryItems.length; index += 1) {
+      const item = draft.galleryItems[index];
+      const progressPrefix = `[Lot ${batchPosition + 1}/${batchEntries.length} · photo ${index + 1}/${draft.galleryItems.length}]`;
+      if (!item.file) continue;
+      const uploadedVariants = await uploadProductVariantSet(item.file, progressPrefix, index, onVariantUploaded);
+      const imageMetadata = item.metadata || await getImageFileMetadata(item.file);
+      const fullUrl = uploadedVariants.full || uploadedVariants.large || uploadedVariants.medium || uploadedVariants.card || uploadedVariants.thumb || '';
+      const thumbUrl = uploadedVariants.thumb384 || uploadedVariants.thumb || uploadedVariants.card || fullUrl;
+      finalImageUrls.push(fullUrl);
+      finalThumbnails.push(thumbUrl);
+      finalImageVariants.push(uploadedVariants);
+      finalImageMetadata.push(imageMetadata || {});
+    }
+
+    const data = draft.formData;
+    const editorial = {
+      name: data.name,
+      description: data.description,
+      seoTitle: '',
+      seoDescription: '',
+      seoIndexable: String(data.name || '').trim().length >= 4
+        && String(data.description || '').trim().length >= 48
+        && finalImageUrls.length > 0,
+      material: data.material,
+      color: data.color,
+      dimensions: data.dimensions,
+      width: data.width,
+      depth: data.depth,
+      height: data.height,
+      category: data.category,
+      style: data.style
+    };
+    const media = {
+      images: finalImageUrls,
+      thumbnails: finalThumbnails,
+      imageVariants: finalImageVariants,
+      imageMetadata: finalImageMetadata,
+      imageUrl: finalImageUrls[0] || '',
+      thumbnailUrl: finalThumbnails[0] || finalImageUrls[0] || ''
+    };
+    const offer = {
+      currentPrice: Number(data.startingPrice),
+      startingPrice: Number(data.startingPrice),
+      priceOnRequest: Boolean(data.priceOnRequest)
+    };
+    const created = await createPublishedProductAdmin({
+      collectionName,
+      productId: session.productId,
+      editorial,
+      media,
+      offer,
+      initialStock: Number(data.stock),
+      commandId: session.createPublishedCommandId
+    });
+    return { id: created.productId, name: data.name, session };
+  };
+
+  const publishBatch = async () => {
+    if (mutationsBlocked) {
+      setMsg('Actualise le back-office avant de reprendre ce lot.');
+      return;
+    }
+    if (batchEntries.length === 0) return;
+
+    setUploading(true);
+    setPublicationPhase('authorization');
+    setProgress(0.04);
+    setMsg(`Vérification avant l’envoi de ${batchEntries.length} publications…`);
+    try {
+      const adminIdToken = await refreshAdminAuthorizationToken();
+      await preflightProductMutationAdmin();
+      setPublicationPhase('photos');
+      const totalVariants = Math.max(1, batchEntries.reduce((total, entry) => total + entry.galleryItems.filter((item) => item.file).length * PRODUCT_IMAGE_VARIANT_SPECS.length, 0));
+      let uploadedVariants = 0;
+      const onVariantUploaded = () => {
+        uploadedVariants += 1;
+        setProgress(0.08 + (uploadedVariants / totalVariants) * 0.52);
+      };
+
+      const products = new Array(batchEntries.length);
+      await runWithConcurrency(batchEntries.map((entry, index) => ({ entry, index })), 2, async ({ entry, index }) => {
+        const existingProduct = batchPublishedProductsRef.current.get(entry.id);
+        if (existingProduct) {
+          products[index] = existingProduct;
+          return;
+        }
+        const session = batchSessionsRef.current.get(entry.id) || createProductCommandSession();
+        batchSessionsRef.current.set(entry.id, session);
+        setMsg(`Préparation du lot · ${index + 1}/${batchEntries.length} — ${entry.formData.name}`);
+        products[index] = await buildDraftPayload(entry, session, index, onVariantUploaded);
+        batchPublishedProductsRef.current.set(entry.id, products[index]);
+      });
+
+      clearAdminPublicCatalogCache();
+      setPublicationPhase('catalog');
+      setProgress(0.68);
+      setMsg('Les meubles sont enregistrés. Vérification groupée de la galerie…');
+      let confirmedProducts = 0;
+      await runWithConcurrency(products.map((product) => ({ product })), 3, async ({ product }) => {
+        const publicProduct = await waitForPublicCatalogProduct(product.id, { idToken: adminIdToken });
+        if (!publicProduct) throw new Error(`${product.name} est enregistré, mais sa présence dans la galerie n’est pas encore confirmée.`);
+        confirmedProducts += 1;
+        setProgress(0.68 + (confirmedProducts / products.length) * 0.2);
+      });
+
+      const socialJobs = batchEntries.map((entry, index) => ({ entry, product: products[index] })).filter(({ entry }) => {
+        const instagram = Boolean(entry.targets.instagram) && metaConnected && metaConnection.instagramAvailable !== false;
+        const facebook = Boolean(entry.targets.facebook) && Boolean(metaConnection.facebookAvailable);
+        return instagram || facebook;
+      });
+      if (socialJobs.length > 0) {
+        setPublicationPhase('social');
+        setMsg(`Galerie confirmée. Publication de ${socialJobs.length} meuble${socialJobs.length > 1 ? 's' : ''} sur Meta…`);
+        await runWithConcurrency(socialJobs, 2, async ({ entry, product }) => {
+          const prepared = await prepareSocialPublicationAdmin({
+            collectionName,
+            productId: product.id,
+            commandId: product.session.socialCommandId,
+            targets: {
+              instagram: Boolean(entry.targets.instagram) && metaConnected && metaConnection.instagramAvailable !== false,
+              facebook: Boolean(entry.targets.facebook) && Boolean(metaConnection.facebookAvailable)
+            },
+            hashtags: entry.hashtags
+          });
+          const result = await runSocialPublicationAdmin(prepared.publicationId);
+          if (result.overallStatus !== 'published') throw new Error(`${entry.formData.name} est publié sur le site, mais une destination Meta doit être reprise.`);
+        });
+      }
+
+      setProgress(1);
+      setPublicationPhase('complete');
+      setMsg(`${products.length} meubles publiés. La galerie se synchronise automatiquement.`);
+      setCompletedProduct({
+        productId: products[0].id,
+        name: `${products.length} meubles`,
+        products: products.map(({ id, name }) => ({ productId: id, name }))
+      });
+    } catch (error) {
+      console.error('BATCH PUBLICATION ERROR:', error);
+      setMsg(`Erreur du lot : ${error?.message || 'la publication groupée a échoué.'}`);
+    } finally {
+      setUploading(false);
+    }
   };
 
   const addMeuble = async () => {
@@ -906,12 +1132,21 @@ const AdminForm = ({
   const showPublishedProduct = React.useCallback(() => {
     if (!completedProduct) return;
     const savedProduct = completedProduct;
+    if (savedProduct.products?.length) {
+      batchEntries.flatMap((entry) => entry.galleryItems).forEach((item) => {
+        if (item.preview && !item.isExisting) URL.revokeObjectURL(item.preview);
+      });
+      setBatchEntries([]);
+      setBatchMode(false);
+      batchSessionsRef.current.clear();
+      batchPublishedProductsRef.current.clear();
+    }
     productCommandSessionRef.current = null;
     publishedProductRef.current = null;
     setCompletedProduct(null);
     if (editData && onCancelEdit) onCancelEdit();
     onSaved?.(savedProduct);
-  }, [completedProduct, editData, onCancelEdit, onSaved]);
+  }, [batchEntries, completedProduct, editData, onCancelEdit, onSaved]);
 
   useEffect(() => {
     if (publicationPhase !== 'complete' || !completedProduct) return;
@@ -1018,40 +1253,64 @@ const AdminForm = ({
       ? 'success'
       : 'neutral';
   const isReview = step === 'review';
+  const hasCurrentBatchDraft = batchMode && !isReview && (
+    galleryItems.length > 0 || Object.entries(formData).some(([key, value]) => (
+      key !== 'stock' && key !== 'startingPrice' && key !== 'priceOnRequest' && String(value || '').trim()
+    ))
+  );
   const publishLabel = uploading
     ? 'Publication…'
-    : socialPublication && socialPublication.overallStatus !== 'published'
-      ? 'Réessayer les réseaux'
-      : editData
-        ? 'Enregistrer les modifications'
-        : instagramTarget && facebookTarget
-          ? 'Publier sur 3 destinations'
-          : socialEnabled
-            ? `Publier sur le site + ${instagramTarget ? 'Instagram' : 'Facebook'}`
-            : 'Publier sur le site';
+    : batchMode && isReview
+      ? `Publier le lot (${batchEntries.length})`
+      : socialPublication && socialPublication.overallStatus !== 'published'
+        ? 'Réessayer les réseaux'
+        : editData
+          ? 'Enregistrer les modifications'
+          : instagramTarget && facebookTarget
+            ? 'Publier sur 3 destinations'
+            : socialEnabled
+              ? `Publier sur le site + ${instagramTarget ? 'Instagram' : 'Facebook'}`
+              : 'Publier sur le site';
 
   return (
     <div className="pub-surface flex min-h-0 w-full flex-col xl:h-full">
       <div className={`relative min-h-0 flex-1 overflow-hidden rounded-[26px] border ${darkMode ? 'border-white/10 bg-[#11110f]' : 'border-stone-200 bg-white'}`}>
         <PublicationProgressDialog
           darkMode={darkMode}
-          includeSocial={socialEnabled}
+          includeSocial={batchMode ? batchHasSocialTargets : socialEnabled}
           open={uploading || Boolean(completedProduct)}
           phase={publicationPhase}
           message={msg}
           productName={completedProduct?.name}
+          batchCount={batchMode ? batchEntries.length : 0}
         />
         <div className="flex h-full min-h-0 flex-col overflow-hidden px-4 py-4 sm:px-5 sm:py-5 xl:px-6 xl:py-5">
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
             <div className="min-w-0">
-              <h3 className="text-[15px] font-extrabold tracking-[-0.025em]">{editData ? 'Modifier la publication' : 'Nouvelle publication'}</h3>
+              <h3 className="text-[15px] font-extrabold tracking-[-0.025em]">{editData ? 'Modifier la publication' : batchMode ? 'Lot de publications' : 'Nouvelle publication'}</h3>
               <p className={`mt-0.5 text-[10px] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>
                 {isReview
-                  ? `Vérifiez le rendu, puis choisissez la portée — actuellement ${describeChannels({ instagram: instagramTarget, facebook: facebookTarget })}.`
-                  : 'Les informations essentielles, dans l’ordre naturel de saisie.'}
+                  ? batchMode
+                    ? `Vérifiez chaque meuble, puis publiez les ${batchEntries.length} publications en une fois.`
+                    : `Vérifiez le rendu, puis choisissez la portée — actuellement ${describeChannels({ instagram: instagramTarget, facebook: facebookTarget })}.`
+                  : batchMode
+                    ? 'Composez un meuble, puis cliquez sur Suivant pour l’ajouter au lot.'
+                    : 'Les informations essentielles, dans l’ordre naturel de saisie.'}
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+              {!editData && (
+                <PublicationBatchControl
+                  active={batchMode}
+                  entries={batchEntries}
+                  selectedIndex={selectedBatchIndex}
+                  onToggle={toggleBatchMode}
+                  onSelect={setSelectedBatchIndex}
+                  disabled={uploading}
+                  darkMode={darkMode}
+                  review={isReview}
+                />
+              )}
               <MetaConnectionBadge darkMode={darkMode} meta={meta} disabled={uploading} />
               <PublicationStepRail
                 step={step}
@@ -1059,7 +1318,10 @@ const AdminForm = ({
                 disabled={uploading}
                 onSelect={(nextStep) => {
                   if (nextStep === step) return;
-                  if (nextStep === 'review') goToReview();
+                  if (nextStep === 'review') {
+                    if (batchMode) finishBatch();
+                    else goToReview();
+                  }
                   else setStep('compose');
                 }}
               />
@@ -1237,14 +1499,20 @@ const AdminForm = ({
             >
               <PublicationReviewStep
                 darkMode={darkMode}
-                formData={formData}
-                galleryItems={galleryItems}
-                targets={socialTargets}
-                onTargetsChange={setSocialTargets}
+                formData={reviewFormData}
+                galleryItems={reviewGalleryItems}
+                targets={activeSocialTargets}
+                onTargetsChange={(targets) => {
+                  if (batchMode) updateSelectedBatchEntry({ targets });
+                  else setSocialTargets(targets);
+                }}
                 connection={metaConnection}
                 onConnectRequest={meta.beginOAuth}
-                hashtags={instagramHashtags}
-                onHashtagsChange={setInstagramHashtags}
+                hashtags={activeHashtags}
+                onHashtagsChange={(hashtags) => {
+                  if (batchMode) updateSelectedBatchEntry({ hashtags });
+                  else setInstagramHashtags(hashtags);
+                }}
                 socialPublication={socialPublication}
                 uploading={uploading}
                 productId={editData?.id || null}
@@ -1260,7 +1528,7 @@ const AdminForm = ({
           stockLabel={formData.stock === '' ? '—' : String(formData.stock)}
           photoCount={galleryItems.length}
           photoLimit={MAX_PRODUCT_IMAGES}
-          targets={socialTargets}
+          targets={activeSocialTargets}
           connection={metaConnection}
           editData={editData}
           uploading={uploading}
@@ -1268,11 +1536,14 @@ const AdminForm = ({
           message={msg}
           messageTone={messageTone}
           onBack={() => setStep('compose')}
-          onNext={goToReview}
-          onPublish={addMeuble}
+          onNext={batchMode ? addCurrentPublicationToBatch : goToReview}
+          onPublish={batchMode ? publishBatch : addMeuble}
           onCancelEdit={onCancelEdit}
           publishLabel={publishLabel}
           retryMode={Boolean(socialPublication && socialPublication.overallStatus !== 'published')}
+          batchMode={batchMode}
+          batchCount={batchEntries.length + (hasCurrentBatchDraft ? 1 : 0)}
+          onFinishBatch={finishBatch}
         />
         </div>
       </div>

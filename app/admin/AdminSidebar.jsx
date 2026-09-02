@@ -7,6 +7,7 @@ export default function AdminSidebar({
   activeTabId,
   darkMode,
   groups,
+  incidentCount = 0,
   isOpen,
   onClose,
   onSelect,
@@ -67,7 +68,17 @@ export default function AdminSidebar({
                       className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[11px] font-bold tracking-wide transition duration-200 active:translate-y-px ${isActive ? (darkMode ? 'bg-white text-stone-950' : 'bg-stone-950 text-white') : (darkMode ? 'text-stone-400 hover:bg-white/5 hover:text-white' : 'text-stone-600 hover:bg-white hover:text-stone-950')}`}
                     >
                       <Icon size={16} strokeWidth={1.8} className={`shrink-0 transition-transform duration-200 ${isActive ? '' : 'group-hover:translate-x-0.5'}`} />
-                      <span>{tab.label}</span>
+                      <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                        <span>{tab.label}</span>
+                        {tab.id === 'incidents' && incidentCount > 0 && (
+                          <span
+                            aria-label={`${incidentCount} incident${incidentCount > 1 ? 's' : ''} actif${incidentCount > 1 ? 's' : ''}`}
+                            className={`min-w-5 rounded-full px-1.5 py-0.5 text-center text-[9px] font-black tabular-nums ${isActive ? 'bg-red-500 text-white' : (darkMode ? 'bg-red-400/15 text-red-300' : 'bg-red-50 text-red-700')}`}
+                          >
+                            {incidentCount > 99 ? '99+' : incidentCount}
+                          </span>
+                        )}
+                      </span>
                     </button>
                   );
                 })}

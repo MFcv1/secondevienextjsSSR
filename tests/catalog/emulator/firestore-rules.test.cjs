@@ -3,7 +3,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { after, before, beforeEach, test } = require('node:test');
 const { assertFails, assertSucceeds, initializeTestEnvironment } = require('@firebase/rules-unit-testing');
-const { doc, getDoc, setDoc, updateDoc } = require('firebase/firestore');
+const {
+  collection, doc, documentId, getDoc, getDocs, query, setDoc, updateDoc, where,
+} = require('firebase/firestore');
 const { PROJECT_ID, assertEmulatorEnvironment } = require('./emulator-guard.cjs');
 
 let environment;
@@ -194,4 +196,48 @@ test('catalog live expose uniquement le signal courant minimal et refuse toute e
   }).firestore();
   await assertSucceeds(getDoc(doc(admin, 'sys_catalog_live/current')));
   await assertFails(setDoc(doc(admin, 'sys_catalog_live/current'), { revision: 9 }));
+});
+
+test('dashboard projections require strong active admin and remain backend-write-only', async () => {
+  await environment.withSecurityRulesDisabled(async (context) => {
+    await setDoc(doc(context.firestore(), 'sys_admin_access/admin-strong'), { active: true, role: 'admin' });
+    await setDoc(doc(context.firestore(), 'sys_admin_access/admin-removed'), { active: false, role: 'admin' });
+    for (const id of ['finance', 'orders', 'activity', 'insights', 'future']) {
+      await setDoc(doc(context.firestore(), `admin_dashboard/${id}`), { schemaVersion: 1, revision: 1 });
+    }
+    await setDoc(doc(context.firestore(), 'admin_incident_summary/current'), {
+      schemaVersion: 1, activeCritical: 0, activeWarnings: 0, activeTotal: 0,
+    });
+  });
+  const strong = environment.authenticatedContext('admin-strong', {
+    admin: true,
+    firebase: { sign_in_provider: 'google.com' },
+  }).firestore();
+  const weak = environment.authenticatedContext('admin-strong', {
+    admin: true,
+    firebase: { sign_in_provider: 'password' },
+  }).firestore();
+  const removed = environment.authenticatedContext('admin-removed', {
+    admin: true,
+    firebase: { sign_in_provider: 'google.com' },
+  }).firestore();
+  const client = environment.authenticatedContext('client-1').firestore();
+  const anonymous = environment.unauthenticatedContext().firestore();
+
+  const criticalQuery = query(
+    collection(strong, 'admin_dashboard'),
+    where(documentId(), 'in', ['finance', 'orders', 'activity'])
+  );
+  await assertSucceeds(getDocs(criticalQuery));
+  await assertSucceeds(getDoc(doc(strong, 'admin_dashboard/insights')));
+  await assertSucceeds(getDoc(doc(strong, 'admin_incident_summary/current')));
+  await assertFails(getDocs(collection(strong, 'admin_dashboard')));
+  await assertFails(getDoc(doc(strong, 'admin_dashboard/future')));
+  await assertFails(setDoc(doc(strong, 'admin_dashboard/finance'), { schemaVersion: 1, revision: 2 }));
+  await assertFails(setDoc(doc(strong, 'admin_incident_summary/current'), { activeTotal: 1 }));
+
+  for (const firestore of [weak, removed, client, anonymous]) {
+    await assertFails(getDoc(doc(firestore, 'admin_dashboard/finance')));
+    await assertFails(getDoc(doc(firestore, 'admin_incident_summary/current')));
+  }
 });

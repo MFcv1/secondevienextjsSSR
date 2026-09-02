@@ -39,7 +39,10 @@ function buildFinancialRollupDelta(fact) {
         capturedCents,
         refundedCents,
         netCents: capturedCents - refundedCents,
-        factCount: 1
+        factCount: 1,
+        captureCount: fact.type === 'capture' ? 1 : 0,
+        refundCount: fact.type === 'refund' ? 1 : 0,
+        refundReversalCount: fact.type === 'refund_reversal' ? 1 : 0
     });
 }
 
@@ -57,7 +60,9 @@ function writeFinancialRollups(transaction, {
         capturedCents: increment(delta.capturedCents),
         refundedCents: increment(delta.refundedCents),
         netCents: increment(delta.netCents),
-        factCount: increment(delta.factCount)
+        factCount: increment(delta.factCount),
+        refundCount: increment(delta.refundCount),
+        refundReversalCount: increment(delta.refundReversalCount)
     };
     transaction.set(refs.financialDaily(delta.dateKey, delta.currency), {
         schemaVersion: 2,

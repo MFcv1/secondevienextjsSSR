@@ -38,3 +38,15 @@ test('admin data cache is cleared when the admin session ends', async () => {
 
   assert.equal(getAdminCachedData('dashboard'), null);
 });
+
+test('an in-flight read cannot repopulate the cache after logout', async () => {
+  let resolveLoader;
+  const pending = loadAdminCachedData('dashboard', () => new Promise((resolve) => {
+    resolveLoader = resolve;
+  }));
+  await Promise.resolve();
+  clearAdminDataCache();
+  resolveLoader({ totalOrders: 24 });
+  assert.deepEqual(await pending, { totalOrders: 24 });
+  assert.equal(getAdminCachedData('dashboard'), null);
+});

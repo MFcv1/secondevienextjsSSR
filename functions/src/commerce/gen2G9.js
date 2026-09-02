@@ -107,9 +107,15 @@ const exported = {
     requestRefundAdminGen2: callable('requestRefundAdmin', refunds.requestRefundAdmin, { secrets: STRIPE_SECRET }),
     commerceOperationsReconcilerGen2: scheduled({
         schedulerName: 'commerceOperationsReconciler',
-        schedule: 'every 60 minutes',
+        schedule: '17 3 * * *',
         serviceAccount: 'commerce-operations-reconciler@secondevienextjsssr.iam.gserviceaccount.com',
         handler: operations.runOperationsRebuild
+    }),
+    commerceWebhookCoverageWatchdogGen2: scheduled({
+        schedulerName: 'commerceWebhookCoverageWatchdog',
+        schedule: 'every 15 minutes',
+        serviceAccount: 'commerce-operations-reconciler@secondevienextjsssr.iam.gserviceaccount.com',
+        handler: operations.runWebhookCoverageWatchdog
     }),
     commerceOutboxDispatcherGen2: scheduled({
         schedulerName: 'commerceOutboxDispatcher',

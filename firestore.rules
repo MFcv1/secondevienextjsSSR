@@ -367,6 +367,31 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // KPI globaux expurges. La query Stats doit borner explicitement les trois
+    // documents critiques; insights est lu seul et paresseusement.
+    match /admin_dashboard/{docId} {
+      allow get, list: if docId in ['finance', 'orders', 'activity', 'insights']
+        && isStrongArtisan();
+      allow write: if false;
+    }
+
+    match /admin_user_stats_projections/{userId} {
+      allow read, write: if false;
+    }
+
+    match /admin_finance_capture_projections/{factId} {
+      allow read, write: if false;
+    }
+
+    match /admin_incident_summary/{docId} {
+      allow get: if docId == 'current' && isStrongArtisan();
+      allow list, write: if false;
+    }
+
+    match /admin_incident_projections/{incidentId} {
+      allow read, write: if false;
+    }
+
     // Idempotency Keys (Backend-Only)
     match /sys_idempotency/{docId} {
       allow read, write: if false;
