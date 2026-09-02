@@ -26,8 +26,8 @@ test('admin dashboard consumes resolved claims without forcing a token refresh o
 
   assert.match(adminIsland, /<AdminDashboard[\s\S]*isSuperAdmin={isSuperAdmin}/);
   assert.match(dashboard, /const AdminDashboard = \(\{[\s\S]*isSuperAdmin = false,[\s\S]*commerceStatus =/);
-  assert.match(dashboard, /loading={financialLoading}/);
-  assert.match(dashboard, /registeredUsers: cachedUserCount/);
+  assert.match(dashboard, /if \(projection\.loading\) return <DashboardSkeleton/);
+  assert.match(dashboard, /activity\?\.users\?\.registeredUsers/);
   assert.doesNotMatch(dashboard, /getIdTokenResult/);
   assert.doesNotMatch(dashboard, /ensureAdminAccessRegistry/);
   assert.doesNotMatch(dashboard, /syncSuperAdminClaim/);
@@ -77,6 +77,7 @@ test('header, menu and cart consume the shared auth snapshot', () => {
 
 test('Google popup is prepared before the user click and concurrent requests are blocked', () => {
   const context = read('src/kit/contexts/AuthContext.jsx');
+  const firebaseLazy = read('src/kit/config/firebaseLazy.js');
   const modal = read('src/kit/marketplace/LegacyLoginModalFullIsland.jsx');
 
   assert.match(context, /googleRuntimeRef = React\.useRef/);
@@ -89,6 +90,10 @@ test('Google popup is prepared before the user click and concurrent requests are
   assert.match(modal, /setGoogleStatus\('preload-error'\)/);
   assert.match(context, /auth\/google-not-prepared/);
   assert.match(context, /recordGoogleAuthDiagnostic/);
+  assert.match(firebaseLazy, /setCustomParameters\(\{ prompt: 'select_account' \}\)/);
+  assert.match(modal, /pointer-events-none absolute inset-0[\s\S]*md:backdrop-blur-xl/);
+  assert.match(modal, /relative z-\[1\] isolate flex[\s\S]*overflow-hidden/);
+  assert.doesNotMatch(modal, /justify-center bg-\[#0F0F11\][^\n]*backdrop-blur-xl/);
 });
 
 test('Google failures are diagnosed without persisting raw Firebase details', () => {

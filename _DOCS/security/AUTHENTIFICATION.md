@@ -148,6 +148,13 @@ Le serveur refuse une inscription ou une assertion dont le flag User Verificatio
 ### 5.4 Flux Google
 
 Google reste disponible depuis la meme modale. Le store identifie le fournisseur `google.com` et normalise la methode en `google`.
+Le provider impose `prompt=select_account`: chaque nouvelle ceremonie Google
+affiche donc le selecteur des comptes deja ouverts dans le navigateur au lieu
+de reutiliser silencieusement le dernier compte.
+La video decorative desktop reste conservee. Le voile floute et la fenetre
+sont toutefois deux couches soeurs: la video n'est plus descendante de la
+couche `backdrop-filter`, ce qui evite la surface de compositing fantome
+observee dans Chrome pendant l'initialisation du media.
 
 La modale ouverte depuis le bouton `Connexion` de la galerie est l'unique
 porte de connexion visible, pour les clients comme pour les administrateurs.

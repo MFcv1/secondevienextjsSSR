@@ -214,6 +214,7 @@ export const getGoogleProvider = async () => {
   if (!googleProviderInstance) {
     const { GoogleAuthProvider } = await loadAuthModule();
     googleProviderInstance = new GoogleAuthProvider();
+    googleProviderInstance.setCustomParameters({ prompt: 'select_account' });
   }
   return googleProviderInstance;
 };
