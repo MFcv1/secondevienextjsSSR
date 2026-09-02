@@ -30,11 +30,12 @@ Etat d'execution au 2026-09-01:
 | I3 | `DEPLOYEE_RUN_MANUEL_OK_FENETRE_NATURELLE_A_OBSERVER` | reconciliateur borne finance/orders programme a 03:17 UTC; run manuel sain en 877 ms, aucune divergence; premiere fenetre naturelle reste requise |
 | C | `OUVERTE` | le plan reste present jusqu'aux quiet-windows, mesures segmentaires/cout et rollback final fermes |
 
-Extension locale non deployee du 2026-09-01: le schema `insights` v2 ajoute les
-intentions de devis sur 30 jours, 3 mois, 6 mois et 1 an, ainsi que le top cinq
-produits sur 30 jours. Les tests analytics/dashboard et le build local passent;
-le sandbox conserve le schema precedemment deploye tant qu'un nouveau rollout
-Functions puis App Hosting n'est pas explicitement autorise.
+Extension du 2026-09-01: le schema `insights` v2 ajoute les intentions de devis
+sur 30 jours, 3 mois, 6 mois et 1 an, ainsi que le top cinq produits sur 30
+jours. Les tests analytics/dashboard et le build local passent; l'interface est
+presente dans App Hosting `build-2026-09-02-003`, mais le sandbox conserve le
+document Firestore v1 tant que les deux Functions analytics ne sont pas
+redeployees par le rail cible gouverne.
 
 Mesures sandbox du 2026-09-01:
 

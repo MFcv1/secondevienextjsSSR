@@ -157,8 +157,9 @@ dans [FUNCTIONS_RUNTIME_ADR.md](_DOCS/architecture/FUNCTIONS_RUNTIME_ADR.md):
 152 exports locaux, 149 Functions cloud, 146 Gen2 `ACTIVE` et uniquement les
 trois triggers Auth limites par Firebase encore en Gen1. Les quatre owners
 Scheduler commerce sont Gen2 `ENABLED`; les endpoints Stripe test actifs sont
-Gen2. App Hosting a recu le rollout sandbox Stats du 2026-09-01; le rollout
-immediatement precedent reste la cible de rollback.
+Gen2. App Hosting sert `build-2026-09-02-003`, qui fusionne le dashboard
+materialise et le jeu newsletter cinematographique; `build-2026-09-02-002`
+reste la cible de rollback immediate.
 
 Les retraits G12-A ont ete individuels, allowlistes, precedes d'appelants,
 trafic, quiet-windows et rollbacks digestes. G12-B a retire le code exclusif
