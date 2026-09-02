@@ -6089,13 +6089,45 @@ html.dark .discount-section,
   --card-shift: calc(var(--card-w) + var(--card-gap));
   --nl-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --nl-ease-inout: cubic-bezier(0.62, 0, 0.28, 1);
+  /* Montee vers la scene : courbe longue a decroissance douce, la carte
+     arrive sans jamais donner l'impression de s'arreter net. */
+  --nl-ease-hero: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Sortie des cartes ecartees : acceleration franche, elles quittent le
+     cadre au lieu de s'effacer sur place. */
+  --nl-ease-exit: cubic-bezier(0.5, 0, 0.9, 0.35);
+  --turn-ms: 1300ms;
+  /* Mesures en JS : la carte doit occuper la scene quelle que soit la
+     hauteur reelle du panneau, qui depend de la colonne formulaire. */
+  --hero-scale: 1.5;
+  --hero-lift: 0px;
+}
+
+/* La scene garde la hauteur d'une carte au repos : la carte heros grandit en
+   transform, elle ne pousse donc jamais la mise en page.
+
+   Largeur bloquee a 100 % : sans cela, la scene s'ajuste a son contenu, et le
+   passage de la carte choisie en `position: absolute` la faisait retrecir de
+   trois cartes a deux. Le centrage, calcule sur cette largeur, se decalait
+   alors de 80 px au moment precis de l'echange. */
+.discount-game__cards {
+  z-index: 1;
+  width: 100%;
+  min-height: calc(var(--card-w) * 88 / 63);
 }
 
 .discount-game__label {
+  min-height: 1.5em;
   color: var(--nl-muted);
   transition:
     opacity 420ms var(--nl-ease-out),
     transform 420ms var(--nl-ease-out);
+}
+
+/* Le libelle recule des qu'une carte se souleve : plus aucun contact entre le
+   texte et la carte du milieu qui monte. */
+.discount-game[data-nl-act='idle']:has(.discount-card:hover) .discount-game__label {
+  opacity: 0.45;
+  transform: translateY(-4px);
 }
 
 .discount-game__label-text {
@@ -6112,15 +6144,34 @@ html.dark .discount-section,
   transform: translateY(-7px);
 }
 
-.discount-game[data-nl-game-state='won'] .discount-game__label {
+/* Le libelle s'efface des que la carte monte sur scene : a cette taille elle
+   couvre la ligne de texte, qui passerait derriere elle. */
+.discount-game:is([data-nl-act='ascend'], [data-nl-act='hold'], [data-nl-act='flip'], [data-nl-act='reveal'])
+  .discount-game__label {
   opacity: 0;
-  transform: translateY(-10px);
+  transform: translateY(-12px);
 }
 
 .discount-game__cards {
   gap: var(--card-gap);
   perspective: 1500px;
   perspective-origin: 50% 42%;
+}
+
+/* Pendant la mise en scene, la scene se vide : paliers et reassurances
+   s'effacent pour que la carte heros ne partage l'espace avec rien. */
+.discount-game .discount-tier-row,
+.discount-game .discount-assurances {
+  transition:
+    opacity 520ms ease,
+    transform 620ms var(--nl-ease-out);
+}
+
+.discount-game:is([data-nl-act='ascend'], [data-nl-act='hold'], [data-nl-act='flip'], [data-nl-act='reveal'])
+  :is(.discount-tier-row, .discount-assurances) {
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
 }
 
 /* Halo de gain. Un degrade radial, jamais un filter: blur() — sur une couche
@@ -6130,7 +6181,7 @@ html.dark .discount-section,
   position: absolute;
   top: 50%;
   left: 50%;
-  width: calc(var(--card-w) * 4.4);
+  width: calc(var(--card-w) * 5.8);
   aspect-ratio: 1;
   border-radius: 999px;
   background: radial-gradient(circle at 50% 50%, var(--nl-bloom) 0%, transparent 62%);
@@ -6143,83 +6194,27 @@ html.dark .discount-section,
   pointer-events: none;
 }
 
-.discount-game[data-nl-game-state='won'] .discount-game__bloom {
+/* Le halo de fond se leve des l'ascension : la lumiere precede la carte au
+   lieu d'apparaitre apres coup. */
+.discount-game:is([data-nl-act='ascend'], [data-nl-act='hold'], [data-nl-act='flip']) .discount-game__bloom {
+  opacity: 0.55;
+  transform: translate3d(-50%, -50%, 0) scale(0.9);
+}
+
+.discount-game[data-nl-act='reveal'] .discount-game__bloom {
   opacity: 1;
   transform: translate3d(-50%, -50%, 0) scale(1);
-}
-
-/* Onde fine qui s'echappe de la carte au moment ou elle se pose. */
-.discount-game__halo {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: calc(var(--card-w) * 1.45);
-  aspect-ratio: 1;
-  border: 1px solid var(--nl-card-rule);
-  border-radius: 999px;
-  opacity: 0;
-  transform: translate3d(-50%, -50%, 0) scale(0.45);
-  will-change: transform, opacity;
-  pointer-events: none;
-}
-
-.discount-game__halo--echo {
-  width: calc(var(--card-w) * 1.2);
-}
-
-.discount-game[data-nl-game-state='won'] .discount-game__halo {
-  animation: discount-halo 1500ms var(--nl-ease-out) 60ms 1;
-}
-
-.discount-game[data-nl-game-state='won'] .discount-game__halo--echo {
-  animation: discount-halo 1800ms var(--nl-ease-out) 260ms 1;
-}
-
-@keyframes discount-halo {
-  0% { opacity: 0; transform: translate3d(-50%, -50%, 0) scale(0.45); }
-  20% { opacity: 0.9; }
-  100% { opacity: 0; transform: translate3d(-50%, -50%, 0) scale(2); }
-}
-
-/* Eclat tournant : quatre traits de lumiere qui balaient l'arriere-plan une
-   seule fois. L'anneau de masquage evite que le centre ne se salisse derriere
-   la carte. */
-.discount-game__rays {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: calc(var(--card-w) * 3.4);
-  aspect-ratio: 1;
-  border-radius: 999px;
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg, var(--nl-bloom) 11deg, transparent 27deg,
-    transparent 90deg, var(--nl-bloom) 101deg, transparent 117deg,
-    transparent 180deg, var(--nl-bloom) 191deg, transparent 207deg,
-    transparent 270deg, var(--nl-bloom) 281deg, transparent 297deg
-  );
-  -webkit-mask-image: radial-gradient(circle, transparent 33%, #000 54%, transparent 80%);
-  mask-image: radial-gradient(circle, transparent 33%, #000 54%, transparent 80%);
-  opacity: 0;
-  transform: translate3d(-50%, -50%, 0) rotate(-24deg) scale(0.72);
-  will-change: transform, opacity;
-  pointer-events: none;
-}
-
-.discount-game[data-nl-game-state='won'] .discount-game__rays {
-  animation: discount-rays 2600ms var(--nl-ease-out) 80ms 1;
-}
-
-@keyframes discount-rays {
-  0% { opacity: 0; transform: translate3d(-50%, -50%, 0) rotate(-24deg) scale(0.72); }
-  20% { opacity: 1; }
-  100% { opacity: 0; transform: translate3d(-50%, -50%, 0) rotate(46deg) scale(1.24); }
 }
 
 /* --- Carte --------------------------------------------------------------
    Toutes les positions passent par des variables : l'etat au repos, le
    survol, la carte choisie et les cartes ecartees composent la meme
-   declaration transform, donc tout s'interpole proprement sans !important. */
+   declaration transform, donc tout s'interpole proprement sans !important.
+
+   Le bouton ne porte que le trajet et l'echelle. Le flottement de la carte en
+   scene vit sur .discount-card__float et le basculement du retournement sur
+   .discount-card__depth : des mouvements de durees tres differentes ne peuvent
+   pas cohabiter dans un transform unique. */
 .discount-card {
   position: relative;
   width: var(--card-w);
@@ -6234,27 +6229,58 @@ html.dark .discount-section,
   --slide: 0px;
   --rise: 0px;
   --lift: 0px;
-  --rot: 0deg;
+  --fan-rot: 0deg;
   --scale: 1;
-  --tilt-x: 0deg;
-  --tilt-y: 0deg;
   --deal-from: 0px;
   --move-ms: 780ms;
+  --move-ease: var(--nl-ease-out);
   transform:
     translate3d(var(--slide), calc(var(--rise) + var(--lift)), 0)
-    rotate(var(--rot))
-    rotateX(var(--tilt-x))
-    rotateY(var(--tilt-y))
+    rotate(var(--fan-rot))
     scale(var(--scale));
   transition:
-    transform var(--move-ms) var(--nl-ease-out),
+    transform var(--move-ms) var(--move-ease),
     opacity 620ms ease;
 }
 
 /* Eventail au repos. :nth-of-type ne compte que les boutons, le halo et le
    bloom etant des <span> dans le meme parent. */
-.discount-card:nth-of-type(1) { --rot: -6.5deg; --rise: 2.2cqw; --deal-from: var(--card-shift); }
-.discount-card:nth-of-type(3) { --rot: 6.5deg; --rise: 2.2cqw; --deal-from: calc(-1 * var(--card-shift)); }
+.discount-card:nth-of-type(1) { --fan-rot: -6.5deg; --rise: 2.2cqw; --deal-from: var(--card-shift); }
+.discount-card:nth-of-type(3) { --fan-rot: 6.5deg; --rise: 2.2cqw; --deal-from: calc(-1 * var(--card-shift)); }
+
+/* --- Couche 2 : flottement en scene -------------------------------------
+   Reserve a la carte choisie une fois montee sur scene : au repos l'eventail
+   reste parfaitement immobile, trois cartes qui ondulent en permanence se
+   lisant comme un defaut plutot que comme de la vie.
+   Les images 0 % et 100 % sont neutres, le flottement demarre donc sans a-coup
+   au moment ou il s'enclenche. L'amplitude n'a pas besoin d'etre augmentee :
+   la carte etant mise a l'echelle par le bouton, les pixels le sont aussi. */
+.discount-card__float {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+
+.discount-game:is([data-nl-act='ascend'], [data-nl-act='hold'], [data-nl-act='flip'], [data-nl-act='reveal'])
+  .discount-card[data-nl-card-state='picked'] .discount-card__float {
+  animation: discount-float 7000ms ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes discount-float {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  25% { transform: translate3d(0, -4px, 0) rotate(-0.35deg); }
+  75% { transform: translate3d(0, 4px, 0) rotate(0.35deg); }
+}
+
+/* --- Couche 3 : profondeur du retournement ------------------------------
+   Uniquement porteuse du basculement et du gonflement pendant la rotation :
+   les separer du demi-tour est ce qui leur permet d'avoir leur propre courbe. */
+.discount-card__depth {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
 
 .discount-card:focus-visible {
   outline: 1.5px solid var(--nl-accent);
@@ -6266,8 +6292,15 @@ html.dark .discount-section,
    eventail. Sans bloc `to`, l'animation se termine sur l'etat de repos. */
 .discount-game[data-nl-dealt='false'] .discount-card { opacity: 0; }
 
+/* fill-mode `backwards` et surtout pas `both`. Une animation remplie garde la
+   propriete animee sous son controle une fois terminee, et les animations
+   l'emportent sur les transitions dans la cascade : avec `both`, `transform`
+   appartenait definitivement a discount-deal et AUCUNE transition de carte ne
+   s'appliquait jamais. Survol, ecartement, montee sur scene : tout sautait
+   d'un etat a l'autre. `backwards` ne remplit que la periode d'attente avant
+   le demarrage, puis rend la main a la transition. */
 .discount-game[data-nl-dealt='true'] .discount-card {
-  animation: discount-deal 940ms var(--nl-ease-out) both;
+  animation: discount-deal 940ms var(--nl-ease-out) backwards;
 }
 
 .discount-game[data-nl-dealt='true'] .discount-card:nth-of-type(1) { animation-delay: 60ms; }
@@ -6280,58 +6313,79 @@ html.dark .discount-section,
     transform:
       translate3d(var(--deal-from), calc(var(--rise) + 7cqw), 0)
       rotate(0deg)
-      rotateX(0deg)
-      rotateY(0deg)
       scale(0.88);
   }
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .discount-game[data-nl-game-state='idle'] .discount-card:hover,
-  .discount-game[data-nl-game-state='idle'] .discount-card:focus-visible {
+  /* Seule la carte survolee bouge. Les deux autres restent strictement en
+     place : c'est leur deplacement qui rendait le survol desagreable et
+     donnait l'impression d'un defaut d'affichage. */
+  .discount-game[data-nl-act='idle'] .discount-card:hover,
+  .discount-game[data-nl-act='idle'] .discount-card:focus-visible {
     z-index: 4;
-    --lift: -3.2cqw;
-    --scale: 1.05;
-    --rot: 0deg;
-    --move-ms: 230ms;
+    --lift: -2.2cqw;
+    --scale: 1.045;
+    --fan-rot: 0deg;
+    --move-ms: 620ms;
+    --move-ease: var(--nl-ease-hero);
   }
 
-  .discount-game[data-nl-game-state='idle'] .discount-card:nth-of-type(1):hover { --rot: -2.4deg; }
-  .discount-game[data-nl-game-state='idle'] .discount-card:nth-of-type(3):hover { --rot: 2.4deg; }
+  .discount-game[data-nl-act='idle'] .discount-card:nth-of-type(1):hover { --fan-rot: -2.2deg; }
+  .discount-game[data-nl-act='idle'] .discount-card:nth-of-type(3):hover { --fan-rot: 2.2deg; }
 
-  .discount-game[data-nl-game-state='idle'] .discount-card:hover .discount-card__sheen {
+  .discount-game[data-nl-act='idle'] .discount-card:hover .discount-card__sheen {
     animation: discount-sheen 1150ms var(--nl-ease-out);
   }
 
-  .discount-game[data-nl-game-state='idle'] .discount-card:hover .discount-card__shadow {
+  .discount-game[data-nl-act='idle'] .discount-card:hover .discount-card__shadow {
     opacity: 0.55;
     transform: translateY(3.2cqw) scale(0.9);
   }
 }
 
-/* Les deux cartes ecartees s'ecartent vers l'exterieur en retombant : elles
-   liberent l'axe du panneau avant que la carte choisie n'y arrive. */
+/* Les cartes ecartees ne s'effacent plus sur place : elles quittent le cadre
+   en glissant vers l'exterieur, en rotation, sur une courbe qui accelere. Le
+   decalage entre les deux est pose en JS, il depend de la carte choisie. */
 .discount-card[data-nl-card-state='faded'] {
-  --scale: 0.74;
-  --lift: 5.5cqw;
-  --rot: 0deg;
-  opacity: 0.12;
+  --scale: 0.6;
+  --lift: 16cqw;
+  --move-ms: 760ms;
+  --move-ease: var(--nl-ease-exit);
+  opacity: 0;
   pointer-events: none;
+  transition:
+    transform var(--move-ms) var(--move-ease),
+    opacity 560ms ease-in 140ms;
 }
 
-.discount-card[data-nl-card-state='faded']:nth-of-type(1) { --slide: -3.4cqw; }
-.discount-card[data-nl-card-state='faded']:nth-of-type(3) { --slide: 3.4cqw; }
+.discount-card[data-nl-card-state='faded']:nth-of-type(1) { --slide: -26cqw; --fan-rot: -24deg; }
+.discount-card[data-nl-card-state='faded']:nth-of-type(2) { --slide: 0px; --fan-rot: 9deg; --lift: 19cqw; }
+.discount-card[data-nl-card-state='faded']:nth-of-type(3) { --slide: 26cqw; --fan-rot: 24deg; }
 
-/* La carte choisie glisse jusqu'a l'axe du panneau avant de se retourner. */
+/* La carte choisie rejoint l'axe de la scene. */
 .discount-card[data-nl-card-state='picked'] {
   z-index: 6;
+  --rise: 0px;
   --scale: 1.14;
   --lift: -2.4cqw;
-  --rot: 0deg;
+  --fan-rot: 0deg;
 }
 
 .discount-card[data-nl-card-state='picked']:nth-of-type(1) { --slide: var(--card-shift); }
 .discount-card[data-nl-card-state='picked']:nth-of-type(3) { --slide: calc(-1 * var(--card-shift)); }
+
+/* Ascension : la carte grandit pour occuper la scene. L'echelle et le
+   recentrage verticaux sont mesures en JS (--hero-scale / --hero-lift) parce
+   qu'ils dependent de la hauteur reelle du panneau. 1200 ms sur une courbe a
+   longue decroissance : elle arrive sans jamais s'arreter net. */
+.discount-game:is([data-nl-act='ascend'], [data-nl-act='hold'], [data-nl-act='flip'], [data-nl-act='reveal'])
+  .discount-card[data-nl-card-state='picked'] {
+  --scale: var(--hero-scale);
+  --lift: var(--hero-lift);
+  --move-ms: 1200ms;
+  --move-ease: var(--nl-ease-hero);
+}
 
 /* Ombre portee au sol, independante du retournement : elle reste a plat
    pendant que la carte pivote. */
@@ -6353,19 +6407,29 @@ html.dark .discount-section,
 .discount-card[data-nl-card-state='faded'] .discount-card__shadow { opacity: 0.12; }
 .discount-card[data-nl-card-state='picked'] .discount-card__shadow { opacity: 0.6; transform: translateY(2.6cqw); }
 
+/* L'ombre s'eloigne et s'adoucit a mesure que la carte prend de l'altitude :
+   c'est elle qui raconte la hauteur, pas l'echelle. */
+.discount-game:is([data-nl-act='ascend'], [data-nl-act='hold'], [data-nl-act='flip'], [data-nl-act='reveal'])
+  .discount-card[data-nl-card-state='picked'] .discount-card__shadow {
+  opacity: 0.3;
+  transform: translateY(5.4cqw) scale(1.24, 0.86);
+  transition:
+    opacity 1200ms ease,
+    transform 1200ms var(--nl-ease-hero);
+}
+
 .discount-card__flip {
   position: absolute;
   inset: 0;
   transform-style: preserve-3d;
-  transition: transform 980ms cubic-bezier(0.36, 0.9, 0.24, 1);
 }
 
 /* Entre le clic et la reponse du tirage, la carte avancee respire au lieu de
    se figer : le mouvement ne s'interrompt jamais, meme si le reseau traine.
-   Le balancement demarre apres l'avancee et reste sous les 4 degres pour que
-   le passage a la rotation ne se voie pas. */
+   Le balancement reste sous les 4 degres pour que le passage a la rotation ne
+   se voie pas. */
 .discount-card[data-nl-card-state='picked']:not([data-nl-card-flipped='true']) .discount-card__flip {
-  animation: discount-poise 2600ms ease-in-out 720ms infinite;
+  animation: discount-poise 3400ms ease-in-out 200ms infinite;
 }
 
 @keyframes discount-poise {
@@ -6373,8 +6437,58 @@ html.dark .discount-section,
   50% { transform: rotateY(3.4deg) rotateX(-1.1deg); }
 }
 
+/* --- Rotation de revelation ---------------------------------------------
+   Trois animations paralleles plutot qu'une transition unique, chacune avec
+   sa propre courbe :
+
+   - discount-turn        : le demi-tour, une seule bezier, donc une vitesse
+                            parfaitement continue du debut a la fin ;
+   - discount-turn-light  : la lumiere, qui tombe quand la carte se presente
+                            sur la tranche et remonte quand la face se
+                            devoile. C'est ce qui remplace l'apparition
+                            brutale de la face bronze par un objet eclaire ;
+   - discount-turn-depth  : sur la couche tilt, le basculement et le leger
+                            gonflement qui donnent l'epaisseur.
+
+   Les separer est le seul moyen de leur donner des easings differents : une
+   keyframe unique aurait impose la meme courbe aux trois. */
 .discount-card[data-nl-card-flipped='true'] .discount-card__flip {
-  transform: rotateY(180deg);
+  animation: discount-turn var(--turn-ms) cubic-bezier(0.58, 0.02, 0.16, 1) both;
+}
+
+@keyframes discount-turn {
+  from { transform: rotateY(0deg); }
+  to { transform: rotateY(180deg); }
+}
+
+/* La lumiere est portee par les faces, jamais par .discount-card__flip : un
+   filter non nul aplatit le preserve-3d de l'element auquel il s'applique,
+   ce qui desactive backface-visibility sur ses enfants et faisait apparaitre
+   le dos en miroir au lieu de la face bronze. Les faces, elles, sont des
+   feuilles de la chaine 3D : le filtre n'y casse rien.
+   Les deux faces partagent la meme courbe ; comme une seule est visible a la
+   fois, la lumiere se lit comme continue d'un bout a l'autre du demi-tour. */
+.discount-card[data-nl-card-flipped='true'] .discount-card__face {
+  animation: discount-turn-light var(--turn-ms) linear both;
+}
+
+@keyframes discount-turn-light {
+  0% { filter: brightness(1); }
+  32% { filter: brightness(0.9); }
+  50% { filter: brightness(0.68); }
+  60% { filter: brightness(1.12); }
+  74% { filter: brightness(1.05); }
+  100% { filter: brightness(1); }
+}
+
+.discount-card[data-nl-card-flipped='true'] .discount-card__depth {
+  animation: discount-turn-depth var(--turn-ms) ease-in-out both;
+}
+
+@keyframes discount-turn-depth {
+  0% { transform: rotateX(0deg) scale(1); }
+  50% { transform: rotateX(-8deg) scale(1.055); }
+  100% { transform: rotateX(0deg) scale(1); }
 }
 
 .discount-card__face {
@@ -6488,27 +6602,33 @@ html.dark .discount-card__face--back,
 
 .discount-card__value {
   font-family: var(--font-cormorant), ui-serif, Georgia, serif;
-  font-size: calc(var(--card-w) * 0.36);
+  font-size: calc(var(--card-w) * 0.33);
   font-weight: 400;
   font-variant-numeric: lining-nums tabular-nums;
   font-feature-settings: 'lnum' 1, 'tnum' 1;
+  letter-spacing: -0.005em;
   line-height: 1;
 }
 
+/* Le pourcent se met au service du chiffre : plus petit, legerement retrait
+   en valeur, il cesse de peser autant que les dizaines. */
 .discount-card__value::after {
-  margin-left: 0.04em;
+  margin-left: 0.07em;
   content: '%';
-  font-size: 0.52em;
+  font-size: 0.38em;
+  opacity: 0.68;
 }
 
 /* La face n'est lisible qu'apres le demi-tour : le chiffre et la legende s'y
    posent a ce moment precis plutot que d'etre deja la quand la carte pivote. */
+/* Cales sur la rotation : la face n'est de face qu'a la moitie de --turn-ms,
+   le chiffre se pose donc juste apres, jamais avant. */
 .discount-card[data-nl-card-flipped='true'] .discount-card__value {
-  animation: discount-value-pop 820ms var(--nl-ease-out) 470ms both;
+  animation: discount-value-pop 820ms var(--nl-ease-out) calc(var(--turn-ms) * 0.54) both;
 }
 
 .discount-card[data-nl-card-flipped='true'] .discount-card__caption {
-  animation: discount-value-pop 760ms var(--nl-ease-out) 600ms both;
+  animation: discount-value-pop 760ms var(--nl-ease-out) calc(var(--turn-ms) * 0.66) both;
 }
 
 @keyframes discount-value-pop {
@@ -6517,14 +6637,33 @@ html.dark .discount-card__face--back,
   100% { opacity: 1; transform: scale(1); }
 }
 
+/* Les tailles suivent --card-w et non plus des unites de conteneur : quand la
+   carte passe en taille reelle pour la revelation, la legende grandit avec
+   elle au lieu de rester minuscule. Graisse allegee et interlettrage elargi :
+   en capitales a cette echelle, le gras se lisait comme un pave. */
 .discount-card__caption {
+  display: block;
   margin-top: calc(var(--card-w) * 0.05);
   font-family: var(--font-sans), ui-sans-serif, sans-serif;
-  font-size: clamp(6.5px, 1.5cqw, 9.5px);
-  font-weight: 700;
-  letter-spacing: 0.2em;
+  font-size: calc(var(--card-w) * 0.042);
+  font-weight: 500;
+  /* Compense l'espace ajoute apres la derniere lettre par l'interlettrage,
+     sans quoi le mot parait decale a gauche. */
+  text-indent: 0.34em;
+  letter-spacing: 0.34em;
+  text-align: center;
   text-transform: uppercase;
-  opacity: 0.74;
+  opacity: 0.6;
+}
+
+.discount-card__caption::before {
+  display: block;
+  width: calc(var(--card-w) * 0.15);
+  height: 1px;
+  margin: 0 auto calc(var(--card-w) * 0.05);
+  background: currentColor;
+  opacity: 0.38;
+  content: '';
 }
 
 /* Reflet unique qui balaie la face au moment ou la carte se stabilise. */
@@ -6538,7 +6677,7 @@ html.dark .discount-card__face--back,
 }
 
 .discount-card[data-nl-card-flipped='true'] .discount-card__glare {
-  animation: discount-glare 1150ms var(--nl-ease-out) 640ms 1;
+  animation: discount-glare 1150ms var(--nl-ease-out) calc(var(--turn-ms) * 0.6) 1;
 }
 
 @keyframes discount-glare {
@@ -6547,41 +6686,25 @@ html.dark .discount-card__face--back,
   100% { opacity: 0; transform: translateX(70%); }
 }
 
-/* --- Panneau de gain --- */
+/* --- Bande d'appel ------------------------------------------------------
+   La carte restant en grand porte le chiffre, cette bande ne fait plus que
+   renvoyer au formulaire. Elle est ancree au bas de la scene pour ne pas
+   entrer en concurrence avec la carte, qui occupe le centre. */
+.discount-game[data-nl-act='reveal'] .discount-game__won {
+  position: absolute;
+  right: 0;
+  bottom: clamp(8px, 2cqw, 22px);
+  left: 0;
+  z-index: 10;
+  margin-top: 0;
+}
+
 .discount-game__won-rule {
   display: block;
   width: calc(var(--card-w) * 0.7);
   height: 1px;
-  margin: 0 auto calc(var(--card-w) * 0.13);
+  margin: 0 auto calc(var(--card-w) * 0.09);
   background: linear-gradient(90deg, transparent, var(--nl-card-rule), transparent);
-}
-
-.discount-game__won-value {
-  animation: discount-won-value 900ms var(--nl-ease-out) both;
-  color: var(--nl-ink);
-  font-size: clamp(2.6rem, 34cqw, 4rem);
-  font-weight: 400;
-  font-variant-numeric: lining-nums tabular-nums;
-  font-feature-settings: 'lnum' 1, 'tnum' 1;
-  letter-spacing: 0;
-  line-height: 1;
-}
-
-.discount-game__won-percent {
-  margin-left: 0.04em;
-  color: var(--nl-bronze);
-  font-size: 0.62em;
-  font-style: normal;
-  font-weight: 400;
-}
-
-.discount-game__won-sub {
-  margin-top: 12px;
-  color: var(--nl-muted);
-  font-size: 9.5px;
-  font-weight: 800;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
 }
 
 .discount-game__won-hint {
@@ -6613,39 +6736,49 @@ html.dark .discount-card__face--back,
   }
 }
 
-/* Entree en cascade du panneau, une ligne apres l'autre. */
-.discount-game__won > *:not(.discount-game__won-value) {
+/* Entree en cascade de la bande, une ligne apres l'autre. */
+.discount-game__won > *:not(.sr-only) {
   animation: discount-won-rise 720ms var(--nl-ease-out) both;
 }
 
-.discount-game__won > *:nth-child(1) { animation-delay: 40ms; }
-.discount-game__won > *:nth-child(2) { animation-delay: 130ms; }
-.discount-game__won > *:nth-child(3) { animation-delay: 220ms; }
-.discount-game__won > *:nth-child(4) { animation-delay: 320ms; }
+.discount-game__won > *:nth-child(2) { animation-delay: 40ms; }
+.discount-game__won > *:nth-child(3) { animation-delay: 160ms; }
 
 @keyframes discount-won-rise {
   from { opacity: 0; transform: translateY(14px); }
 }
 
-@keyframes discount-won-value {
-  0% { opacity: 0; transform: translateY(16px) scale(0.82); }
-  46% { opacity: 1; }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
+/* --- Confettis et poussiere d'or ----------------------------------------
+   Un seul canvas plutot que 130 noeuds animes : c'est la seule facon de
+   tenir les 60 fps avec autant de particules. Il est dimensionne au clic,
+   dessine en une boucle rAF, puis rendu inerte. */
+.discount-game__fx {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 320ms ease;
+  pointer-events: none;
 }
 
-.discount-spark {
-  position: absolute;
-  width: 4px;
-  height: 4px;
-  border-radius: 999px;
-  background: var(--nl-bronze);
-  pointer-events: none;
+/* Plan arriere : sous la scene des cartes (z-index 1), donc masque par la
+   carte quand une particule passe derriere elle. */
+.discount-game__fx--back {
+  z-index: 0;
+}
+
+.discount-game[data-nl-fx='on'] .discount-game__fx {
+  opacity: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {
   /* Tout ce qui bouge est neutralise, puis on retablit l'etat d'arrivee de
      chaque element : la mecanique du jeu reste entierement jouable. */
   .discount-card,
+  .discount-card__float,
+  .discount-card__depth,
   .discount-card__flip,
   .discount-card__shadow,
   .discount-card__value,
@@ -6654,10 +6787,28 @@ html.dark .discount-card__face--back,
   .discount-game__label-text,
   .discount-game__bloom,
   .discount-game__won > *,
+  .discount-game .discount-tier-row,
+  .discount-game .discount-assurances,
   .discount-promo-cycle__digit-layer,
   .discount-tier {
     transition-duration: 0.01ms !important;
     animation: none !important;
+  }
+
+  /* Les couches intermediaires reprennent leur transform neutre : sans cela
+     le dernier etat d'une animation coupee resterait applique. */
+  .discount-card__float,
+  .discount-card__depth {
+    transform: none;
+  }
+
+  .discount-card__face {
+    animation: none !important;
+    filter: none;
+  }
+
+  .discount-game__fx {
+    display: none;
   }
 
   .discount-card__value,
@@ -6668,9 +6819,7 @@ html.dark .discount-card__face--back,
   }
 
   .discount-card__glare,
-  .discount-card__sheen,
-  .discount-game__halo,
-  .discount-game__rays {
+  .discount-card__sheen {
     animation: none !important;
     opacity: 0;
   }

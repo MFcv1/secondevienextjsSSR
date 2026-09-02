@@ -1078,12 +1078,25 @@ export const NewsletterSectionServer = ({ darkMode = false } = {}) => (
               <span data-nl-game-label-text className="discount-game__label-text">Choisis une carte</span>
             </p>
 
-            <div data-nl-cards className="discount-game__cards relative mt-7 flex items-center justify-center">
-              <span className="discount-game__bloom" aria-hidden="true" />
-              <span className="discount-game__rays" aria-hidden="true" />
-              <span className="discount-game__halo" aria-hidden="true" />
-              <span className="discount-game__halo discount-game__halo--echo" aria-hidden="true" />
+            {/* Deux plans de particules encadrant les cartes : celles du fond
+                passent derriere la carte, celles du premier plan devant. C'est
+                ce qui donne la profondeur, et ce qui les rend visibles puisque
+                l'essentiel du vol se fait sur le fond clair et non sur le brun
+                de la carte. */}
+            <canvas data-nl-fx-back className="discount-game__fx discount-game__fx--back" aria-hidden="true" />
 
+            <div data-nl-cards className="discount-game__cards relative mt-10 flex items-center justify-center sm:mt-12">
+              {/* Seule reste la lueur diffuse. Les anneaux et le balayage de
+                  rayons tournants entraient en concurrence avec les confettis
+                  et la poussiere d'or, qui portent desormais la celebration. */}
+              <span className="discount-game__bloom" aria-hidden="true" />
+
+              {/* Quatre couches, une responsabilite chacune : le bouton porte le
+                  trajet et l'echelle, __float le flottement de la carte en
+                  scene, __depth le basculement de la rotation, et __flip le
+                  demi-tour. Empilees sur un seul transform, ces mouvements
+                  s'ecrasaient les uns les autres et partageaient une duree
+                  unique. */}
               {[0, 1, 2].map((cardIndex) => (
                 <button
                   key={cardIndex}
@@ -1093,23 +1106,29 @@ export const NewsletterSectionServer = ({ darkMode = false } = {}) => (
                   aria-label={`Retourner la carte ${cardIndex + 1}`}
                 >
                   <span className="discount-card__shadow" aria-hidden="true" />
-                  <span className="discount-card__flip">
-                    <span className="discount-card__face discount-card__face--back">
-                      <span className="discount-card__grain" aria-hidden="true" />
-                      <span className="discount-card__frame" aria-hidden="true" />
-                      <span className="discount-card__mark" aria-hidden="true" />
-                      <span className="discount-card__sheen" aria-hidden="true" />
-                    </span>
-                    <span className="discount-card__face discount-card__face--front">
-                      <span className="discount-card__frame" aria-hidden="true" />
-                      <span className="discount-card__value" data-nl-card-value>—</span>
-                      <span className="discount-card__caption">de reduction</span>
-                      <span className="discount-card__glare" aria-hidden="true" />
+                  <span className="discount-card__float">
+                    <span className="discount-card__depth">
+                      <span className="discount-card__flip">
+                        <span className="discount-card__face discount-card__face--back">
+                          <span className="discount-card__grain" aria-hidden="true" />
+                          <span className="discount-card__frame" aria-hidden="true" />
+                          <span className="discount-card__mark" aria-hidden="true" />
+                          <span className="discount-card__sheen" aria-hidden="true" />
+                        </span>
+                        <span className="discount-card__face discount-card__face--front">
+                          <span className="discount-card__frame" aria-hidden="true" />
+                          <span className="discount-card__value" data-nl-card-value>—</span>
+                          <span className="discount-card__caption">de reduction</span>
+                          <span className="discount-card__glare" aria-hidden="true" />
+                        </span>
+                      </span>
                     </span>
                   </span>
                 </button>
               ))}
             </div>
+
+            <canvas data-nl-fx className="discount-game__fx" aria-hidden="true" />
 
             <div className="discount-tier-row relative mt-8 flex w-full items-stretch sm:hidden">
               {prizeTiers.map((tier, tierIndex) => (
@@ -1135,12 +1154,12 @@ export const NewsletterSectionServer = ({ darkMode = false } = {}) => (
               ))}
             </ul>
 
+            {/* La carte reste en grand et porte le chiffre : le panneau ne
+                repete plus le gain, il ne fait que renvoyer au formulaire. Le
+                montant est annonce aux lecteurs d'ecran par la zone live. */}
             <div data-nl-won hidden className="discount-game__won relative mt-8 text-center">
+              <p data-nl-won-value className="sr-only" role="status" aria-live="polite" />
               <span className="discount-game__won-rule" aria-hidden="true" />
-              <p data-nl-won-value className="discount-game__won-value font-serif">
-                0<span className="discount-game__won-percent">%</span>
-              </p>
-              <p className="discount-game__won-sub font-sans">de reduction remportes</p>
               <p className="discount-game__won-hint font-sans">
                 <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
                 Laisse ton e-mail pour le recevoir

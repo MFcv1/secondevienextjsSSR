@@ -28,12 +28,28 @@ export const createNewsletterPlayId = () => (
 
 const LOCAL_HOSTNAMES = new Set(['localhost', '127.0.0.1', '[::1]', '::1']);
 
+/* Adresses privees, de liaison locale et plage partagee des operateurs
+   (100.64.0.0/10, celle qu'utilisent les VPN mailles type Tailscale). Un poste
+   de developpement est couramment atteint depuis une autre machine du reseau,
+   et `next dev` annonce lui-meme une adresse reseau a cote de localhost : s'y
+   connecter desactivait le repli et faisait echouer tout tirage, alors que la
+   meme page servie depuis localhost fonctionnait. */
+const PRIVATE_HOSTNAME = /^(?:10\.|127\.|169\.254\.|192\.168\.|172\.(?:1[6-9]|2\d|3[01])\.|100\.(?:6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.)/;
+
 const canSimulateLocally = () => {
   if (process.env.NODE_ENV === 'production') return false;
   if (typeof window === 'undefined') return false;
   const { hostname } = window.location;
-  return LOCAL_HOSTNAMES.has(hostname) || hostname.startsWith('192.168.');
+  return LOCAL_HOSTNAMES.has(hostname)
+    || hostname.endsWith('.local')
+    || PRIVATE_HOSTNAME.test(hostname);
 };
+
+/* En local l'appel n'echoue pas vite : App Check met une dizaine de secondes a
+   rendre son 403, pendant lesquelles la carte reste en vol. On ne l'attend pas
+   pour basculer sur la simulation. Ce delai ne s'applique qu'aux hotes de
+   developpement : ailleurs, l'appel garde son comportement normal. */
+const LOCAL_FALLBACK_MS = 3000;
 
 // Ponderations identiques a functions/src/newsletter/newsletterRewardDomain.js
 const SIMULATED_WEIGHTS = [
@@ -86,10 +102,29 @@ const simulateClaim = (playId, email) => {
 };
 
 const withLocalFallback = async (label, call, simulate) => {
+  const local = canSimulateLocally();
   try {
-    return await call();
+    if (!local) return await call();
+    const pending = call();
+    // L'appel peut echouer apres que la course a ete tranchee par le delai :
+    // on absorbe ce rejet tardif, sans quoi il remonte en rejet non gere.
+    pending.catch(() => {});
+    let timer;
+    try {
+      return await Promise.race([
+        pending,
+        new Promise((_, reject) => {
+          timer = setTimeout(
+            () => reject(new Error(`pas de reponse en ${LOCAL_FALLBACK_MS} ms`)),
+            LOCAL_FALLBACK_MS,
+          );
+        }),
+      ]);
+    } finally {
+      clearTimeout(timer);
+    }
   } catch (error) {
-    if (!canSimulateLocally()) throw error;
+    if (!local) throw error;
     console.warn(
       `[newsletter] ${label} indisponible en local (${error?.code || error?.message || 'erreur inconnue'}). `
       + 'Tirage simule cote navigateur pour permettre le test de l’interface.',
