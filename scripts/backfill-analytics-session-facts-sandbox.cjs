@@ -1,6 +1,8 @@
 'use strict';
 
-const admin = require('firebase-admin');
+// Use the exact SDK instance loaded by the Functions domain. Firestore
+// sentinels are class instances and cannot cross two firebase-admin copies.
+const admin = require('../functions/node_modules/firebase-admin');
 
 const EXPECTED_PROJECT = 'secondevienextjsssr';
 const APPLY_TOKEN = 'BACKFILL_ANALYTICS_FACTS_SANDBOX';
