@@ -129,6 +129,16 @@ test('le transport Eventarc de l agregateur analytics est repare sans invoker pu
     assert.doesNotMatch(iam, /allUsers|roles\/owner|roles\/editor/);
 });
 
+test('le rejeu des faits analytics est borne, idempotent et sans donnee personnelle', () => {
+    const backfill = read('scripts/backfill-analytics-session-facts-sandbox.cjs');
+    assert.match(backfill, /MAX_SESSIONS\s*=\s*5000/);
+    assert.match(backfill, /BACKFILL_ANALYTICS_FACTS_SANDBOX/);
+    assert.match(backfill, /materializeSessionFact/);
+    assert.match(backfill, /compactDay/);
+    assert.match(backfill, /materializeDashboardInsights/);
+    assert.doesNotMatch(backfill, /email|userAgent|ipAddress/);
+});
+
 test('les commandes ont un compteur transactionnel et un affichage lisible', () => {
     const repository = read('functions/src/commerce/domain/checkoutRepository.js');
     const state = read('functions/src/commerce/domain/orderState.js');

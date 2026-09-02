@@ -29,6 +29,7 @@
     "admin-dashboard:probe:d4": "node scripts/with-env.mjs .env.sandbox node scripts/probe-admin-dashboard-d4.mjs --project=secondevienextjsssr --env=sandbox",
     "admin-dashboard:bootstrap-financial-history": "node scripts/with-env.mjs .env.sandbox node scripts/bootstrap-financial-history-sandbox.cjs",
     "admin-dashboard:bootstrap-newsletter": "node scripts/with-env.mjs .env.sandbox node scripts/bootstrap-newsletter-summary-sandbox.cjs",
+    "analytics:backfill-facts": "node scripts/with-env.mjs .env.sandbox node scripts/backfill-analytics-session-facts-sandbox.cjs",
     "functions:configure-stats-iam:g2b": "node scripts/configure-functions-gen2-g2b-stats-iam.mjs --project=secondevienextjsssr --env=sandbox",
     "functions:plan-catalog:g2b": "node scripts/with-env.mjs .env.sandbox node scripts/plan-functions-gen2-g2b-catalog.mjs --project=secondevienextjsssr --env=sandbox",
     "functions:configure-catalog-iam:g2b": "node scripts/configure-functions-gen2-g2b-catalog-iam.mjs --project=secondevienextjsssr --env=sandbox",
