@@ -49,11 +49,11 @@ export default function MarketplaceHeroServer({
           <div
             key={img.src || index}
             data-hero-slide={index}
+            data-hero-state={index === 0 ? 'active' : undefined}
             aria-hidden={index === 0 ? 'false' : 'true'}
-            className="absolute inset-0 h-full w-full transition-opacity duration-[1200ms] ease-in-out"
-            style={{ opacity: index === 0 ? 1 : 0 }}
+            className="absolute inset-0 h-full w-full"
           >
-            <picture className="block h-full w-full">
+            <picture className="hero-slide-frame block h-full w-full">
               {img.mobileSrc ? (
                 <source
                   media="(max-width: 767px)"
@@ -162,7 +162,7 @@ export default function MarketplaceHeroServer({
             >
               <span
                 aria-hidden="true"
-                className="absolute inset-y-0 left-0 w-full origin-center rounded-full bg-white/30 transition-transform duration-500"
+                className="hero-step-track absolute inset-y-0 left-0 w-full origin-center rounded-full bg-white/30"
                 style={{ transform: index === 0 ? 'scaleX(1)' : 'scaleX(0.53)' }}
               />
               <span
