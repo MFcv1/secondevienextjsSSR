@@ -157,6 +157,7 @@ const G11_GEN2_TARGETS = Object.freeze({
 const dashboardEventTarget = ({ name, documentPathPattern, runtimeServiceAccount }) => Object.freeze({
   create: true,
   triggerType: 'event',
+  retry: true,
   region: 'europe-west1',
   runtime: 'nodejs22',
   entryPoint: name,
@@ -1639,11 +1640,17 @@ export function validateDeploymentRequest({
 }
 
 export function buildFirebaseDeployArgs(validation) {
-  return [
+  const args = [
     'deploy',
     '--project', validation.project,
     '--only', validation.selectors.join(',')
   ];
+  const confirmsFailurePolicy = validation.allowlist.some((name) =>
+    GCLOUD_GEN2_TARGETS[name]?.triggerType === 'event' &&
+    GCLOUD_GEN2_TARGETS[name]?.retry === true
+  );
+  if (confirmsFailurePolicy) args.push('--force');
+  return args;
 }
 
 export function buildGcloudGen1DeployArgs(validation) {
