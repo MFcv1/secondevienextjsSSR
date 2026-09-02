@@ -156,6 +156,7 @@ const G11_GEN2_TARGETS = Object.freeze({
 });
 const dashboardEventTarget = ({ name, documentPathPattern, runtimeServiceAccount }) => Object.freeze({
   create: true,
+  dashboardEvent: true,
   triggerType: 'event',
   retry: true,
   region: 'europe-west1',
@@ -2089,21 +2090,25 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
     if (before.status === 0 || !/NOT_FOUND|not found/i.test(`${before.stderr || ''}${before.stdout || ''}`)) {
       fail('Creation Gen2 refusee: la cible existe deja ou son absence ne peut pas etre prouvee');
     }
-    const sourceObject = JSON.parse(run('gcloud', [
-      'storage', 'objects', 'describe', validation.sourceUri,
-      `--project=${validation.project}`, '--format=json'
-    ], { cwd: rootDir }));
-    if (
-      String(sourceObject.generation || '') !== validation.sourceGeneration ||
-      Number(sourceObject.size) !== Number(validation.sourceSize)
-    ) fail('Objet source Gen2 different du manifeste approuve');
-    const sourceBytes = spawnSync('gcloud', [
-      'storage', 'cat', validation.sourceUri,
-      `--project=${validation.project}`
-    ], { cwd: rootDir, env: process.env, encoding: null, maxBuffer: 25 * 1024 * 1024 });
-    if (sourceBytes.error || sourceBytes.status !== 0) fail('Lecture archive source Gen2 impossible');
-    const actualSourceSha256 = crypto.createHash('sha256').update(sourceBytes.stdout || Buffer.alloc(0)).digest('hex');
-    if (actualSourceSha256 !== validation.sourceSha256) fail('SHA-256 archive source Gen2 different du manifeste approuve');
+    if (validation.sourceUri) {
+      const sourceObject = JSON.parse(run('gcloud', [
+        'storage', 'objects', 'describe', validation.sourceUri,
+        `--project=${validation.project}`, '--format=json'
+      ], { cwd: rootDir }));
+      if (
+        String(sourceObject.generation || '') !== validation.sourceGeneration ||
+        Number(sourceObject.size) !== Number(validation.sourceSize)
+      ) fail('Objet source Gen2 different du manifeste approuve');
+      const sourceBytes = spawnSync('gcloud', [
+        'storage', 'cat', validation.sourceUri,
+        `--project=${validation.project}`
+      ], { cwd: rootDir, env: process.env, encoding: null, maxBuffer: 25 * 1024 * 1024 });
+      if (sourceBytes.error || sourceBytes.status !== 0) fail('Lecture archive source Gen2 impossible');
+      const actualSourceSha256 = crypto.createHash('sha256').update(sourceBytes.stdout || Buffer.alloc(0)).digest('hex');
+      if (actualSourceSha256 !== validation.sourceSha256) fail('SHA-256 archive source Gen2 different du manifeste approuve');
+    } else if (target.dashboardEvent !== true) {
+      fail('Source locale Gen2 limitee aux nouvelles cibles dashboard allowlistees');
+    }
     process.stdout.write(`Projet: ${validation.project}\nCible: functions:main:${name}\nCommit: ${validation.commit}\nTransport: gcloud-gen2-create\n`);
     const result = spawnSync('gcloud', buildGcloudGen2DeployArgs(validation), {
       cwd: rootDir,
