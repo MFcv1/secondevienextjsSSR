@@ -99,7 +99,11 @@
     {
       "name": "rollbackCatalogSnapshotGen2",
       "cloud": { "present": true, "generation": 2, "region": "europe-west1", "revision": "rollbackcatalogsnapshotgen2-00001-qit" },
-      "decision": { "classification": "KEEP_GEN2", "deploymentMaxBatchSize": 1 }
+      "decision": { "classification": "KEEP_GEN2", "deploymentMaxBatchSize": 1 },
+      "identities": {
+        "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+        "runtimeServiceAccount": "catalog-builder@secondevienextjsssr.iam.gserviceaccount.com"
+      }
     }
   ]
 }
