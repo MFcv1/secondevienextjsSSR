@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "project": "secondevienextjsssr",
+  "codebase": "main",
+  "baselineCommit": "5ef44029faea87dfdd49d7aa3c8f8f202e748c2b",
+  "files": {
+    "apphostingaudit/manifests/functions-dashboard-events-rollout.json": "e49f04df82d993fd72e6a446f3d958245ce33e1e2765a248202d606a95aab4fb"
+  }
+}
