@@ -930,7 +930,7 @@ export const GCLOUD_GEN2_TARGETS = Object.freeze({
     timeZone: 'UTC',
     schedulerServiceAccount: 'catalog-enqueuer@secondevienextjsssr.iam.gserviceaccount.com',
     schedulerAttemptDeadline: '540s',
-    expectedSchedulerAttemptDeadline: '180s',
+    expectedSchedulerAttemptDeadline: '540s',
     runtimeServiceAccount: 'catalog-builder@secondevienextjsssr.iam.gserviceaccount.com',
     buildServiceAccount: 'projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com',
     memory: '512Mi',
