@@ -420,6 +420,15 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    match /admin_action_summary/{docId} {
+      allow get: if docId == 'current' && isStrongArtisan();
+      allow list, write: if false;
+    }
+
+    match /admin_action_projections/{projectionId} {
+      allow read, write: if false;
+    }
+
     // Erreurs runtime expurgees et materialisees par le sink Cloud Logging.
     // Le navigateur ne lit jamais les logs bruts et ne peut rien ecrire.
     match /admin_system_incident_summary/{docId} {
@@ -538,6 +547,24 @@ service cloud.firestore {
     }
 
     match /analytics_session_facts/{docId} {
+      allow read, write: if false;
+    }
+
+    match /analytics_session_exclusions/{docId} {
+      allow read, write: if false;
+    }
+
+    match /admin_analytics_realtime/{docId} {
+      allow get, list: if docId in ['recent', 'history'] && isStrongArtisan();
+      allow write: if false;
+    }
+    match /analytics_realtime_control/{docId} {
+      allow read, write: if false;
+    }
+    match /analytics_realtime_ledgers/{docId} {
+      allow read, write: if false;
+    }
+    match /analytics_realtime_buckets/{docId} {
       allow read, write: if false;
     }
 

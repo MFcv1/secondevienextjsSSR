@@ -39,6 +39,8 @@ Une information structurante ne doit avoir qu'une seule reference active. Les an
 
 | Perimetre | Document | Statut | Echeance et cloture |
 | --- | --- | --- | --- |
+| temps reel Data, couts et DevOps | [TEMPS_REEL_COUTS_DEVOPS.md](infra/TEMPS_REEL_COUTS_DEVOPS.md) | `IMPLEMENTATION_LOCALE_EN_COURS`, moteur/lecteur codes et tests locaux passes; aucune bascule sandbox | gates P0-P6, revue/cloture cible le 2026-09-30; fusion canonique avant suppression |
+| recette humaine client/admin sandbox | [RECETTE_HUMAINE_SANDBOX.md](quality/RECETTE_HUMAINE_SANDBOX.md) | `AUDIT_TERMINE_CORRECTIONS_OUVERTES`, transactionnel sain, huit constats HRT a corriger/requalifier | revue au plus tard le 2026-09-10, fusion commerce/client/admin/data/operations/qualite puis suppression |
 | stabilisation securite sandbox | [STABILISATION_SECURITE_SANDBOX.md](security/STABILISATION_SECURITE_SANDBOX.md) | `SANDBOX_SECURITY_STABILIZED`, Gates S0-S4 fermees; production explicitement differee | conserver jusqu'a la fusion de la PR #5, puis verifier la fusion canonique et supprimer |
 | publication Meta sans friction | [META_OAUTH_PUBLICATION_PRD.md](admin/META_OAUTH_PUBLICATION_PRD.md) | `IMPLEMENTATION_LOCALE_M1_M3`, OAuth/saga/UI codes, configuration sandbox non lancee | Gates M4-M6, revue au plus tard le 2026-10-31, fusion admin/infra/securite/qualite/carte puis suppression |
 | reprise commerce post-Gate 8 | [COMMERCE_REPRISE.md](commerce/COMMERCE_REPRISE.md) | `PLAN_REPRISE_DIFFERE`, R0 documentaire termine, R1 UX suivant | revue au plus tard le 2026-10-31, fusion canonique puis suppression avec `TODO.md` |

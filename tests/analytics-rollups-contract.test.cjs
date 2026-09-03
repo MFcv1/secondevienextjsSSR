@@ -10,7 +10,8 @@ const {
     buildDashboardInsightsContent,
     contributionFor,
     estimateHll,
-    mergeHll
+    mergeHll,
+    rebuildShardFromFacts
 } = require('../functions/src/analytics/rollups');
 
 const ROOT = path.resolve(__dirname, '..');
@@ -100,12 +101,13 @@ test('le rail admin lit des rollups et charge le detail seulement a la demande',
     const indexes = JSON.parse(read('firestore.indexes.json'));
 
     assert.match(functionSource, /analytics_rollup_years/);
-    assert.match(functionSource, /MAX_ADMIN_PAGE_SIZE\s*=\s*250/);
+    assert.match(functionSource, /MAX_ADMIN_PAGE_SIZE\s*=\s*50/);
     assert.match(functionSource, /private\/analytics-archives\/v1/);
     assert.doesNotMatch(functionSource, /email:\s*value\.|ip:\s*value\.|userAgent:\s*value\./);
-    assert.match(uiSource, /action:\s*'overview'/);
+    assert.match(uiSource, /action:\s*'overview_bundle'/);
     assert.match(uiSource, /action:\s*'detail'/);
-    assert.match(uiSource, /Charger 250 sessions plus anciennes/);
+    assert.match(uiSource, /ADMIN_SESSION_PAGE_SIZE\s*=\s*10/);
+    assert.match(uiSource, /Charger 10 sessions plus anciennes/);
     assert.doesNotMatch(uiSource, /MAX_ANALYTICS_SESSIONS\s*=\s*5000/);
     assert.match(rulesSource, /match \/analytics_rollup_days\/\{dayId\}[\s\S]*allow read, write: if false/);
 
@@ -113,6 +115,40 @@ test('le rail admin lit des rollups et charge le detail seulement a la demande',
     assert.ok(ttlGroups.has('analytics_sessions'));
     assert.ok(ttlGroups.has('analytics_session_facts'));
     assert.ok(ttlGroups.has('summary_shards'));
+});
+
+test('les heures analytics utilisent Europe Paris et un retrait reconstruit le HLL', () => {
+    const summer = contributionFor('summer-session', {
+        startedAt: Date.parse('2026-09-02T21:53:00.000Z'),
+        duration: 20,
+        journeyCount: 2
+    });
+    assert.equal(summer.dateKey, '2026-09-02');
+    assert.equal(summer.hourKey, '23');
+
+    const winter = contributionFor('winter-session', {
+        startedAt: Date.parse('2026-12-02T22:53:00.000Z'),
+        duration: 20,
+        journeyCount: 2
+    });
+    assert.equal(winter.hourKey, '23');
+
+    const documents = [
+        { id: 'keep', data: () => ({ shardId: '00', contribution: { ...summer, subject: 'keep' } }) },
+        { id: 'remove', data: () => ({ shardId: '00', contribution: { ...summer, subject: 'remove' } }) }
+    ];
+    const rebuilt = rebuildShardFromFacts('2026-09-02', '00', documents, 'remove');
+    assert.equal(rebuilt.sessions, 1);
+    assert.equal(estimateHll(rebuilt.uniqueHll), 1);
+});
+
+test('la reparation historique est bornee, sans identifiant affiche et dry-run par defaut', () => {
+    const source = read('scripts/repair-analytics-day-sandbox.cjs');
+    assert.match(source, /MAX_FACTS = 400/);
+    assert.match(source, /ageDays > 14/);
+    assert.match(source, /REPAIR_ANALYTICS_DAY_SANDBOX/);
+    assert.match(source, /identifiersExposed: false/);
+    assert.match(source, /const apply = process\.argv\.includes\('--apply'\)/);
 });
 
 test('le transport Eventarc de l agregateur analytics est repare sans invoker public', () => {

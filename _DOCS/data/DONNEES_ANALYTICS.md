@@ -226,8 +226,10 @@ Contrat du moteur:
 - `lastSyncReason` et `syncReasonCounts` instrumentent `init`, route, heartbeat, visibilite et beacons dans la meme ecriture de session, sans operation Firestore supplementaire;
 - une reprise exige le meme UID, le bon jeton, une activite de moins d'une heure et une session non admin;
 - une session explicitement fermee ne peut etre reprise que pendant une grace de 15 secondes, afin de tolerer un rechargement immediat sans fusionner un retour plusieurs minutes plus tard;
-- l'admin lit les rollups permanents jour/mois/annee pour les statistiques et
-  au maximum 1 000 projections de sessions recentes, par pages de 250;
+- l'admin lit les rollups permanents jour/mois/annee pour les statistiques;
+  `overview_bundle` peuple les six periodes en une fois et la liste recente
+  charge dix projections, puis dix de plus a la demande, avec un plafond
+  serveur de 50;
 - l'onglet Stats ne lit jamais `analytics_sessions`; il charge une fois
   `admin_dashboard/insights` lorsque le panneau approche du viewport;
 - chaque fait de session et rollup journalier porte les drapeaux de session
@@ -263,6 +265,11 @@ Exclusion admin:
 - `updateUserSessions` determine ce statut depuis `sys_admin_access` sans relire le profil `users/{uid}`, dont le resultat etait auparavant toujours ecrase par le registre;
 - les sessions `type == admin` sont exclues de tous les calculs du panneau Data;
 - aucun e-mail brut n'est stocke dans les sessions analytics.
+- lorsque l'identite admin est resolue, `updateUserSessions` ecrit un marqueur
+  backend-only `analytics_session_exclusions/{sessionId}` puis supprime la
+  session dans la meme transaction; le trigger retire alors le fait, reconstruit
+  le shard HLL borne et compacte le jour. Une suppression TTL sans ce marqueur
+  conserve l'historique agrege.
 
 Migration Gen2 sandbox: `updateUserSessionsGen2` est ACTIVE avec le meme handler
 que la Gen1, App Check et le runtime dedie `analytics-runtime`. La revision
@@ -391,6 +398,7 @@ collections qui ne relevent pas de cette maintenance.
 | --- | --- | --- |
 | `analytics_sessions` | detail recent, acces uniquement par callable admin AAL2 | 90 jours, TTL cloud active |
 | `analytics_session_facts` | idempotence des rollups | 120 jours, TTL cloud active |
+| `analytics_session_exclusions` | autorisation temporaire de retrait d'un fait admin | 7 jours, backend-only, TTL cloud active |
 | `analytics_rollup_days/months/years` | statistiques historiques pseudonymisees | racines compactes permanentes; shards quotidiens 400 jours avec TTL |
 | archive Storage privee | parcours pseudonymises compresses | Coldline apres 30 jours, suppression apres 730 jours |
 | `sys_ratelimit`, `sys_idempotency` | anti-abus et idempotence, backend-only | 30 jours maximum ou expiration explicite |
@@ -434,6 +442,16 @@ faits clients crees. Il a compacte 24 jours, deux mois, une annee et le document
 `admin_dashboard/insights`. Le run a estime 760 lectures transactionnelles et
 332 ecritures de faits/shards; il n'a affiche ni identifiant ni donnee
 personnelle. Les nouvelles fermetures sont desormais traitees par evenement.
+
+Le 2026-09-03, le dry-run borne `analytics:repair-day -- --date=2026-09-02`
+a trouve 12 faits, dont cinq orphelins et sept cles horaires UTC. Le mode
+autorise a supprime les cinq faits, recalcule les sept contributions en
+`Europe/Paris`, compacte jour/mois/annee et rematerialise les insights. Le
+controle immediat trouve sept faits, zero orphelin et zero correction restante.
+Le transport gcloud des handlers Firestore utilise desormais une facade
+CloudEvent explicite afin que le payload protobuf soit decode avant la logique
+Firebase; un test synthetique sans PII a prouve creation du fait puis retrait
+par tombstone. Les collections synthetiques ont ete nettoyees.
 
 Les audits securite conservent l'UID brut parce qu'il est la cle
 d'imputabilite, mais e-mail, IP et user-agent y sont hashes. Les sessions
@@ -505,7 +523,62 @@ Il n'existe pas encore de migration vers un rail production definitif. Lorsque c
 
 Ce chapitre remplace les anciens plans de migration et constitue la seule reference active pour une future copie de donnees.
 
-## 12. Preuves de resilience checkout
+## 12. Diagnostic Data et raccordement temps reel
+
+Extension locale P2/P3: `functions/src/analytics/realtime.js` materialise les
+creations, corrections d'identite/device et fermetures a partir de la source
+relue transactionnellement. Le filtre de heartbeat est sans lecture. Les
+histogrammes de rangs HLL prives permettent un retrait exact de contribution
+sans scan; le nombre final de visiteurs reste estime. Un journal technique
+conserve contribution, version source secondes+nanos et tombstone. Une
+suppression TTL du detail ne retire pas l'historique; une exclusion admin le
+corrige une seule fois. Les parcours restent dans le detail, sans reecrire
+cinq periodes de KPI. Duree/rebond sont finalises a la fermeture.
+
+Collections nouvelles (non deployees):
+
+| Collection | Acces / retention |
+| --- | --- |
+| `admin_analytics_realtime/recent|history` | strong-admin/AAL2, deux documents <=256 Kio; anneaux bornes; pas de PII |
+| `analytics_realtime_control/current` | backend-only, paused/shadow/active et epoch; durable |
+| `analytics_realtime_ledgers/*` | backend-only, empreinte session et contribution reversible; durable, pas de TTL autonome |
+| `analytics_realtime_buckets/*` | backend-only, compteurs et histogrammes compresses; durable tant que leurs contributions peuvent etre corrigees |
+
+Les quatre collections exemptent tous les champs d'index automatique. La
+compaction/retrait des auxiliaires doit reconstruire et verifier une baseline
+avant suppression, jamais copier le TTL 90 jours du detail. Le preparateur
+offline `analytics:prepare-realtime` valide un inventaire sans lire ni ecrire le
+cloud; l'inventaire reel et le raccordement des faits historiques restent P4.
+L'inventaire P4 du 4 septembre confirme 188 sessions non-admin; 13 anciennes
+sources sont reparties sur le jour Paris correct au lieu du jour UTC des faits.
+Cinq jours immuables de mai sont verifies contre leurs faits; les sources depuis
+le 15 juillet Paris restent corrigeables. Les 214 sources admin existantes
+produisent des tombstones, aucun compteur. Le bootstrap est create-only,
+verifie et reprenable; les artefacts locaux ne contiennent ni UID ni parcours.
+Les flags backend/frontend sont absents par defaut. Aucun rollback client
+automatique vers les anciennes lectures n'est autorise si le nouveau lecteur
+est active mais ses documents sont indisponibles.
+
+Le premier lot du 2026-09-04 ajoute un diagnostic local borne a vingt traces:
+`window.__svDataPerformance.snapshot()` apres ouverture de Data. Il distingue
+cache memoire/disque, preparation SDK, requete complete et opportunite de rendu
+apres deux requestAnimationFrame. Cette derniere n'est pas une mesure garantie
+du pixel effectivement peint, notamment dans un onglet masque. Les ressources
+reseau sont reduites a une famille et une duree, sans URL ni token; les tailles
+non exposees cross-origin restent inconnues. Aucun upload, stockage persistant
+ou compteur Firestore supplementaire. Deconnexion/changement de compte efface
+les traces. La reponse admin peut joindre des durees acces/lecture/audit.
+
+Le bandeau ne presente plus une confiance 100 % pendant le chargement. Les
+visiteurs restent estimes, pas des personnes physiques identifiees.
+
+Le diagnostic seul ne modifie pas la fraicheur de `overview_bundle`: les faits ordinaires
+restent produits a la fermeture et les rollups compacts planifies. Le plan
+explicitement demande [Temps reel/couts/DevOps](../infra/TEMPS_REEL_COUTS_DEVOPS.md)
+porte la qualification cloud restante du moteur delta et du lecteur partage.
+Leur code local ne constitue pas une bascule sandbox ou une mesure de latence cloud.
+
+## 13. Preuves de resilience checkout
 
 La qualification D2-D4 du 2026-08-24 n'a change aucune politique de retention.
 La console Incidents fusionne des sources autoritaires bornees et retourne au

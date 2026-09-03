@@ -15,6 +15,27 @@ La validation depend du risque et de la demande:
 
 Toujours annoncer ce qui a ete lance et ce qui ne l'a pas ete.
 
+### Gate diagnostic temps reel/couts
+
+Extension P2/P3: `test:realtime-ops` couvre egalement le moteur/lecteur Data:
+session active, heartbeat sans effet, retrait HLL reversible, rejeu, identite
+corrigee, tombstone, TTL, anneaux sous 256 Kio, couverture partielle, DST,
+horloge monotone et partage d'ecoute/cache->serveur/refus de regression.
+`npm run test:realtime-emulator` execute trois scenarios sur
+`demo-secondevie-analytics` uniquement: concurrence/rejeu, exclusion vs TTL et
+Rules fortes. Le runner refuse les credentials cloud explicites et ne demarre
+que Firestore local. Ces gates sont ajoutees a la CI. La recette navigateur
+avec Auth reelle et les p95 cloud restent P5, non prouves par ces tests.
+
+`npm run test:realtime-ops` execute sans credentials ni reseau les tests du
+chronometre Data et du rapport runtime: preservation des resultats/erreurs,
+traces bornees et expurgees, reponses tardives apres effacement, ressources
+sans URL/token, OPTIONS non masques, fenetre/limite et commandes read-only.
+Cette gate figure dans `.github/workflows/quality.yml`. Elle ne prouve ni un
+p95 navigateur ni un cout facture ni la fraicheur evenementielle de Data.
+Ces preuves sont des gates distinctes dans
+[TEMPS_REEL_COUTS_DEVOPS.md](../infra/TEMPS_REEL_COUTS_DEVOPS.md).
+
 ## 2. CI
 
 `.github/workflows/quality.yml` s'execute sur pull request et push `main` avec Node 22/pnpm:
@@ -663,6 +684,18 @@ lectures critiques, zero callable sante/utilisateur et des callbacks incidents
 et orders sous une seconde sur les echantillons observes. La fermeture exige
 encore la mesure instrumentee separee `Auth forte -> backOfficeReady` puis
 `backOfficeReady -> KPI`, une fenetre longue et le cout consolide sur 24 h.
+
+Passe du 2026-09-03: `test:analytics` 9/9, `test:admin-dashboard` 28/28,
+`test:auth` 78/78, `test:admin-cache` 9/9, `test:commerce:ui` 20/20,
+`test:retention` 5/5, `test:observability` 16/16,
+`test:functions-gen2` 164/164, Rules/Storage Emulator et build Next 16.3 sont
+verts. Le test dashboard couvre en plus la facade protobuf gcloud. En sandbox,
+le badge Retours a fait `0 -> 1 -> 0`, puis l'agregateur Analytics a cree et
+retire un fait par tombstone; aucune donnee personnelle n'a ete utilisee et
+les fixtures ont ete supprimees. Les deux routes hebergees repondent 200.
+Restent non lancees: nouvelle course checkout a deux navigateurs,
+remboursement Stripe test humain sans refresh, mesure p95 navigateur du
+callback et consolidation Billing/Monitoring sur 24 heures.
 
 La couverture durable de resilience checkout comprend
 `tests/commerce/resilience/checkout-boundaries.test.cjs`,

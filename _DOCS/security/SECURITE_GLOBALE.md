@@ -7,6 +7,14 @@ Suivi temporaire de cloture: `STABILISATION_SECURITE_SANDBOX.md`
 
 ## 1. Perimetre et modele de confiance
 
+Extension Data locale du 2026-09-04: `admin_analytics_realtime` ne permet la
+lecture que de `recent|history`, via `isStrongArtisan()` (claim, registre actif
+et assurance forte). Toutes les ecritures client sont refusees. Controle,
+ledgers et buckets reversibles sont backend-only, sans exception admin client.
+Les tests Emulator refusent visiteur, client, admin faible et registre revoque,
+ainsi qu'une query non bornee par IDs. Aucune Rule n'a encore ete deployee pour
+ce lot; le plan temps reel/couts conserve la gate sandbox.
+
 Ce document couvre la securite hors detail du workflow Auth. Les frontieres principales sont:
 
 ```text
@@ -402,6 +410,14 @@ resume badgeable Firestore. Les erreurs runtime inattendues restent dans Cloud
 Logging et declenchent les policies LogMatch/Cloud Run existantes; elles ne
 sont pas recopies dans Firestore. Le rate limit local cible des notifications
 LogMatch est cinq minutes, sans polling ni ajout de `minInstances`.
+
+Le resume d'actions `admin_action_summary/current` suit la meme frontiere:
+lecture exacte uniquement pour un admin actif avec claim et AAL2, aucune
+requete de collection, aucune ecriture SDK et aucune donnee personnelle. Son
+ledger `admin_action_projections` et les marqueurs temporaires
+`analytics_session_exclusions` sont backend-only. Les Rules et les refus
+non-admin/ecriture ont ete valides par Emulator le 2026-09-03; les indexes ont
+ete publies sans `--force`.
 
 Performance Monitoring applique une allowlist positive de routes vitrine. Les
 tunnels prives, le checkout, les liens `/payer/*`, le compte, l'admin, la

@@ -379,6 +379,33 @@ La cible separe refund financier, retour physique, inspection et remise en stock
 
 ### 4.6 Analytics
 
+Extension Data evenementielle **locale, non activee sur sandbox**:
+`aggregateAnalyticsSessionGen2` -> `functions/src/analytics/realtime.js`
+-> `analytics_realtime_control/current` + `analytics_realtime_ledgers/*`
++ `analytics_realtime_buckets/*` (backend-only)
+-> `admin_analytics_realtime/recent|history` (deux resumes strong-admin)
+-> `adminAnalyticsRealtime.js` / `adminAnalyticsRealtimeStore.js`
+-> `AdminAnalytics` (une ecoute possedee par `AdminAppIsland`).
+Flags explicites: `ANALYTICS_REALTIME_ENABLED` cote Functions et
+`NEXT_PUBLIC_ADMIN_ANALYTICS_REALTIME` cote build. Sans flags, le rail deploye
+ci-dessous est conserve. Le preparateur offline est
+`scripts/prepare-analytics-realtime-seed.mjs`; les gates locales sont
+`test:realtime-ops` et `test:realtime-emulator`.
+P4 ajoute `scripts/inventory-analytics-realtime-sandbox.mjs` (snapshot borne,
+export prive sans UID/parcours) et `scripts/bootstrap-analytics-realtime-sandbox.mjs`
+(create-only, paused, verification puis shadow et rattrapage). Aucune bascule
+du lecteur UI sans gate P5 distincte.
+
+Diagnostic local du chargement: `src/kit/admin/adminAnalyticsPerformance.js`
+relie la selection Data dans `AdminAppIsland` au cache, au chargement du module,
+aux callables et a une opportunite de rendu dans `AdminAnalytics`. Maximum vingt
+traces en memoire, aucune emission reseau ni ecriture Firestore. Le handler
+`getAnalyticsAdminGen2` peut retourner `serverTimings` expurges (acces/lecture/audit).
+`scripts/audit-interactive-runtime.mjs` complete ce diagnostic par les OPTIONS,
+POST et demarrages Cloud Run en lecture seule; ce n'est pas une mesure Billing.
+La transformation evenementielle reste suivie, sans cutover implicite, dans
+[_DOCS/infra/TEMPS_REEL_COUTS_DEVOPS.md](_DOCS/infra/TEMPS_REEL_COUTS_DEVOPS.md).
+
 ```text
 AnalyticsCollectorIsland + AuthProvider anonyme [C]
   -> AnalyticsProvider [C]
@@ -389,7 +416,10 @@ AnalyticsCollectorIsland + AuthProvider anonyme [C]
      devis 30 j/3 m/6 m/1 an et top cinq produits 30 j [F/DB]
   -> AdminDashboard: listener allowliste finance/orders/activity, puis insights et catalogue lazy [C/DB]
   -> AdminAnalytics: historique borne, cache IndexedDB stale-while-refresh 5 min,
-     prechargement du chunk par intention et frise illustree [C]
+     overview_bundle toutes periodes, 10 sessions initiales puis pagination
+     par 10 plafonnee a 50, prechargement du chunk par intention [C/F]
+  -> admin_action_summary/current: badge Retours pousse par
+     projectAdminActionSummaryGen2, sans scan de collection [F/DB]
   -> AdminIncidentConsole: recherche support CMD/provider/correlation/e-mail,
      timeline expurgee, attemptCount et audit fail-closed via callable AAL2 [C/F]
      -> vue Systeme: Log Router -> Pub/Sub -> projectSystemIncidentGen2,
@@ -926,13 +956,13 @@ functions/
 
 ## 9. Exports Cloud Functions
 
-Etat courant au 2026-09-02: `functions/index.js` contient 160 exports uniques
-locaux; 157 Functions sont deployees dans le sandbox (3 Gen1, 154 Gen2).
+Etat courant au 2026-09-03: `functions/index.js` contient 161 exports uniques
+locaux; 158 Functions sont deployees dans le sandbox (3 Gen1, 155 Gen2).
 Les trois seules Gen1 sont les triggers Auth
 `grantAdminOnAuth`, `onRegisteredUserCreated` et `onRegisteredUserDeleted`.
 Toutes les autres cibles cloud conservees sont Gen2 `ACTIVE`; les quatre
 owners Scheduler commerce sont `ENABLED` et les endpoints Stripe test pointent
-uniquement vers les owners Gen2. L'ecart exact est 148 noms communs, cinq
+uniquement vers les owners Gen2. L'ecart exact est 156 noms communs, cinq
 exports uniquement locaux (les cinq Instagram legacy) et deux webhooks v2 uniquement
 cloud (`stripeWebhookV2Gen2`, `stripeConnectWebhookV2Gen2`) avec source et
 entree de deploiement dediees. `commerceWebhookCoverageWatchdogGen2` est
@@ -1297,10 +1327,13 @@ Firestore
 |-- commerce_incidents/{incidentId}
 |-- admin_incident_summary/current .... resume badge expurge, lecture admin forte exacte
 |-- admin_incident_projections/{incidentId} . ledger backend-only avec tombstones
+|-- admin_action_summary/current ..... retours pending_review, resume global sans PII
+|-- admin_action_projections/{hash} .. ledger backend-only du badge Retours
 |-- admin_dashboard/finance ........... projection EUR absolue expurgee
 |-- admin_dashboard/orders ............ partition orders legacy/v2 expurgee
 |-- admin_dashboard/activity .......... revisions independantes Auth/catalogue
 |-- admin_dashboard/insights .......... devis 30 j/3 m/6 m/1 an + top cinq produits 30 j, sans donnees personnelles
+|-- analytics_session_exclusions/{sessionId} . tombstone admin temporaire backend-only, TTL 7 j
 |-- admin_user_stats_projections/{uid}  ledger Auth backend-only avec tombstones
 |-- admin_finance_capture_projections/{factId} . ledger de capture backend-only
 |-- admin_newsletter_summary/current . compteur global sans PII

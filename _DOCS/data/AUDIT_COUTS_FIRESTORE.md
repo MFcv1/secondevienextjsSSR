@@ -6,6 +6,19 @@ Projet mesure: `secondevienextjsssr`
 
 ## 1. Objet et fin de l'audit
 
+Mesure locale additionnelle du 2026-09-04, **non facturation sandbox**:
+le nouveau projecteur Data (desactive par defaut) effectue 11 lectures et
+8 ecritures pour une contribution dans cinq buckets; 4 lectures/0 ecriture
+sur rejeu. Un heartbeat sans effet est filtre avant toute lecture. Une correction
+de date peut toucher dix buckets, soit au plus 16 lectures/13 ecritures hors
+retries. Les tests comptent les appels de transaction, pas des euros factures.
+Le lecteur KPI passe de 30 jours + 12 mois + au plus 50 annees par chargement
+de bundle a deux documents et leurs changements. Un aller-retour d'onglet
+connecte ou changement de periode ne cree aucune nouvelle ecoute.
+Ajouter aux comptes: ingestion des sessions, rollups existants pour les insights/rollback,
+retries, Rules, reconnexions et nombre d'administrateurs abonnes. L'historique
+de facturation ci-dessous n'est pas remplace par ces budgets locaux.
+
 Au 2026-08-24, le pipeline deploye sur le sandbox reduit le heartbeat de 15 a
 60 secondes, borne `journey` aux 25 dernieres etapes et retire e-mail, IP et
 user-agent des nouveaux documents de session. Les mesures historiques de ce

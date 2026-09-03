@@ -221,6 +221,11 @@ const DASHBOARD_EVENT_TARGETS = Object.freeze({
     documentPathPattern: 'commerce_financial_daily/{dayId}',
     runtimeServiceAccount: 'order-stats-projector@secondevienextjsssr.iam.gserviceaccount.com'
   }),
+  projectAdminActionSummaryGen2: dashboardEventTarget({
+    name: 'projectAdminActionSummaryGen2',
+    documentPathPattern: 'orders/{orderId}/customer_return_requests/{requestId}',
+    runtimeServiceAccount: 'commerce-operations-reconciler@secondevienextjsssr.iam.gserviceaccount.com'
+  }),
   onCommerceOutboxWrittenGen2: dashboardEventTarget({
     name: 'onCommerceOutboxWrittenGen2',
     documentPathPattern: 'commerce_outbox/{outboxId}',
@@ -855,7 +860,47 @@ export const GCLOUD_GEN2_TARGETS = Object.freeze({
     maxInstances: '1',
     ingressSettings: 'all'
   }),
+  getAnalyticsAdminGen2: Object.freeze({
+    create: true,
+    triggerType: 'http-callable',
+    region: 'europe-west1',
+    runtime: 'nodejs22',
+    entryPoint: 'getAnalyticsAdminGen2',
+    runtimeServiceAccount: 'analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com',
+    buildServiceAccount: 'projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    memory: '512Mi',
+    cpu: '333m',
+    timeout: '120s',
+    concurrency: '1',
+    minInstances: '0',
+    maxInstances: '1',
+    ingressSettings: 'all'
+  }),
+  maintainAnalyticsGen2: Object.freeze({
+    create: true,
+    triggerType: 'http-scheduler',
+    region: 'europe-west1',
+    runtime: 'nodejs22',
+    entryPoint: 'maintainAnalyticsGen2',
+    functionUrl: 'https://europe-west1-secondevienextjsssr.cloudfunctions.net/maintainAnalyticsGen2',
+    runtimeServiceAccount: 'analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com',
+    buildServiceAccount: 'projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    memory: '512Mi',
+    cpu: '333m',
+    timeout: '540s',
+    concurrency: '1',
+    minInstances: '0',
+    maxInstances: '1',
+    ingressSettings: 'all',
+    schedulerJob: 'firebase-schedule-maintainAnalyticsGen2-europe-west1',
+    schedule: 'every 15 minutes',
+    timeZone: 'Europe/Paris',
+    schedulerServiceAccount: 'analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com',
+    schedulerAttemptDeadline: '540s',
+    schedulerUpdateRequired: false
+  }),
   aggregateAnalyticsSessionGen2: Object.freeze({
+    updateEnvironmentVariables: ['ANALYTICS_REALTIME_ENABLED=true'],
     triggerType: 'event',
     region: 'europe-west1',
     runtime: 'nodejs22',
@@ -1727,6 +1772,8 @@ export function buildGcloudGen2DeployArgs(validation, options = {}) {
     ...(target.environmentVariableNames || []).map((name) => `${name}=${process.env[name] || ''}`)
   ];
   if (environmentVariables.length) args.push(`--set-env-vars=${environmentVariables.join(',')}`);
+  // Preserve unrelated runtime configuration when enabling a narrowly scoped projector.
+  if (target.updateEnvironmentVariables?.length) args.push(`--update-env-vars=${target.updateEnvironmentVariables.join(',')}`);
   return args;
 }
 

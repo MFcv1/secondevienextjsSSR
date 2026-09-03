@@ -48,7 +48,18 @@ const updateUserSessionsHandler = async (data = {}, context) => {
         }
 
         if (isAdmin) {
-            await sessionRef.delete();
+            const exclusionRef = db.collection('analytics_session_exclusions').doc(sessionId);
+            await db.runTransaction(async (transaction) => {
+                const current = await transaction.get(sessionRef);
+                if (!current.exists || !isValidSyncToken(current.data(), syncToken)) return;
+                transaction.set(exclusionRef, {
+                    schemaVersion: 1,
+                    reason: 'admin_identity_resolved',
+                    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                    expireAt: admin.firestore.Timestamp.fromMillis(Date.now() + (7 * 24 * 60 * 60 * 1000))
+                });
+                transaction.delete(sessionRef);
+            });
             return { success: true, deletedCount: 1, isAdmin: true };
         } else {
             await sessionRef.update({

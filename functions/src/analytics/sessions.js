@@ -388,6 +388,7 @@ const syncSessionBeaconHandler = async (req, res) => {
         return;
     }
 
+    let sessionIdForLog = null;
     try {
         let payload;
         if (typeof req.body === 'string') {
@@ -400,6 +401,7 @@ const syncSessionBeaconHandler = async (req, res) => {
 
         payload = payload || {};
         const { sessionId, journey, journeyCount, pageCounts, actionCounts, lastEventPreview, duration, sessionActive, syncToken, reason } = payload;
+        sessionIdForLog = sessionId;
 
         if (!sessionId) {
             res.status(400).send('Missing session ID');
@@ -449,7 +451,7 @@ const syncSessionBeaconHandler = async (req, res) => {
         res.status(200).send('Session synced via beacon');
     } catch (error) {
         structuredLog('error', 'analytics_session_beacon_failed', {
-            sessionIdHash: hashOpaque(sessionId),
+            sessionIdHash: sessionIdForLog ? hashOpaque(sessionIdForLog) : null,
             errorClass: String(error?.code || error?.name || 'unknown').slice(0, 120)
         });
         res.status(500).send('Beacon sync failed');

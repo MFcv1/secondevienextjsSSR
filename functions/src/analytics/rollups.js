@@ -11,6 +11,7 @@ const {
     checkActiveStrongAdmin,
     writeSecurityAudit
 } = require('../../helpers/security');
+const { firestoreCloudEvent } = require('../../helpers/gcloudFirestoreEvent');
 const { hashOpaque, runObserved, structuredLog } = require('../../helpers/observability');
 
 const REGION = 'europe-west1';
@@ -46,9 +47,21 @@ const SHARD_RETENTION_DAYS = 400;
 const ARCHIVE_AFTER_DAYS = 75;
 const ARCHIVE_PAGE_SIZE = 500;
 const MAX_ARCHIVE_PARTS = 100;
-const MAX_ADMIN_PAGE_SIZE = 250;
+const MAX_ADMIN_PAGE_SIZE = 50;
 const MAX_ADMIN_HISTORY_YEARS = 50;
+const MAX_FACTS_PER_REBUILD_DAY = 2000;
 const DAY_MS = 24 * 60 * 60 * 1000;
+const BUSINESS_TIME_ZONE = 'Europe/Paris';
+const BUSINESS_DATE_TIME_FORMATTER = new Intl.DateTimeFormat('en-CA', {
+    timeZone: BUSINESS_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23'
+});
 const ALLOWED_PAGES = new Set([
     'home', 'gallery', 'category', 'detail', 'search', 'about', 'quote',
     'wishlist', 'cart', 'checkout', 'orders', 'shop', 'shop-detail',
@@ -78,8 +91,21 @@ function timestampAfterDays(days, now = Date.now()) {
     return admin.firestore.Timestamp.fromMillis(now + (days * DAY_MS));
 }
 
+function businessDateParts(value) {
+    const parts = Object.fromEntries(BUSINESS_DATE_TIME_FORMATTER
+        .formatToParts(new Date(value))
+        .filter((part) => part.type !== 'literal')
+        .map((part) => [part.type, Number(part.value)]));
+    return parts;
+}
+
 function dateKey(value) {
-    return new Date(value).toISOString().slice(0, 10);
+    const parts = businessDateParts(value);
+    return `${parts.year}-${String(parts.month).padStart(2, '0')}-${String(parts.day).padStart(2, '0')}`;
+}
+
+function hourKey(value) {
+    return String(businessDateParts(value).hour).padStart(2, '0');
 }
 
 function monthKey(value) {
@@ -90,10 +116,38 @@ function yearKey(value) {
     return dateKey(value).slice(0, 4);
 }
 
+function shiftDateKey(key, days) {
+    const parsed = Date.parse(`${key}T12:00:00.000Z`);
+    if (!Number.isFinite(parsed)) throw new Error('ANALYTICS_DATE_KEY_INVALID');
+    return new Date(parsed + (days * DAY_MS)).toISOString().slice(0, 10);
+}
+
+function businessTimestamp(key, hour = 0) {
+    const [year, month, day] = key.split('-').map(Number);
+    const localAsUtc = Date.UTC(year, month - 1, day, hour, 0, 0, 0);
+    let candidate = localAsUtc;
+    for (let iteration = 0; iteration < 3; iteration += 1) {
+        const parts = businessDateParts(candidate);
+        const representedAsUtc = Date.UTC(
+            parts.year,
+            parts.month - 1,
+            parts.day,
+            parts.hour,
+            parts.minute,
+            parts.second
+        );
+        candidate -= representedAsUtc - localAsUtc;
+    }
+    return candidate;
+}
+
 function utcDayBounds(key) {
-    const start = Date.parse(`${key}T00:00:00.000Z`);
-    if (!Number.isFinite(start) || dateKey(start) !== key) throw new Error('ANALYTICS_DATE_KEY_INVALID');
-    return { start, end: start + DAY_MS };
+    const start = businessTimestamp(key);
+    const end = businessTimestamp(shiftDateKey(key, 1));
+    if (!Number.isFinite(start) || dateKey(start) !== key || end <= start) {
+        throw new Error('ANALYTICS_DATE_KEY_INVALID');
+    }
+    return { start, end };
 }
 
 function normalizeCounterKey(value, allowed, fallback = 'unknown') {
@@ -251,7 +305,7 @@ function contributionFor(sessionId, session) {
     const subject = hashOpaque(session.userId || sessionId);
     return {
         dateKey: dateKey(startedAt),
-        hourKey: new Date(startedAt).toISOString().slice(11, 13),
+        hourKey: hourKey(startedAt),
         subject,
         sessions: 1,
         duration,
@@ -354,6 +408,8 @@ async function materializeSessionFact(sessionId, session, db = admin.firestore()
         transaction.set(factRef, {
             schemaVersion: 1,
             sessionIdHash: hashOpaque(sessionId),
+            dateKey: contribution.dateKey,
+            shardId,
             contribution,
             contributionHash: hash,
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -361,6 +417,59 @@ async function materializeSessionFact(sessionId, session, db = admin.firestore()
         });
         return previousFact ? 'updated' : 'created';
     });
+}
+
+function rebuildShardFromFacts(date, shardId, documents, excludedSessionId = null) {
+    let rebuilt = { schemaVersion: 1, dateKey: date, shardId };
+    for (const document of documents) {
+        if (document.id === excludedSessionId) continue;
+        const value = document.data() || {};
+        const contribution = value.contribution;
+        const factShardId = value.shardId || String(
+            parseInt(hashOpaque(document.id).slice(0, 8), 16) % SHARD_COUNT
+        ).padStart(2, '0');
+        if (!contribution || contribution.dateKey !== date || factShardId !== shardId) continue;
+        rebuilt = applyContributionDelta(rebuilt, contribution, null);
+    }
+    return rebuilt;
+}
+
+async function removeMaterializedSessionFact(sessionId, db = admin.firestore()) {
+    const factRef = db.doc(`analytics_session_facts/${sessionId}`);
+    const factSnapshot = await factRef.get();
+    if (!factSnapshot.exists) return 'noop';
+    const fact = factSnapshot.data() || {};
+    const date = fact.dateKey || fact.contribution?.dateKey;
+    const shardId = fact.shardId || String(
+        parseInt(hashOpaque(sessionId).slice(0, 8), 16) % SHARD_COUNT
+    ).padStart(2, '0');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date || ''))) {
+        throw new Error('ANALYTICS_FACT_DATE_INVALID');
+    }
+    const factsQuery = db.collection('analytics_session_facts')
+        .where('contribution.dateKey', '==', date)
+        .limit(MAX_FACTS_PER_REBUILD_DAY + 1);
+    await db.runTransaction(async (transaction) => {
+        const [currentFact, dayFacts] = await Promise.all([
+            transaction.get(factRef),
+            transaction.get(factsQuery)
+        ]);
+        if (!currentFact.exists) return;
+        if (dayFacts.size > MAX_FACTS_PER_REBUILD_DAY) {
+            throw new Error('ANALYTICS_FACT_REBUILD_LIMIT');
+        }
+        const rebuilt = rebuildShardFromFacts(date, shardId, dayFacts.docs, sessionId);
+        const shardRef = db.doc(`analytics_rollup_days/${date}/summary_shards/${shardId}`);
+        if (Number(rebuilt.sessions || 0) === 0) transaction.delete(shardRef);
+        else transaction.set(shardRef, {
+            ...rebuilt,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            expireAt: timestampAfterDays(SHARD_RETENTION_DAYS)
+        });
+        transaction.delete(factRef);
+    });
+    await compactDay(date, db);
+    return 'removed';
 }
 
 function emptyAggregate() {
@@ -446,7 +555,7 @@ async function compactDay(key, db = admin.firestore()) {
         dateKey: key,
         ...compact,
         sourceShards: shards.size,
-        provisional: key >= dateKey(Date.now() - DAY_MS)
+        provisional: key >= shiftDateKey(dateKey(Date.now()), -1)
     };
     const currentContent = current.exists ? current.data() : null;
     const unchanged = currentContent && contributionHash(stableContent) === contributionHash({
@@ -512,7 +621,8 @@ function buildDashboardInsightsContent(dailyRollups, monthlyRollups) {
 }
 
 async function materializeDashboardInsights(db = admin.firestore(), nowMillis = Date.now()) {
-    const dayKeys = Array.from({ length: 30 }, (_, index) => dateKey(nowMillis - ((29 - index) * DAY_MS)));
+    const currentDateKey = dateKey(nowMillis);
+    const dayKeys = Array.from({ length: 30 }, (_, index) => shiftDateKey(currentDateKey, index - 29));
     const monthKeys = Array.from({ length: 12 }, (_, offset) => {
         const value = new Date(Date.UTC(new Date(nowMillis).getUTCFullYear(), new Date(nowMillis).getUTCMonth() - offset, 1));
         return monthKey(value.getTime());
@@ -747,7 +857,7 @@ async function archiveNextEligibleDay(db = admin.firestore(), storage = admin.st
 async function maintainAnalytics() {
     const db = admin.firestore();
     const today = dateKey(Date.now());
-    const yesterday = dateKey(Date.now() - DAY_MS);
+    const yesterday = shiftDateKey(today, -1);
     const finalized = await finalizeInactiveSessions(db);
     const [todayCompaction, yesterdayCompaction] = await Promise.all([
         compactDay(today, db),
@@ -813,7 +923,10 @@ function periodRefs(db, period, now = Date.now()) {
         });
     }
     const days = period === '7j' ? 7 : period === '1mois' ? 30 : 2;
-    return Array.from({ length: days }, (_, offset) => db.doc(`analytics_rollup_days/${dateKey(now - (offset * DAY_MS))}`));
+    const currentDateKey = dateKey(now);
+    return Array.from({ length: days }, (_, offset) => (
+        db.doc(`analytics_rollup_days/${shiftDateKey(currentDateKey, -offset)}`)
+    ));
 }
 
 function chartName(key, period) {
@@ -823,15 +936,9 @@ function chartName(key, period) {
     return key.slice(8, 10) + '/' + key.slice(5, 7);
 }
 
-async function analyticsOverview(period, db = admin.firestore(), now = Date.now()) {
-    const accepted = new Set(['1h', '1j', '7j', '1mois', '1ans', 'tout']);
-    const selected = accepted.has(period) ? period : '1j';
-    let snapshots;
-    if (selected === 'tout') {
-        snapshots = (await db.collection('analytics_rollup_years').orderBy('yearKey', 'asc').limit(MAX_ADMIN_HISTORY_YEARS).get()).docs;
-    } else {
-        snapshots = (await getAllRefs(db, periodRefs(db, selected, now))).filter((snapshot) => snapshot.exists);
-    }
+const ANALYTICS_OVERVIEW_PERIODS = Object.freeze(['1h', '1j', '7j', '1mois', '1ans', 'tout']);
+
+function buildAnalyticsOverview(selected, snapshots, now = Date.now()) {
     const aggregate = emptyAggregate();
     const chart = [];
     const cutoff = selected === '1h' ? now - (60 * 60 * 1000) : selected === '1j' ? now - DAY_MS : null;
@@ -839,7 +946,7 @@ async function analyticsOverview(period, db = admin.firestore(), now = Date.now(
         for (const snapshot of snapshots) {
             const value = snapshot.data();
             for (const [hour, metrics] of Object.entries(value.hours || {})) {
-                const timestamp = Date.parse(`${value.dateKey}T${hour}:00:00.000Z`);
+                const timestamp = businessTimestamp(value.dateKey, Number(hour));
                 if (timestamp < cutoff || timestamp > now) continue;
                 const source = {
                     sessions: metrics.sessions,
@@ -859,7 +966,9 @@ async function analyticsOverview(period, db = admin.firestore(), now = Date.now(
             const value = snapshot.data();
             mergeAggregate(aggregate, value);
             const key = value.dateKey || value.monthKey || value.yearKey || snapshot.id;
-            const timestamp = Date.parse(key.length === 4 ? `${key}-01-01T00:00:00.000Z` : key.length === 7 ? `${key}-01T00:00:00.000Z` : `${key}T00:00:00.000Z`);
+            const timestamp = businessTimestamp(
+                key.length === 4 ? `${key}-01-01` : key.length === 7 ? `${key}-01` : key
+            );
             chart.push({ timestamp, name: chartName(key.length === 4 ? `${key}-01-01` : key.length === 7 ? `${key}-01` : key, selected), sessions: Number(value.sessions) || 0, visites: Number(value.uniqueVisitorsApprox) || 0, ips: 0 });
         }
     }
@@ -902,6 +1011,45 @@ async function analyticsOverview(period, db = admin.firestore(), now = Date.now(
     };
 }
 
+async function analyticsOverview(period, db = admin.firestore(), now = Date.now()) {
+    const selected = ANALYTICS_OVERVIEW_PERIODS.includes(period) ? period : '1j';
+    let snapshots;
+    if (selected === 'tout') {
+        snapshots = (await db.collection('analytics_rollup_years')
+            .orderBy('yearKey', 'asc')
+            .limit(MAX_ADMIN_HISTORY_YEARS)
+            .get()).docs;
+    } else {
+        snapshots = (await getAllRefs(db, periodRefs(db, selected, now)))
+            .filter((snapshot) => snapshot.exists);
+    }
+    return buildAnalyticsOverview(selected, snapshots, now);
+}
+
+async function analyticsOverviewBundle(db = admin.firestore(), now = Date.now()) {
+    const dailyRefs = periodRefs(db, '1mois', now);
+    const monthlyRefs = periodRefs(db, '1ans', now);
+    const [dailySnapshots, monthlySnapshots, yearlyQuery] = await Promise.all([
+        getAllRefs(db, dailyRefs),
+        getAllRefs(db, monthlyRefs),
+        db.collection('analytics_rollup_years')
+            .orderBy('yearKey', 'asc')
+            .limit(MAX_ADMIN_HISTORY_YEARS)
+            .get()
+    ]);
+    const daily = dailySnapshots.filter((snapshot) => snapshot.exists);
+    const monthly = monthlySnapshots.filter((snapshot) => snapshot.exists);
+    const overviews = {
+        '1h': buildAnalyticsOverview('1h', daily.slice(0, 2), now),
+        '1j': buildAnalyticsOverview('1j', daily.slice(0, 2), now),
+        '7j': buildAnalyticsOverview('7j', daily.slice(0, 7), now),
+        '1mois': buildAnalyticsOverview('1mois', daily, now),
+        '1ans': buildAnalyticsOverview('1ans', monthly, now),
+        'tout': buildAnalyticsOverview('tout', yearlyQuery.docs, now)
+    };
+    return { schemaVersion: 1, generatedAtMillis: now, overviews };
+}
+
 async function listSessions(data, db = admin.firestore()) {
     const pageSize = Math.min(MAX_ADMIN_PAGE_SIZE, Math.max(1, Math.round(Number(data.pageSize) || MAX_ADMIN_PAGE_SIZE)));
     let query = db.collection('analytics_sessions').orderBy('lastActivityAt', 'desc').limit(pageSize);
@@ -941,34 +1089,77 @@ async function sessionDetail(data, db = admin.firestore()) {
 }
 
 async function adminHandler(data, context) {
+    const startedAt = Date.now();
     await checkActiveStrongAdmin(context);
+    const accessCompletedAt = Date.now();
     const action = String(data.action || 'overview');
     let result;
     if (action === 'overview') result = await analyticsOverview(data.period);
+    else if (action === 'overview_bundle') result = await analyticsOverviewBundle();
     else if (action === 'list') result = await listSessions(data);
     else if (action === 'detail') result = await sessionDetail(data);
     else throw requestError('invalid-argument', 'Action analytics invalide.');
+    const readCompletedAt = Date.now();
     await writeSecurityAudit('analytics.admin_read', context, {
         action,
         sessionIdHash: action === 'detail' ? hashOpaque(data.sessionId) : null,
         resultCount: Array.isArray(result.sessions) ? result.sessions.length : null,
         period: result.period || null
     });
-    return { success: true, ...result };
+    return {
+        success: true,
+        ...result,
+        // Mesures du handler seulement: le cold start/OPTIONS est dans Cloud Run.
+        // Aucun log ni document Firestore supplementaire pour cette instrumentation.
+        serverTimings: {
+            accessMs: accessCompletedAt - startedAt,
+            readMs: readCompletedAt - accessCompletedAt,
+            auditMs: Date.now() - readCompletedAt
+        }
+    };
 }
 
-const aggregateAnalyticsSessionGen2 = onDocumentWritten(
+const aggregateAnalyticsSessionFirebaseHandler = onDocumentWritten(
     { ...RUNTIME, document: 'analytics_sessions/{sessionId}', retry: true },
     async (event) => {
         const before = event.data?.before?.exists ? event.data.before.data() : null;
         const after = event.data?.after?.exists ? event.data.after.data() : null;
-        if (!after || after.type === 'admin' || after.sessionActive !== false) return;
+        if (process.env.ANALYTICS_REALTIME_ENABLED === 'true') {
+            const realtime = require('./realtime');
+            // Event data is only a no-effect filter; the transaction rereads the authoritative source.
+            if (!after || !before || JSON.stringify(realtime.contribution(event.params.sessionId, before))
+                !== JSON.stringify(realtime.contribution(event.params.sessionId, after))) {
+                await realtime.projectSession(event.params.sessionId);
+            }
+        }
+        if (!after) {
+            if (!before) return;
+            const exclusion = await admin.firestore()
+                .doc(`analytics_session_exclusions/${event.params.sessionId}`)
+                .get();
+            if (!exclusion.exists || exclusion.data()?.reason !== 'admin_identity_resolved') return;
+            await removeMaterializedSessionFact(event.params.sessionId);
+            return;
+        }
+        if (after.type === 'admin' || after.sessionActive !== false) return;
         const becameClosed = after.sessionActive === false && before?.sessionActive !== false;
         const closedChanged = after.sessionActive === false && contributionHash(contributionFor(event.params.sessionId, after)) !== contributionHash(contributionFor(event.params.sessionId, before || {}));
         if (!becameClosed && !closedChanged) return;
         await materializeSessionFact(event.params.sessionId, after);
     }
 );
+
+// Voir actionSummaryProjection: une facade sans `__endpoint` ni `.run`
+// empeche le buildpack gcloud de contourner le decodeur protobuf Firestore.
+// Son deploiement reste gouverne par deploy-functions-targeted.
+const aggregateAnalyticsSessionGen2 = (...args) => {
+    const [payload, context] = args;
+    return aggregateAnalyticsSessionFirebaseHandler(firestoreCloudEvent(
+        payload,
+        context,
+        `analytics_sessions/${context?.params?.sessionId}`
+    ));
+};
 
 const maintainAnalyticsGen2 = onSchedule(SCHEDULE_RUNTIME, async () => {
     try {
@@ -990,6 +1181,8 @@ module.exports = {
     addHll,
     aggregateAnalyticsSessionGen2,
     analyticsOverview,
+    analyticsOverviewBundle,
+    buildAnalyticsOverview,
     archiveDay,
     archiveNextEligibleDay,
     buildDashboardInsightsContent,
@@ -1004,6 +1197,8 @@ module.exports = {
     maintainAnalytics,
     maintainAnalyticsGen2,
     materializeSessionFact,
+    removeMaterializedSessionFact,
+    rebuildShardFromFacts,
     materializeDashboardInsights,
     mergeHll,
     sessionDetail

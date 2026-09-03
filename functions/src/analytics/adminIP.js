@@ -2,7 +2,6 @@
  * Compatibilite temporaire de l'ancien tracker IP admin.
  * Aucun nouvel e-mail ou IP n'est lu ni ecrit.
  */
-const functions = require('firebase-functions/v1');
 const { onCall } = require('firebase-functions/v2/https');
 const { checkActiveStrongAdmin } = require('../../helpers/security');
 const { regionalFunctions } = require('../../helpers/runtime');

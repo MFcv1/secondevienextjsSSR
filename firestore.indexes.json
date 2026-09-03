@@ -1,6 +1,14 @@
 {
   "indexes": [
     {
+      "collectionGroup": "orders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "updatedAt", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "furniture",
       "queryScope": "COLLECTION",
       "fields": [
@@ -132,6 +140,10 @@
     }
   ],
   "fieldOverrides": [
+    { "collectionGroup": "admin_analytics_realtime", "fieldPath": "*", "indexes": [] },
+    { "collectionGroup": "analytics_realtime_control", "fieldPath": "*", "indexes": [] },
+    { "collectionGroup": "analytics_realtime_ledgers", "fieldPath": "*", "indexes": [] },
+    { "collectionGroup": "analytics_realtime_buckets", "fieldPath": "*", "indexes": [] },
     {
       "collectionGroup": "admin_dashboard",
       "fieldPath": "updatedAt",
@@ -236,6 +248,12 @@
       "indexes": []
     },
     {
+      "collectionGroup": "analytics_session_exclusions",
+      "fieldPath": "expireAt",
+      "ttl": true,
+      "indexes": []
+    },
+    {
       "collectionGroup": "summary_shards",
       "fieldPath": "expireAt",
       "ttl": true,
@@ -331,6 +349,20 @@
           "order": "DESCENDING",
           "queryScope": "COLLECTION"
         },
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION_GROUP"
+        },
+        {
+          "order": "DESCENDING",
+          "queryScope": "COLLECTION_GROUP"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "customer_return_requests",
+      "fieldPath": "status",
+      "indexes": [
         {
           "order": "ASCENDING",
           "queryScope": "COLLECTION_GROUP"

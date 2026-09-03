@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "codebase": "main",
+    "baselineCommit": "528e80e2659e9f77268f17f63f7bbba9e9e7860f",
+    "gate": "ANALYTICS_REALTIME_P4_SHADOW"
+  },
+  "gates": { "deploymentAllowed": true, "frontendCutoverAllowed": false },
+  "deploymentPolicy": { "maxBatchSize": 1, "forbiddenGlobalSelector": "functions" },
+  "functions": [{
+    "name": "aggregateAnalyticsSessionGen2",
+    "cloud": { "present": true, "generation": 2, "region": "europe-west1", "revision": "aggregateanalyticssessiongen2-00006-xak" },
+    "decision": { "classification": "KEEP_GEN2", "deploymentMaxBatchSize": 1 },
+    "identities": {
+      "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+      "runtimeServiceAccount": "analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    },
+    "trigger": { "transportServiceAccount": "functions-eventarc-invoker@secondevienextjsssr.iam.gserviceaccount.com" }
+  }],
+  "rollback": {
+    "firstAction": "Pause analytics_realtime_control/current; frontend remains unchanged in P4",
+    "sourceSha256": "260746928e4465d2abc74675e907284d9bb3c76203a12b0c913ae780f98f1096",
+    "sourceUri": "gs://gcf-v2-sources-231220287936-europe-west1/analytics-realtime-p4/rollback/260746928e4465d2abc74675e907284d9bb3c76203a12b0c913ae780f98f1096/function-source.zip",
+    "ruleset": "projects/secondevienextjsssr/rulesets/e902c39b-dade-45b7-a68f-27b73ec80a9f",
+    "runtimeFlagBefore": "ANALYTICS_REALTIME_ENABLED absent",
+    "preserveSourcesAndLedgers": true
+  }
+}

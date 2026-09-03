@@ -150,17 +150,18 @@ Git conserve l'audit et la roadmap retires.
 
 La topologie Firebase Functions Gen1 vers Gen2 est complete sur le sandbox,
 y compris l'extension evenementielle du dashboard:
-160 exports locaux, 157 Functions cloud, 154 Gen2 `ACTIVE` et trois triggers
+161 exports locaux, 158 Functions cloud, 155 Gen2 `ACTIVE` et trois triggers
 Auth Gen1. L'exercice rollback/reactivation est ferme et la cloture definitive
 observe maintenant la revision finale pendant sept jours selon
 `apphostingaudit/FINALISATION_MIGRATION_GEN2.md`. L'architecture durable est
 dans [FUNCTIONS_RUNTIME_ADR.md](_DOCS/architecture/FUNCTIONS_RUNTIME_ADR.md):
-160 exports locaux, 157 Functions cloud, 154 Gen2 `ACTIVE` et uniquement les
+161 exports locaux, 158 Functions cloud, 155 Gen2 `ACTIVE` et uniquement les
 trois triggers Auth limites par Firebase encore en Gen1. Les quatre owners
 Scheduler commerce sont Gen2 `ENABLED`; les endpoints Stripe test actifs sont
-Gen2. App Hosting sert le deployment ID `sv-mtk9ag3n-d6c64195f71c`, qui
-fusionne le dashboard materialise, la reception evenementielle des erreurs,
-le jeu newsletter et les transitions hero; `build-2026-09-02-004` reste la
+Gen2. App Hosting sert le deployment ID `sv-mtlle76d-daa1d98532b0`, qui
+fusionne le dashboard materialise, Data bornee, le badge Retours evenementiel,
+la reception des erreurs, le jeu newsletter et les transitions hero;
+`build-2026-09-02-004` reste la
 cible de rollback immediate.
 
 Les retraits G12-A ont ete individuels, allowlistes, precedes d'appelants,
@@ -187,6 +188,12 @@ qualifiees separement et ne prouvent pas la sante de cette revision. Ne pas recr
 de plan de migration au-dela du plan temporaire explicitement demande.
 
 Plans temporaires de reprise encore actifs:
+- [TEMPS_REEL_COUTS_DEVOPS.md](_DOCS/infra/TEMPS_REEL_COUTS_DEVOPS.md):
+  plan explicitement demande le 2026-09-04 pour Data evenementielle, ecoutes
+  partagees, mesures cout/latence et reglage des fonctions par cohortes;
+  diagnostic et moteur/lecteur Data codes et testes localement; bootstrap,
+  shadow, bascule Data et mesures sandbox restent a autoriser/prouver;
+  gates P0-P6, revue/cloture cible le 2026-09-30 puis fusion canonique.
 - [FINALISATION_MIGRATION_GEN2.md](apphostingaudit/FINALISATION_MIGRATION_GEN2.md):
   cloture contradictoire bornee des gates locales, du rollback G13, de la
   qualification des erreurs et du soak final; aucune ecriture cloud implicite;
