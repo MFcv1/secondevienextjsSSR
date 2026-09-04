@@ -152,7 +152,7 @@ const ADMIN_NAV_GROUPS = [
   { label: 'Catalogue', tabs: ['furniture', 'inventory', 'studio'] },
   { label: 'Ventes', tabs: ['orders', 'quotes', 'payment_links', 'invoices', 'returns', 'promotions', 'livraison', 'payment_settings'] },
   { label: 'Communication', tabs: ['homepage', 'newsletter', 'seo'] },
-  { label: 'Administration', tabs: ['account', 'users', 'incidents', 'performance'] },
+  { label: 'Administration', tabs: ['account', 'users', 'performance', 'incidents'] },
 ];
 
 /** Onglets qui pilotent leur propre hauteur : liste et detail scrollent separement. */

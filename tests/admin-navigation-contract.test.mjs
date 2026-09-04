@@ -15,7 +15,8 @@ test('Incidents reste le dernier item du menu lateral Admin', () => {
   const tabIds = [...tabs.matchAll(/id:\s*'([^']+)'/g)].map((match) => match[1]);
 
   assert.doesNotMatch(groups, /Vue d'ensemble[^\n]*incidents/);
-  assert.match(groups, /\{ label: 'Administration', tabs: \['account', 'users', 'incidents'\] \},\s*$/);
+  assert.match(groups, /\{ label: 'Administration', tabs: \['account', 'users', 'performance', 'incidents'\] \},\s*$/);
+  assert.equal(tabIds.filter((id) => id === 'performance').length, 1);
   assert.equal(tabIds.at(-1), 'incidents');
   assert.equal(tabIds.filter((id) => id === 'incidents').length, 1);
 });
