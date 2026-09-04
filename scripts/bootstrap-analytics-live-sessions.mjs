@@ -9,10 +9,13 @@ try {
     const db = admin.firestore();
     const sources = await db.collection('analytics_sessions').select().limit(2001).get();
     if (sources.size > 2000) throw new Error('BOOTSTRAP_LIMIT');
+    const projections = await db.collection('admin_analytics_sessions').select().limit(2001).get();
+    const ids = [...new Set([...sources.docs, ...projections.docs].map(document => document.id))];
+    if (ids.length > 2000) throw new Error('BOOTSTRAP_LIMIT');
     const outcomes = {};
-    if (apply) for (const source of sources.docs) {
-        const result = await projectLiveSession(source.id, db);
+    if (apply) for (const id of ids) {
+        const result = await projectLiveSession(id, db);
         outcomes[result] = (outcomes[result] || 0) + 1;
     }
-    console.log(JSON.stringify({ apply, sources: sources.size, maximumWrites: sources.size * 2, outcomes }));
+    console.log(JSON.stringify({ apply, sources: sources.size, existingProjections: projections.size, inspected: ids.length, maximumWrites: ids.length * 2, outcomes }));
 } finally { await app.delete(); }

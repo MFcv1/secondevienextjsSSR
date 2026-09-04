@@ -2,10 +2,14 @@
 const admin = require('firebase-admin');
 const { isDeepStrictEqual } = require('node:util');
 const { hashOpaque } = require('../../helpers/observability');
-const PAGES = new Set(['home', 'gallery', 'category', 'detail', 'search', 'about', 'quote', 'wishlist', 'cart', 'checkout', 'orders', 'shop', 'shop-detail', 'comptoir', 'delivery', 'unknown']);
+const PAGES = new Set(['home', 'gallery', 'category', 'detail', 'search', 'about', 'quote', 'wishlist', 'cart', 'checkout', 'orders', 'my-orders', 'login', 'shop', 'shop-detail', 'comptoir', 'delivery', 'unknown',
+    'affiliate_shop_grid', 'affiliate_shop_detail', 'affiliate_shop_tutorial', 'affiliate_gallery_detail']);
 const millis = value => typeof value?.toMillis === 'function' ? value.toMillis() : typeof value === 'number' && Number.isFinite(value) ? value : 0;
 const integer = (value, max = 86400) => Math.max(0, Math.min(max, Math.round(Number(value) || 0)));
 const safeId = value => typeof value === 'string' && /^[A-Za-z0-9_-]{1,160}$/.test(value) ? value : null;
+// The collector stores "id | display name (price)". Keep only the catalog ID,
+// never its free-text suffix; this preserves thumbnail lookup without leaking text.
+const catalogId = value => safeId(typeof value === 'string' ? value.split(/\s*\|\s*|\s+\[(?:depuis|source):/)[0].trim() : value);
 const choice = (value, values, fallback) => values.includes(value) ? value : fallback;
 
 function projectData(id, source) {
@@ -14,7 +18,7 @@ function projectData(id, source) {
     if (!startedAt || !lastActivityAt) throw new Error('LIVE_SESSION_TIMESTAMP');
     const journey = (Array.isArray(source.journey) ? source.journey : []).slice(-25).map(step => ({
         page: PAGES.has(step?.page) ? step.page : 'unknown',
-        ...(safeId(step?.itemId) ? { itemId: step.itemId } : {}),
+        ...(catalogId(step?.itemId) ? { itemId: catalogId(step.itemId) } : {}),
         ...(typeof step?.time === 'string' && /^\d{2}:\d{2}(:\d{2})?$/.test(step.time) ? { time: step.time } : {}),
         timestampMs: millis(step?.timestampMs),
         duration: integer(step?.duration)

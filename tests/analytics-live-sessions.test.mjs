@@ -14,6 +14,15 @@ test('live projection is allowlisted, bounded and contains no raw identity or to
     assert.equal(output.summary.sessionActive, true);
     for (const privateText of ['private-uid', 'private@example.test', 'secret', '127.0.0.1', 'search']) assert.ok(!JSON.stringify(output).includes(privateText));
     assert.throws(() => projectData('bad', {}), /TIMESTAMP/);
+    const realFormat = projectData('real-format', { startedAt: 1000, journey: [
+        { page: 'detail', itemId: 'chair-Ab12 | Un texte prive (12EUR) [source: libre]' },
+        { page: 'my-orders' }, { page: 'affiliate_shop_grid', itemId: 'unsafe@example.test' }
+    ] });
+    assert.equal(realFormat.detail.journey[0].itemId, 'chair-Ab12');
+    assert.equal(realFormat.detail.journey[1].page, 'my-orders');
+    assert.equal(realFormat.detail.journey[2].page, 'affiliate_shop_grid');
+    assert.equal(realFormat.detail.journey[2].itemId, undefined);
+    assert.ok(!JSON.stringify(realFormat).includes('prive'));
 });
 test('presence allows 60 second heartbeat and rejects old, closed and invalid sessions', () => {
     assert.equal(isSessionOnline({ lastActivityAt: 100000, sessionActive: true }, 161000), true);

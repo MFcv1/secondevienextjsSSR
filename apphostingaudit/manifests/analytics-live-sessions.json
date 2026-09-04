@@ -10,7 +10,7 @@
   "deploymentPolicy": { "maxBatchSize": 1, "forbiddenGlobalSelector": "functions" },
   "functions": [{
     "name": "aggregateAnalyticsSessionGen2",
-    "cloud": { "present": true, "generation": 2, "region": "europe-west1", "revision": "aggregateanalyticssessiongen2-00007-bas" },
+    "cloud": { "present": true, "generation": 2, "region": "europe-west1", "revision": "aggregateanalyticssessiongen2-00008-sug" },
     "decision": { "classification": "KEEP_GEN2", "deploymentMaxBatchSize": 1 },
     "identities": {
       "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
