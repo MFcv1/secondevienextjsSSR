@@ -45,6 +45,8 @@ import { mutedTextClass, surfaceClass } from './components/orders/orderTones';
 
 const WIDE_VIEWPORT = '(min-width: 1280px)';
 
+export const preloadAdminOrdersWorkspace = () => loadAdminOrdersFirstPage();
+
 /** Le detail vit en colonne sur grand ecran, en feuille en dessous. */
 const useWideViewport = () => {
     const [isWide, setIsWide] = useState(false);

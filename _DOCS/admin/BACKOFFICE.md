@@ -1,5 +1,12 @@
 # Back-office
 
+Sessions Data (2026-09-04): graphiques inchanges, dix cartes recentes poussees
+par Firestore et parcours selectionne ecoute uniquement tant qu'il est ouvert.
+L'historique s'ouvre par pages de dix, une seule page ecoutee a la fois, avec
+retour possible; les suppressions/exclusions retirent aussi les cartes.
+Presence estimee sur les signaux des 150 dernieres secondes, cache brut ignore,
+erreur distincte de liste vide. Contrat et couts dans DONNEES_ANALYTICS.md.
+
 Derniere mise a jour: 2026-09-01
 Statut: `PREPROD_READY`
 
@@ -804,6 +811,33 @@ Cette recette n'autorise aucun rattachement du vrai sandbox ou d'une future prod
 
 ## 7. Analytics et statistiques
 
+### Extension Data evenementielle: lecteur sandbox qualifie (2026-09-04)
+
+Le lecteur est active sur App Hosting sandbox depuis `build-2026-09-03-002`.
+Il reste desactive par defaut hors configuration explicite. Avec le flag build
+`NEXT_PUBLIC_ADMIN_ANALYTICS_REALTIME=true`, les KPI Data ne lancent plus
+`overview_bundle`: `AdminAppIsland` possede une seule ecoute sur les deux
+documents `admin_analytics_realtime/recent|history`. Elle survit aux changements
+d'onglet et s'arrete a la sortie du back-office/perte d'acces/changement de compte.
+Les periodes et l'expiration des buckets sont calculees localement, sans polling.
+Le cache reste marque en attente de confirmation serveur; absence, refus,
+donnees invalides ou revision regressive affichent Indisponible sans secours
+callable. Les dix sessions/detail au clic gardent leur circuit borne independant.
+Les periodes 1 h/1 j sont arrondies a la minute/heure courante incluse et
+l'interface le precise. La couverture historique incomplete est marquee Partiel.
+
+Producteur: `functions/src/analytics/realtime.js`, sous le trigger existant et
+un flag Functions distinct. Bootstrap/shadow P4 qualifies sur sandbox:
+188 -> 191 -> 188 sessions, rejeux et retrait admin exacts, pause/reprise testee.
+La recette Chrome a vu apparaitre puis disparaitre deux visiteurs/trois sessions
+sans rafraichissement. Trente retours a Data conservent leurs KPI. Le rollback
+sur `build-2026-09-03-001` a ete exerce. Les mesures a froid, le p95 interne
+navigateur et les couts longs restent dans
+[TEMPS_REEL_COUTS_DEVOPS.md](../infra/TEMPS_REEL_COUTS_DEVOPS.md).
+L'heure Maj reste celle du chargement des details, pas du dernier evenement KPI.
+
+### Contrat actuellement deploye
+
 Le chemin critique Stats lit une query Firestore allowlistee contenant
 exactement `admin_dashboard/finance`, `orders` et `activity`. Les trois
 documents globaux sont expurges et ne portent aucune donnee personnelle. Le
@@ -880,8 +914,11 @@ un signal historique d'intention de session et n'alimente pas le compteur
 `submitted`; seul `quote_submitted`, emis apres reception durable, l'alimente.
 
 `AdminAnalytics` lit maintenant les rollups serveur permanents pour les KPI et
-graphiques, y compris la periode `Tout`. La liste recente est independante:
-250 projections legeres par page, maximum 1 000 visibles. Le parcours borne
+graphiques, y compris la periode `Tout`. Une seule action
+`overview_bundle` charge les six periodes bornees et peuple le cache local;
+changer de periode ne relance donc pas la callable. La liste recente est
+independante: dix projections legeres au premier affichage, puis dix de plus a
+la demande, avec une borne serveur absolue de 50. Le parcours borne
 est charge uniquement via le callable admin AAL2 au clic sur `Tracer`; aucune
 lecture directe de `analytics_sessions` ou IP brute n'est autorisee au
 navigateur. Le cache local accelere la liste mais ne conditionne jamais
@@ -893,6 +930,16 @@ et les retours dans les cinq minutes ne relancent ni overview ni liste. Au-dela,
 la synchronisation est silencieuse; seul un premier acces sans cache attend la
 lecture IndexedDB. Le chunk Data est precharge au survol, au focus ou au toucher
 de son entree de navigation.
+
+Le shell admin ecoute aussi le document exact `admin_action_summary/current`.
+Il contient uniquement le nombre de demandes de retour `pending_review` et
+alimente le badge Retours sans polling. Le projecteur
+`projectAdminActionSummaryGen2` filtre les ecritures sans effet, utilise un
+ledger hashe et applique les transitions par transaction. L'ouverture du
+back-office coute donc une lecture de resume, puis une lecture uniquement
+lorsque le compteur change; elle ne relit jamais la collection des retours.
+Ventes precharge son chunk et sa premiere page sur intention de navigation,
+sans entrer dans le chemin critique Stats.
 
 Le parcours reste vertical sous 1024 px et devient une frise en grille sur desktop: les etapes occupent une ligne tant que la largeur le permet, puis reprennent naturellement a la ligne suivante, sans barre de defilement horizontale. Chaque etape desktop reserve un media 66x84 px: les etapes `detail` affichent la premiere variante `thumb320` du produit lorsqu'elle existe; les sous-categories `buffets`, `armoires`, `miroirs` et `commodes` reprennent les memes images `*-config-rail.webp` que les quatre cartes sous le hero de la galerie; les categories parentes `meubles`, `assises`, `eclairage` et `decorations` utilisent les illustrations WebP dediees de `public/images/analytics`; Galerie, A propos et Devis utilisent des visuels editoriaux differencies. Les images sont resolues depuis les assets ou le catalogue deja charges et n'alourdissent pas les documents analytics.
 
@@ -960,6 +1007,7 @@ le seul parcours de suppression de session expose. Aucun IAM ou secret dedie
 n'existait; les identites partagees ont ete preservees.
 
 ## 9. Performance du back-office
+
 
 - garder les vues lourdes lazy;
 - ne precharger ni les donnees Ventes/Retours, ni Factures, Livraison ou Devis
@@ -1043,3 +1091,12 @@ fait trois lectures; dix reloads chauds atteignent `KPI · A jour` en mediane
 Le badge incidents a suivi open puis close sans reload. Le critere global chaud
 < 2 s est prouve; la mesure instrumentee du seul segment
 `backOfficeReady -> KPI` < 700 ms reste necessaire avant cloture du plan.
+
+Qualification ciblee du 2026-09-03: App Hosting sert
+`sv-mtlle76d-daa1d98532b0`; `/` et `/admin` retournent 200. Le badge Retours a
+ete prouve sans PII sur une transition synthetique `0 -> 1 -> 0` en environ
+5 s a froid puis 2 s pour la resolution. Les trois ledgers de test ont ete
+nettoyes. Data conserve les etats chargement, aucune activite et indisponible,
+et ne montre plus de faux squelette une fois la lecture terminee. La p95
+navigateur du callback Firestore et la nouvelle recette humaine refund/course
+restent des preuves separees.

@@ -89,12 +89,19 @@ function CheckoutPageContent() {
   const [orderSuccessMethod, setOrderSuccessMethod] = useState('');
   const [orderSuccessNumber, setOrderSuccessNumber] = useState(null);
   const [checkoutReturnNotice, setCheckoutReturnNotice] = useState('');
+  const [checkoutConflict, setCheckoutConflict] = useState(false);
   const [cartLoading, setCartLoading] = useState(true);
   const [fixtureContext, setFixtureContext] = useState(null);
   const [fixtureCartItems, setFixtureCartItems] = useState([]);
   const [checkoutRecoveryChecked, setCheckoutRecoveryChecked] = useState(!COMMERCE_V2_CONSUMERS_ENABLED);
   const [hasRecoverableCheckout, setHasRecoverableCheckout] = useState(false);
   const handledStripeReturnRef = useRef(false);
+  const lastNonEmptyCartRef = useRef([]);
+  const expectedCartClearRef = useRef(false);
+
+  useEffect(() => {
+    if (cartItems.length > 0) lastNonEmptyCartRef.current = cartItems;
+  }, [cartItems]);
 
   useEffect(() => {
     if (!COMMERCE_V2_CONSUMERS_ENABLED) return undefined;
@@ -180,7 +187,19 @@ function CheckoutPageContent() {
         unsubscribe = onSnapshot(
           query(collection(db, 'users', user.uid, 'cart')),
           (snap) => {
-            setCartItems(snap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() })));
+            const nextItems = snap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }));
+            if (
+              nextItems.length === 0
+              && lastNonEmptyCartRef.current.length > 0
+              && !expectedCartClearRef.current
+            ) {
+              setCheckoutConflict(true);
+              setCartItems(lastNonEmptyCartRef.current);
+            } else {
+              expectedCartClearRef.current = false;
+              setCheckoutConflict(false);
+              setCartItems(nextItems);
+            }
             clearCheckoutCartHandoff();
             setCartLoading(false);
           },
@@ -220,6 +239,7 @@ function CheckoutPageContent() {
     if (!Array.isArray(purchasedCartLines) || purchasedCartLines.length === 0) {
       return;
     }
+    expectedCartClearRef.current = true;
     const purchasedByLineId = new Map(
       purchasedCartLines.map((line) => [line.cartLineId, line])
     );
@@ -231,6 +251,7 @@ function CheckoutPageContent() {
       clearCheckoutCartHandoff();
       writeGuestCart(remaining);
       setCartItems(remaining);
+      expectedCartClearRef.current = false;
       return;
     }
     const [db, { collection, doc, getDocs, writeBatch }] = await Promise.all([getDb(), loadFirestoreModule()]);
@@ -261,6 +282,7 @@ function CheckoutPageContent() {
   }, [clearCartAfterOrder]);
 
   const handlePlaceOrder = async (orderData = {}) => {
+    expectedCartClearRef.current = true;
     setOrderSuccessMethod(orderData.paymentMethod || 'deferred');
     setOrderSuccessNumber(Number.isSafeInteger(orderData.orderNumber) ? orderData.orderNumber : null);
     setShowOrderSuccess(true);
@@ -422,6 +444,20 @@ function CheckoutPageContent() {
         recoveryExpected={hasRecoverableCheckout}
         onRecoveryTerminal={handleRecoveryTerminal}
       />
+      {checkoutConflict ? (
+        <div className="fixed inset-0 z-[300] grid place-items-center bg-stone-950/45 px-5 backdrop-blur-sm" role="alertdialog" aria-modal="true" aria-labelledby="checkout-conflict-title">
+          <div className={`w-full max-w-md rounded-[28px] border p-7 text-center shadow-2xl ${darkMode ? 'border-white/10 bg-stone-950 text-white' : 'border-stone-200 bg-white text-stone-950'}`}>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600">Disponibilité actualisée</p>
+            <h2 id="checkout-conflict-title" className="mt-3 text-2xl font-black tracking-tight">Cette pièce vient d’être vendue</h2>
+            <p className={`mt-3 text-sm leading-6 ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>
+              Une autre personne a finalisé son paiement juste avant vous. Votre brouillon reste affiché pour que vous compreniez ce qui s’est passé, mais aucun paiement n’a été créé sur ce compte.
+            </p>
+            <button type="button" onClick={() => router.push('/')} className={`mt-6 min-h-12 w-full rounded-full px-5 text-sm font-extrabold ${darkMode ? 'bg-white text-stone-950' : 'bg-stone-950 text-white'}`}>
+              Retourner à la galerie
+            </button>
+          </div>
+        </div>
+      ) : null}
       {showOrderSuccess ? (
         <OrderSuccessModal
           paymentMethod={orderSuccessMethod}

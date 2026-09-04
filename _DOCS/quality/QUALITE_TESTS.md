@@ -17,15 +17,41 @@ Toujours annoncer ce qui a ete lance et ce qui ne l'a pas ete.
 
 ### Gate diagnostic temps reel/couts
 
+Sessions live: `node --test tests/analytics-live-sessions.test.mjs` couvre
+minimisation, presence, partage/fermeture des listeners, pagination bornee,
+suppression et callbacks tardifs. Le scenario additionnel de
+`test:realtime-emulator` verifie les Rules et les ecritures sans effet:
+0 au rejeu, 1 au heartbeat et 2 au changement de parcours.
+
 Extension P2/P3: `test:realtime-ops` couvre egalement le moteur/lecteur Data:
 session active, heartbeat sans effet, retrait HLL reversible, rejeu, identite
 corrigee, tombstone, TTL, anneaux sous 256 Kio, couverture partielle, DST,
 horloge monotone et partage d'ecoute/cache->serveur/refus de regression.
-`npm run test:realtime-emulator` execute trois scenarios sur
-`demo-secondevie-analytics` uniquement: concurrence/rejeu, exclusion vs TTL et
+`npm run test:realtime-emulator` execute quatre scenarios sur
+`demo-secondevie-analytics` uniquement: bootstrap reprenable et rattrapage,
+concurrence/rejeu, exclusion vs TTL et
 Rules fortes. Le runner refuse les credentials cloud explicites et ne demarre
 que Firestore local. Ces gates sont ajoutees a la CI. La recette navigateur
 avec Auth reelle et les p95 cloud restent P5, non prouves par ces tests.
+
+P4 sandbox du 4 septembre: `probe-analytics-realtime-sandbox.mjs`, autorisation
+explicite, trois visites fictives et deux identites, total 188 -> 191 -> 188.
+Six POST Eventarc 204, aucun doublon au rejeu, retrait admin exact (HLL inclus),
+pause/reprise du controle et comparaison de tous les buckets non nuls reussis.
+Sources/exclusions de test retirees, aucun fait legacy ni effet commerce.
+Environ 3,2 s jusqu'a reception des trois creations, mesure inter-horloges;
+aucun p95 deduit des six callbacks, ni mesure navigateur/Billing.
+
+P5 autorisee: build sandbox normal et 38 tests cibles passes, lint global
+0 erreur/127 avertissements. Chrome authentifie: six periodes, 30 retours
+Stats -> Data avec KPI deja presents, injection puis retrait automatiques de
+trois sessions/deux visiteurs sans Actualiser. Total final 188 exact et six
+POST Eventarc 204. Un seul audit action=list sur la fenetre de trois minutes,
+aucun overview/overview_bundle. Rollback App Hosting vers l'ancien build exerce.
+Le p95 de 405 ms mesure clic + controle DOM par l'outil (pas clic -> pixel).
+La creation des trois projections prend 5,466 s apres acquittement source sur
+un essai avec demarrage d'instance. Serie froide, p95 navigateur interne,
+parcours client complet et cout Billing restent non qualifies.
 
 `npm run test:realtime-ops` execute sans credentials ni reseau les tests du
 chronometre Data et du rapport runtime: preservation des resultats/erreurs,
@@ -37,6 +63,7 @@ Ces preuves sont des gates distinctes dans
 [TEMPS_REEL_COUTS_DEVOPS.md](../infra/TEMPS_REEL_COUTS_DEVOPS.md).
 
 ## 2. CI
+
 
 `.github/workflows/quality.yml` s'execute sur pull request et push `main` avec Node 22/pnpm:
 

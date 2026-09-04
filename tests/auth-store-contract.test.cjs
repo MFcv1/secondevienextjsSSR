@@ -54,9 +54,8 @@ test('the gallery login is the only visible entry to the back-office', () => {
   assert.doesNotMatch(adminIsland, /Acces admin refuse/);
   assert.match(adminIsland, /!user[\s\S]*user\.isAnonymous[\s\S]*!isAdmin/);
   assert.match(adminIsland, /router\.replace\('\/'\)/);
-  assert.match(header, /onAuthenticated=/);
-  assert.match(header, /authState\.claimsStatus !== 'ready'/);
-  assert.match(header, /if \(isAdmin\) router\.push\('\/admin'\)/);
+  assert.doesNotMatch(header, /router\.push\('\/admin'\)/);
+  assert.doesNotMatch(header, /pendingRoleRedirectRef/);
   assert.match(modal, /onAuthenticated\?\.\(result\?\.user \|\| null\)/);
   assert.match(modal, /onAuthenticated\?\.\(userCredential\?\.user \|\| null\)/);
 });

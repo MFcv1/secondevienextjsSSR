@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { useRouter } from 'next/navigation';
 import { LogOut, ShieldCheck } from 'lucide-react';
 import { useAuthState } from '../contexts/AuthContext';
 import { initializeAuthStore, resetAuthStoreAfterSignOut, syncAuthStoreUser } from '../auth/authStore';
@@ -29,22 +28,9 @@ const hasPersistedFirebaseUser = () => {
 
 export default function HeaderAccountIsland({ darkMode = false } = {}) {
   const [loginOpen, setLoginOpen] = useState(false);
-  const pendingRoleRedirectRef = useRef(false);
-  const router = useRouter();
   const authState = useAuthState();
   const user = authState.user;
   const isAdmin = authState.claims.admin;
-
-  useEffect(() => {
-    if (
-      !pendingRoleRedirectRef.current
-      || authState.status !== 'authenticated'
-      || authState.claimsStatus !== 'ready'
-    ) return;
-
-    pendingRoleRedirectRef.current = false;
-    if (isAdmin) router.push('/admin');
-  }, [authState.claimsStatus, authState.status, isAdmin, router]);
 
   useEffect(() => {
     let cancelled = false;
@@ -101,9 +87,6 @@ export default function HeaderAccountIsland({ darkMode = false } = {}) {
   const loginModal = loginOpen ? (
     <LegacyLoginModalIsland
       open={loginOpen}
-      onAuthenticated={() => {
-        pendingRoleRedirectRef.current = true;
-      }}
       onOpenChange={setLoginOpen}
       renderTrigger={false}
     />

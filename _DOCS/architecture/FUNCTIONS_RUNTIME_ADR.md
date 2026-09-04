@@ -12,9 +12,9 @@ la cadence de livraison d'un domaine deviennent un probleme concret.
 
 L'etat autoritaire est:
 
-- 160 exports locaux;
-- 157 Functions cloud;
-- 154 Gen2 `ACTIVE`;
+- 161 exports locaux;
+- 158 Functions cloud;
+- 155 Gen2 `ACTIVE`;
 - exactement trois Gen1 Auth conservees:
   `grantAdminOnAuth`, `onRegisteredUserCreated` et
   `onRegisteredUserDeleted`;
@@ -22,7 +22,7 @@ L'etat autoritaire est:
   restent uniquement cloud avec leur source et leur entree de deploiement
   dediees. L'ecart net local/cloud est donc `155 communs + 5 / + 2`; aucun
   deploiement global n'est permis;
-- App Hosting sert le deployment ID `sv-mtk9ag3n-d6c64195f71c`; la revision
+- App Hosting sert le deployment ID `sv-mtlle76d-daa1d98532b0`; la revision
   precedente immediate est `build-2026-09-02-004`.
 
 Les deploiements Functions restent individuels, allowlistes et lies a une
@@ -105,6 +105,27 @@ Le contrat local rend l'attente `livemode` dependante de l'environnement:
 aucun rail live, n'utilise aucun secret live et n'autorise aucune production.
 
 ## Preuves
+
+
+### Mesure des fonctions interactives
+
+Le diagnostic `scripts/audit-interactive-runtime.mjs` se lance avec
+`npm run audit:interactive-runtime -- --input <export-expurge.json>` ou avec
+`--cloud --from <UTC> --to <UTC> --services <noms-Cloud-Run>` explicitement.
+Le chemin cloud est limite au sandbox, a dix services, 24 h et 5000 lignes;
+il ne fait que `functions list` et `logging read`. Il signale la troncature,
+les observations insuffisantes pour p95 et les configurations absentes.
+La configuration lue est courante, pas une preuve de configuration historique.
+
+OPTIONS, POST et GET sont separes: un POST de 417 ms ne doit pas masquer un
+OPTIONS de 5788 ms avec demarrage d'instance (fenetre du 2026-09-03
+21:11-21:14 UTC). Deux POST ne ferment pas une gate p95. Le rapport ne chiffre
+pas Billing et ne somme pas des requetes paralleles en latence utilisateur.
+CPU/concurrence/min/max restent inchanges. Les modifications par cohortes
+suivent le [plan temporaire demande](../infra/TEMPS_REEL_COUTS_DEVOPS.md),
+pas une augmentation uniforme de toutes les Functions.
+
+### Archives de qualification Gen2
 
 - `apphostingaudit/manifests/functions-gen2-g12a-remaining.json`;
 - `apphostingaudit/manifests/functions-gen2-g12b-remaining.json`;

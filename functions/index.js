@@ -372,6 +372,11 @@ exports.projectCommerceFinancialHistoryGen2 = projectCommerceFinancialHistoryGen
 exports.projectLegacyFinancialHistoryGen2 = projectLegacyFinancialHistoryGen2;
 
 const {
+    projectAdminActionSummaryGen2
+} = require('./src/admin/actionSummaryProjection');
+exports.projectAdminActionSummaryGen2 = projectAdminActionSummaryGen2;
+
+const {
     aggregateAnalyticsSessionGen2,
     getAnalyticsAdminGen2,
     maintainAnalyticsGen2

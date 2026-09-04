@@ -310,6 +310,16 @@ Ce changement n'élargit pas le domaine du paiement: une panne du projecteur de
 tâche n'annule ni ne valide aucune commande et le watchdog horaire reprend les
 éléments durables encore éligibles.
 
+Requalification UX du 2026-09-03: la course serveur reste autoritaire, mais le
+checkout perdant conserve son dernier brouillon visuel et affiche
+`Cette piece vient d'etre vendue` au lieu de tomber silencieusement sur un
+panier vide. `MyOrdersView` ouvre apres sa lecture initiale un listener borne
+aux commandes du proprietaire modifiees depuis le watermark de la callable,
+`limit(25)`; un remboursement apparait ainsi sans refresh et sans polling. Le
+badge Retours provient du resume global `admin_action_summary/current`, jamais
+d'un scan des demandes. Ces changements ne touchent ni Stripe live, ni prix,
+ni stock, ni autorite de paiement.
+
 Les commandes portent aussi un `orderNumber` entier, attribue dans la meme
 transaction que la creation via `sys_counters/orders`. Les 131 commandes
 sandbox existantes ont ete numerotees chronologiquement; la prochaine valeur

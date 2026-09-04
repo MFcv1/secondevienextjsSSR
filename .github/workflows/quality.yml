@@ -49,6 +49,8 @@ jobs:
       - run: pnpm test:billing-onboarding
       - run: pnpm test:invoices
       - run: pnpm test:admin-cache
+      - run: pnpm test:realtime-ops
+      - run: pnpm test:realtime-emulator
       - run: pnpm test:meta
       - run: pnpm test:deployment-cache
       - run: pnpm seo:surface

@@ -140,6 +140,9 @@
     }
   ],
   "fieldOverrides": [
+    { "collectionGroup": "admin_analytics_sessions", "fieldPath": "*", "indexes": [] },
+    { "collectionGroup": "admin_analytics_sessions", "fieldPath": "lastActivityAt", "indexes": [{ "order": "DESCENDING", "queryScope": "COLLECTION" }] },
+    { "collectionGroup": "admin_analytics_session_details", "fieldPath": "*", "indexes": [] },
     { "collectionGroup": "admin_analytics_realtime", "fieldPath": "*", "indexes": [] },
     { "collectionGroup": "analytics_realtime_control", "fieldPath": "*", "indexes": [] },
     { "collectionGroup": "analytics_realtime_ledgers", "fieldPath": "*", "indexes": [] },

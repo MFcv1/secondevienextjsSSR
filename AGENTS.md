@@ -191,8 +191,10 @@ Plans temporaires de reprise encore actifs:
 - [TEMPS_REEL_COUTS_DEVOPS.md](_DOCS/infra/TEMPS_REEL_COUTS_DEVOPS.md):
   plan explicitement demande le 2026-09-04 pour Data evenementielle, ecoutes
   partagees, mesures cout/latence et reglage des fonctions par cohortes;
-  diagnostic et moteur/lecteur Data codes et testes localement; bootstrap,
-  shadow, bascule Data et mesures sandbox restent a autoriser/prouver;
+  diagnostic et moteur/lecteur Data codes et testes; bootstrap et shadow P4
+  qualifies sur sandbox (revision aggregateanalyticssessiongen2-00007-bas);
+  lecteur Data P5 active et qualifie sur build-2026-09-03-002, rollback exerce;
+  mesures completes a froid/p95 de P5 et mesures longues P6 restent a prouver;
   gates P0-P6, revue/cloture cible le 2026-09-30 puis fusion canonique.
 - [FINALISATION_MIGRATION_GEN2.md](apphostingaudit/FINALISATION_MIGRATION_GEN2.md):
   cloture contradictoire bornee des gates locales, du rollback G13, de la

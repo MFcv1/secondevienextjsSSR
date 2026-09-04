@@ -1,11 +1,18 @@
 # Temps reel, couts et livraison Next.js/Firebase
 
 Date: 2026-09-04
-Statut: `IMPLEMENTATION_LOCALE_EN_COURS`
+Statut: `P5_CUTOVER_QUALIFIE_MESURES_COMPLETES_RESTANTES`
 Proprietaire: equipe Seconde Vie
 Revue et cloture cible: 2026-09-30. Une gate non prouvee reste ouverte.
 
 ## 1. Mandat et fin du chantier
+
+Extension sessions du 2026-09-04, explicitement autorisee avec GitHub/staging:
+projecteur de cartes et parcours expurges dans le trigger Analytics existant;
+aucune nouvelle Function ni instance chaude. Listeners: dix recentes, une page
+ancienne sur demande, un parcours ouvert. Tests locaux Node et Emulator passes;
+qualification hebergee et revision de livraison consignees apres deploiement.
+Les mesures longues P5/P6 ne sont pas declarees closes par ce correctif.
 
 Plan temporaire explicitement demande apres la recette humaine et la latence
 Data du 3 septembre. Il regroupe le raccordement Data, le partage des ecoutes,
@@ -112,11 +119,11 @@ plan. Pas de migration de fournisseur, de base ni de region dans ce chantier.
 | Gate | Livraison / condition de sortie | Etat |
 | --- | --- | --- |
 | P0 | Baseline, contrats, rattachement aux anciens plans, liste exacte des ecarts | `BASELINE_ET_CONTRAT_DOCUMENTES` |
-| P1 | Instrumentation clic/cache/SDK/appel/rendu; rapport HTTP incluant OPTIONS; tests locaux, aucune PII ni compteur Firestore ajoute | `VALIDEE_LOCALEMENT_NON_DEPLOYEE` |
+| P1 | Instrumentation clic/cache/SDK/appel/rendu; rapport HTTP incluant OPTIONS; tests locaux, aucune PII ni compteur Firestore ajoute | `DEPLOYEE`, extraction des traces internes a qualifier |
 | P2 | Moteur delta, versions/tombstones, uniques corrigeables, bornes, reconstitution historique et tests Emulator concurrentiels | `CODE_ET_TESTS_LOCAUX_OK`, inventaire historique reel a qualifier en P4 |
-| P3 | Lecteur Data partage, horloge sans polling, etats cache/serveur/fail-closed, pagination, tests UI et couts | `CODE_LOGIQUE_ET_BUILD_OK`, recette navigateur a qualifier en P5 |
-| P4 | Dry-run, sauvegarde, bootstrap et shadow sandbox autorises, zero divergence apres rejeux et exclusions admin | `AUTORISEE_INVENTAIRE_OK`, livraison ciblee en cours |
-| P5 | Cutover cible, visite client visible automatiquement, 30 mesures froid/chaud, pas de polling ni scans, rollback exerce | `AUTORISATION_DEPLOIEMENT_REQUISE` |
+| P3 | Lecteur Data partage, horloge sans polling, etats cache/serveur/fail-closed, pagination, tests UI et couts | `RECETTE_UI_SANDBOX_OK`, cout facture a mesurer en P6 |
+| P4 | Dry-run, sauvegarde, bootstrap et shadow sandbox autorises, zero divergence apres rejeux et exclusions admin | `VALIDEE_SANDBOX`, preuve fonctionnelle bornee ci-dessous |
+| P5 | Cutover cible, visite client visible automatiquement, 30 mesures froid/chaud, pas de polling ni scans, rollback exerce | `PARTIELLE`: cutover/probe UI/30 retours chauds/rollback qualifies; froid, ingestion client et p95 interne restants |
 | P6 | Regler ou conserver chaque cohorte interactive sur mesures comparables, verifier cout 24 h et alertes, observation 7 jours, fusion documentaire | `APRES_P5` |
 
 P0/P1 ne signifient pas que Data est temps reel. P2/P3 n'autorisent pas un
@@ -202,7 +209,47 @@ fixture local n'est pas un artefact a deployer; refaire le build sandbox normal
 apres la gate P4. Les tests de permissions produisent volontairement des refus
 PERMISSION_DENIED dans l'Emulator.
 
-### P4 autorisee / P5 encore fermee
+### Preuves P4 avant autorisation P5
+
+Qualification terminee le 2026-09-04, 01:16 Paris:
+
+- Commit local autorise `cf697cd63f059631fc9481c40b1a52a37e11facb`, sans push.
+  Une seule Function deployee depuis un worktree propre:
+  `aggregateanalyticssessiongen2-00007-bas`, ACTIVE, flag backend true,
+  333m/512Mi, concurrence 1, min 0/max 1 inchanges. Transport prive Eventarc
+  verifie; Rules deployees et exemptions des quatre nouvelles collections.
+- Bootstrap: 627 creations de documents + un controle initial, verification
+  create-only, puis activation shadow. Rattrapage des 387 sources: 173 noop et
+  214 tombstones, aucune ecriture de source. Revision initiale des resumes: 1.
+- Test `p4-realtime-probe-1788477320710`: trois sources fictives actives, deux
+  identites fictives, reception par onSnapshot des deux resumes sans polling.
+  Total 188 -> 191, trois sessions et deux visiteurs estimes dans la derniere
+  heure. Trois rejeux manuels: noop, revision inchangee. Retrait via exclusions
+  admin: retour a 188, sketches et compteurs annuels exactement restaures.
+  Trois nouveaux rejeux refusent la resurrection (tombstone). Revision finale 7.
+- Les trois sources et trois exclusions temporaires ont ete supprimees;
+  absence de faits legacy de test verifiee. Les trois tombstones et les buckets
+  vides restent volontairement conserves. Aucune commande, Auth ou Stripe touche.
+- Comparaison independante de tous les buckets publics non nuls avec une
+  nouvelle reconstruction de l'inventaire: exacte. Pause du controle testee:
+  projectSession retourne disabled et ne modifie pas la revision; shadow
+  retabli ensuite (deux ecritures du controle).
+- Six POST Eventarc observes, tous 204, durees HTTP 0,304 a 1,275 s;
+  aucune erreur >=400 ni log ERROR sur la fenetre bornee
+  `2026-09-03T23:15:15Z` a `23:16:00Z`.
+- Les trois creations sont visibles ensemble environ 3,2 s apres leur commit.
+  Cette soustraction utilise deux horloges: precision non garantie. Les deltas
+  commit->callback comprennent deux valeurs negatives (-6/-10 ms), donc ne
+  prouvent aucun p95 de latence. Le premier snapshot mesure l'age de la
+  projection, pas une livraison tardive. Le probe distingue desormais horloge
+  locale monotone, deltas inter-horloges et premier snapshot. Pas de mesure UI.
+- Preuves privees ignorees: `output/analytics-realtime/` (probe et
+  shadow-verification-p4.json). Rollback source SHA-256
+  `260746928e4465d2abc74675e907284d9bb3c76203a12b0c913ae780f98f1096`
+  copie sous temporary hold; ancienne release Rules dans le manifeste P4.
+- P5 reste fermee: aucun build App Hosting, aucun lecteur Data active, aucun
+  test navigateur authentifie ou serie de trente mesures. Cout Billing reel,
+  observation longue et hausse eventuelle de capacite restent P6.
 
 Autorisation P4 et commit local (sans push/merge) recue le 2026-09-04.
 Inventaire transactionnel borne: 387 sources dont 214 admins, 188 faits,
@@ -240,6 +287,63 @@ Les admins connus recoivent aussi des tombstones au bootstrap.
    aucune suppression necessaire et aucun fallback automatique a chaud.
 6. Les cohortes CPU/concurrence et budgets factures restent P6: aucune mesure
    Emulator ne justifie seule une hausse de puissance ni un cout en euros.
+
+### P5 autorisee le 4 septembre 2026
+
+L'utilisateur autorise explicitement l'activation du lecteur et le deploiement
+App Hosting sandbox. Flag BUILD/RUNTIME ajoute dans `apphosting.yaml`;
+build sandbox normal reussi (sans fixture), 38 tests cibles passes, lint global
+sans erreur (127 avertissements). Le build actuellement servi avant bascule est
+`build-2026-09-03-001`, deployment ID `sv-mtlle76d-daa1d98532b0`, trafic 100 %.
+Cette cible est conservee pour le rollback. Aucun push/merge, production ou
+Stripe live. Qualification navigateur ci-dessous; les mesures manquantes sont
+explicitement conservees et ne ferment pas P5/P6.
+
+Qualification navigateur du build `build-2026-09-03-002`, deployment ID
+`sv-mtm5ndde-e6ff894eb978`:
+
+- Chrome, session admin forte existante: les six periodes affichent leur
+  resultat depuis les projections. 1 h/1 j vides, 7 j = 9 sessions,
+  30 j = 33 sessions, 12 mois/Tout = 188 sessions. Les deux dernieres vues
+  sont honnetement marquees Partiel (couverture anterieure non prouvee).
+- Probe `p4-realtime-probe-1788478282269`, maintenu visible 45 secondes:
+  trois sources fictives pour deux identites. L'ecran ouvert passe seul de
+  zero a deux visiteurs/trois sessions et affiche une barre a 01:31 Paris;
+  retrait ensuite visible sans Actualiser. Total 188 -> 191 -> 188,
+  revisions 7 -> 10 -> 13, rejeux noop puis tombstones, compteurs/sketches
+  annuels restaures exactement. Trois sources et trois exclusions temporaires
+  retirees; trois tombstones conserves. Aucune operation commerce/Auth/Stripe.
+- 30 allers-retours Stats -> Data: resultat present au premier controle DOM
+  dans les 30 cas. Aller-retour de l'outil d'automatisation (clic et lecture
+  DOM inclus): mediane 399 ms, p95 405 ms, maximum 407 ms. Ce n'est PAS le
+  p95 interne clic -> pixel ni une serie d'ouvertures a froid. Les six
+  changements de periode prennent 379 a 778 ms avec le meme outil.
+- Sur `23:30:00Z` -> `23:33:00Z`, un seul appel Analytics POST (200, 341 ms)
+  et son OPTIONS (204); le seul audit serveur confirme action=list,
+  resultCount=3, aucune action overview/overview_bundle. Il s'agit de la
+  liste detaillee independante, non d'un recalcul des graphiques.
+- Les six livraisons Eventarc sont 204. Une nouvelle instance demarre au
+  premier evenement: HTTP 4,047 s, autres livraisons 0,239 a 0,614 s.
+  Temps monotone local source acquittee -> trois projections recues:
+  5,466 s; cible operationnelle de 5 s depassee sur cet echantillon a froid.
+  Les deltas inter-horloges commit -> callback sont 17 a 34 ms, sans horloges
+  synchronisees: ils ne prouvent pas le p95 navigateur <1 s.
+- Cout reel en euros non disponible sur cette fenetre. Ne pas extrapoler le
+  budget d'operations en facture. Reste a qualifier: ouvertures a froid,
+  p95 interne navigateur, observation longue P6 et couverture visite client
+  reelle depuis l'ingestion (le probe injecte a la frontiere Firestore).
+- Observation UX distincte: l'heure « Maj » reste celle de la liste detaillee,
+  pas celle du dernier evenement KPI; elle ne mesure donc pas la fraicheur du
+  listener. Les cartes insights Stats restent hors perimetre de cette bascule.
+- Rollback reel: `p5-rollback-20260904-001` SUCCEEDED, trafic 100 % vers
+  `build-2026-09-03-001`, ancien deployment ID observe dans Chrome.
+  Reactivation du build qualifie via `p5-reactivate-20260904-001`, sans
+  reconstruire ni redeployer de Function. Le controle producteur reste shadow;
+  revenir au build precedent restaure donc exactement l'etat avant P5.
+  Reactivation SUCCEEDED a `2026-09-03T23:40:34Z`, trafic 100 % vers le build
+  qualifie; Chrome confirme son deployment ID et Data synchronise a zero
+  apres retrait des fixtures. Onglet temporaire ferme. Manifeste durable:
+  `apphostingaudit/manifests/analytics-realtime-p5.json`.
 
 ### Budget local du nouveau projecteur (hors retries)
 

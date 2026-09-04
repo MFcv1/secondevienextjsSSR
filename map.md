@@ -379,7 +379,7 @@ La cible separe refund financier, retour physique, inspection et remise en stock
 
 ### 4.6 Analytics
 
-Extension Data evenementielle **locale, non activee sur sandbox**:
+Extension Data evenementielle **producteur et lecteur UI actifs sur sandbox**:
 `aggregateAnalyticsSessionGen2` -> `functions/src/analytics/realtime.js`
 -> `analytics_realtime_control/current` + `analytics_realtime_ledgers/*`
 + `analytics_realtime_buckets/*` (backend-only)
@@ -393,8 +393,13 @@ ci-dessous est conserve. Le preparateur offline est
 `test:realtime-ops` et `test:realtime-emulator`.
 P4 ajoute `scripts/inventory-analytics-realtime-sandbox.mjs` (snapshot borne,
 export prive sans UID/parcours) et `scripts/bootstrap-analytics-realtime-sandbox.mjs`
-(create-only, paused, verification puis shadow et rattrapage). Aucune bascule
-du lecteur UI sans gate P5 distincte.
+(create-only, paused, verification puis shadow et rattrapage). P5 autorisee:
+lecteur active dans `apphosting.yaml` BUILD/RUNTIME, `build-2026-09-03-002`
+(`sv-mtm5ndde-e6ff894eb978`), recette Chrome temps reel qualifiee. Ancien build
+`build-2026-09-03-001` exerce comme rollback. Mesures completes P5/P6 ouvertes.
+`scripts/probe-analytics-realtime-sandbox.mjs` qualifie trois sources synthetiques,
+leur reception automatique, rejeu et retrait admin; P4 validee sur la revision
+`aggregateanalyticssessiongen2-00007-bas` (188 -> 191 -> 188, historique exact).
 
 Diagnostic local du chargement: `src/kit/admin/adminAnalyticsPerformance.js`
 relie la selection Data dans `AdminAppIsland` au cache, au chargement du module,
@@ -415,9 +420,12 @@ AnalyticsCollectorIsland + AuthProvider anonyme [C]
   -> rollups quoteSessions + vues produit -> admin_dashboard/insights,
      devis 30 j/3 m/6 m/1 an et top cinq produits 30 j [F/DB]
   -> AdminDashboard: listener allowliste finance/orders/activity, puis insights et catalogue lazy [C/DB]
-  -> AdminAnalytics: historique borne, cache IndexedDB stale-while-refresh 5 min,
-     overview_bundle toutes periodes, 10 sessions initiales puis pagination
-     par 10 plafonnee a 50, prechargement du chunk par intention [C/F]
+  -> aggregateAnalyticsSessionGen2 -> liveSessions.js -> admin_analytics_sessions
+     + admin_analytics_session_details (carte expurgee et 25 etapes) [F/DB]
+  -> AdminAnalytics + liveSessionsChannel: 10 cartes recentes, une page ancienne
+     de 10 sur demande, un parcours ouvert; listeners admin forts [C/DB].
+     Cache brut ignore; legacy callable conserve uniquement pour rollback.
+     liveSessionPresence: expiration locale du signal a 150 s [C]
   -> admin_action_summary/current: badge Retours pousse par
      projectAdminActionSummaryGen2, sans scan de collection [F/DB]
   -> AdminIncidentConsole: recherche support CMD/provider/correlation/e-mail,
