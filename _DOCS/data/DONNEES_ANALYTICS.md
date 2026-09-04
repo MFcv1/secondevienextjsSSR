@@ -10,6 +10,11 @@ e-mail, IP, recherche libre ou jeton n'y figure. Le projecteur relit la source
 et son exclusion dans une transaction: rejeu, evenement desordonne, suppression
 et exclusion admin ne peuvent ressusciter un ancien etat.
 
+La reference composee `id | libelle (prix)` du collecteur est normalisee
+en ID seul pour conserver les vignettes; les routes `my-orders`, `login`
+et les quatre origines affiliate connues sont preservees, sans texte libre.
+Livraison et preuves hebergees: EXPLOITATION.md, section sessions du 4 septembre.
+
 Le back-office ecoute les dix cartes les plus recentes, une seule page ancienne
 de dix cartes sur demande, et un seul parcours ouvert. Les pages anciennes se
 remplacent; pas d'accumulation de listeners ni de lecture de tout l'historique.

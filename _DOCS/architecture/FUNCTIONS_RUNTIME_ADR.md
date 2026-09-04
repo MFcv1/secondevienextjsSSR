@@ -22,8 +22,9 @@ L'etat autoritaire est:
   restent uniquement cloud avec leur source et leur entree de deploiement
   dediees. L'ecart net local/cloud est donc `155 communs + 5 / + 2`; aucun
   deploiement global n'est permis;
-- App Hosting sert le deployment ID `sv-mtlle76d-daa1d98532b0`; la revision
-  precedente immediate est `build-2026-09-02-004`.
+- Les revisions App Hosting/Functions servies et leurs rollbacks sont consignes
+  dans EXPLOITATION.md et doivent etre recontroles avant livraison. Le suivi des
+  sessions reutilise le trigger Analytics existant, sans nouvelle Function.
 
 Les deploiements Functions restent individuels, allowlistes et lies a une
 archive immuable. Production, Stripe live et un selecteur global `functions`

@@ -10,8 +10,9 @@ Revue et cloture cible: 2026-09-30. Une gate non prouvee reste ouverte.
 Extension sessions du 2026-09-04, explicitement autorisee avec GitHub/staging:
 projecteur de cartes et parcours expurges dans le trigger Analytics existant;
 aucune nouvelle Function ni instance chaude. Listeners: dix recentes, une page
-ancienne sur demande, un parcours ouvert. Tests locaux Node et Emulator passes;
-qualification hebergee et revision de livraison consignees apres deploiement.
+ancienne sur demande, un parcours ouvert. Tests locaux Node/Emulator et recette
+Chrome qualifies; livraison `build-2026-09-04-001` et Function 00009-jen.
+Mesures bornees, limites et rollback consignes dans EXPLOITATION.md.
 Les mesures longues P5/P6 ne sont pas declarees closes par ce correctif.
 
 Plan temporaire explicitement demande apres la recette humaine et la latence
