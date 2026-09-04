@@ -124,11 +124,12 @@ separent agregation, cache transactionnel et adaptation serveur.
 
 Le compte App Hosting observe est
 `firebase-app-hosting-compute@secondevienextjsssr.iam.gserviceaccount.com`.
-Son IAM observe ne contient pas de role Monitoring Viewer/Functions Viewer.
-Avant deploiement, verifier/accorder un role personnalise limite aux deux
-permissions `monitoring.timeSeries.list` et `cloudfunctions.functions.list`
-sur le seul projet sandbox. Aucun changement IAM ni deploiement n'a ete fait
-pendant l'implementation. Le scope OAuth utilise est celui de l'ADC; aucun
+Le 4 septembre, la consolidation autorisee a ajoute le role personnalise
+`projects/secondevienextjsssr/roles/functionMetricsReader`, limite aux deux
+permissions `monitoring.timeSeries.list` et `cloudfunctions.functions.list`,
+sur le seul projet sandbox et pour ce seul compte. Aucun role Viewer large,
+Editor ou droit de mutation n'a ete ajoute. Retrait reversible par suppression
+de ce binding, sans toucher aux autres roles. Le scope OAuth utilise est celui de l'ADC; aucun
 token n'est fourni au navigateur ou ecrit dans les preuves.
 
 L'inventaire inclut seulement les fonctions actuellement deployees. Sur 30

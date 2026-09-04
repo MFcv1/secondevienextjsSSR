@@ -109,6 +109,12 @@ photos deja preparees.
 
 ## 4. Procedure de build et de deploiement
 
+La configuration locale sandbox doit aussi activer
+`NEXT_PUBLIC_ADMIN_ANALYTICS_REALTIME=true`, comme `apphosting.yaml`.
+Le modele `.env.sandbox.example` porte cette valeur ; le fichier local reel
+reste ignore par Git. Un code identique ne suffit pas si les flags de build
+different. Redemarrer le serveur local apres modification du flag.
+
 Les commandes canoniques restent:
 
 ```bash
