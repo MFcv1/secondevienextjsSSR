@@ -1,3 +1,4 @@
+import { ArrowUpRight } from 'lucide-react';
 import { PRODUCT_CARD_IMAGE_SIZES } from '../../utils/imageUtils';
 
 const getDimensions = (metadata) => {
@@ -13,15 +14,20 @@ const getDimensions = (metadata) => {
 export function ProductCardHoverOverlay() {
   return (
     <span className="product-card-hover-overlay" aria-hidden="true">
-      <span className="product-card-hover-frame">
-        <span className="product-card-hover-corner product-card-hover-corner--top-left" />
-        <span className="product-card-hover-corner product-card-hover-corner--top-right" />
-        <span className="product-card-hover-corner product-card-hover-corner--bottom-left" />
-        <span className="product-card-hover-corner product-card-hover-corner--bottom-right" />
+      <span className="product-card-hover-veil" />
+      <span className="product-card-hover-cta">
         <span className="product-card-hover-label">Découvrir</span>
-        <span className="product-card-hover-rule" />
+        <span className="product-card-hover-dot">
+          <ArrowUpRight size={12} strokeWidth={1.9} />
+        </span>
       </span>
     </span>
+  );
+}
+
+export function ProductSoldBadge() {
+  return (
+    <span className="product-card-sold-badge">Vendu</span>
   );
 }
 

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import GalleryProductCardServer from './GalleryProductCardServer';
 import { ProductGridMoreButtonIsland } from './GalleryFixedSectionsInteractions';
+import { isSoldOut } from '../commerce/purchasability';
 
 const PRODUCT_GRID_INITIAL_COUNT = 10;
 const RELEASE_CONFIRMATION_DELAYS_MS = [0, 300, 900, 1800];
@@ -182,12 +183,12 @@ export default function GalleryLiveProductGridIsland({
             data-product-grid-item
             hidden={index >= PRODUCT_GRID_INITIAL_COUNT}
           >
-            {badgeLabel ? (
-              <div className="absolute left-2 top-2 z-10 rounded-sm bg-[#d4e1d9] px-2 py-1 text-[8px] font-bold uppercase tracking-widest text-[#2d4033] dark:bg-[#203126]/92 dark:text-[#c8ddca] md:text-[9px]">
+            {badgeLabel && !isSoldOut(item) ? (
+              <div className="product-card-badge z-10 bg-[#d4e1d9] text-[#2d4033] dark:bg-[#203126]/92 dark:text-[#c8ddca]">
                 {badgeLabel}
               </div>
             ) : null}
-            <GalleryProductCardServer item={item} layoutMode="grid" compact priority={false} />
+            <GalleryProductCardServer item={item} layoutMode="grid" compact priority={false} darkMode={darkMode} />
           </div>
         ))}
       </div>

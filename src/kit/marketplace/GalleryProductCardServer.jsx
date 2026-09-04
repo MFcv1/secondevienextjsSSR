@@ -1,12 +1,12 @@
 import Link from 'next/link';
 import { getProductUrl } from '../../utils/slug';
 import { getProductCardImage, getProductDisplayImageSrc, getProductImageItems } from '../../utils/imageUtils';
-import { getProductPriceAmount, getProductStockAmount, isPurchasable, shouldRequestQuote } from '../commerce/purchasability';
+import { getProductPriceAmount, getProductStockAmount, isPurchasable, isSoldOut, shouldRequestQuote } from '../commerce/purchasability';
 import { Heart, Plus } from 'lucide-react';
-import ProductCardMediaServer, { ProductCardHoverOverlay } from './ProductCardMediaServer';
+import ProductCardMediaServer, { ProductCardHoverOverlay, ProductSoldBadge } from './ProductCardMediaServer';
 
 const formatPrice = (item) => {
-  if (item?.sold) return 'VENDU';
+  if (isSoldOut(item)) return 'VENDU';
   if (shouldRequestQuote(item)) return 'Sur demande';
   const price = getProductPriceAmount(item);
   return price ? `${Number(price).toLocaleString('fr-FR')} EUR` : '';
@@ -34,11 +34,13 @@ export default function GalleryProductCardServer({
   isBig = false,
   compact = false,
   priority = false,
+  darkMode = false,
 } = {}) {
   const cardImage = getProductCardImage(item);
   const [primaryDetailImage] = getProductImageItems(item);
   const title = item?.name || item?.title || 'Piece restauree';
   const purchasable = isPurchasable(item);
+  const soldOut = isSoldOut(item);
   const cartItem = getCartItemPayload(item, cardImage, title);
   const warmupImage = primaryDetailImage ? {
     detailFast: primaryDetailImage.detailFast || '',
@@ -56,13 +58,15 @@ export default function GalleryProductCardServer({
 
   return (
     <div
-      className={`group relative flex touch-manipulation flex-col ${compact ? 'gap-3 md:gap-6' : 'gap-6'} w-full text-inherit ${layoutMode === 'list' ? 'flex-row items-center gap-12 border-b border-stone-200 pb-12' : ''}`}
+      className={`product-card-shell group relative flex touch-manipulation flex-col w-full text-inherit ${layoutMode === 'list' ? 'flex-row items-center gap-12 border-b border-stone-200 pb-12' : ''}`}
       data-gallery-product-card
+      data-card-theme={darkMode ? 'dark' : undefined}
+      data-card-sold={soldOut ? 'true' : undefined}
       data-product-id={productId || undefined}
       data-product-url={productUrl}
     >
       <div
-        className={`product-card-media relative overflow-hidden rounded-[12px] ${layoutMode === 'list' ? 'w-1/3 aspect-[4/3]' : 'w-full aspect-[3/4]'} ${isBig ? 'md:aspect-[16/10]' : ''}`}
+        className={`product-card-media relative overflow-hidden ${layoutMode === 'list' ? 'w-1/3 aspect-[4/3]' : 'w-full aspect-[3/4]'} ${isBig ? 'md:aspect-[16/10]' : ''}`}
       >
         <Link href={productUrl} prefetch={false} draggable={false} data-gallery-product-link className="block h-full w-full cursor-pointer text-inherit no-underline" aria-label={`Découvrir ${title}`}>
           <ProductCardMediaServer
@@ -70,14 +74,16 @@ export default function GalleryProductCardServer({
             alt={title}
             priority={priority}
             warmupSrc={warmupSrc}
-            imageClassName="product-card-image h-full w-full object-cover transition-transform duration-[800ms] ease-[cubic-bezier(0.23,1,0.32,1)] lg:group-hover:scale-[1.03]"
+            imageClassName="product-card-image h-full w-full object-cover"
           />
 
           <ProductCardHoverOverlay />
         </Link>
 
+        {soldOut ? <ProductSoldBadge /> : null}
+
         {productId ? (
-          <div className="absolute right-2 top-2 z-20 flex flex-col gap-1.5 opacity-100 transition-opacity duration-300 md:right-3 md:top-3 md:gap-2 lg:opacity-0 lg:group-hover:opacity-100">
+          <div className="product-card-actions absolute right-2 top-2 z-20 flex flex-col gap-1.5 opacity-100 transition-opacity duration-300 md:right-2.5 md:top-2.5 md:gap-2 lg:opacity-0 lg:group-hover:opacity-100">
             {purchasable ? (
               <button
                 type="button"
@@ -107,7 +113,7 @@ export default function GalleryProductCardServer({
         ) : null}
       </div>
 
-      <Link href={productUrl} prefetch={false} draggable={false} data-gallery-product-link className={`flex cursor-pointer text-inherit no-underline ${compact ? 'flex-col gap-1 md:flex-row md:items-start md:justify-between md:gap-4' : 'items-start justify-between gap-2 md:gap-4'} ${layoutMode === 'list' ? 'flex-1 pt-6' : compact ? 'pt-1 md:pt-4' : 'pt-4'}`}>
+      <Link href={productUrl} prefetch={false} draggable={false} data-gallery-product-link className={`product-card-info flex cursor-pointer text-inherit no-underline ${compact ? 'flex-col gap-1 md:flex-row md:items-start md:justify-between md:gap-4' : 'items-start justify-between gap-2 md:gap-4'} ${layoutMode === 'list' ? 'flex-1 pt-6' : ''}`}>
         <div className="flex min-w-0 flex-1 flex-col gap-0.5 md:gap-1">
           <div className={`truncate font-black uppercase tracking-widest opacity-50 ${compact ? 'text-[8px] md:text-[9px]' : 'text-[9px]'}`}>
             {item?.material || 'Matiere inconnue'}
@@ -119,9 +125,9 @@ export default function GalleryProductCardServer({
 
         <div className={`flex shrink-0 ${compact ? 'flex-row items-center justify-between md:flex-col md:items-end' : 'flex-col items-end'} gap-0.5 text-right md:gap-1`}>
           <div className={`whitespace-nowrap font-black uppercase tracking-widest opacity-50 ${compact ? 'text-[8px] md:text-[9px]' : 'text-[9px]'}`}>
-            {item?.sold ? 'Stock: 0' : `Stock: ${getProductStockAmount(item)}`}
+            {soldOut ? 'Stock: 0' : `Stock: ${getProductStockAmount(item)}`}
           </div>
-          <p className={`whitespace-nowrap font-bold tabular-nums ${compact ? 'text-[10px] md:text-xs lg:text-sm' : 'text-[11px] md:text-xs lg:text-sm'} ${item?.sold ? 'text-red-500' : ''}`}>
+          <p className={`product-card-price whitespace-nowrap font-bold tabular-nums ${compact ? 'text-[10px] md:text-xs lg:text-sm' : 'text-[11px] md:text-xs lg:text-sm'}`}>
             {formatPrice(item)}
           </p>
         </div>

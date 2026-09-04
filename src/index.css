@@ -1266,7 +1266,7 @@ img {
 }
 
 .product-card-media {
-  border-radius: 12px;
+  border-radius: 14px;
   overflow: hidden;
   contain: paint;
   background: transparent;
@@ -1304,165 +1304,287 @@ img {
     rotate 800ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 
+/* ------------------------------------------------------------------
+   Carte produit — passe-partout blanc
+   La marge autour de la photo existe par l'ombre et le filet, pas par un
+   contraste de fond : un contenant blanc sur #FAFAF9 ne se detache pas seul.
+   ------------------------------------------------------------------ */
+
+.product-card-shell {
+  --card-surface: #ffffff;
+  --card-edge: rgba(24, 23, 22, 0.07);
+  /* Valeurs reprises telles quelles de la maquette validee. */
+  --card-shadow: 0 1px 2px rgba(33, 27, 19, 0.05), 0 10px 26px rgba(33, 27, 19, 0.055);
+  --card-shadow-lift: 0 2px 4px rgba(33, 27, 19, 0.06), 0 26px 54px rgba(33, 27, 19, 0.13);
+  --card-sold-ink: #8b5c42;
+
+  background: var(--card-surface);
+  border: 1px solid var(--card-edge);
+  border-radius: 20px;
+  padding: 6px;
+  box-shadow: var(--card-shadow);
+  transition:
+    transform 200ms cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 500ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/*
+ * Animer un box-shadow de 54px de flou force un repeint complet a chaque frame.
+ * En balayant la grille trois cartes se chevauchent en transition, ce qui suffit
+ * a faire sauter les frames -- nettement plus sur Safari. On empile donc l'ombre
+ * haute sur un pseudo-element dont on ne fait varier que l'opacite, propriete
+ * composee sur le GPU.
+ */
+.product-card-shell::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border-radius: inherit;
+  box-shadow: var(--card-shadow-lift);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dark .product-card-shell,
+.product-card-shell[data-card-theme="dark"] {
+  --card-surface: #16130f;
+  --card-edge: rgba(230, 193, 138, 0.11);
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 14px 34px rgba(0, 0, 0, 0.34);
+  --card-shadow-lift: 0 2px 6px rgba(0, 0, 0, 0.5), 0 30px 64px rgba(0, 0, 0, 0.5);
+  --card-sold-ink: #d8ad73;
+}
+
+.product-card-info {
+  padding: 13px 8px 7px;
+}
+
+.product-card-price {
+  color: inherit;
+}
+
+.product-card-shell[data-card-sold="true"] .product-card-price {
+  color: var(--card-sold-ink);
+}
+
+/* Pas de desaturation des pieces vendues : elle avait du sens dans la maquette
+   ou une carte sur cinq etait vendue, mais le catalogue est vendu a 97%, donc
+   elle vidait de sa couleur la galerie entiere. La pastille « Vendu » et le
+   prix en brun signalent l'etat sans toucher a la photo. */
+
+/* Pastilles posees dans la photo, donc decalees des 6px du passe-partout */
+.product-card-badge,
+.product-card-sold-badge {
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  z-index: 20;
+  padding: 4px 7px 3px;
+  border-radius: 4px;
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.product-card-sold-badge {
+  background: #201c19;
+  color: #f3ede4;
+}
+
+.dark .product-card-sold-badge,
+.product-card-shell[data-card-theme="dark"] .product-card-sold-badge {
+  background: #e8dcc8;
+  color: #1a1712;
+}
+
+@media (min-width: 768px) {
+  .product-card-badge,
+  .product-card-sold-badge {
+    left: 16px;
+    top: 16px;
+    font-size: 9px;
+  }
+}
+
+/* Le badge « Vendu » vit dans .product-card-media, deja en retrait du passe-partout */
+.product-card-media .product-card-sold-badge {
+  left: 8px;
+  top: 8px;
+}
+
+@media (min-width: 768px) {
+  .product-card-media .product-card-sold-badge {
+    left: 10px;
+    top: 10px;
+  }
+}
+
+/* ---------------- survol ---------------- */
+
 .product-card-hover-overlay {
   pointer-events: none;
   position: absolute;
   inset: 0;
   z-index: 2;
   display: none;
-  align-items: center;
-  justify-content: center;
-  background-color: transparent;
 }
 
-.product-card-hover-frame {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  padding: 28px 40px;
-  opacity: 0;
-}
-
-.product-card-hover-corner {
+.product-card-hover-veil {
   position: absolute;
-  width: 12px;
-  height: 12px;
-  border-color: rgb(255 255 255 / 0.4);
+  inset: 0;
+  opacity: 0;
+  background: linear-gradient(
+    to top,
+    rgba(18, 15, 12, 0.5) 0%,
+    rgba(18, 15, 12, 0.14) 38%,
+    rgba(18, 15, 12, 0) 68%
+  );
 }
 
-.product-card-hover-corner--top-left {
-  top: 0;
-  left: 0;
-  border-top-width: 1px;
-  border-left-width: 1px;
-  transform: translate3d(8px, 8px, 0);
-}
-
-.product-card-hover-corner--top-right {
-  top: 0;
-  right: 0;
-  border-top-width: 1px;
-  border-right-width: 1px;
-  transform: translate3d(-8px, 8px, 0);
-}
-
-.product-card-hover-corner--bottom-left {
-  bottom: 0;
-  left: 0;
-  border-bottom-width: 1px;
-  border-left-width: 1px;
-  transform: translate3d(8px, -8px, 0);
-}
-
-.product-card-hover-corner--bottom-right {
-  right: 0;
-  bottom: 0;
-  border-right-width: 1px;
-  border-bottom-width: 1px;
-  transform: translate3d(-8px, -8px, 0);
+.product-card-hover-cta {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 5px 5px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #181716;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.6),
+    0 6px 18px rgba(0, 0, 0, 0.18);
+  opacity: 0;
+  transform: translate3d(0, 10px, 0);
 }
 
 .product-card-hover-label {
-  color: #fff;
   font-family: var(--font-sans, sans-serif);
-  font-size: 9px;
-  font-weight: 900;
-  letter-spacing: 0.4em;
+  font-size: 11px;
+  font-weight: 600;
   line-height: 1;
-  text-transform: uppercase;
-  transform: translate3d(0, 8px, 0);
+  white-space: nowrap;
 }
 
-.product-card-hover-rule {
-  width: 32px;
-  height: 1.5px;
-  background-color: rgb(255 255 255 / 0.3);
-  transform: scaleX(0);
-  transform-origin: center;
+.product-card-hover-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: #181716;
+  color: #ffffff;
 }
 
+/*
+ * Transitions asymetriques.
+ *
+ * A l'entree on garde les durees d'origine, longues et etagees : c'est ce qui
+ * donne son caractere au survol. A la sortie, les six proprietes partagent une
+ * seule duree courte et une seule courbe.
+ *
+ * Une transition interrompue ne redemarre jamais de zero : elle repart de la
+ * valeur en cours. Avec six durees differentes (520 a 800ms), un survol repris
+ * en vol retrouvait chaque propriete a une fraction differente de son retour,
+ * et elles arrivaient ensuite a six instants distincts -- c'est cette
+ * desynchronisation qui se lit comme un bug. Une sortie unique et breve garantit
+ * que la carte est revenue au repos, ou tout pres, avant qu'un balayage rapide
+ * ne la re-survole ; et si elle est reprise en vol, les six proprietes sont
+ * toutes au meme point.
+ */
 @media (min-width: 1024px) and (any-hover: hover) and (any-pointer: fine) {
   .product-card-hover-overlay {
-    display: flex;
-    transition: background-color 600ms cubic-bezier(0.23, 1, 0.32, 1);
+    display: block;
   }
 
-  .product-card-hover-frame {
-    transition: opacity 600ms cubic-bezier(0.23, 1, 0.32, 1);
+  /* --- sortie : commune a tout, 200ms --- */
+
+  .product-card-hover-veil,
+  .product-card-hover-cta,
+  .product-card-hover-dot,
+  .product-card-shell::after {
+    transition:
+      opacity 200ms cubic-bezier(0.4, 0, 0.2, 1),
+      transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .product-card-hover-corner,
-  .product-card-hover-label {
-    transition: transform 600ms cubic-bezier(0.23, 1, 0.32, 1);
+  .product-card-image[data-product-image-state="ready"] {
+    transition: scale 200ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .product-card-hover-rule {
-    transition: transform 800ms cubic-bezier(0.23, 1, 0.32, 1);
+  /* --- entree : durees d'origine --- */
+
+  .product-card-wrap:hover .product-card-shell,
+  .product-card-shell:focus-within {
+    transform: translate3d(0, -5px, 0);
+    transition:
+      transform 640ms cubic-bezier(0.23, 1, 0.32, 1),
+      background-color 500ms cubic-bezier(0.23, 1, 0.32, 1);
   }
 
-  [data-gallery-product-card]:is(:hover, :focus-within) .product-card-hover-overlay {
-    background-color: rgb(0 0 0 / 0.5);
-  }
-
-  [data-gallery-product-card]:is(:hover, :focus-within) .product-card-hover-frame {
+  .product-card-wrap:hover .product-card-shell::after,
+  .product-card-shell:focus-within::after {
     opacity: 1;
+    transition: opacity 520ms cubic-bezier(0.23, 1, 0.32, 1);
   }
 
-  [data-gallery-product-card]:is(:hover, :focus-within) .product-card-hover-corner,
-  [data-gallery-product-card]:is(:hover, :focus-within) .product-card-hover-label {
+  .product-card-wrap:hover .product-card-hover-veil,
+  [data-gallery-product-card]:focus-within .product-card-hover-veil {
+    opacity: 1;
+    transition: opacity 560ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  .product-card-wrap:hover .product-card-hover-cta,
+  [data-gallery-product-card]:focus-within .product-card-hover-cta {
+    opacity: 1;
     transform: translate3d(0, 0, 0);
+    transition:
+      opacity 520ms cubic-bezier(0.23, 1, 0.32, 1),
+      transform 620ms cubic-bezier(0.32, 0.72, 0, 1);
   }
 
-  [data-gallery-product-card]:is(:hover, :focus-within) .product-card-hover-rule {
-    transform: scaleX(1);
+  .product-card-wrap:hover .product-card-hover-dot,
+  [data-gallery-product-card]:focus-within .product-card-hover-dot {
+    transform: rotate(45deg);
+    transition: transform 700ms cubic-bezier(0.32, 0.72, 0, 1);
   }
 
-  [data-gallery-product-card]:is(:hover, :focus-within) .product-card-image[data-product-image-state="ready"] {
-    scale: 1.03;
+  .product-card-wrap:hover .product-card-image[data-product-image-state="ready"],
+  [data-gallery-product-card]:focus-within .product-card-image[data-product-image-state="ready"] {
+    scale: 1.035;
+    transition: scale 800ms cubic-bezier(0.23, 1, 0.32, 1);
   }
 }
 
 @media (min-width: 1280px) {
-  .product-card-hover-frame {
-    padding-inline: 32px;
+  .product-card-hover-cta {
+    left: 12px;
+    bottom: 12px;
+    padding-left: 16px;
   }
 
   .product-card-hover-label {
-    font-size: 10px;
-    letter-spacing: 0.3em;
-  }
-}
-
-@media (min-width: 1536px) {
-  .product-card-hover-frame {
-    gap: 1vw;
-    padding: 2.5vw 3vw;
-  }
-
-  .product-card-hover-corner {
-    width: 0.9vw;
-    height: 0.9vw;
-  }
-
-  .product-card-hover-label {
-    font-size: 0.6vw;
-    letter-spacing: 0.5em;
-  }
-
-  .product-card-hover-rule {
-    width: 2.5vw;
+    font-size: 11.5px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .product-card-hover-overlay,
-  .product-card-hover-frame,
-  .product-card-hover-corner,
-  .product-card-hover-label,
-  .product-card-hover-rule {
+  .product-card-shell,
+  .product-card-hover-veil,
+  .product-card-hover-cta,
+  .product-card-hover-dot {
     transition-duration: 0.01ms !important;
+  }
+
+  .product-card-shell:is(:hover, :focus-within) {
+    transform: none;
   }
 }
 
@@ -1665,9 +1787,16 @@ html.dark .gallery-seo-proof-item {
   contain-intrinsic-size: none;
 }
 
+/*
+ * Pas de `content-visibility` ici : il implique le confinement de peinture, qui
+ * decoupe au ras de la boite tout ce qu'un enfant peint en dehors -- donc
+ * l'ombre de la carte, transformee en rectangle gris a bords francs au lieu
+ * d'un halo doux. La section entiere est deja differee par
+ * `.gallery-deferred-render` + la file de prechauffage, ce qui porte l'essentiel
+ * du gain au defilement ; le differe par carte n'ajoutait que peu par-dessus.
+ */
 .product-card-wrap {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 420px;
+  position: relative;
 }
 
 [data-gallery-product-card][data-publication-focus="true"] {
@@ -1708,10 +1837,6 @@ footer.gallery-deferred-render {
 }
 
 @media (max-width: 767px) {
-  .product-card-wrap {
-    contain-intrinsic-size: auto 350px;
-  }
-
   #gallery-pieces.gallery-deferred-render,
   #gallery-small-prices.gallery-deferred-render {
     --gallery-intrinsic-block-size: 1700px;

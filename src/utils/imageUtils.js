@@ -15,7 +15,6 @@ export const compressImage = (file, quality = 0.8, maxWidth = 1920) => {
             img.src = event.target.result;
 
             img.onload = () => {
-                const canvas = document.createElement('canvas');
                 let width = img.width;
                 let height = img.height;
 
@@ -25,11 +24,7 @@ export const compressImage = (file, quality = 0.8, maxWidth = 1920) => {
                     width = maxWidth;
                 }
 
-                canvas.width = width;
-                canvas.height = height;
-
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
+                const canvas = drawDownscaled(img, width, height);
 
                 canvas.toBlob(
                     (blob) => {
@@ -64,12 +59,53 @@ export const PRODUCT_IMAGE_VARIANT_SPECS = [
     { key: 'thumb320', width: 320, quality: 0.73, folder: 'thumbnails' },
     { key: 'thumb384', width: 384, quality: 0.74, folder: 'thumbnails' },
     { key: 'thumb', width: 480, quality: 0.74, folder: 'thumbnails' },
-    { key: 'card', width: 768, quality: 0.78, folder: 'responsive' },
+    { key: 'card', width: 768, quality: 0.82, folder: 'responsive' },
     { key: 'detailFast', width: 900, quality: 0.78, folder: 'responsive' },
     { key: 'medium', width: 1024, quality: 0.8, folder: 'responsive' },
     { key: 'large', width: 1440, quality: 0.82, folder: 'responsive' },
     { key: 'full', width: 1920, quality: 0.85, folder: 'responsive' },
 ];
+
+/**
+ * Reduit une image par demi-pas successifs jusqu'a la taille visee.
+ * Un seul drawImage de 4000px vers 384px laisse du crenelage : le filtre
+ * bilineaire du canvas n'echantillonne que quelques pixels source. En divisant
+ * par deux a chaque passe on conserve le detail des textures (bois, tapis).
+ */
+const drawDownscaled = (image, targetWidth, targetHeight) => {
+    const sourceWidth = image.naturalWidth || image.width;
+    const sourceHeight = image.naturalHeight || image.height;
+
+    let currentWidth = sourceWidth;
+    let currentHeight = sourceHeight;
+    let source = image;
+
+    while (currentWidth > targetWidth * 2) {
+        const stepWidth = Math.max(targetWidth, Math.round(currentWidth / 2));
+        const stepHeight = Math.max(targetHeight, Math.round(currentHeight / 2));
+        const stepCanvas = document.createElement('canvas');
+        stepCanvas.width = stepWidth;
+        stepCanvas.height = stepHeight;
+        const stepContext = stepCanvas.getContext('2d');
+        if (!stepContext) break;
+        stepContext.imageSmoothingEnabled = true;
+        stepContext.imageSmoothingQuality = 'high';
+        stepContext.drawImage(source, 0, 0, stepWidth, stepHeight);
+        source = stepCanvas;
+        currentWidth = stepWidth;
+        currentHeight = stepHeight;
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('Canvas context unavailable');
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = 'high';
+    context.drawImage(source, 0, 0, targetWidth, targetHeight);
+    return canvas;
+};
 
 const canvasToWebpFile = (canvas, sourceName, quality) => new Promise((resolve, reject) => {
     canvas.toBlob((blob) => {
@@ -102,12 +138,7 @@ export const createProductImageVariantFiles = async (file, specs = PRODUCT_IMAGE
         const entries = await Promise.all(specs.map(async (spec) => {
             const width = Math.min(sourceWidth, spec.width);
             const height = Math.max(1, Math.round((sourceHeight * width) / sourceWidth));
-            const canvas = document.createElement('canvas');
-            canvas.width = width;
-            canvas.height = height;
-            const context = canvas.getContext('2d');
-            if (!context) throw new Error('Canvas context unavailable');
-            context.drawImage(image, 0, 0, width, height);
+            const canvas = drawDownscaled(image, width, height);
             return [spec.key, await canvasToWebpFile(canvas, file.name, spec.quality)];
         }));
         return Object.fromEntries(entries);
@@ -350,9 +381,14 @@ export const getProductCardImage = (item) => {
         { src: primary?.thumb, width: 480 },
         { src: primary?.card, width: 768 },
     ]);
+    // Au-dela de 1920px de viewport une carte reclame plus de 768px en Retina.
+    // On n'ajoute que des variantes reellement stockees (primary.variants), jamais
+    // les valeurs de repli qui pointeraient sur l'original non redimensionne.
     const desktopCardSrcSet = buildSrcSet([
         { src: primary?.thumb, width: 480 },
         { src: primary?.card, width: 768 },
+        { src: primary?.variants?.medium, width: 1024 },
+        { src: primary?.variants?.large, width: 1440 },
     ]);
     const thumbSrcSet = buildSrcSet([
         { src: primary?.thumb320, width: 320 },

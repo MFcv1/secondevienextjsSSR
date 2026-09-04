@@ -15,6 +15,7 @@ import {
 
 const prefetchedRoutes = new Set();
 const SCROLL_HOVER_WARMUP_COOLDOWN_MS = 420;
+const HOVER_WARMUP_INTENT_MS = 160;
 const PRODUCT_CARD_IMAGE_SELECTOR = 'img[data-product-image-state]';
 
 const getProductMediaSurface = (image) => image.closest?.('[data-product-media-state]');
@@ -67,6 +68,8 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
   const router = useRouter();
   const lastScrollIntentAtRef = useRef(0);
   const authUserRef = useRef(null);
+  const hoverWarmupTimerRef = useRef(0);
+  const hoverWarmupCardRef = useRef(null);
 
   const syncWishlistButtons = useCallback(() => {
     const wishlist = new Set(readWishlistIds());
@@ -137,16 +140,39 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
         });
     };
 
+    // Balayer vite la grille survolait une dizaine de cartes en une seconde et
+    // lancait autant de prefetch de route + de decodages d'image pleine taille.
+    // Le travail retombait dans les frames d'animation et faisait vibrer les
+    // cartes traversees. On n'amorce donc que si le pointeur se pose vraiment.
+    const cancelPendingHoverWarmup = () => {
+      if (hoverWarmupTimerRef.current) {
+        window.clearTimeout(hoverWarmupTimerRef.current);
+        hoverWarmupTimerRef.current = 0;
+      }
+      hoverWarmupCardRef.current = null;
+    };
+
     const onPointerOver = (event) => {
       if (event.pointerType === 'touch') return;
       if (Date.now() - lastScrollIntentAtRef.current < SCROLL_HOVER_WARMUP_COOLDOWN_MS) return;
       const link = event.target.closest?.('[data-gallery-product-link]');
-      if (link) warmupProduct(link.closest('[data-gallery-product-card]'), 'hover');
+      const card = link?.closest('[data-gallery-product-card]') || null;
+      if (card === hoverWarmupCardRef.current) return;
+
+      cancelPendingHoverWarmup();
+      if (!card) return;
+
+      hoverWarmupCardRef.current = card;
+      hoverWarmupTimerRef.current = window.setTimeout(() => {
+        hoverWarmupTimerRef.current = 0;
+        if (card.isConnected) warmupProduct(card, 'hover');
+      }, HOVER_WARMUP_INTENT_MS);
     };
 
     const onPointerDown = (event) => {
       const link = event.target.closest?.('[data-gallery-product-link]');
       if (link) {
+        cancelPendingHoverWarmup();
         clearQueuedProductImageWarmups();
         warmupProduct(link.closest('[data-gallery-product-card]'), 'press');
       }
@@ -186,6 +212,7 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
     window.addEventListener('sv:auth-user-changed', onAuthUserChanged);
 
     return () => {
+      cancelPendingHoverWarmup();
       document.removeEventListener('click', onClick);
       document.removeEventListener('load', onProductImageLoad, true);
       document.removeEventListener('error', onProductImageError, true);

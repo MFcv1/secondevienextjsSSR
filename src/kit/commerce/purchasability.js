@@ -16,6 +16,16 @@ export const isPurchasable = (item) => (
   && !item?.priceOnRequest
 );
 
+/**
+ * Vrai quand la piece n'est plus disponible a la vente : soit le champ `sold`
+ * est renseigne, soit le stock est retombe a zero. C'est l'etat affiche
+ * (badge + libelle de prix), distinct de `isPurchasable` qui gouverne le panier.
+ */
+export const isSoldOut = (item) => (
+  Boolean(item?.sold)
+  || ((!item?.status || item.status === 'published') && getProductStockAmount(item) <= 0)
+);
+
 export const getPurchaseUnavailableLabel = (item) => {
   if (item?.status && item.status !== 'published') return 'Indisponible';
   if (item?.sold) return 'Vendu';

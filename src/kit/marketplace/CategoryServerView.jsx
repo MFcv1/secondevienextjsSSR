@@ -2,12 +2,12 @@ import { ChevronDown, Grid3X3, LayoutGrid, List, SlidersHorizontal, X } from 'lu
 import Link from 'next/link';
 import { getCategoryUrl, getProductUrl } from '../../utils/slug';
 import { getProductCardImage, getProductDisplayImageSrc, getProductImageItems } from '../../utils/imageUtils';
-import { getProductStockAmount, getPurchaseUnavailableLabel, isPurchasable, shouldRequestQuote } from '../commerce/purchasability';
+import { getProductStockAmount, getPurchaseUnavailableLabel, isPurchasable, isSoldOut, shouldRequestQuote } from '../commerce/purchasability';
 import CategoryControlsIsland from './CategoryControlsIsland';
 import GalleryGridActionsIsland from './GalleryGridActionsIsland';
 import PageBreadcrumb from './PageBreadcrumb';
 import CatalogVersionSyncIsland from './CatalogVersionSyncIsland';
-import ProductCardMediaServer, { ProductCardHoverOverlay } from './ProductCardMediaServer';
+import ProductCardMediaServer, { ProductCardHoverOverlay, ProductSoldBadge } from './ProductCardMediaServer';
 import {
   CATEGORY_SORT_OPTIONS,
   buildCategoryHref,
@@ -45,12 +45,13 @@ const FilterSection = ({ title, children, darkMode }) => (
   </div>
 );
 
-const CategoryProductCard = ({ item, priority = false }) => {
+const CategoryProductCard = ({ item, priority = false, darkMode = false }) => {
   const cardImage = getProductCardImage(item);
   const warmup = getCategoryProductWarmup(item);
   const title = item?.name || item?.title || 'Pi\u00e8ce restaur\u00e9e';
   const price = getCategoryProductPrice(item);
   const purchasable = isPurchasable(item);
+  const soldOut = isSoldOut(item);
 
   return (
     <Link
@@ -59,24 +60,28 @@ const CategoryProductCard = ({ item, priority = false }) => {
       draggable={false}
       data-gallery-product-card
       data-gallery-product-link
+      data-card-theme={darkMode ? 'dark' : undefined}
+      data-card-sold={soldOut ? 'true' : undefined}
       data-product-url={warmup.productUrl}
-      className="category-product-card-link group relative flex w-full touch-manipulation flex-col gap-3 text-inherit no-underline md:gap-6"
+      className="category-product-card-link product-card-shell group relative flex w-full touch-manipulation flex-col text-inherit no-underline"
     >
       <div
-        className="category-product-card-media product-card-media relative aspect-[3/4] w-full overflow-hidden rounded-[12px]"
+        className="category-product-card-media product-card-media relative aspect-[3/4] w-full overflow-hidden"
       >
         <ProductCardMediaServer
           cardImage={cardImage}
           alt={title}
           priority={priority}
           warmupSrc={warmup.src}
-          imageClassName="product-card-image h-full w-full object-cover transition-transform duration-[800ms] ease-[cubic-bezier(0.23,1,0.32,1)] lg:group-hover:scale-[1.03]"
+          imageClassName="product-card-image h-full w-full object-cover"
         />
 
         <ProductCardHoverOverlay />
+
+        {soldOut ? <ProductSoldBadge /> : null}
       </div>
 
-      <div className="category-product-card-info flex flex-col gap-1 pt-1 md:flex-row md:items-start md:justify-between md:gap-4 md:pt-4">
+      <div className="category-product-card-info product-card-info flex flex-col gap-1 md:flex-row md:items-start md:justify-between md:gap-4">
         <div className="flex min-w-0 flex-1 flex-col gap-0.5 md:gap-1">
           <div className="truncate text-[8px] font-black uppercase tracking-widest opacity-50 md:text-[9px]">
             {item?.material || 'Mati\u00e8re inconnue'}
@@ -88,10 +93,10 @@ const CategoryProductCard = ({ item, priority = false }) => {
 
         <div className="flex shrink-0 flex-row items-center justify-between gap-0.5 text-right md:flex-col md:items-end md:gap-1">
           <div className="whitespace-nowrap text-[8px] font-black uppercase tracking-widest opacity-50 md:text-[9px]">
-            {item?.sold ? 'Stock: 0' : `Stock: ${getProductStockAmount(item)}`}
+            {soldOut ? 'Stock: 0' : `Stock: ${getProductStockAmount(item)}`}
           </div>
-          <p className={`whitespace-nowrap text-[10px] font-bold tabular-nums md:text-xs lg:text-sm ${!purchasable ? 'text-red-500' : ''}`}>
-            {purchasable ? `${price} EUR` : shouldRequestQuote(item) ? 'Sur demande' : getPurchaseUnavailableLabel(item)}
+          <p className="product-card-price whitespace-nowrap text-[10px] font-bold tabular-nums md:text-xs lg:text-sm">
+            {soldOut ? 'VENDU' : purchasable ? `${price} EUR` : shouldRequestQuote(item) ? 'Sur demande' : getPurchaseUnavailableLabel(item)}
           </p>
         </div>
       </div>
@@ -412,12 +417,12 @@ export default function CategoryServerView({
                 <div className="category-product-list grid grid-cols-2 gap-4 md:grid-cols-2 md:gap-[24px] lg:grid-cols-3">
                   {filteredItems.map((item, index) => (
                     <div key={item.id} className="product-card-wrap relative" {...getCategoryProductDataset(item)}>
-                      {isNewProduct(item) ? (
-                        <div className="absolute left-2 top-2 z-10 rounded-sm bg-[#d4e1d9] px-2 py-1 text-[8px] font-bold uppercase tracking-widest text-[#2d4033] md:text-[9px]">
+                      {isNewProduct(item) && !isSoldOut(item) ? (
+                        <div className="product-card-badge z-10 bg-[#d4e1d9] text-[#2d4033] dark:bg-[#203126]/92 dark:text-[#c8ddca]">
                           Nouveau
                         </div>
                       ) : null}
-                      <CategoryProductCard item={item} priority={index < 3} />
+                      <CategoryProductCard item={item} priority={index < 3} darkMode={darkMode} />
                     </div>
                   ))}
                 </div>
