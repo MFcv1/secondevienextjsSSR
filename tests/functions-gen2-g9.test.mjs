@@ -91,7 +91,7 @@ function createFakeDb() {
 
 test('G9 exposes its 24 Gen2 targets beside the active event-driven projections', () => {
   const exported = require(path.join(ROOT, 'functions/index.js'));
-  assert.equal(Object.keys(exported).length, 160);
+  assert.equal(Object.keys(exported).length, 161);
   assert.equal(LOGICAL.length, 24);
   for (const name of LOGICAL) {
     assert.equal(exported[name], undefined, `${name} Gen1 encore exportee`);
@@ -102,9 +102,9 @@ test('G9 exposes its 24 Gen2 targets beside the active event-driven projections'
 
 test('G9 inventory counts are recalculated from the complete source set', () => {
   const exports = extractLocalExports(ROOT);
-  assert.equal(exports.length, 160);
-  assert.equal(EXPECTED_CURRENT_SOURCE_COUNT, 160);
-  assert.equal(EXPECTED_CURRENT_CLOUD_COUNT, 157);
+  assert.equal(exports.length, 161);
+  assert.equal(EXPECTED_CURRENT_SOURCE_COUNT, 161);
+  assert.equal(EXPECTED_CURRENT_CLOUD_COUNT, 158);
   assert.equal(PARALLEL_MIGRATION_EXPORTS.size, 120);
   assert.deepEqual(
     exports.filter(({ name }) => name.endsWith('Gen2') && !PARALLEL_MIGRATION_EXPORTS.has(name) && !PENDING_OBSERVABILITY_EXPORTS.has(name) && !ACTIVE_OBSERVABILITY_EXPORTS.has(name)),

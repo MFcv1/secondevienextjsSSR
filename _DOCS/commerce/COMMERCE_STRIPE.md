@@ -597,9 +597,10 @@ portent `cartLineId/cartRevision`; le succes exige
 lignes achetees demeurees identiques. `MyOrdersView` utilise le reader UID et
 sa pagination; les readers commandes et retours admin sont egalement actifs,
 avec un adaptateur v1 historique explicitement read-only. Les transports Gate 5
-restent exportes. Le controle serveur sandbox courant est
-`newCheckoutMode=v2_fixture`, les mutations admin sont `read_only` et le
-paiement offline reste `off`.
+restent exportes. Le controle ferme `v2_fixture/read_only` appartenait a la
+qualification initiale. L'ouverture durable du 2026-08-25 est `v2_all/v2`,
+Stripe test et paiement offline `off` ; relire le controle reel avant mutation.
+Voir [COMMERCE_SYNTHESE.md](COMMERCE_SYNTHESE.md).
 
 Gate 7A ajoute les projections financieres absolues, les recus sandbox
 explicitement non fiscaux, l'outbox avec leases/dead-letter et statut

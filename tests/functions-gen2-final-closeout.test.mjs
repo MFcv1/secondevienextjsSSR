@@ -1,9 +1,14 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import test from 'node:test';
 
 import {
   loadEvidence,
   runCloseout,
+  trackedMarkdownReferences,
   validateEvidence,
   validateReferenceState
 } from '../scripts/functions-gen2-final-closeout.mjs';
@@ -11,6 +16,27 @@ import {
 function clone(value) {
   return structuredClone(value);
 }
+
+test('les archives suivies par Git ne bloquent pas la cloture, les references actives oui', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sv-doc-closeout-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const files = [
+    '_DOCS/ETAT_PROJET.md',
+    'doc/archives/2026-09-04/map.md',
+    'doc/archives-active/README.md'
+  ];
+  for (const file of files) {
+    const absolutePath = path.join(root, file);
+    fs.mkdirSync(path.dirname(absolutePath), { recursive: true });
+    fs.writeFileSync(absolutePath, 'Reference: FINALISATION_MIGRATION_GEN2.md\n');
+  }
+  execFileSync('git', ['init', '--quiet'], { cwd: root });
+  execFileSync('git', ['add', '--', ...files], { cwd: root });
+  assert.deepEqual(trackedMarkdownReferences(root).sort(), [
+    '_DOCS/ETAT_PROJET.md',
+    'doc/archives-active/README.md'
+  ]);
+});
 
 test('le verrou de cloture accepte uniquement le mode correspondant aux preuves courantes', () => {
   const evidence = loadEvidence();

@@ -5,11 +5,14 @@ import { spawnSync } from 'node:child_process';
 const PROJECT = 'secondevienextjsssr';
 const REGION = 'europe-west1';
 const APPLY_TOKEN = 'APPLY_DASHBOARD_EVENT_INVOKERS_SANDBOX';
-const TRIGGER_ACCOUNT = `functions-eventarc-invoker@${PROJECT}.iam.gserviceaccount.com`;
 const SERVICES = Object.freeze([
-  'projectnewslettersubscribergen2',
-  'oncommerceoutboxwrittengen2',
-  'oncommercereservationwrittengen2'
+  { service: 'projectnewslettersubscribergen2', account: 'functions-eventarc-invoker' },
+  { service: 'oncommerceoutboxwrittengen2', account: 'functions-eventarc-invoker' },
+  { service: 'oncommercereservationwrittengen2', account: 'functions-eventarc-invoker' },
+  { service: 'journalinventorymovementgen2', account: 'commerce-operations-reconciler' },
+  { service: 'journalordereventgen2', account: 'commerce-operations-reconciler' },
+  { service: 'projectcommercefinancialhistorygen2', account: 'order-stats-projector' },
+  { service: 'projectadminactionsummarygen2', account: 'functions-eventarc-invoker' }
 ]);
 const apply = process.argv.includes('--apply');
 
@@ -33,12 +36,13 @@ function hasBinding(policy, role, member) {
     binding.role === role && (binding.members || []).includes(member) && !binding.condition);
 }
 
-const member = `serviceAccount:${TRIGGER_ACCOUNT}`;
-const before = Object.fromEntries(SERVICES.map((service) => [service,
+const memberFor = (account) => `serviceAccount:${account}@${PROJECT}.iam.gserviceaccount.com`;
+const before = Object.fromEntries(SERVICES.map(({ service }) => [service,
   command(['run', 'services', 'get-iam-policy', service, `--region=${REGION}`])
 ]));
 const changes = {};
-for (const service of SERVICES) {
+for (const { service, account } of SERVICES) {
+  const member = memberFor(account);
   if (hasBinding(before[service], 'roles/run.invoker', member)) {
     changes[service] = 'EXISTING';
   } else if (!apply) {
@@ -56,11 +60,11 @@ for (const service of SERVICES) {
   }
 }
 
-const after = Object.fromEntries(SERVICES.map((service) => [service,
+const after = Object.fromEntries(SERVICES.map(({ service }) => [service,
   command(['run', 'services', 'get-iam-policy', service, `--region=${REGION}`])
 ]));
-const verified = SERVICES.every((service) =>
-  hasBinding(after[service], 'roles/run.invoker', member) &&
+const verified = SERVICES.every(({ service, account }) =>
+  hasBinding(after[service], 'roles/run.invoker', memberFor(account)) &&
   !hasBinding(after[service], 'roles/run.invoker', 'allUsers') &&
   !hasBinding(after[service], 'roles/run.invoker', 'allAuthenticatedUsers'));
 
@@ -69,7 +73,10 @@ process.stdout.write(`${JSON.stringify({
   mode: apply ? 'apply' : 'dry-run',
   project: PROJECT,
   region: REGION,
-  triggerServiceAccount: TRIGGER_ACCOUNT,
+  triggerServiceAccounts: Object.fromEntries(SERVICES.map(({ service, account }) => [
+    service,
+    `${account}@${PROJECT}.iam.gserviceaccount.com`
+  ])),
   changes,
   verified,
   publicInvoker: false

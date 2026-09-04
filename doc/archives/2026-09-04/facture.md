@@ -1,3 +1,7 @@
+> ARCHIVE — photographie conservée le 2026-09-04 depuis `facture.md`.
+> Contenu historique non applicable comme consigne actuelle. Les liens Markdown ont été rebasés.
+> Références actives : [documentation](../../../_DOCS/README.md).
+
 # Factures manuelles administrateur
 
 Derniere mise a jour: 2026-08-01
@@ -10,11 +14,11 @@ Ce document decrit le nouvel atelier de facturation manuelle du back-office
 Seconde Vie. Il sert de fiche de reprise courte pour Jean et ne remplace pas
 les sources canoniques du projet:
 
-- [Back-office](_DOCS/admin/BACKOFFICE.md) pour l'interface administrateur;
-- [E-mails transactionnels](_DOCS/email/EMAILS_TRANSACTIONNELS.md) pour le
+- [Back-office](../../../_DOCS/admin/BACKOFFICE.md) pour l'interface administrateur;
+- [E-mails transactionnels](../../../_DOCS/email/EMAILS_TRANSACTIONNELS.md) pour le
   transport Gmail/Resend;
-- [Donnees et analytics](_DOCS/data/DONNEES_ANALYTICS.md) pour la retention;
-- [Qualite et tests](_DOCS/quality/QUALITE_TESTS.md) pour les validations;
+- [Donnees et analytics](../../../_DOCS/data/DONNEES_ANALYTICS.md) pour la retention;
+- [Qualite et tests](../../../_DOCS/quality/QUALITE_TESTS.md) pour les validations;
 - [Cartographie technique](map.md) pour les fichiers, collections et exports.
 
 En cas de contradiction, le code executable puis ces chapitres canoniques
@@ -231,13 +235,13 @@ automatique du regime fiscal de Seconde Vie.
 
 ## 10. Fichiers principaux
 
-- [Interface Factures](src/kit/admin/AdminInvoices.jsx)
-- [Integration du back-office](app/admin/AdminAppIsland.jsx)
-- [Validation metier](functions/src/invoicing/manualInvoiceDomain.js)
-- [Generation PDF](functions/src/invoicing/manualInvoicePdf.js)
-- [Callables et envoi](functions/src/invoicing/manualInvoices.js)
-- [Rules Firestore](firestore.rules)
-- [Rules Storage](storage.rules)
-- [Tests](tests/invoicing/manual-invoices.test.cjs)
+- [Interface Factures](../../../src/kit/admin/AdminInvoices.jsx)
+- [Integration du back-office](../../../app/admin/AdminAppIsland.jsx)
+- [Validation metier](../../../functions/src/invoicing/manualInvoiceDomain.js)
+- [Generation PDF](../../../functions/src/invoicing/manualInvoicePdf.js)
+- [Callables et envoi](../../../functions/src/invoicing/manualInvoices.js)
+- [Rules Firestore](../../../firestore.rules)
+- [Rules Storage](../../../storage.rules)
+- [Tests](../../../tests/invoicing/manual-invoices.test.cjs)
 
 Retour a l'index de travail: [jean.md](jean.md).

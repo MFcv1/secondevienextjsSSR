@@ -6,6 +6,11 @@ runConfig:
   memoryMiB: 512
 
 env:
+  - variable: NEXT_PUBLIC_ADMIN_ANALYTICS_REALTIME
+    value: "true"
+    availability:
+      - BUILD
+      - RUNTIME
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
     value: "AIzaSyA1QWWEgPdeGPCsir57EhhvEBthFJR9_No"
     availability:

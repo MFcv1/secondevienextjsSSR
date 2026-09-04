@@ -6,6 +6,11 @@ import {
 import { collection, query, orderBy, limit, getDocs, Timestamp } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { getCallableFunction } from '../config/firebaseLazy';
+import { dataPerformance, recordDataServerTimings, startDataPerformance } from './adminAnalyticsPerformance';
+import { ANALYTICS_REALTIME_ENABLED, useAnalyticsRealtime } from './adminAnalyticsRealtime';
+import { realtimeOverview } from './adminAnalyticsRealtimeStore';
+import { useLiveSessions, liveSessionsChannel, listenSessionDetail } from './liveSessionsChannel';
+import { isSessionOnline, LIVE_PRESENCE_MS } from './liveSessionPresence';
 import { CATEGORY_RAIL_IMAGE_SOURCES } from '../config/constants';
 import { getProductImageItems } from '../../utils/imageUtils';
 import { getProductUrl } from '../../utils/slug';
@@ -23,12 +28,15 @@ let cachedAnalyticsSessionsLoadedAt = null;
 let cachedAffiliateClicks = null;
 let cachedAffiliateClicksLoadedAt = null;
 const cachedAnalyticsOverviews = new Map();
+let cachedAnalyticsOverviewBundlePromise = null;
 
 const ADMIN_ANALYTICS_CACHE_DB = 'sv-admin-analytics-cache-v1';
 const ADMIN_ANALYTICS_CACHE_STORE = 'snapshots';
 const ADMIN_ANALYTICS_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 const ADMIN_ANALYTICS_REFRESH_TTL_MS = 5 * 60 * 1000;
-const ADMIN_SESSIONS_CACHE_KEY = 'traffic-sessions';
+const ADMIN_SESSION_PAGE_SIZE = 10;
+const ADMIN_SESSIONS_CACHE_KEY = 'traffic-sessions-v2';
+const ADMIN_OVERVIEWS_CACHE_KEY = 'traffic-overviews-v1';
 const ADMIN_AFFILIATE_CACHE_KEY = 'affiliate-clicks';
 const OMIT_CACHE_FIELDS = new Set(['email', 'syncTokenHash', 'userAgent', 'journey', 'lastEventPreview']);
 
@@ -689,7 +697,7 @@ const SessionJourneyTrace = ({ session, darkMode, formatDuration, productThumbna
 
             <div className="relative pl-6 space-y-6 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-px before:bg-stone-800 lg:grid lg:[grid-template-columns:repeat(auto-fit,minmax(210px,1fr))] lg:gap-x-3 lg:gap-y-7 lg:space-y-0 lg:pl-0 lg:before:hidden">
                 {!session.journey || session.journey.length === 0 ? (
-                    <p className="text-[10px] italic text-stone-500">Aucune activite enregistree</p>
+                    <p className="text-[10px] italic text-stone-500">{!session.journey ? 'Parcours en cours de chargement ou indisponible' : 'Aucune activite enregistree'}</p>
                 ) : (
                     session.journey.map((step, idx) => {
                         const accent = getJourneyAccent(step.page);
@@ -843,7 +851,7 @@ const VisitorSessionGroup = ({
                     {visitor.sessions.map(session => {
                         const isExpanded = expandedSessionId === session.id;
                         const lastActiveMs = getMillis(session.lastActivityAt);
-                        const isInactive = (now - lastActiveMs) > 30000;
+                        const isInactive = (now - lastActiveMs) > LIVE_PRESENCE_MS;
                         const isFinished = session.sessionActive === false || isInactive;
                         const startedTime = session.startedAt ? new Date(getMillis(session.startedAt)).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '--:--';
 
@@ -1735,31 +1743,80 @@ const BoutiqueAnalytics = ({ darkMode, sessions = [], onRefreshSessions, session
 void BoutiqueAnalytics;
 
 const AdminAnalytics = ({ darkMode = false, items = [] }) => {
-    const [sessions, setSessions] = useState(() => cachedAnalyticsSessions || []);
+    const [legacySessions, setSessions] = useState(() => cachedAnalyticsSessions || []);
+    const liveSessionState = useLiveSessions();
+    const [liveDetail, setLiveDetail] = useState(null);
+    const [detailStatus, setDetailStatus] = useState('idle');
+    const sessions = useMemo(() => ANALYTICS_REALTIME_ENABLED
+        ? liveSessionState.sessions.map(session => liveDetail?.id === session.id ? { ...session, ...liveDetail } : session)
+        : legacySessions, [legacySessions, liveSessionState.sessions, liveDetail]);
     const [loading, setLoading] = useState(false);
     const [restoringSessions, setRestoringSessions] = useState(() => cachedAnalyticsSessions === null);
     const [timeFilter, setTimeFilter] = useState('1j'); // Default to 24h // '1h', '1j', '7j', '1mois', '1ans'
     const [expandedSessionId, setExpandedSessionId] = useState(null);
+    const selectedExists = liveSessionState.sessions.some(session => session.id === expandedSessionId);
+    useEffect(() => {
+        setLiveDetail(null);
+        if (!ANALYTICS_REALTIME_ENABLED || !expandedSessionId || !selectedExists) { setDetailStatus('idle'); return; }
+        setDetailStatus('loading');
+        return listenSessionDetail(expandedSessionId, value => {
+            setLiveDetail(value); setDetailStatus(value ? 'ready' : 'missing');
+        }, () => { setLiveDetail(null); setDetailStatus('error'); });
+    }, [expandedSessionId, selectedExists]);
     const [now, setNow] = useState(Date.now());
     const [liveNow, setLiveNow] = useState(Date.now());
     const [currentPage, setCurrentPage] = useState(1);
     const DAYS_PER_PAGE = 10;
     const [openVisitors, setOpenVisitors] = useState({});
     const [sessionsRefreshKey, setSessionsRefreshKey] = useState(() => cachedAnalyticsSessionsLoadedAt || 0);
-    const [overview, setOverview] = useState(() => cachedAnalyticsOverviews.get('1j')?.data || null);
+    const [legacyOverview, setOverview] = useState(() => cachedAnalyticsOverviews.get('1j')?.data || null);
+    const [legacyOverviewStatus, setOverviewStatus] = useState(() => (
+        cachedAnalyticsOverviews.get('1j')?.data ? 'ready' : 'restoring'
+    ));
+    const [restoringOverviews, setRestoringOverviews] = useState(() => cachedAnalyticsOverviews.size === 0);
     const [nextBeforeMillis, setNextBeforeMillis] = useState(null);
     const [loadingOlder, setLoadingOlder] = useState(false);
     const initialRecentSyncRef = useRef(false);
+    const performanceTraceRef = useRef(null);
+    const overviewSourceRef = useRef(cachedAnalyticsOverviews.get('1j')?.data ? 'memory' : 'none');
+    const realtime = useAnalyticsRealtime();
+    const liveOverview = useMemo(() => realtimeOverview(realtime.data, timeFilter, liveNow), [realtime.data, timeFilter, liveNow]);
+    const overview = ANALYTICS_REALTIME_ENABLED ? liveOverview : legacyOverview;
+    const overviewStatus = ANALYTICS_REALTIME_ENABLED
+        ? (liveOverview ? 'ready' : realtime.status === 'error' ? 'error' : 'loading') : legacyOverviewStatus;
+    if (ANALYTICS_REALTIME_ENABLED) overviewSourceRef.current = realtime.status === 'cached' ? 'memory' : 'server';
     const productThumbnails = useMemo(() => buildProductThumbnailMap(items), [items]);
 
     useEffect(() => {
+        performanceTraceRef.current = dataPerformance.current() || startDataPerformance('open');
+        dataPerformance.mark('component.commit', { trace: performanceTraceRef.current });
+    }, []);
+
+    useEffect(() => {
+        const trace = performanceTraceRef.current;
+        if (overviewStatus !== 'ready' || !trace) return undefined;
+        dataPerformance.mark('overview.ready', { trace, source: overviewSourceRef.current });
+        let secondFrame;
+        const firstFrame = requestAnimationFrame(() => {
+            secondFrame = requestAnimationFrame(() => {
+                dataPerformance.mark('kpi.frame', { trace, source: overviewSourceRef.current });
+            });
+        });
+        return () => {
+            cancelAnimationFrame(firstFrame);
+            if (secondFrame !== undefined) cancelAnimationFrame(secondFrame);
+        };
+    }, [overview, overviewStatus, timeFilter]);
+
+    useEffect(() => {
         let cancelled = false;
+        if (ANALYTICS_REALTIME_ENABLED) { setRestoringSessions(false); return; }
         if (cachedAnalyticsSessions !== null) {
             setRestoringSessions(false);
             return () => { cancelled = true; };
         }
 
-        readAdminAnalyticsCache(ADMIN_SESSIONS_CACHE_KEY).then((snapshot) => {
+        dataPerformance.span('cache.sessions', () => readAdminAnalyticsCache(ADMIN_SESSIONS_CACHE_KEY)).then((snapshot) => {
             if (cancelled || !snapshot) return;
             cachedAnalyticsSessions = snapshot.data || [];
             cachedAnalyticsSessionsLoadedAt = snapshot.loadedAt || 0;
@@ -1773,6 +1830,30 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
         return () => { cancelled = true; };
     }, []);
 
+    useEffect(() => {
+        let cancelled = false;
+        if (ANALYTICS_REALTIME_ENABLED) return undefined;
+        if (cachedAnalyticsOverviews.size > 0) {
+            setRestoringOverviews(false);
+            return () => { cancelled = true; };
+        }
+        dataPerformance.span('cache.overview', () => readAdminAnalyticsCache(ADMIN_OVERVIEWS_CACHE_KEY)).then((snapshot) => {
+            if (cancelled || !snapshot?.data?.overviews) return;
+            Object.entries(snapshot.data.overviews).forEach(([period, data]) => {
+                cachedAnalyticsOverviews.set(period, { data, loadedAt: snapshot.loadedAt || 0 });
+            });
+            const selected = snapshot.data.overviews['1j'];
+            if (selected) {
+                overviewSourceRef.current = 'disk';
+                setOverview(selected);
+                setOverviewStatus('ready');
+            }
+        }).finally(() => {
+            if (!cancelled) setRestoringOverviews(false);
+        });
+        return () => { cancelled = true; };
+    }, []);
+
     // Refresh live status without moving the analytics window away from the last refresh.
     useEffect(() => {
         const i = setInterval(() => setLiveNow(Date.now()), 10000);
@@ -1782,18 +1863,13 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
     // Kpis
     const analyticsStats = useMemo(() => {
         if (overview?.kpis && overview?.chartData && overview?.dataQuality) return overview;
-        const oldestStartedAt = sessions
-            .map(session => getMillis(session.startedAt))
-            .filter(Boolean)
-            .reduce((oldest, value) => Math.min(oldest, value), Infinity);
-
-        return buildAnalyticsStats(sessions, timeFilter, {
+        return buildAnalyticsStats([], timeFilter, {
             now,
-            coverageStartMs: Number.isFinite(oldestStartedAt) ? oldestStartedAt : null,
-            fetchedCount: sessions.length,
-            maxFetched: MAX_ANALYTICS_SESSIONS
+            coverageStartMs: null,
+            fetchedCount: 0,
+            maxFetched: 0
         });
-    }, [overview, sessions, timeFilter, now]);
+    }, [overview, timeFilter, now]);
 
     const kpis = analyticsStats.kpis;
     const dataQuality = analyticsStats.dataQuality;
@@ -1803,8 +1879,8 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
     const filteredTrafficSessions = sessions;
 
     const groupedByDay = useMemo(() => (
-        buildVisitorDayGroups(filteredTrafficSessions, { now })
-    ), [filteredTrafficSessions, now]);
+        buildVisitorDayGroups(filteredTrafficSessions, { now: liveNow, activeWindowMs: LIVE_PRESENCE_MS })
+    ), [filteredTrafficSessions, liveNow]);
 
     const totalPages = Math.ceil(groupedByDay.length / DAYS_PER_PAGE);
     const paginatedGroups = useMemo(() => {
@@ -1831,9 +1907,7 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
     // ─── Sessions en ligne (Live) ───
     const liveSessions = useMemo(() => {
         return sessions.filter(s => {
-            const lastActiveMs = getMillis(s.lastActivityAt);
-            const isInactive = (liveNow - lastActiveMs) > 30000;
-            return s.sessionActive !== false && !isInactive;
+            return isSessionOnline(s, liveNow);
         });
     }, [sessions, liveNow]);
 
@@ -1854,37 +1928,63 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
     }, [firstTrafficDayKey]);
 
     const loadOverview = useCallback(async ({ force = false } = {}) => {
+        if (ANALYTICS_REALTIME_ENABLED) return; // No callable fallback, even on missing/invalid projection.
+        const trace = performanceTraceRef.current;
         const cached = cachedAnalyticsOverviews.get(timeFilter);
         if (!force && cached && (Date.now() - cached.loadedAt) < ADMIN_ANALYTICS_REFRESH_TTL_MS) {
+            overviewSourceRef.current = 'memory';
             setOverview(cached.data);
+            setOverviewStatus('ready');
             return;
         }
+        if (!cached) setOverviewStatus('loading');
         try {
-            const getAnalyticsAdmin = await getCallableFunction('getAnalyticsAdmin');
-            const response = await getAnalyticsAdmin({ action: 'overview', period: timeFilter });
-            cachedAnalyticsOverviews.set(timeFilter, { data: response.data, loadedAt: Date.now() });
-            setOverview(response.data);
+            if (!cachedAnalyticsOverviewBundlePromise || force) {
+                cachedAnalyticsOverviewBundlePromise = dataPerformance.span('callable.prepare', () => getCallableFunction('getAnalyticsAdmin'), { trace })
+                    .then((getAnalyticsAdmin) => dataPerformance.span('overview.request', () => getAnalyticsAdmin({ action: 'overview_bundle' }), { trace }))
+                    .finally(() => {
+                        cachedAnalyticsOverviewBundlePromise = null;
+                    });
+            }
+            const response = await cachedAnalyticsOverviewBundlePromise;
+            recordDataServerTimings(response.data?.serverTimings, trace);
+            const overviews = response.data?.overviews || {};
+            const loadedAt = Date.now();
+            Object.entries(overviews).forEach(([period, data]) => {
+                cachedAnalyticsOverviews.set(period, { data, loadedAt });
+            });
+            void writeAdminAnalyticsCache(ADMIN_OVERVIEWS_CACHE_KEY, { overviews }, loadedAt);
+            overviewSourceRef.current = 'server';
+            setOverview(overviews[timeFilter] || null);
+            setOverviewStatus(overviews[timeFilter] ? 'ready' : 'error');
         } catch (error) {
+            dataPerformance.mark('overview.error', { trace, outcome: 'error' });
             console.error('Analytics overview load error:', error);
-            setOverview(null);
+            if (!cached) {
+                setOverview(null);
+                setOverviewStatus('error');
+            } else {
+                setOverviewStatus('ready');
+            }
         }
     }, [timeFilter]);
 
     const loadSessions = useCallback(async ({ incremental = false, beforeMillis = null } = {}) => {
+        const trace = performanceTraceRef.current;
         if (beforeMillis) setLoadingOlder(true);
         else setLoading(true);
         try {
-            const getAnalyticsAdmin = await getCallableFunction('getAnalyticsAdmin');
+            const getAnalyticsAdmin = await dataPerformance.span('callable.prepare', () => getCallableFunction('getAnalyticsAdmin'), { trace });
             const newestKnown = sessions.reduce(
                 (latest, session) => Math.max(latest, getMillis(session.lastActivityAt) || 0),
                 0
             );
-            const response = await getAnalyticsAdmin({
+            const response = await dataPerformance.span('sessions.request', () => getAnalyticsAdmin({
                 action: 'list',
-                pageSize: 250,
+                pageSize: ADMIN_SESSION_PAGE_SIZE,
                 ...(beforeMillis ? { beforeMillis } : {}),
                 ...(!beforeMillis && incremental && newestKnown ? { updatedAfterMillis: newestKnown } : {})
-            });
+            }), { trace });
             const incoming = Array.isArray(response.data.sessions) ? response.data.sessions : [];
             const merged = new Map((beforeMillis || incremental ? sessions : []).map(session => [session.id, session]));
             incoming.forEach(session => merged.set(session.id, session));
@@ -1905,7 +2005,7 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
                 ? (response.data.truncated ? (response.data.nextBeforeMillis || oldestKnown) : null)
                 : (
                     response.data.nextBeforeMillis
-                    || (incremental && cleanData.length >= 250 && Number.isFinite(oldestKnown) ? oldestKnown : null)
+                    || (incremental && cleanData.length >= ADMIN_SESSION_PAGE_SIZE && Number.isFinite(oldestKnown) ? oldestKnown : null)
                 ));
             void writeAdminAnalyticsCache(ADMIN_SESSIONS_CACHE_KEY, cleanData, loadedAt);
         } catch (error) {
@@ -1917,11 +2017,14 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
     }, [sessions]);
 
     useEffect(() => {
+        if (ANALYTICS_REALTIME_ENABLED) return;
+        if (restoringOverviews) return;
         setOverview(cachedAnalyticsOverviews.get(timeFilter)?.data || null);
         void loadOverview();
-    }, [loadOverview, timeFilter]);
+    }, [loadOverview, restoringOverviews, timeFilter]);
 
     useEffect(() => {
+        if (ANALYTICS_REALTIME_ENABLED) return;
         if (restoringSessions || initialRecentSyncRef.current) return;
         initialRecentSyncRef.current = true;
         if (
@@ -1932,6 +2035,8 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
     }, [restoringSessions, loadSessions, sessions.length]);
 
     const refreshAnalytics = useCallback(async () => {
+        performanceTraceRef.current = startDataPerformance('refresh');
+        if (ANALYTICS_REALTIME_ENABLED) { setLiveNow(Date.now()); return; }
         await Promise.all([
             loadOverview({ force: true }),
             loadSessions({ incremental: sessions.length > 0 })
@@ -1944,6 +2049,7 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
             return;
         }
         setExpandedSessionId(sessionId);
+        if (ANALYTICS_REALTIME_ENABLED) return;
         const existing = sessions.find(session => session.id === sessionId);
         if (Array.isArray(existing?.journey)) return;
         try {
@@ -1981,7 +2087,7 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
                 confirmation
             });
             if (!dryRun.data?.wouldDelete || !dryRun.data?.precondition?.updateTime) {
-                await loadSessions();
+                if (!ANALYTICS_REALTIME_ENABLED) await loadSessions();
                 return;
             }
             await deleteSession({
@@ -1991,7 +2097,7 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
                 confirmation,
                 expectedUpdateTime: dryRun.data.precondition.updateTime
             });
-            loadSessions();
+            if (!ANALYTICS_REALTIME_ENABLED) loadSessions();
         } catch (e) {
             console.error("Delete error:", e);
             alert("Erreur lors de la suppression");
@@ -2029,7 +2135,11 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
                         {ANALYTICS_TIME_FILTERS.map(tf => (
                             <button
                                 key={tf.id}
-                                onClick={() => setTimeFilter(tf.id)}
+                                onClick={() => {
+                                    if (tf.id === timeFilter) return;
+                                    performanceTraceRef.current = startDataPerformance('period');
+                                    setTimeFilter(tf.id);
+                                }}
                                 className={`px-4 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all ${timeFilter === tf.id ? (darkMode ? 'bg-white/10 text-white shadow-sm border border-white/10' : 'bg-white text-stone-900 shadow-sm border border-stone-200') : 'text-stone-500 hover:text-stone-300'}`}
                             >
                                 {tf.label}
@@ -2045,14 +2155,14 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
                     <div>
                         <p className="text-[9px] font-black uppercase tracking-[0.24em] text-stone-500 mb-2">Utilisateurs uniques</p>
                         <h4 className={`text-4xl sm:text-5xl font-black tracking-tighter tabular-nums ${darkMode ? 'text-white' : 'text-stone-900'}`}>
-                            {kpis.uniqueVisitors}
+                            {overviewStatus === 'ready' ? kpis.uniqueVisitors : '—'}
                         </h4>
                         <div className="mt-3 flex flex-wrap items-center gap-2">
                             <span className={`inline-flex items-center rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-widest ${ratioBg} ${ratioAccent}`}>
-                                Confiance {kpis.visitorConfidenceScore}%
+                                {overviewStatus === 'ready' ? 'Visiteurs estimés' : overviewStatus === 'error' ? 'Indisponible' : 'En attente des données'}
                             </span>
                             <span className="text-[9px] font-black uppercase tracking-widest text-stone-500">
-                                {kpis.visitorConfidenceLabel}
+                                {overviewStatus === 'ready' ? kpis.visitorConfidenceLabel : ''}
                             </span>
                         </div>
                     </div>
@@ -2063,11 +2173,13 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
                         </div>
                         <div>
                             <p className="text-[8px] font-black uppercase tracking-widest text-stone-500">Historique</p>
-                            <p className={`mt-1 text-sm font-black tabular-nums ${ratioAccent}`}>Complet</p>
+                            <p className={`mt-1 text-sm font-black tabular-nums ${overviewStatus === 'error' ? 'text-red-500' : ratioAccent}`}>
+                                {overviewStatus === 'error' ? 'Indisponible' : overviewStatus === 'ready' ? (dataQuality.isWindowComplete ? 'Complet' : 'Partiel') : 'Chargement'}
+                            </p>
                         </div>
                         <div>
                             <p className="text-[8px] font-black uppercase tracking-widest text-stone-500">Sessions brutes</p>
-                            <p className="mt-1 text-sm font-black text-stone-500 tabular-nums">{kpis.totalSessions}</p>
+                            <p className="mt-1 text-sm font-black text-stone-500 tabular-nums">{overviewStatus === 'ready' ? kpis.totalSessions : '—'}</p>
                         </div>
                     </div>
                 </div>
@@ -2082,10 +2194,14 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
                 </div>
                 <div className="min-w-0">
                     <p className={`text-[9px] font-black uppercase tracking-[0.22em] ${darkMode ? 'text-white/60' : 'text-stone-500'}`}>
-                        Fiabilite {dataQuality.confidence}
+                        {overviewStatus === 'ready' ? `Fiabilite ${dataQuality.confidence}` : overviewStatus === 'error' ? 'Données indisponibles' : 'Vérification en cours'}
                     </p>
                     <p className="text-[10px] font-bold text-stone-500 leading-relaxed">
-                        {dataQuality.method} Fenetre {dataQuality.isWindowComplete ? 'complete' : `plafonnee a ${dataQuality.maxFetched} sessions`}.
+                        {overviewStatus === 'error'
+                            ? 'Données indisponibles. Les sessions brutes ne sont pas utilisées comme résultat de secours.'
+                            : overviewStatus === 'ready'
+                                ? `${dataQuality.method} Fenêtre ${dataQuality.isWindowComplete ? 'complète' : 'partielle : couverture historique incomplète'}.${ANALYTICS_REALTIME_ENABLED ? (realtime.status === 'cached' ? ' Cache connu — confirmation serveur en cours.' : ' Synchronisé avec le serveur.') : ''}`
+                                : 'Chargement des résumés serveur…'}
                     </p>
                 </div>
             </div>
@@ -2099,10 +2215,14 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
                     </div>
                 </div>
                 <div className="h-[240px] md:h-[320px] w-full">
-                    {chartData.length > 0 ? (
+                    {overviewStatus === 'loading' || overviewStatus === 'restoring' ? (
+                        <div className="flex items-center justify-center h-full text-stone-500 font-bold text-xs">Chargement…</div>
+                    ) : overviewStatus === 'error' ? (
+                        <div className="flex items-center justify-center h-full text-red-500 font-bold text-xs">Données indisponibles</div>
+                    ) : chartData.length > 0 ? (
                         <TrafficChart data={chartData} darkMode={darkMode} valueLabel="visiteur" animationKey={`traffic-${sessionsRefreshKey}`} />
                     ) : (
-                        <div className="flex items-center justify-center h-full text-stone-500 font-bold italic text-xs">Pas assez de données.</div>
+                        <div className="flex items-center justify-center h-full text-stone-500 font-bold italic text-xs">Aucune activité sur cette période</div>
                     )}
                 </div>
             </div>
@@ -2128,10 +2248,21 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
             )}
 
             {/* GROUPED SESSIONS LOG (MODULE 4) */}
+            {ANALYTICS_REALTIME_ENABLED && (
+                <p role="status" className="text-xs text-stone-500">
+                    {liveSessionState.status === 'error' ? 'Sessions indisponibles' : liveSessionState.status === 'loading' || liveSessionState.status === 'idle'
+                        ? 'Chargement des sessions…' : liveSessionState.status === 'cached' ? 'Sessions en cache — confirmation serveur en cours.'
+                            : 'Sessions en direct · 10 plus récentes, historique sur demande. Présence récente estimée sur 2 min 30 s.'}
+                    {expandedSessionId && detailStatus === 'loading' && ' Chargement du parcours…'}
+                    {expandedSessionId && ['missing', 'error'].includes(detailStatus) && ' Parcours indisponible ou session retirée.'}
+                </p>
+            )}
             <div className="space-y-2">
                 {groupedByDay.length === 0 ? (
                     <div className={`p-12 text-center rounded-2xl border ${darkMode ? 'bg-[#161616] border-white/5 text-stone-500' : 'bg-stone-50 border-stone-100 text-stone-400'} font-bold text-sm italic`}>
-                        Aucune session enregistrée.
+                        {ANALYTICS_REALTIME_ENABLED && liveSessionState.status !== 'ready'
+                            ? liveSessionState.status === 'error' ? 'Sessions indisponibles.' : 'Chargement des sessions…'
+                            : 'Aucune session enregistrée.'}
                     </div>
                 ) : (
                     paginatedGroups.map((group) => {
@@ -2139,7 +2270,7 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
                         return (
                             <div key={group.key} className={`rounded-2xl border overflow-hidden transition-all duration-300 ${darkMode ? 'bg-[#161616] border-white/5' : 'bg-white border-stone-100'}`}>
                                 <button
-                                    onClick={() => setOpenDays(prev => ({ ...prev, [group.key]: !prev[group.key] }))}
+                                    onClick={() => { setExpandedSessionId(null); setOpenDays(prev => ({ ...prev, [group.key]: !prev[group.key] })); }}
                                     className={`w-full p-3 sm:p-4 flex items-center justify-between hover:bg-white/[0.02] transition-colors`}
                                 >
                                     <div className="flex items-center gap-3">
@@ -2168,7 +2299,7 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
                                                         visitor={visitor}
                                                         now={liveNow}
                                                         isOpen={visitorOpen}
-                                                        onToggle={() => setOpenVisitors(prev => ({ ...prev, [visitor.key]: !visitorOpen }))}
+                                                        onToggle={() => { setExpandedSessionId(null); setOpenVisitors(prev => ({ ...prev, [visitor.key]: !visitorOpen })); }}
                                                         expandedSessionId={expandedSessionId}
                                                         onToggleSessionDetail={toggleSessionDetail}
                                                         handleDeleteSession={handleDeleteSession}
@@ -2239,15 +2370,20 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
                     </div>
                 )}
 
-                {nextBeforeMillis && sessions.length < MAX_ANALYTICS_SESSIONS && (
+                {ANALYTICS_REALTIME_ENABLED && liveSessionState.historyPage > 0 && (
+                    <button type="button" disabled={liveSessionState.loadingMore} onClick={() => { setExpandedSessionId(null); liveSessionsChannel.newer(); }} className="text-sm underline disabled:opacity-50">
+                        Historique — page {liveSessionState.historyPage} · Revenir aux sessions plus récentes
+                    </button>
+                )}
+                {(ANALYTICS_REALTIME_ENABLED ? liveSessionState.more || liveSessionState.loadingMore : nextBeforeMillis) && sessions.length < MAX_ANALYTICS_SESSIONS && (
                     <div className="flex justify-center pt-3">
                         <button
                             type="button"
-                            disabled={loadingOlder}
-                            onClick={() => loadSessions({ beforeMillis: nextBeforeMillis })}
+                            disabled={ANALYTICS_REALTIME_ENABLED ? liveSessionState.loadingMore : loadingOlder}
+                            onClick={() => { setExpandedSessionId(null); return ANALYTICS_REALTIME_ENABLED ? liveSessionsChannel.older() : loadSessions({ beforeMillis: nextBeforeMillis }); }}
                             className={`rounded-xl border px-4 py-2 text-[10px] font-black uppercase tracking-widest ${darkMode ? 'border-white/10 text-stone-300 hover:bg-white/5' : 'border-stone-200 text-stone-600 hover:bg-stone-50'} disabled:opacity-50`}
                         >
-                            {loadingOlder ? 'Chargement…' : 'Charger 250 sessions plus anciennes'}
+                            {(ANALYTICS_REALTIME_ENABLED ? liveSessionState.loadingMore : loadingOlder) ? 'Chargement…' : 'Charger 10 sessions plus anciennes'}
                         </button>
                     </div>
                 )}
@@ -2257,7 +2393,7 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
             <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 py-4 border-t border-white/5">
                 {[
                     "Statistiques historiques permanentes",
-                    "Sessions détaillées chargées par 250",
+                    "Sessions détaillées chargées par 10",
                     "Aucun e-mail ni IP dans les analytics",
                     "Sync protegee par jeton",
                     "Détails actifs: 90 jours"

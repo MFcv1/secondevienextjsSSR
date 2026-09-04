@@ -213,10 +213,12 @@ export function validateReferenceState({ planExists, referenceFiles, automationS
   }
 }
 
-function trackedMarkdownReferences(root) {
+export function trackedMarkdownReferences(root) {
   const files = execFileSync('git', ['ls-files', '*.md'], { cwd: root, encoding: 'utf8' })
     .trim().split('\n').filter(Boolean);
   return files.filter((relativePath) => {
+    // Historical snapshots may mention a retired plan without keeping it active.
+    if (relativePath.startsWith('doc/archives/')) return false;
     const absolutePath = path.join(root, relativePath);
     return fs.existsSync(absolutePath) && relativePath !== PLAN_PATH &&
       fs.readFileSync(absolutePath, 'utf8').includes('FINALISATION_MIGRATION_GEN2.md');

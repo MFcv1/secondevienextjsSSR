@@ -20,10 +20,25 @@ const {
     incidentStateAffectsSummary
 } = require('../functions/src/observability/incidentProjection');
 const { buildFinancialRollupDelta } = require('../functions/src/commerce/domain/financialRollup');
+const { actionSummaryDelta } = require('../functions/src/admin/actionSummaryProjection');
+const { firestoreCloudEvent } = require('../functions/helpers/gcloudFirestoreEvent');
 
 const root = path.resolve(__dirname, '..');
 const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8');
 const timestamp = (seconds, nanoseconds = 0) => ({ seconds, nanoseconds });
+
+test('la facade gcloud restaure un CloudEvent Firestore depuis le transport protobuf', () => {
+    const payload = Buffer.from([1, 2, 3]);
+    const event = firestoreCloudEvent(payload, {
+        eventId: 'evt-1',
+        eventType: 'google.cloud.firestore.document.v1.written',
+        timestamp: '2026-09-03T00:00:00.000Z',
+        resource: { name: 'projects/secondevienextjsssr/databases/(default)/documents/orders/o1/customer_return_requests/r1' }
+    });
+    assert.equal(event.datacontenttype, 'application/protobuf');
+    assert.equal(event.document, 'orders/o1/customer_return_requests/r1');
+    assert.equal(event.data, payload);
+});
 
 test('finance est une projection absolue en centimes avec compteurs de faits explicites', () => {
     const projection = buildFinanceProjection({
@@ -114,6 +129,12 @@ test('activity preserve les revisions independantes users et catalogue', () => {
     }, { updatedAt: timestamp(8), revision: 9 });
     assert.equal(next.users.sourceRevision, 3);
     assert.equal(next.catalog.sourceRevision, 7);
+});
+
+test('le badge retours suit uniquement les demandes encore a examiner', () => {
+    assert.equal(actionSummaryDelta(null, { status: 'pending_review' }), 1);
+    assert.equal(actionSummaryDelta({ status: 'pending_review' }, { status: 'completed' }), -1);
+    assert.equal(actionSummaryDelta({ status: 'completed' }, { status: 'completed' }), 0);
 });
 
 test('incidents open/update/close sont idempotents et les codes inconnus fail-closed', () => {

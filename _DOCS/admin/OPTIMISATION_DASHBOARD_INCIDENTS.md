@@ -1,6 +1,6 @@
 # Optimisation du dashboard et observabilite evenementielle
 
-Derniere mise a jour: 2026-09-02
+Derniere mise a jour: 2026-09-03
 
 Statut: `SANDBOX_CUTOVER_EFFECTUE_QUIET_WINDOW_A_FERMER`
 
@@ -23,8 +23,8 @@ Etat d'execution au 2026-09-01:
 | D1 | `FERMEE_LOCAL` | schemas, deltas, ordre nanoseconde, tombstones, baselines fail-closed et table incidents testes |
 | D2 | `FERMEE` | reader trois documents, cache -> serveur, indisponible, lazy loading, badge, Rules deployees et Emulator 7/7 |
 | D3 | `FERMEE_SANDBOX` | backup READY `339d85e6-c1b7-4211-9f25-9368d8dd5009`, bootstrap additif 185 documents par digest, puis verification sans ecriture |
-| D4 | `SHADOW_CONFORME_QUIET_WINDOW_COURTE` | projecteurs deployes; rejeu/tombstones/no-op prouves; 140/140 orders, 34/34 users, 11/11 incidents et finance exacte; fenetre longue et recette refund fixture restent ouvertes |
-| D5 | `CUTOVER_SANDBOX_PARTIELLEMENT_MESURE` | App Hosting deploye; trois lectures critiques, aucune callable sante/utilisateur, badge push; p95 reload chaud 822 ms et global < 2 s, mais segment exact `backOfficeReady -> KPI` < 700 ms non encore instrumente |
+| D4 | `SHADOW_CONFORME_QUIET_WINDOW_COURTE` | projecteurs deployes; rejeu/tombstones/no-op prouves; 140/140 orders, 34/34 users, 11/11 incidents et finance exacte; retrait admin Analytics et badge Retours requalifies; fenetre longue et recette refund fixture restent ouvertes |
+| D5 | `CUTOVER_SANDBOX_PARTIELLEMENT_MESURE` | App Hosting `sv-mtlle76d-daa1d98532b0`; trois lectures critiques, aucune callable sante/utilisateur, badges push; p95 reload chaud historique 822 ms et global < 2 s, mais segment exact `backOfficeReady -> KPI` < 700 ms non encore instrumente |
 | I1 | `FERMEE_SANDBOX` | `onDocumentWritten`, filtre no-op, ledger/tombstones, resume push et badge sans polling deployes et prouves |
 | I2 | `DEPLOYEE_COUT_24H_A_FERMER` | watchdog limite aux deux trous inbox, `limit(1)`, toutes les 15 min; runs sains sans incident, cout journalier complet non encore mesure |
 | I3 | `DEPLOYEE_RUN_MANUEL_OK_FENETRE_NATURELLE_A_OBSERVER` | reconciliateur borne finance/orders programme a 03:17 UTC; run manuel sain en 877 ms, aucune divergence; premiere fenetre naturelle reste requise |
@@ -54,6 +54,17 @@ catalogue de cinq minutes à une heure. Cela réduit le socle de 1 440 à 48
 réveils commerce par jour et de 288 à 24 réveils catalogue. Les sept Functions,
 les deux queues, l'IAM minimal, Rules/index, les 23 documents de bootstrap et
 App Hosting sont actifs. La mesure facturee consolidee sur 24 h reste ouverte.
+
+Extension recette humaine du 2026-09-03: Data charge un bundle de rollups et
+dix sessions recentes au lieu de relire la liste historique, les sessions admin
+sont retirees avec tombstone et reconstruction HLL, les commandes client
+visibles recoivent les remboursements par listener borne, Ventes se precharge
+sur intention et le checkout perdant conserve son brouillon. Le nouveau resume
+`admin_action_summary/current` pousse le nombre de retours a traiter. Rules,
+index, IAM, six Functions et App Hosting ont ete deployes sur le sandbox. La
+journalisation finale ne montre plus de 403 apres propagation IAM; la mesure
+24 h et la recette humaine refund/course restent ouvertes, donc le plan n'est
+pas supprime.
 
 Mesures sandbox du 2026-09-01:
 

@@ -17,15 +17,41 @@ Toujours annoncer ce qui a ete lance et ce qui ne l'a pas ete.
 
 ### Gate diagnostic temps reel/couts
 
+Sessions live: `node --test tests/analytics-live-sessions.test.mjs` couvre
+minimisation, presence, partage/fermeture des listeners, pagination bornee,
+suppression et callbacks tardifs. Le scenario additionnel de
+`test:realtime-emulator` verifie les Rules et les ecritures sans effet:
+0 au rejeu, 1 au heartbeat et 2 au changement de parcours.
+
 Extension P2/P3: `test:realtime-ops` couvre egalement le moteur/lecteur Data:
 session active, heartbeat sans effet, retrait HLL reversible, rejeu, identite
 corrigee, tombstone, TTL, anneaux sous 256 Kio, couverture partielle, DST,
 horloge monotone et partage d'ecoute/cache->serveur/refus de regression.
-`npm run test:realtime-emulator` execute trois scenarios sur
-`demo-secondevie-analytics` uniquement: concurrence/rejeu, exclusion vs TTL et
+`npm run test:realtime-emulator` execute quatre scenarios sur
+`demo-secondevie-analytics` uniquement: bootstrap reprenable et rattrapage,
+concurrence/rejeu, exclusion vs TTL et
 Rules fortes. Le runner refuse les credentials cloud explicites et ne demarre
 que Firestore local. Ces gates sont ajoutees a la CI. La recette navigateur
 avec Auth reelle et les p95 cloud restent P5, non prouves par ces tests.
+
+P4 sandbox du 4 septembre: `probe-analytics-realtime-sandbox.mjs`, autorisation
+explicite, trois visites fictives et deux identites, total 188 -> 191 -> 188.
+Six POST Eventarc 204, aucun doublon au rejeu, retrait admin exact (HLL inclus),
+pause/reprise du controle et comparaison de tous les buckets non nuls reussis.
+Sources/exclusions de test retirees, aucun fait legacy ni effet commerce.
+Environ 3,2 s jusqu'a reception des trois creations, mesure inter-horloges;
+aucun p95 deduit des six callbacks, ni mesure navigateur/Billing.
+
+P5 autorisee: build sandbox normal et 38 tests cibles passes, lint global
+0 erreur/127 avertissements. Chrome authentifie: six periodes, 30 retours
+Stats -> Data avec KPI deja presents, injection puis retrait automatiques de
+trois sessions/deux visiteurs sans Actualiser. Total final 188 exact et six
+POST Eventarc 204. Un seul audit action=list sur la fenetre de trois minutes,
+aucun overview/overview_bundle. Rollback App Hosting vers l'ancien build exerce.
+Le p95 de 405 ms mesure clic + controle DOM par l'outil (pas clic -> pixel).
+La creation des trois projections prend 5,466 s apres acquittement source sur
+un essai avec demarrage d'instance. Serie froide, p95 navigateur interne,
+parcours client complet et cout Billing restent non qualifies.
 
 `npm run test:realtime-ops` execute sans credentials ni reseau les tests du
 chronometre Data et du rapport runtime: preservation des resultats/erreurs,
@@ -37,6 +63,27 @@ Ces preuves sont des gates distinctes dans
 [TEMPS_REEL_COUTS_DEVOPS.md](../infra/TEMPS_REEL_COUTS_DEVOPS.md).
 
 ## 2. CI
+
+Qualification Performance Functions du 2026-09-04:
+`node --test tests/function-metrics.test.mjs` couvre les moyennes ponderees,
+refus/erreurs separes, valeurs absentes, faible echantillon, pagination et
+cache/bail. `node scripts/verify-function-metrics.mjs` lit le sandbox via
+gcloud sans mutation et compare le collecteur a des series Google a la minute.
+`node scripts/with-env.mjs .env.sandbox node scripts/probe-function-metrics-sandbox.mjs`
+qualifie le vrai cache serveur: trois documents operationnels remplaces au
+maximum, aucune donnee metier modifiee. Ces probes sont manuelles, pas en CI.
+Les preuves expurgees sont dans `logs/function-metrics/` (ignore).
+La premiere comparaison a retrouve exactement 936, 356 et 350 appels pour
+les trois services principaux sur une meme fenetre. Les trois periodes ont
+retrouve 158 fonctions et le second acces a chacune n'a genere aucun nouvel
+appel Monitoring. Le build passe. Le HTTP non authentifie est 401; la recette
+admin complete reste a faire sur une origine App Check valide.
+La contre-verification finale a compare 928, 352 et 346 appels ainsi que
+les moyennes 1,601809932 ms, 2,504135037 ms et 4,614197136 ms, identiques aux
+distributions relues a la minute (tolerance 0,00001 ms). Une capture du rendu
+reel precedent est conservee dans `logs/function-metrics/desktop.png`.
+Les deux fichiers temporaires d'apercu ont ete retires apres controle;
+aucune route de demonstration ni contournement d'auth n'est livre.
 
 `.github/workflows/quality.yml` s'execute sur pull request et push `main` avec Node 22/pnpm:
 
@@ -126,7 +173,10 @@ encore ouverte mais controle deja les gates locales, les preuves F4/F5/F7, la
 CI et les references du plan. `--require-ready` exige 604800 secondes et une
 acceptation F6 complete avant fusion; `--require-closed` exige ensuite le plan
 absent, zero reference morte et le heartbeat consigne `DISABLED`. Cette
-commande ne contacte aucun service externe.
+commande ne contacte aucun service externe. Le controle des references exclut
+uniquement `doc/archives/` : une mention historique dans une archive suivie par
+Git ne maintient pas le plan actif. Les references actives restent bloquantes ;
+ce contrat est couvert par `tests/functions-gen2-final-closeout.test.mjs`.
 
 G8 est ferme par `npm run test:functions-g8`: les tests Node et les cinq
 controles Firestore rules couvrent les 37 wrappers commerce,
@@ -751,7 +801,11 @@ Couverture locale actuelle:
 
 Les gates `next:routes` et `mobile:contract` protegent en plus ISR/SSG et le shell mobile. La recette cold/warm, la mesure des telechargements et le comportement `router.refresh()` restent des preuves navigateur sandbox et ne doivent pas etre declares par les tests statiques.
 
-La recette catalogue complete se fait dans le navigateur sandbox. Le rollback reel est exclusivement expose par Maintenance admin et exige App Check, registre actif, AAL2 Google ou passkey et revisions explicites, sans minuterie de reconnexion.
+La recette catalogue complete se fait dans le navigateur sandbox. Le backend
+de rollback exige App Check, registre actif, AAL2 Google ou passkey et revisions
+explicites, sans minuterie de reconnexion. L'onglet Maintenance a ete retire :
+ne pas annoncer une recette UI de rollback disponible. La limite operateur
+actuelle est decrite dans [EXPLOITATION.md](../operations/EXPLOITATION.md#51-commandes-operateur-catalogue).
 
 La recette de cutover du 2026-07-18 a inclus plus de 20 builds de comparaison alors necessaires, creation, prix, stock nul, suppression, publication/revalidation, API same-origin froide/chaude et checkout sans paiement. Ces anciens modes ne sont plus des gates actives: le moteur public unique est le snapshot Storage. Le checkout reste autoritaire sur Firestore, meme si le snapshot est en retard. Le contrat actuel `/api/catalog` est non persistant; seul `/api/catalog/version` utilise un ETag public.
 

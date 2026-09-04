@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const admin = require('node:module').createRequire(path.resolve(__dirname, '../functions/package.json'))('firebase-admin');
 const { initializeTestEnvironment, assertFails, assertSucceeds } = require('@firebase/rules-unit-testing');
-const { doc, getDoc, setDoc, getDocs, collection, query, where, documentId } = require('firebase/firestore');
+const { doc, getDoc, setDoc, getDocs, collection, query, where, documentId, limit, orderBy, onSnapshot } = require('firebase/firestore');
 const { buildSeed, projectSession } = require('../functions/src/analytics/realtime');
 const PROJECT = 'demo-secondevie-analytics';
 let environment; let db; let app;
@@ -31,6 +31,44 @@ beforeEach(async () => {
     await batch.commit();
 });
 after(async () => { await environment?.cleanup(); await app?.delete(); });
+
+test('live cards/detail stream securely, deduplicate replays and disappear after admin exclusion', async () => {
+    const { projectLiveSession } = require('../functions/src/analytics/liveSessions');
+    await db.doc('sys_admin_access/admin').set({ active: true });
+    const strong = environment.authenticatedContext('admin', { admin: true, firebase: { sign_in_provider: 'google.com' } }).firestore();
+    const client = environment.authenticatedContext('client').firestore();
+    const ref = db.doc('analytics_sessions/live-fixture');
+    await ref.set({ startedAt: now, lastActivityAt: now, userId: 'private', sessionActive: true, journey: [{ page: 'gallery', timestampMs: now }] });
+    assert.equal(await projectLiveSession(ref.id, db), 2);
+    assert.equal(await projectLiveSession(ref.id, db), 0);
+    const liveQuery = query(collection(strong, 'admin_analytics_sessions'), orderBy('lastActivityAt', 'desc'), limit(10));
+    await assertSucceeds(getDocs(liveQuery));
+    await assertFails(getDocs(collection(strong, 'admin_analytics_sessions')));
+    await assertFails(getDocs(query(collection(strong, 'admin_analytics_sessions'), limit(11))));
+    await assertFails(getDoc(doc(client, 'admin_analytics_sessions/live-fixture')));
+    await assertFails(getDoc(doc(strong, 'analytics_sessions/live-fixture')));
+    await assertFails(setDoc(doc(strong, 'admin_analytics_sessions/live-fixture'), {}));
+    await assertSucceeds(getDoc(doc(strong, 'admin_analytics_session_details/live-fixture')));
+    await assertFails(getDocs(collection(strong, 'admin_analytics_session_details')));
+    const observed = [];
+    let stop;
+    const removed = new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('LIVE_CALLBACK_TIMEOUT')), 10000);
+        stop = onSnapshot(liveQuery, snapshot => { observed.push(snapshot.size); if (snapshot.empty) { clearTimeout(timer); resolve(); } }, reject);
+    });
+    await ref.update({ lastActivityAt: now + 60000 });
+    assert.equal(await projectLiveSession(ref.id, db), 1); // heartbeat does not rewrite detail
+    await ref.update({ journey: [{ page: 'gallery' }, { page: 'detail', itemId: 'chair' }], journeyCount: 2 });
+    assert.equal(await projectLiveSession(ref.id, db), 2);
+    assert.equal((await getDoc(doc(strong, 'admin_analytics_session_details/live-fixture'))).data().journey.length, 2);
+    await db.doc('analytics_session_exclusions/live-fixture').set({ reason: 'admin_identity_resolved' });
+    await Promise.all([projectLiveSession(ref.id, db), projectLiveSession(ref.id, db)]);
+    await removed; stop();
+    assert.ok(observed.includes(0));
+    assert.equal((await db.doc('admin_analytics_session_details/live-fixture').get()).exists, false);
+    await ref.delete();
+    assert.equal(await projectLiveSession(ref.id, db), 'removed');
+});
 
 test('bootstrap is create-only, resumable, verified before shadow and catches paused mutations', async () => {
     const { bootstrap } = await import('../scripts/bootstrap-analytics-realtime-sandbox.mjs');

@@ -50,6 +50,9 @@ import {
   loadAdminPublicCatalog,
 } from '../../src/kit/admin/adminPublicCatalog';
 import AdminSidebar from './AdminSidebar';
+import { dataPerformance, startDataPerformance } from '../../src/kit/admin/adminAnalyticsPerformance';
+import { ANALYTICS_REALTIME_ENABLED, analyticsChannel } from '../../src/kit/admin/adminAnalyticsRealtime';
+import { liveSessionsChannel } from '../../src/kit/admin/liveSessionsChannel';
 
 const loadAdminDashboard = () => import('../../src/kit/admin/AdminDashboard');
 const loadAdminOrders = () => import('../../src/kit/admin/AdminOrders');
@@ -57,7 +60,7 @@ const loadAdminReturns = () => import('../../src/kit/admin/AdminReturns');
 const loadAdminInvoices = () => import('../../src/kit/admin/AdminInvoices');
 const loadAdminLivraison = () => import('../../src/kit/admin/AdminLivraison');
 const loadAdminQuotes = () => import('../../src/kit/admin/AdminQuotes');
-const loadAdminAnalytics = () => import('../../src/kit/admin/AdminAnalytics');
+const loadAdminAnalytics = () => dataPerformance.span('chunk', () => import('../../src/kit/admin/AdminAnalytics'));
 const loadAdminIncidentConsole = () => import('../../src/kit/admin/AdminIncidentConsole');
 
 const AdminDashboard = React.lazy(loadAdminDashboard);
@@ -74,6 +77,7 @@ const AdminUsers = React.lazy(() => import('../../src/kit/admin/AdminUsers'));
 const AdminNewsletter = React.lazy(() => import('../../src/kit/admin/AdminNewsletter'));
 const AdminAnalytics = React.lazy(loadAdminAnalytics);
 const AdminIncidentConsole = React.lazy(loadAdminIncidentConsole);
+const AdminFunctionPerformance = React.lazy(() => import('../../src/kit/admin/AdminFunctionPerformance'));
 const AdminSEO = React.lazy(() => import('../../src/kit/admin/AdminSEO'));
 const AdminPaymentSettings = React.lazy(() => import('../../src/kit/admin/AdminPaymentSettings'));
 const AdminPaymentLinks = React.lazy(() => import('../../src/kit/admin/AdminPaymentLinks'));
@@ -86,6 +90,7 @@ const TAB_ICONS = {
   dashboard: Activity,
   analytics: BarChart3,
   incidents: TriangleAlert,
+  performance: Activity,
   studio: Palette,
   homepage: Palette,
   orders: Package,
@@ -147,7 +152,7 @@ const ADMIN_NAV_GROUPS = [
   { label: 'Catalogue', tabs: ['furniture', 'inventory', 'studio'] },
   { label: 'Ventes', tabs: ['orders', 'quotes', 'payment_links', 'invoices', 'returns', 'promotions', 'livraison', 'payment_settings'] },
   { label: 'Communication', tabs: ['homepage', 'newsletter', 'seo'] },
-  { label: 'Administration', tabs: ['account', 'users', 'incidents'] },
+  { label: 'Administration', tabs: ['account', 'users', 'incidents', 'performance'] },
 ];
 
 /** Onglets qui pilotent leur propre hauteur : liste et detail scrollent separement. */
@@ -166,6 +171,7 @@ function AdminContent() {
   const [catalogState, setCatalogState] = useState({ items: [], status: 'idle', error: null });
   const [billingGate, setBillingGate] = useState({ status: 'idle', data: null, error: null });
   const [incidentSummary, setIncidentSummary] = useState(null);
+  const [actionSummary, setActionSummary] = useState(null);
   const [systemIncidentState, setSystemIncidentState] = useState({ status: 'idle', data: null });
   const [systemIncidentSeenRevision, setSystemIncidentSeenRevision] = useState(0);
   const catalogStatusRef = React.useRef('idle');
@@ -234,11 +240,13 @@ function AdminContent() {
     const nextUid = user?.uid || null;
     if (!nextUid) {
       if (cachedAdminUidRef.current) clearAdminDataCache();
+      dataPerformance.clear();
       cachedAdminUidRef.current = null;
       return;
     }
     if (cachedAdminUidRef.current && cachedAdminUidRef.current !== nextUid) {
       clearAdminDataCache();
+      dataPerformance.clear();
     }
     cachedAdminUidRef.current = nextUid;
   }, [user]);
@@ -268,6 +276,18 @@ function AdminContent() {
   }, [hasStrongAuth, isAdmin, isSuperAdmin, refreshBillingGate, user]);
 
   const backOfficeReady = isSuperAdmin || (billingGate.status === 'ready' && billingGate.data?.required !== true);
+  React.useEffect(() => {
+    const owner = ANALYTICS_REALTIME_ENABLED && isAdmin && hasStrongAuth && backOfficeReady ? user?.uid : null;
+    analyticsChannel.setOwner(owner || null);
+    liveSessionsChannel.setOwner(owner || null);
+    return () => { analyticsChannel.clear(); liveSessionsChannel.clear(); };
+  }, [backOfficeReady, hasStrongAuth, isAdmin, user?.uid]);
+  React.useEffect(() => {
+    if (ANALYTICS_REALTIME_ENABLED && isAdmin && hasStrongAuth && backOfficeReady && adminCollection === 'analytics') {
+      analyticsChannel.start();
+      liveSessionsChannel.start();
+    }
+  }, [adminCollection, backOfficeReady, hasStrongAuth, isAdmin, user?.uid]);
   const perfNow = typeof performance !== 'undefined' ? performance.now() : null;
   if (user?.uid && isAdmin && hasStrongAuth) {
     if (strongAuthReadyAtRef.current === null) strongAuthReadyAtRef.current = perfNow;
@@ -297,6 +317,29 @@ function AdminContent() {
         console.error('Admin incident summary listener failed', error?.code || error?.name);
       }
       setIncidentSummary(null);
+    });
+  }, [backOfficeReady, hasStrongAuth, isAdmin, user?.uid]);
+
+  React.useEffect(() => {
+    setActionSummary(null);
+    if (!user?.uid || !isAdmin || !hasStrongAuth || !backOfficeReady) return undefined;
+    return onSnapshot(doc(db, 'admin_action_summary', 'current'), (snapshot) => {
+      if (!snapshot.exists()) {
+        setActionSummary({ schemaVersion: 1, pendingReturns: 0, totalPending: 0, revision: 0 });
+        return;
+      }
+      const data = snapshot.data();
+      const valid = data?.schemaVersion === 1
+        && Number.isSafeInteger(data.pendingReturns) && data.pendingReturns >= 0
+        && Number.isSafeInteger(data.totalPending) && data.totalPending >= 0
+        && data.totalPending === data.pendingReturns
+        && Number.isSafeInteger(data.revision) && data.revision >= 0;
+      setActionSummary(valid ? data : null);
+    }, (error) => {
+      if (error?.code !== 'permission-denied') {
+        console.error('Admin action summary listener failed', error?.code || error?.name);
+      }
+      setActionSummary(null);
     });
   }, [backOfficeReady, hasStrongAuth, isAdmin, user?.uid]);
 
@@ -412,6 +455,7 @@ function AdminContent() {
   }, []);
 
   const selectAdminTab = (tabId) => {
+    if (tabId === 'analytics' && adminCollection !== 'analytics') startDataPerformance('open');
     if (ADMIN_PUBLIC_CATALOG_TABS.has(tabId)) void ensureAdminCatalog();
     if (tabId === 'incidents' && systemIncidentState.data?.revision) {
       setSystemIncidentSeenRevision(systemIncidentState.data.revision);
@@ -570,11 +614,15 @@ function AdminContent() {
         incidentCount={(incidentSummary?.activeTotal || 0) + (
           (systemIncidentState.data?.revision || 0) > systemIncidentSeenRevision ? 1 : 0
         )}
+        actionCounts={{ returns: actionSummary?.pendingReturns || 0 }}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         onIntent={(tabId) => {
           if (tabId === 'analytics') void loadAdminAnalytics();
           if (tabId === 'incidents') void loadAdminIncidentConsole();
+          if (tabId === 'orders') {
+            void loadAdminOrders().then((module) => module.preloadAdminOrdersWorkspace?.());
+          }
         }}
         onSelect={selectAdminTab}
         tabs={adminTabs}
@@ -669,6 +717,8 @@ function AdminContent() {
             </div>
           ) : adminCollection === 'incidents' ? (
             <AdminIncidentConsole darkMode={darkMode} systemIncidentState={systemIncidentState} />
+          ) : adminCollection === 'performance' ? (
+            <AdminFunctionPerformance darkMode={darkMode} />
           ) : adminCollection === 'payment_settings' ? (
             <AdminPaymentSettings darkMode={darkMode} />
           ) : adminCollection === 'payment_links' ? (

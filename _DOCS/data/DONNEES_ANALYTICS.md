@@ -1,5 +1,46 @@
 # Donnees, Firestore et analytics
 
+## Sessions en direct — contrat du 2026-09-04
+
+Les graphiques restent sur les deux projections KPI existantes. Le trigger
+`aggregateAnalyticsSessionGen2` produit aussi deux documents allowlistes par
+session: `admin_analytics_sessions/{id}` (carte) et
+`admin_analytics_session_details/{id}` (25 dernieres etapes). Aucun UID brut,
+e-mail, IP, recherche libre ou jeton n'y figure. Le projecteur relit la source
+et son exclusion dans une transaction: rejeu, evenement desordonne, suppression
+et exclusion admin ne peuvent ressusciter un ancien etat.
+
+La reference composee `id | libelle (prix)` du collecteur est normalisee
+en ID seul pour conserver les vignettes; les routes `my-orders`, `login`
+et les quatre origines affiliate connues sont preservees, sans texte libre.
+Livraison et preuves hebergees: EXPLOITATION.md, section sessions du 4 septembre.
+
+Le back-office ecoute les dix cartes les plus recentes, une seule page ancienne
+de dix cartes sur demande, et un seul parcours ouvert. Les pages anciennes se
+remplacent; pas d'accumulation de listeners ni de lecture de tout l'historique.
+Les deux premieres ecoutes survivent aux changements d'onglet dans la meme
+session admin. Toutes sont detachees a la sortie ou perte d'autorisation; le
+parcours est detache des qu'il est referme ou masque. L'ancien cache IndexedDB
+des sessions brutes est ignore lorsque le circuit temps reel est actif.
+
+Presence: `sessionActive === true` et dernier signal datant d'au plus 150 s,
+pour un heartbeat client de 60 s. C'est une activite recente estimee, pas une
+preuve de connexion permanente. L'horloge UI expire ce statut sans requete.
+Une fermeture explicite arrive par le signal de fermeture existant.
+
+Cout additionnel par traitement du projecteur: quatre lectures transactionnelles,
+zero ecriture si identique, une pour un heartbeat, deux au maximum si carte et
+parcours changent (hors reprises de transaction). Lecture initiale Data: deux
+documents KPI + dix cartes au maximum, hors Rules et autres badges admin.
+Ouvrir un parcours: un document; une page ancienne: dix au maximum. Les mises
+a jour livrees et les reconnexions peuvent ajouter des lectures facturees.
+Ces nombres d'operations ne sont pas une facture en euros.
+
+Retention: projections supprimees par le trigger quand la source expire ou est
+retiree; aucune archive personnelle supplementaire. Index unique descendant sur
+`lastActivityAt`, tous les autres champs exempts. Bootstrap manuel borne a
+2 000 sources, dry-run obligatoire; aucun scan periodique ajoute.
+
 Derniere mise a jour: 2026-09-01
 Statut: `REFERENCE_ACTIVE`
 
@@ -226,10 +267,9 @@ Contrat du moteur:
 - `lastSyncReason` et `syncReasonCounts` instrumentent `init`, route, heartbeat, visibilite et beacons dans la meme ecriture de session, sans operation Firestore supplementaire;
 - une reprise exige le meme UID, le bon jeton, une activite de moins d'une heure et une session non admin;
 - une session explicitement fermee ne peut etre reprise que pendant une grace de 15 secondes, afin de tolerer un rechargement immediat sans fusionner un retour plusieurs minutes plus tard;
-- l'admin lit les rollups permanents jour/mois/annee pour les statistiques;
-  `overview_bundle` peuple les six periodes en une fois et la liste recente
-  charge dix projections, puis dix de plus a la demande, avec un plafond
-  serveur de 50;
+- avec le flag temps reel actif, l'admin lit les deux projections KPI et les
+  cartes/detail bornes decrits en ouverture ; `overview_bundle` et son plafond
+  historique de 50 relevent uniquement du lecteur legacy hors flag ;
 - l'onglet Stats ne lit jamais `analytics_sessions`; il charge une fois
   `admin_dashboard/insights` lorsque le panneau approche du viewport;
 - chaque fait de session et rollup journalier porte les drapeaux de session
@@ -525,7 +565,8 @@ Ce chapitre remplace les anciens plans de migration et constitue la seule refere
 
 ## 12. Diagnostic Data et raccordement temps reel
 
-Extension locale P2/P3: `functions/src/analytics/realtime.js` materialise les
+Extension P2/P3, producteur qualifie en shadow sandbox P4 le 4 septembre:
+`functions/src/analytics/realtime.js` materialise les
 creations, corrections d'identite/device et fermetures a partir de la source
 relue transactionnellement. Le filtre de heartbeat est sans lecture. Les
 histogrammes de rangs HLL prives permettent un retrait exact de contribution
@@ -535,7 +576,7 @@ suppression TTL du detail ne retire pas l'historique; une exclusion admin le
 corrige une seule fois. Les parcours restent dans le detail, sans reecrire
 cinq periodes de KPI. Duree/rebond sont finalises a la fermeture.
 
-Collections nouvelles (non deployees):
+Collections nouvelles (deployees sur sandbox, lecteur UI active en P5):
 
 | Collection | Acces / retention |
 | --- | --- |
@@ -548,14 +589,23 @@ Les quatre collections exemptent tous les champs d'index automatique. La
 compaction/retrait des auxiliaires doit reconstruire et verifier une baseline
 avant suppression, jamais copier le TTL 90 jours du detail. Le preparateur
 offline `analytics:prepare-realtime` valide un inventaire sans lire ni ecrire le
-cloud; l'inventaire reel et le raccordement des faits historiques restent P4.
+cloud; l'inventaire reel et le raccordement historique ont ete qualifies en P4.
 L'inventaire P4 du 4 septembre confirme 188 sessions non-admin; 13 anciennes
 sources sont reparties sur le jour Paris correct au lieu du jour UTC des faits.
 Cinq jours immuables de mai sont verifies contre leurs faits; les sources depuis
 le 15 juillet Paris restent corrigeables. Les 214 sources admin existantes
 produisent des tombstones, aucun compteur. Le bootstrap est create-only,
 verifie et reprenable; les artefacts locaux ne contiennent ni UID ni parcours.
-Les flags backend/frontend sont absents par defaut. Aucun rollback client
+Le flag backend est actif sur `aggregateanalyticssessiongen2-00007-bas`, controle
+en shadow; le flag frontend est actif dans `build-2026-09-03-002` (P5 autorisee).
+La recette Chrome confirme les changements visibles sans rafraichissement,
+les six periodes locales et trente retours a Data sans chargement KPI.
+La reception des trois creations apres acquittement source a pris 5,466 s
+sur un essai avec demarrage d'instance; aucun p95 ni cout facture n'en est deduit.
+Le test evenementiel
+verifie 188 -> 191 -> 188 sessions, deux visiteurs pour trois visites fictives,
+rejeux sans effet, retrait admin exact et pause/reprise sans modification des
+sources. Les anciennes donnees brutes restent intactes. Aucun rollback client
 automatique vers les anciennes lectures n'est autorise si le nouveau lecteur
 est active mais ses documents sont indisponibles.
 

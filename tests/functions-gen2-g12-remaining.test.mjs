@@ -55,9 +55,9 @@ test('G12-B restant retire les 120 exports et les trois modules exclusivement Ge
   const source = fs.readFileSync(path.join(ROOT, 'functions/index.js'), 'utf8');
   assert.equal(manifest.status, 'CLOSED');
   assert.equal(manifest.exactNames.length, 120);
-  assert.equal(EXPECTED_CURRENT_SOURCE_COUNT, 160);
-  assert.equal(EXPECTED_CURRENT_CLOUD_COUNT, 157);
-  assert.equal(extractLocalExports(ROOT).length, 160);
+  assert.equal(EXPECTED_CURRENT_SOURCE_COUNT, 161);
+  assert.equal(EXPECTED_CURRENT_CLOUD_COUNT, 158);
+  assert.equal(extractLocalExports(ROOT).length, 161);
   for (const name of manifest.exactNames) assert.doesNotMatch(source, new RegExp(`^exports\\.${name}\\s*=`, 'm'), name);
   for (const file of manifest.sourceCleanup.deletedExclusiveLegacyFiles) assert.equal(fs.existsSync(path.join(ROOT, file)), false, file);
   assert.equal(manifest.cloudCleanup.secretVersionsDestroyed, 0);

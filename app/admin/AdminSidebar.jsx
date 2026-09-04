@@ -5,6 +5,7 @@ import { ChevronLeft, X } from 'lucide-react';
 
 export default function AdminSidebar({
   activeTabId,
+  actionCounts = {},
   darkMode,
   groups,
   incidentCount = 0,
@@ -59,6 +60,7 @@ export default function AdminSidebar({
                   if (!tab) return null;
                   const Icon = tab.icon;
                   const isActive = activeTabId === tab.id;
+                  const actionCount = Number(actionCounts[tab.id] || 0);
 
                   return (
                     <button
@@ -80,6 +82,14 @@ export default function AdminSidebar({
                             className={`min-w-5 rounded-full px-1.5 py-0.5 text-center text-[9px] font-black tabular-nums ${isActive ? 'bg-red-500 text-white' : (darkMode ? 'bg-red-400/15 text-red-300' : 'bg-red-50 text-red-700')}`}
                           >
                             {incidentCount > 99 ? '99+' : incidentCount}
+                          </span>
+                        )}
+                        {tab.id !== 'incidents' && actionCount > 0 && (
+                          <span
+                            aria-label={`${actionCount} action${actionCount > 1 ? 's' : ''} à traiter`}
+                            className={`min-w-5 rounded-full px-1.5 py-0.5 text-center text-[9px] font-black tabular-nums ${isActive ? 'bg-amber-500 text-stone-950' : (darkMode ? 'bg-amber-400/15 text-amber-300' : 'bg-amber-50 text-amber-800')}`}
+                          >
+                            {actionCount > 99 ? '99+' : actionCount}
                           </span>
                         )}
                       </span>

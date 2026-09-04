@@ -2,6 +2,11 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Operational snapshots: server-only, three fixed IDs overwritten on demand.
+    match /sys_function_metrics_cache/{period} {
+      allow read, write: if false;
+    }
+
     // Fonction Admin SECURISEE - Custom Claim Firebase Auth requis.
     function isArtisan() {
       return request.auth != null && (
@@ -557,6 +562,15 @@ service cloud.firestore {
     match /admin_analytics_realtime/{docId} {
       allow get, list: if docId in ['recent', 'history'] && isStrongArtisan();
       allow write: if false;
+    }
+    match /admin_analytics_sessions/{docId} {
+      allow get: if isStrongArtisan();
+      allow list: if isStrongArtisan() && request.query.limit <= 10;
+      allow write: if false;
+    }
+    match /admin_analytics_session_details/{docId} {
+      allow get: if isStrongArtisan();
+      allow list, write: if false;
     }
     match /analytics_realtime_control/{docId} {
       allow read, write: if false;

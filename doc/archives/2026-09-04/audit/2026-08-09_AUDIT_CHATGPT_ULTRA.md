@@ -1,9 +1,13 @@
+> ARCHIVE — photographie conservée le 2026-09-04 depuis `audit/2026-08-09_AUDIT_CHATGPT_ULTRA.md`.
+> Contenu historique non applicable comme consigne actuelle. Liens rebasés et espaces de fin de ligne normalisés.
+> Références actives : [documentation](../../../../_DOCS/README.md).
+
 # Audit ChatGPT Ultra
 
-Date : 9 août 2026  
-Projet : Seconde Vie Next.js SSR  
-Environnement audité et déployé : sandbox Firebase App Hosting  
-Branche : `main`  
+Date : 9 août 2026
+Projet : Seconde Vie Next.js SSR
+Environnement audité et déployé : sandbox Firebase App Hosting
+Branche : `main`
 Commit applicatif déployé : `b786546`
 
 ## Verdict

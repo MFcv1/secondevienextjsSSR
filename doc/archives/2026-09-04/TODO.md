@@ -1,3 +1,7 @@
+> ARCHIVE — photographie conservée le 2026-09-04 depuis `TODO.md`.
+> Contenu historique non applicable comme consigne actuelle. Les liens Markdown ont été rebasés.
+> Références actives : [documentation](../../../_DOCS/README.md).
+
 # Handoff de reprise
 
 Derniere mise a jour: 2026-07-29
@@ -6,7 +10,7 @@ Fin de validite: 2026-10-31
 
 Campagne de recette commerce sandbox en cours:
 [TEST_COMMERCE_SANDBOX.md](TEST_COMMERCE_SANDBOX.md), avec registre temporaire
-[anomalies.md](anomalies.md). Fusion et suppression au plus tard le
+[anomalies.md](../../../anomalies.md). Fusion et suppression au plus tard le
 2026-08-06.
 
 ## Point de depart
@@ -24,16 +28,16 @@ Stripe Live et production restent interdits.
 
 ## Documents a lire
 
-1. [AGENTS.md](AGENTS.md);
+1. [AGENTS.md](AGENTS-avant-rangement.md);
 2. [map.md](map.md);
-3. [COMMERCE_SYNTHESE.md](_DOCS/commerce/COMMERCE_SYNTHESE.md);
-4. [COMMERCE_REPRISE.md](_DOCS/commerce/COMMERCE_REPRISE.md);
+3. [COMMERCE_SYNTHESE.md](../../../_DOCS/commerce/COMMERCE_SYNTHESE.md);
+4. [COMMERCE_REPRISE.md](../../../_DOCS/commerce/COMMERCE_REPRISE.md);
 5. le chapitre technique concerne.
 
 ## Prochaine action
 
 Reprendre en Axe R1 du
-[plan commerce](_DOCS/commerce/COMMERCE_REPRISE.md), en commencant par les
+[plan commerce](../../../_DOCS/commerce/COMMERCE_REPRISE.md), en commencant par les
 defauts observes sur les commandes reelles sandbox:
 
 - la reprise du paiement apres fermeture de la modale reste bloquee en

@@ -1,3 +1,7 @@
+> ARCHIVE — photographie conservée le 2026-09-04 depuis `_DOCS/email/RECETTE_EMAILS_LUNA.md`.
+> Contenu historique non applicable comme consigne actuelle. Les liens Markdown ont été rebasés.
+> Références actives : [documentation](../../../../../_DOCS/README.md).
+
 # Recette reelle des e-mails - Plan Luna ou Terra
 
 Derniere mise a jour: 2026-07-31
@@ -8,7 +12,7 @@ Echeance: 2026-08-06
 Cloture: fusion des preuves utiles dans `EMAILS_TRANSACTIONNELS.md` et
 `COMMERCE_STRIPE.md`, puis suppression de ce plan
 Lanceur de nouveau chat: `$client-admin-test` via
-[.agents/skills/client-admin-test/SKILL.md](../../.agents/skills/client-admin-test/SKILL.md)
+[.agents/skills/client-admin-test/SKILL.md](../../../../../.agents/skills/client-admin-test/SKILL.md)
 (guide: [TEST_CLIENT_ADMIN_LUNA.md](../../TEST_CLIENT_ADMIN_LUNA.md))
 
 ## 1. Mission

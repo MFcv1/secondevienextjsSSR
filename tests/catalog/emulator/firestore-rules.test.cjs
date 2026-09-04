@@ -224,6 +224,12 @@ test('dashboard projections require strong active admin and remain backend-write
       schemaVersion: 1, revision: 1, recentTotal: 1, recentCritical: 0, recentErrors: 1,
       incidents: [{ schemaVersion: 1, fingerprint: 'runtime-error', occurrenceCount: 1 }],
     });
+    await setDoc(doc(context.firestore(), 'admin_action_summary/current'), {
+      schemaVersion: 1, pendingReturns: 1, totalPending: 1, revision: 1,
+    });
+    await setDoc(doc(context.firestore(), 'analytics_session_exclusions/private-session'), {
+      schemaVersion: 1, reason: 'admin_identity_resolved',
+    });
     await setDoc(doc(context.firestore(), 'admin_system_incidents/runtime-error'), {
       schemaVersion: 1, fingerprint: 'runtime-error', lastSeen: new Date(), occurrenceCount: 1,
     });
@@ -263,6 +269,7 @@ test('dashboard projections require strong active admin and remain backend-write
   await assertSucceeds(getDoc(doc(strong, 'admin_dashboard/insights')));
   await assertSucceeds(getDoc(doc(strong, 'admin_incident_summary/current')));
   await assertSucceeds(getDoc(doc(strong, 'admin_system_incident_summary/current')));
+  await assertSucceeds(getDoc(doc(strong, 'admin_action_summary/current')));
   await assertSucceeds(getDocs(query(
     collection(strong, 'admin_finance_history_days'),
     where('dateKey', '>=', '2026-09-01'),
@@ -288,11 +295,15 @@ test('dashboard projections require strong active admin and remain backend-write
   await assertFails(setDoc(doc(strong, 'admin_incident_summary/current'), { activeTotal: 1 }));
   await assertFails(setDoc(doc(strong, 'admin_system_incidents/forged'), { occurrenceCount: 999 }));
   await assertFails(setDoc(doc(strong, 'admin_system_incident_summary/current'), { recentTotal: 999 }));
+  await assertFails(setDoc(doc(strong, 'admin_action_summary/current'), { pendingReturns: 999 }));
+  await assertFails(getDoc(doc(strong, 'analytics_session_exclusions/private-session')));
+  await assertFails(setDoc(doc(strong, 'analytics_session_exclusions/private-session'), { reason: 'forged' }));
 
   for (const firestore of [weak, removed, client, anonymous]) {
     await assertFails(getDoc(doc(firestore, 'admin_dashboard/finance')));
     await assertFails(getDoc(doc(firestore, 'admin_incident_summary/current')));
     await assertFails(getDoc(doc(firestore, 'admin_system_incident_summary/current')));
+    await assertFails(getDoc(doc(firestore, 'admin_action_summary/current')));
     await assertFails(getDoc(doc(firestore, 'admin_system_incidents/runtime-error')));
     await assertFails(getDoc(doc(firestore, 'admin_finance_history_days/2026-09-02')));
   }

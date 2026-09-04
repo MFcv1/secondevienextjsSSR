@@ -2,8 +2,16 @@
 
 Derniere mise a jour: 2026-08-24
 Statut: `OUVERT_APRES_RECETTE_CHROME`
-Campagne: [TEST_COMMERCE_SANDBOX.md](TEST_COMMERCE_SANDBOX.md)
+Campagne: [RECETTE_CLIENT_ADMIN.md](_DOCS/quality/RECETTE_CLIENT_ADMIN.md)
 Echeance de fusion et suppression: 2026-08-06
+
+Revue documentaire: 2026-09-04. L'echeance ci-dessus est historique et
+depassee ; aucune anomalie n'est fermee par ce rangement. Commencer par la
+synthese, puis lire uniquement le detail et la derniere preuve du sujet vise.
+Les journaux dates conservent volontairement les etats intermediaires.
+Les suivis non clos de cette serie sont A-010 (externe) et A-033 (requalification).
+Les nouveaux constats HRT sont suivis separement dans
+[la recette humaine](_DOCS/quality/RECETTE_HUMAINE_SANDBOX.md).
 
 ## Regles
 
@@ -11,7 +19,8 @@ Echeance de fusion et suppression: 2026-08-06
 - le detail est complete avant toute correction;
 - aucun mot de passe, OTP, token, PIN, secret, donnee de carte ou donnee
   personnelle inutile n'est consigne;
-- une anomalie `BLOQUANTE` interdit de passer a la phase suivante;
+- une anomalie `BLOQUANTE` interdit les phases qui en dependent ; les scenarios
+  independants et sans risque peuvent continuer selon la recette autorisee;
 - une anomalie fermee conserve sa preuve de requalification jusqu'a la fusion
   dans le chapitre canonique;
 - ce registre est supprime apres fusion de toutes les informations durables;
@@ -35,14 +44,24 @@ Echeance de fusion et suppression: 2026-08-06
 | A-012 | Preflight recette Luna | `BLOQUANTE` | `FERMEE` | La boîte Gmail admin nécessitait une récupération Google avant connexion |
 | A-013 | Preflight recette Luna | `BLOQUANTE` | `FERMEE` | Google OAuth fonctionne dans Chrome externe avec l'extension active |
 | A-014 | Connexion client | `MINEURE` | `FERMEE` | Une validation OTP a subi une erreur reseau transitoire, puis le retry a reussi |
-| A-015 | Nettoyage recette | `MINEURE` | `OUVERTE` | Le meuble de smoke test publie reste a archiver |
+| A-015 | Nettoyage recette | `MINEURE` | `REQUALIFIEE` | Archivage historique confirme ; anciens IDs absents du catalogue lors du controle du 23 aout |
 | A-016 | Documents client | `MINEURE` | `FERMEE` | Les documents ont ete projetes apres le controle immediat; aucune perte durable |
 | A-017 | Remboursement asynchrone | `BLOQUANTE` | `FERMEE_APRES_REQUALIFICATION_SANDBOX` | Le rail v2 applique aussi la reversal Stripe `succeeded -> failed` sans faux remboursement ni restock |
-| A-018 | Fulfillment livraison | `MAJEURE` | `CORRIGEE_A_REQUALIFIER` | L'etat durable etait correct; le cache et la chronologie admin restaient obsoletes |
+| A-018 | Fulfillment livraison | `MAJEURE` | `REQUALIFIEE` | Cache et chronologie corriges ; parcours livraison/retrait requalifies dans la cloture du 12 aout |
 | A-019 | Session client / checkout | `MINEURE` | `FERMEE` | Le panier et la session etaient charges apres hydratation; la reprise a permis les deux commandes |
 | A-020 | Accès administrateur Google | `BLOQUANTE` | `FERMEE` | Le premier parcours n’achevait pas le sélecteur Google; reprise explicite du compte admin réussie |
-| A-021 | Publication admin | `MAJEURE` | `CORRIGEE_A_REQUALIFIER` | Le renouvellement du jeton démontait le parcours, fermait la progression et réinitialisait la vue sur Créer |
+| A-021 | Publication admin | `MAJEURE` | `REQUALIFIEE` | Correction et cycle de publication/archivage requalifies selon le detail du 23 aout |
 | A-022 | Gate refund.failed Gen2 | `IMPORTANTE` | `REQUALIFIEE` | Le préflight M12/M13 cible désormais les trois Functions Gen2 finales et leurs URL publiques |
+| A-023 | Rapprochement | `MINEURE` | `REQUALIFIEE` | Le harnais accepte les deux commandes autorisees sans en exiger trois |
+| A-024 | Publication | `MINEURE` | `REQUALIFIEE` | Apercu URL canonique corrige |
+| A-025 | E-mails refund | `IMPORTANTE` | `REQUALIFIEE` | Succes devenu obsolete supprime avant envoi |
+| A-026 | Deploiement Gen2 | `MINEURE` | `REQUALIFIEE` | Archive webhook et entry points corriges |
+| A-027 | Outbox Gmail | `IMPORTANTE` | `REQUALIFIEE` | Livraison ambigue rapprochee sans renvoi |
+| A-028 | Catalogue | `IMPORTANTE` | `REQUALIFIEE` | Sonde HTML dirigee vers la categorie canonique |
+| A-029 | Documents PDF | `IMPORTANTE` | `REQUALIFIEE` | Resolution du bucket Gen2 et ouverture PDF qualifiees |
+| A-030 | Wishlist | `IMPORTANTE` | `REQUALIFIEE` | Favori historique reconcilie avec le catalogue courant |
+| A-031 | Copie PDF | `IMPORTANTE` | `REQUALIFIEE` | Bucket et lecture Storage du dispatcher qualifies |
+| A-032 | Lien e-mail | `IMPORTANTE` | `REQUALIFIEE` | URL Documents corrigee vers le sandbox |
 | A-033 | OTP client et checkout | `BLOQUANTE` | `CORRIGEE_A_REQUALIFIER` | SMTP repare et M01/M02 frais presents dans Gmail; consommation des nouveaux codes encore a rejouer |
 | A-034 | Entree administration | `MAJEURE` | `FERMEE` | Les sessions anonyme et client reviennent a la galerie; seul le compte admin AAL2 ouvre `/admin` |
 | A-035 | Archivage commande | `MAJEURE` | `FERMEE` | L'archive durable est exclue de la liste active et ne repropose plus de mutation |
@@ -62,7 +81,12 @@ Statuts:
 - `EN_DIAGNOSTIC`;
 - `CORRIGEE_A_REQUALIFIER`;
 - `FERMEE`;
+- `REQUALIFIEE` / `FERMEE_APRES_REQUALIFICATION_SANDBOX` : preuve datee dans le detail;
 - `DIFFEREE_EXTERNE`.
+
+La synthese a ete alignee sur les preuves deja consignees, sans nouvelle recette.
+A-019 a ete reutilise historiquement pour deux observations voisines : les
+deux sous-sections sont conservees avec leur titre, sans renumeroter les references.
 
 ## Anomalies
 
@@ -563,8 +587,8 @@ Dupliquer cette section pour chaque anomalie et remplacer `A-000`.
   effectuer un remboursement Stripe test complet. Aucun patch applicatif
   n'etait necessaire.
 - documentation canonique a mettre a jour:
-  `TEST_COMMERCE_SANDBOX.md` et
-  `_DOCS/email/RECETTE_EMAILS_LUNA.md`, mis a jour.
+  `RECETTE_CLIENT_ADMIN.md` et
+  `_DOCS/quality/RECETTE_CLIENT_ADMIN.md`, mis a jour.
 
 ### A-014 - Erreur reseau transitoire pendant la validation OTP client
 
@@ -766,9 +790,10 @@ Dupliquer cette section pour chaque anomalie et remplacer `A-000`.
   `getOrderTimelineAdminV2` est `ACTIVE`, revision 3, mis a jour a 16:10:20
   Europe/Paris; le backend App Hosting sandbox a ete mis a jour a 16:19:19.
   L'ancien texte « deploiement attendu » ne constitue donc plus un blocage.
-- resultat de requalification: correction Function et App Hosting deployee;
-  la branche livraison A-018 doit encore fermer le smoke admin borne sans
-  repetition d'une transition ambiguë.
+- etat intermediaire apres deploy: le smoke admin restait a faire.
+  La cloture du 2026-08-12 ci-dessous (REC-20260812-A06) consigne ensuite les
+  deux parcours complets, les chronologies et les e-mails ; elle remplace cet
+  ancien reste a faire. Aucune nouvelle qualification n'est affirmee ici.
 - documentation canonique a mettre a jour: commerce et back-office, mis a
   jour dans le meme changement.
 
@@ -825,7 +850,7 @@ Dupliquer cette section pour chaque anomalie et remplacer `A-000`.
   acces admin. Suite Auth finale `77/77`.
 - documentation canonique a mettre a jour:
   `_DOCS/security/AUTHENTIFICATION.md`,
-  `_DOCS/email/RECETTE_EMAILS_LUNA.md`, `map.md`.
+  `_DOCS/quality/RECETTE_CLIENT_ADMIN.md`, `map.md`.
 
 ### A-019 - Session OTP cliente perdue avant le checkout
 

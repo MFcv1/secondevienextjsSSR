@@ -1,3 +1,7 @@
+> ARCHIVE — photographie conservée le 2026-09-04 depuis `_DOCS/security/STABILISATION_SECURITE_SANDBOX.md`.
+> Contenu historique non applicable comme consigne actuelle. Les liens Markdown ont été rebasés.
+> Références actives : [documentation](../../../../../_DOCS/README.md).
+
 # Stabilisation securite sandbox
 
 Derniere mise a jour: 2026-08-12

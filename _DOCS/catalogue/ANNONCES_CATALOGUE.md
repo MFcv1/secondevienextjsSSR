@@ -226,7 +226,13 @@ furniture [DB, autoritaire]
   -> SSR, recherche, wishlist, sitemap et admin lazy
 ```
 
-Le lecteur valide schema, manifestes et checksums. Il tente `current`, puis `previous`, puis `last-known-good`; il ne scanne jamais Firestore en cas de panne Storage. Chaque lecture de pointeur epingle une generation Storage unique pour que metadata et corps ne puissent pas provenir de deux ecritures differentes. Les seuls modes durables sont `active` et `paused`. Maintenance admin valide les releases et effectue le CAS de rollback, puis la reconstruction republie l'etat Firestore courant.
+Le lecteur valide schema, manifestes et checksums. Il tente `current`, puis `previous`, puis `last-known-good`; il ne scanne jamais Firestore en cas de panne Storage. Chaque lecture de pointeur epingle une generation Storage unique pour que metadata et corps ne puissent pas provenir de deux ecritures differentes. Les seuls modes durables sont `active` et `paused`. Le backend de maintenance valide les releases et effectue le CAS de rollback, puis la reconstruction republie l'etat Firestore courant.
+
+Limite operateur constatee dans le code le 2026-09-04 : l'onglet Maintenance
+et son composant ont ete retires. Les Functions de maintenance catalogue
+subsistent, mais aucun appelant UI de rollback/reconstruction n'est present.
+Les recettes historiques ci-dessous ne prouvent donc pas un bouton utilisable
+aujourd'hui. Voir [Exploitation](../operations/EXPLOITATION.md#51-commandes-operateur-catalogue).
 
 La recette de cloture du 2026-07-18 a exerce un rollback reel, sa pause, puis la reconstruction. Une recette complementaire du 2026-07-19 a modifie puis restaure le prix et le stock d'un meuble sandbox existant, verifie le snapshot public et ouvert le checkout sans paiement ni creation de commande. Deux reconstructions finales ont elimine l'etat transitoire des trois pointeurs: `current=45`, `previous=44`, `last-known-good=43`, tous fondes sur l'etat Firestore restaure. Data Access n'a releve aucune lecture publique de `furniture` ni aucun acces a `public/meta`, puis `DATA_READ` et `DATA_WRITE` ont ete retires et `auditConfigs: null` reverifie. Le contrat de synchronisation decrit ci-dessous a ensuite ete deploye sur `secondevie-next-sandbox` et valide par les suites locales Node 22/Java 21, la CI et les probes HTTP. Aucun paiement ni environnement de production n'a ete touche.
 
@@ -239,7 +245,7 @@ La passe de synchronisation locale du 2026-07-19 a ferme les ecarts suivants dan
 - la liberation d'un lease est liee a son token: un ancien worker ne peut pas effacer le lease d'un build plus recent;
 - le reconciler peut reprogrammer la revalidation meme en mode `paused`, notamment apres un rollback;
 - le GC media protege explicitement les releases `current`, `previous` et LKG, quel que soit leur age, et s'arrete si un pointeur ou un index retenu est illisible;
-- Maintenance verifie l'integrite de chaque release avant d'afficher son etat ou d'autoriser sa selection;
+- le backend de maintenance verifie l'integrite de chaque release avant de retourner son etat ou d'autoriser le rollback ; l'interface de selection historique a depuis ete retiree;
 - le lecteur journalise un basculement sur un fallback sans reintroduire de lecture Firestore;
 - chaque mutation publie un `impact-plan.json` immutable, calcule par diff entre releases, qui contient ancienne/nouvelle URL produit, categories feuille/parentes et drapeaux galerie/recherche/sitemap; les depassements de bornes et rollbacks passent par un mode `full` explicitement motive;
 - la resolution d'une fiche compare l'ID direct puis le suffixe canonique contre les IDs reels du snapshot; un ID Firestore contenant des tirets n'est jamais tronque au dernier tiret;

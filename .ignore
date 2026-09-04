@@ -1,0 +1,3 @@
+# Archives documentaires : recherche explicite avec rg --no-ignore doc/archives.
+# Ne change pas le suivi Git ni les permissions des fichiers.
+doc/archives/

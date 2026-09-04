@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "codebase": "main",
+    "baselineCommit": "cf697cd63f059631fc9481c40b1a52a37e11facb",
+    "gate": "ANALYTICS_LIVE_SESSIONS"
+  },
+  "gates": { "deploymentAllowed": true },
+  "deploymentPolicy": { "maxBatchSize": 1, "forbiddenGlobalSelector": "functions" },
+  "functions": [{
+    "name": "aggregateAnalyticsSessionGen2",
+    "cloud": { "present": true, "generation": 2, "region": "europe-west1", "revision": "aggregateanalyticssessiongen2-00008-sug" },
+    "decision": { "classification": "KEEP_GEN2", "deploymentMaxBatchSize": 1 },
+    "identities": {
+      "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+      "runtimeServiceAccount": "analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    },
+    "trigger": { "transportServiceAccount": "functions-eventarc-invoker@secondevienextjsssr.iam.gserviceaccount.com" }
+  }],
+  "rollback": {
+    "hostingBuild": "build-2026-09-03-002",
+    "sourceSha256": "e81c6339389983312c784e77f7d60af33beefd6fd8eb40a8e08b1d7161428e53",
+    "sourceUri": "gs://gcf-v2-sources-231220287936-europe-west1/analytics-live-sessions/rollback/e81c6339389983312c784e77f7d60af33beefd6fd8eb40a8e08b1d7161428e53/function-source.zip",
+    "ruleset": "projects/secondevienextjsssr/rulesets/d4c5720a-3253-4732-a97c-e3eef111a270",
+    "preserveSourcesAndLedgers": true
+  }
+}

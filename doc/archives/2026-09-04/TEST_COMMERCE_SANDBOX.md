@@ -1,3 +1,7 @@
+> ARCHIVE — photographie conservée le 2026-09-04 depuis `TEST_COMMERCE_SANDBOX.md`.
+> Contenu historique non applicable comme consigne actuelle. Les liens Markdown ont été rebasés.
+> Références actives : [documentation](../../../_DOCS/README.md).
+
 # Campagne de recette commerce sandbox
 
 Derniere mise a jour: 2026-07-31
@@ -5,9 +9,9 @@ Statut: `RECETTE_REELLE_EXECUTEE_CONTROLES_FERMES`
 Proprietaire: recette commerce
 Environnement exclusif: `secondevienextjsssr` / App Hosting sandbox / Stripe test
 Echeance de cloture: 2026-08-06
-Registre associe: [anomalies.md](anomalies.md)
+Registre associe: [anomalies.md](../../../anomalies.md)
 Lanceur Luna: `$client-admin-test` via
-[.agents/skills/client-admin-test/SKILL.md](.agents/skills/client-admin-test/SKILL.md)
+[.agents/skills/client-admin-test/SKILL.md](../../../.agents/skills/client-admin-test/SKILL.md)
 (guide: [TEST_CLIENT_ADMIN_LUNA.md](TEST_CLIENT_ADMIN_LUNA.md))
 
 ## 1. Objectif ferme

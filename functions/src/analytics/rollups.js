@@ -1124,6 +1124,7 @@ const aggregateAnalyticsSessionFirebaseHandler = onDocumentWritten(
     async (event) => {
         const before = event.data?.before?.exists ? event.data.before.data() : null;
         const after = event.data?.after?.exists ? event.data.after.data() : null;
+        await require('./liveSessions').projectLiveSession(event.params.sessionId);
         if (process.env.ANALYTICS_REALTIME_ENABLED === 'true') {
             const realtime = require('./realtime');
             // Event data is only a no-effect filter; the transaction rereads the authoritative source.

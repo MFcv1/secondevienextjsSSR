@@ -1,3 +1,7 @@
+> ARCHIVE — photographie conservée le 2026-09-04 depuis `_DOCS/admin/META_OAUTH_PUBLICATION_PRD.md`.
+> Contenu historique non applicable comme consigne actuelle. Les liens Markdown ont été rebasés.
+> Références actives : [documentation](../../../../../_DOCS/README.md).
+
 # PRD temporaire - Connexion Meta et publication sans friction
 
 Derniere mise a jour: 2026-08-19

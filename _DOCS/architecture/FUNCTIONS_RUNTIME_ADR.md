@@ -10,26 +10,33 @@ par domaine ajouterait maintenant des deploiements, IAM et archives sans gain
 mesure. Elle ne sera reouverte que si la duree de build, les droits partages ou
 la cadence de livraison d'un domaine deviennent un probleme concret.
 
-L'etat autoritaire est:
+Inventaire de reference consigne au 2026-09-03 (161 exports recomptees
+localement le 4 septembre ; aucun nouvel inventaire cloud pendant le rangement) :
 
-- 160 exports locaux;
-- 157 Functions cloud;
-- 154 Gen2 `ACTIVE`;
+- 161 exports locaux;
+- 158 Functions cloud;
+- 155 Gen2 `ACTIVE`;
 - exactement trois Gen1 Auth conservees:
   `grantAdminOnAuth`, `onRegisteredUserCreated` et
   `onRegisteredUserDeleted`;
 - cinq exports Instagram legacy restent uniquement locaux; deux webhooks v2
   restent uniquement cloud avec leur source et leur entree de deploiement
-  dediees. L'ecart net local/cloud est donc `155 communs + 5 / + 2`; aucun
+  dediees. L'ecart net local/cloud est donc `156 communs + 5 / + 2`; aucun
   deploiement global n'est permis;
-- App Hosting sert le deployment ID `sv-mtk9ag3n-d6c64195f71c`; la revision
-  precedente immediate est `build-2026-09-02-004`.
+- les identites App Hosting et leur rollback sont propres a chaque livraison :
+  consulter INFRASTRUCTURE.md et TEMPS_REEL_COUTS_DEVOPS.md, puis relire le
+  rollout reel avant action. Le build du 2 septembre n'est plus une constante courante.
 
 Les deploiements Functions restent individuels, allowlistes et lies a une
 archive immuable. Production, Stripe live et un selecteur global `functions`
 restent interdits sans decision distincte.
 
 ## Observation et capacite
+
+Attention au statut de preuve : les mesures et fenetres ci-dessous sont
+historiques. F6 reste ouvert ; l'echeance de fin aout ne prouve pas la sante
+pendant sept jours de la topologie etendue de septembre. Revalider revision,
+configuration et couverture avant toute cloture, sans relancer la migration.
 
 La fenetre historique G13 couvre sept jours de metriques et confirme, a sa fin,
 les 134 Gen2 de la migration historique. La topologie courante ajoute douze
@@ -105,6 +112,55 @@ Le contrat local rend l'attente `livemode` dependante de l'environnement:
 aucun rail live, n'utilise aucun secret live et n'autorise aucune production.
 
 ## Preuves
+
+### Lecteur du dashboard Performance (local, 2026-09-04)
+
+L'API Next `/api/admin/function-metrics` utilise l'identite ADC de l'hote pour
+Monitoring et l'inventaire, et le client Firebase Admin existant pour le cache
+prive. Aucun nouvel export Function n'est ajoute. Le certificat Firebase
+local ne recoit pas de droits supplementaires. Les modules
+`functionMetricsCore.mjs`, `functionMetricsCache.mjs` et `functionMetrics.js`
+separent agregation, cache transactionnel et adaptation serveur.
+
+Le compte App Hosting observe est
+`firebase-app-hosting-compute@secondevienextjsssr.iam.gserviceaccount.com`.
+Son IAM observe ne contient pas de role Monitoring Viewer/Functions Viewer.
+Avant deploiement, verifier/accorder un role personnalise limite aux deux
+permissions `monitoring.timeSeries.list` et `cloudfunctions.functions.list`
+sur le seul projet sandbox. Aucun changement IAM ni deploiement n'a ete fait
+pendant l'implementation. Le scope OAuth utilise est celui de l'ADC; aucun
+token n'est fourni au navigateur ou ecrit dans les preuves.
+
+L'inventaire inclut seulement les fonctions actuellement deployees. Sur 30
+jours, le volume peut inclure plusieurs revisions de ces services, mais ne
+represente pas les anciennes fonctions supprimees ou tout le cout du projet.
+Les erreurs et latences agregees ne prouvent pas la cause d'un incident.
+Les valeurs Gen1 execution_times sont converties de nanosecondes en ms;
+les distributions Cloud Run request_latencies sont deja en ms.
+
+Le cache prive et les couts residuels sont documentes dans BACKOFFICE.md.
+La lecture complete d'une fenetre remplace volontairement un cache incremental
+de percentiles qui serait mathematiquement incorrect.
+
+### Mesure des fonctions interactives
+
+Le diagnostic `scripts/audit-interactive-runtime.mjs` se lance avec
+`npm run audit:interactive-runtime -- --input <export-expurge.json>` ou avec
+`--cloud --from <UTC> --to <UTC> --services <noms-Cloud-Run>` explicitement.
+Le chemin cloud est limite au sandbox, a dix services, 24 h et 5000 lignes;
+il ne fait que `functions list` et `logging read`. Il signale la troncature,
+les observations insuffisantes pour p95 et les configurations absentes.
+La configuration lue est courante, pas une preuve de configuration historique.
+
+OPTIONS, POST et GET sont separes: un POST de 417 ms ne doit pas masquer un
+OPTIONS de 5788 ms avec demarrage d'instance (fenetre du 2026-09-03
+21:11-21:14 UTC). Deux POST ne ferment pas une gate p95. Le rapport ne chiffre
+pas Billing et ne somme pas des requetes paralleles en latence utilisateur.
+CPU/concurrence/min/max restent inchanges. Les modifications par cohortes
+suivent le [plan temporaire demande](../infra/TEMPS_REEL_COUTS_DEVOPS.md),
+pas une augmentation uniforme de toutes les Functions.
+
+### Archives de qualification Gen2
 
 - `apphostingaudit/manifests/functions-gen2-g12a-remaining.json`;
 - `apphostingaudit/manifests/functions-gen2-g12b-remaining.json`;

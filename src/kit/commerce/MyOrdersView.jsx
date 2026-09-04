@@ -1,4 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { collection, limit, onSnapshot, orderBy, query, Timestamp, where } from 'firebase/firestore';
 import {
     AlertTriangle,
     ArrowLeft,
@@ -44,6 +45,7 @@ import {
 import { adaptCommerceOrder } from './orderAdapter';
 import CommerceDocumentModal from './CommerceDocumentModal';
 import { listMyNewsletterRewards } from '../marketplace/newsletterRewardClient';
+import { db } from '../config/firebase';
 
 const { getOrderReference } = orderReferenceHelpers;
 
@@ -937,6 +939,7 @@ const MyOrdersView = ({
     const [ordersError, setOrdersError] = useState('');
     const [ordersPaginationError, setOrdersPaginationError] = useState('');
     const [ordersReloadKey, setOrdersReloadKey] = useState(0);
+    const [ordersLiveSince, setOrdersLiveSince] = useState(null);
     const [showCancelSuccess, setShowCancelSuccess] = useState(false);
     const [showContactPopup, setShowContactPopup] = useState(false);
     const [orderToCancelId, setOrderToCancelId] = useState(null);
@@ -1089,8 +1092,10 @@ const MyOrdersView = ({
         if (!user) return;
         let cancelled = false;
         setLoading(true);
+        setOrdersLiveSince(null);
         setOrdersError('');
         setOrdersPaginationError('');
+        const liveSince = Date.now() - 1000;
         listMyOrdersV2({ pageSize: 25 })
             .then((result) => {
                 if (cancelled) return;
@@ -1100,6 +1105,7 @@ const MyOrdersView = ({
                     allowedActions: order.allowedActions || []
                 })));
                 setOrdersCursor(result.nextCursor || null);
+                setOrdersLiveSince(liveSince);
                 setLoading(false);
             })
             .catch((error) => {
@@ -1114,6 +1120,39 @@ const MyOrdersView = ({
             cancelled = true;
         };
     }, [ordersReloadKey, user]);
+
+    useEffect(() => {
+        if (!user?.uid || user.isAnonymous || !ordersLiveSince) return undefined;
+        const liveQuery = query(
+            collection(db, 'orders'),
+            where('userId', '==', user.uid),
+            where('updatedAt', '>', Timestamp.fromMillis(ordersLiveSince)),
+            orderBy('updatedAt', 'asc'),
+            limit(25)
+        );
+        return onSnapshot(liveQuery, (snapshot) => {
+            if (snapshot.empty) return;
+            setOrders((current) => {
+                const merged = new Map(current.map((order) => [order.id, order]));
+                snapshot.docs.forEach((document) => {
+                    const raw = { id: document.id, ...document.data() };
+                    const existing = merged.get(document.id) || {};
+                    merged.set(document.id, {
+                        ...existing,
+                        ...raw,
+                        ...adaptCommerceOrder(raw, document.id),
+                        allowedActions: existing.allowedActions || [],
+                        documents: existing.documents || raw.documents || []
+                    });
+                });
+                return Array.from(merged.values()).sort(
+                    (left, right) => getMillis(right.createdAt) - getMillis(left.createdAt)
+                );
+            });
+        }, (error) => {
+            console.error('Customer orders live update failed:', error?.code || error?.name);
+        });
+    }, [ordersLiveSince, user?.isAnonymous, user?.uid]);
 
     const retryOrdersRead = () => setOrdersReloadKey((current) => current + 1);
 

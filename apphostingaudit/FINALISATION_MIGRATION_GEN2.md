@@ -8,6 +8,13 @@ Proprietaire: mainteneur Seconde Vie
 
 Echeance de fusion et suppression: 2026-09-01
 
+Revue documentaire du 2026-09-04 : echeance depassee, **F6 non clos** dans
+les preuves disponibles. Les comptages et fenetres ci-dessous appartiennent
+au lot d'aout, pas automatiquement a la topologie enrichie de septembre.
+Revalider perimetre, derniere mutation et fenetre avant toute conclusion.
+Ce rangement n'a ni observe le cloud ni redemarre ou valide un soak.
+Etat general : [_DOCS/ETAT_PROJET.md](../_DOCS/ETAT_PROJET.md).
+
 Ce plan temporaire est cree a la demande explicite de l'utilisateur apres
 l'audit contradictoire du commit `b430109`. Il ne rouvre ni une migration
 fonctionnelle supplementaire ni la production. Il ferme uniquement les preuves,

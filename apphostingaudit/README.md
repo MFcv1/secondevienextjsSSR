@@ -1,5 +1,10 @@
 # Centre de suivi Firebase, App Hosting et migration Gen2
 
+Lecture ciblee uniquement. Ce centre conserve les preuves et le journal du
+chantier d'aout ; il ne fournit pas l'inventaire cloud courant de septembre.
+Reprise generale : [etat du projet](../_DOCS/ETAT_PROJET.md). Le plan de
+finalisation reste ouvert tant que sa gate F6 n'est pas prouvee.
+
 Derniere mise a jour: 2026-08-23
 
 Statut: `TOPOLOGIE_GEN2_COMPLETE - FINALISATION_POST_AUDIT_EN_COURS`

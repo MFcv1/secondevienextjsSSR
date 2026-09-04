@@ -1,6 +1,6 @@
 # OAuth Instagram et Facebook - Runbook Seconde Vie
 
-Derniere verification: 2026-08-19
+Derniere preuve cloud de ce runbook: 2026-08-19 ; revue documentaire: 2026-09-04
 Statut: `REFERENCE_ACTIVE - G7_CLOSED - SANDBOX_GEN2_ACTIVE`
 Proprietaire: back-office / integrations sociales
 Perimetre: connexion professionnelle Instagram directe, Facebook optionnel,
@@ -18,43 +18,30 @@ construite, configuree, diagnostiquee et validee. Il sert a:
 - diagnostiquer les erreurs OAuth deja rencontrees;
 - preparer le passage du mode developpement a une application Meta publique.
 
-Le PRD historique [META_OAUTH_PUBLICATION_PRD.md](META_OAUTH_PUBLICATION_PRD.md)
-conserve le raisonnement produit, les gates et la saga de publication. Le
-present document est la procedure operationnelle durable. Le comportement du
-back-office reste decrit dans [BACKOFFICE.md](BACKOFFICE.md).
+Ce document est la procedure operationnelle durable. Le PRD de conception a
+ete archive lors du rangement documentaire ; ses objectifs restent un OAuth
+sans manipulation de jetons et une publication idempotente, avec etat durable
+visible dans le back-office. Voir [BACKOFFICE.md](BACKOFFICE.md).
 
-## 2. Etat reel valide
+## 2. Etat documente et limites de preuve
 
-Contre-verification G0 du 2026-08-15: la connexion directe decrite dans ce
-runbook a ete qualifiee historiquement, mais ses cinq Functions ne sont plus
-presentes dans le cloud. Elles existent dans le source et l'UI depuis le merge
-`6be360e`, posterieur a leur suppression cloud par la stabilisation securite.
-Le rail Meta/Facebook et la saga conservent neuf cibles cloud. Jusqu'a G7, les
-cinq Instagram direct restent sous `HOLD_META_RECONCILIATION`: aucun deploy,
-aucune suppression de code et aucune utilisation du callback historique comme
-preuve d'etat courant.
+Le hold Instagram de G0/G7-R a ete leve pour G7-D le 2026-08-19 : les neuf
+cibles Meta/Facebook/saga et les cinq Instagram directes ont ete qualifiees
+en Gen2, Node 22. Les deux callbacks ont prouve bascule, rollback puis
+reactivation Gen2. Cette phase n'a pas rejoue d'OAuth interactif ni publie de
+contenu. Les anciennes Gen1 etaient preservees a cette etape seulement ; les
+retraits ulterieurs et la topologie de reference sont dans
+[FUNCTIONS_RUNTIME_ADR.md](../architecture/FUNCTIONS_RUNTIME_ADR.md).
 
-Reconciliation G7-R du 2026-08-19: les neuf cibles Meta/Facebook/saga sont
-Gen1 `ACTIVE` conformes et classees `MIGRATE_GEN2`. Les cinq Instagram directs
-ont des appelants actifs et sont toutes classees `MIGRATE_GEN2`, soit `m = 5`.
-Cette decision ne leve pas le hold, n'autorise pas G7-D et ne retablit pas le
-callback Instagram. Le manifeste de preuve est
-`apphostingaudit/manifests/functions-gen2-g7r.json`.
-
-Fermeture G7-D du 2026-08-19: apres levee formelle du hold pour ce lot, les
-neuf cibles Meta/Facebook/saga et les cinq Instagram directes sont dupliquees
-en 14 Gen2 `ACTIVE`, Node 22, soit `m = 5`. Les callbacks de l'application Meta
-parente et de l'application Instagram integree ont chacun prouve bascule Gen2,
-rollback Gen1 et reactivation Gen2. Aucun OAuth interactif ni publication n'a
-ete execute. App Hosting sert `build-2026-08-19-004` apres rollback reel vers
-`003`; la quiet-window finale est saine. Toutes les Gen1 restent intactes.
+Cette revue documentaire n'a pas controle Meta ni le cloud a nouveau. Les
+anciennes revisions App Hosting ne sont pas des cibles de rollback courantes.
 
 | Element | Valeur sandbox |
 | --- | --- |
 | projet Firebase | `secondevienextjsssr` |
 | App Hosting | `secondevie-next-sandbox`, `europe-west4` |
 | URL admin | `https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app/admin` |
-| Functions OAuth | 14 Gen2 G7 `ACTIVE` en `europe-west1`, Node 22; toutes les Gen1 preservees |
+| Functions OAuth | 14 cibles Gen2 qualifiees en G7, `europe-west1`, Node 22 ; inventaire courant dans l'ADR runtime |
 | application Meta parente | `Seconde Vie Publications`, ID `1580711783405294` |
 | application Instagram | `Seconde Vie Publications-IG`, ID `1728940675104024` |
 | compte Instagram de recette | `@xori_on`, professionnel et public |
@@ -62,13 +49,18 @@ ete execute. App Hosting sert `build-2026-08-19-004` apres rollback reel vers
 | callback Instagram | callback Gen2 actif apres rollback Gen1 prouve |
 | callback Facebook | callback Gen2 actif apres rollback Gen1 prouve |
 | dernier correctif qualifie | commit `83b3a69` |
-| Function Instagram qualifiee | `instagramOAuthCallbackGen2` ACTIVE; Gen1 preservee |
+| Function Instagram qualifiee | `instagramOAuthCallbackGen2` lors de G7-D |
 
 La connexion Instagram directe a ete validee historiquement dans le navigateur
-avec le compte testeur autorise. Cette preuve ne leve pas le hold courant.
-Facebook reste le rail cloud present avec la saga sociale. Le sandbox n'est pas
-une production publique: tant que l'application Meta reste en mode
-developpement, seuls les comptes ayant un role autorise peuvent tester le flux.
+avec le compte testeur autorise. Il reste a requalifier le parcours OAuth puis
+une publication reelle sur un contenu et un compte explicitement autorises,
+avec reprise/idempotence et reconciliation serveur. La consolidation des
+documents ne remplace pas cette recette (ancienne gate M5).
+
+Le sandbox n'est pas une production publique : tant que l'application Meta
+reste en mode developpement, seuls les comptes ayant un role autorise peuvent
+tester le flux. App Review, acces public et configuration production restent
+differes. Lire ce runbook n'autorise pas une publication sociale.
 
 ## 3. Decision d'architecture
 
@@ -519,7 +511,7 @@ elle aussi demandee.
 | exports | `functions/index.js` |
 | tests | `tests/meta-oauth-contract.test.cjs` |
 | comportement back-office | `_DOCS/admin/BACKOFFICE.md` |
-| PRD et gates | `_DOCS/admin/META_OAUTH_PUBLICATION_PRD.md` |
+| PRD et gates | `_DOCS/admin/INSTAGRAM_OAUTH_RUNBOOK.md` |
 | cartographie | `map.md` |
 
 Commits structurants:

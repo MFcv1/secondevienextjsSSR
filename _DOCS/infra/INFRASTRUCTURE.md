@@ -465,7 +465,9 @@ Audit et durcissement securite sandbox du 2026-08-11:
   `6be360e` a reintroduit leurs exports et appelants UI sans les redeployer;
   ce drift, place sous `HOLD_META_RECONCILIATION` en G0, est resolu par G7:
   cinq paralleles Instagram Gen2 et neuf Meta/Facebook/saga Gen2 sont ACTIVE,
-  tandis que toutes les Gen1 sont preservees;
+  tandis que les Gen1 sont encore preservees a cette etape G7 seulement.
+  Les retraits suivants sont consignes dans
+  [FUNCTIONS_RUNTIME_ADR.md](../architecture/FUNCTIONS_RUNTIME_ADR.md);
 - Auth, Firestore et Storage sont `ENFORCED` App Check sur le sandbox apres
   lecture des metriques valides sur sept jours;
 - aucun binding IAM public ni aucun `roles/editor` ne subsiste. Les comptes de

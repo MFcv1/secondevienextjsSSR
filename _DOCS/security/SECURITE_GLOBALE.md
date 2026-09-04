@@ -1,19 +1,30 @@
 # Securite globale
 
+Sessions Data en direct (2026-09-04): `admin_analytics_sessions` exige admin
+fort pour chaque lecture, listes limitees a dix; `admin_analytics_session_details`
+autorise uniquement le get admin fort, jamais les listes. Ecritures client
+interdites; `analytics_sessions` reste inaccessible au navigateur. Les
+projections sont allowlistees sans identite brute ni secret. Les tests Emulator
+couvrent acces, limites, retrait et absence de resurrection.
+
 Derniere mise a jour: 2026-09-01
 Statut: `PREPROD_READY`
 Reference Auth associee: `AUTHENTIFICATION.md`
-Suivi temporaire de cloture: `STABILISATION_SECURITE_SANDBOX.md`
+Stabilisation S0-S4 fermee historiquement sur `05f4830` ; compte rendu archive.
+Ce constat n'est pas un nouvel audit du worktree ni une qualification production.
 
 ## 1. Perimetre et modele de confiance
 
-Extension Data locale du 2026-09-04: `admin_analytics_realtime` ne permet la
+Extension Data sandbox du 2026-09-04: `admin_analytics_realtime` ne permet la
 lecture que de `recent|history`, via `isStrongArtisan()` (claim, registre actif
 et assurance forte). Toutes les ecritures client sont refusees. Controle,
 ledgers et buckets reversibles sont backend-only, sans exception admin client.
 Les tests Emulator refusent visiteur, client, admin faible et registre revoque,
-ainsi qu'une query non bornee par IDs. Aucune Rule n'a encore ete deployee pour
-ce lot; le plan temps reel/couts conserve la gate sandbox.
+ainsi qu'une query non bornee par IDs. Rules deployees en P4; seul l'ajout des
+quatre collections differe de la release sandbox precedente sauvegardee.
+L'invoker Eventarc reste prive et dedie. P4 shadow puis P5 lecteur ont ete
+qualifies sur sandbox selon TEMPS_REEL_COUTS_DEVOPS.md ; les mesures completes
+restent ouvertes. Aucun elargissement des droits utilisateur.
 
 Ce document couvre la securite hors detail du workflow Auth. Les frontieres principales sont:
 
@@ -281,7 +292,14 @@ ne jamais coller du code recu par message, video ou assistant IA, et rappel du
 Code penal. Ce message est dissuasif et pedagogique; il ne detecte pas
 l'ouverture des DevTools et ne remplace aucune autorisation serveur.
 
-## 9. Audit de durcissement du 2026-08-11
+## 9. Preuves historiques de durcissement
+
+Les observations ci-dessous sont datees d'aout, pas des resultats de la revue
+documentaire du 4 septembre. Le hold Meta de G0/G7-R a ete leve en G7-D ; les
+quatorze cibles sociales Gen2 ont ensuite ete qualifiees. Les anciennes Gen1
+ne constituent pas l'inventaire actuel. Voir l'ADR runtime et le runbook Meta.
+
+### Audit du 2026-08-11
 
 La passe locale, le controle read-only du cloud puis le deploiement cible
 sandbox ont etabli:

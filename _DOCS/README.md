@@ -1,80 +1,69 @@
-# Bibliotheque canonique - Seconde Vie Next
+# Documentation de Seconde Vie
 
-Derniere consolidation: 2026-08-24
-Statut: `REFERENCE_ACTIVE`
+Révision : 2026-09-04. Propriétaire : équipe Seconde Vie.
+Ouvrir le chapitre du sujet traité, pas toute cette bibliothèque.
 
-## Role
+- [Projet et intentions](../README.md)
+- [Consignes agents](../AGENTS.md)
+- [État des fonctionnalités et suivis ouverts](ETAT_PROJET.md)
+- [Carte des points d'entrée](../map.md)
 
-Ce dossier est le livre technique du projet. `AGENTS.md` en est le sommaire operationnel, `map.md` la cartographie precise et les fichiers ci-dessous les chapitres de reference.
+## Références durables
 
-Une information structurante ne doit avoir qu'une seule reference active. Les anciens audits, roadmaps et closeouts datés ont ete absorbes dans ces chapitres puis retires du disque de travail. Leur detail reste consultable dans l'historique Git.
-
-## Chapitres
-
-| Domaine | Reference canonique | Contenu |
+| Sujet | Référence | À lire pour |
 | --- | --- | --- |
-| Architecture et SEO | [NEXTJS_SEO.md](architecture/NEXTJS_SEO.md) | App Router, rendu, cache, metadata, indexation, revalidation |
-| Runtime Firebase Functions | [FUNCTIONS_RUNTIME_ADR.md](architecture/FUNCTIONS_RUNTIME_ADR.md) | architecture post-Gen2, exceptions Auth, capacite, rollback et horizon Node |
-| Catalogue et annonces | [ANNONCES_CATALOGUE.md](catalogue/ANNONCES_CATALOGUE.md) | modele produit, categories, publication, recherche, cycle de vie |
-| Interface et navigation | [INTERFACE_NAVIGATION.md](ux/INTERFACE_NAVIGATION.md) | header, mega menu, mobile, transitions, accessibilite UX |
-| Images et medias | [IMAGES_MEDIA.md](images/IMAGES_MEDIA.md) | Storage, variantes, metadata, affichage, backfills |
-| Authentification | [AUTHENTIFICATION.md](security/AUTHENTIFICATION.md) | OTP, Google, passkeys, session, step-up admin, reprise production |
-| E-mails transactionnels | [EMAILS_TRANSACTIONNELS.md](email/EMAILS_TRANSACTIONNELS.md) | galerie, OTP, paiement, cycle de commande, remboursements, transport et captures |
-| Securite globale | [SECURITE_GLOBALE.md](security/SECURITE_GLOBALE.md) | frontieres de confiance, rules, App Check, secrets, risques |
-| Espace client | [ESPACE_CLIENT.md](client/ESPACE_CLIENT.md) | compte, commandes, documents provisoires, wishlist, adresse, support |
-| Commerce - synthese | [COMMERCE_SYNTHESE.md](commerce/COMMERCE_SYNTHESE.md) | point d'entree unique: statut, Gates, preuves, limites et liens |
-| Commerce et Stripe - detail | [COMMERCE_STRIPE.md](commerce/COMMERCE_STRIPE.md) | panier, checkout, paiements, webhooks, remboursements, Connect |
-| Back-office | [BACKOFFICE.md](admin/BACKOFFICE.md) | onglets, droits, publication, ventes, maintenance, analytics |
-| OAuth Instagram/Facebook | [INSTAGRAM_OAUTH_RUNBOOK.md](admin/INSTAGRAM_OAUTH_RUNBOOK.md) | configuration Meta/Firebase, roles testeurs, flux, deploiement, recette et incidents |
-| Infrastructure | [INFRASTRUCTURE.md](infra/INFRASTRUCTURE.md) | Firebase, App Hosting, regions, environnements, production |
-| Deploiement et cache client | [DEPLOIEMENT_CACHE_CLIENT.md](infra/DEPLOIEMENT_CACHE_CLIENT.md) | identite des builds, version skew, cache CDN ISR, rollback |
-| Donnees et analytics | [DONNEES_ANALYTICS.md](data/DONNEES_ANALYTICS.md) | collections, rollups, retention, migration et fiabilite |
-| Audit couts Firestore | [AUDIT_COUTS_FIRESTORE.md](data/AUDIT_COUTS_FIRESTORE.md) | mesures Usage/Query Insights, attribution des lectures et protocole avant/apres |
-| Exploitation | [EXPLOITATION.md](operations/EXPLOITATION.md) | commandes, deploiement, rollback, incidents et backlog controle |
-| Qualite et tests | [QUALITE_TESTS.md](quality/QUALITE_TESTS.md) | CI, gates, tests cibles, matrice de validation |
-| Assistant devis IA | [ASSISTANT_DEVIS.md](ai/ASSISTANT_DEVIS.md) | cadrage MVP non implemente, garde-fous et conditions de reprise |
-| Legal | [CGV_RETOURS_DRAFT.md](legal/CGV_RETOURS_DRAFT.md) | brouillon metier a faire valider par un professionnel du droit |
+| Next/SEO | [NEXTJS_SEO.md](architecture/NEXTJS_SEO.md) | Rendu, routes, cache, indexation |
+| Functions | [FUNCTIONS_RUNTIME_ADR.md](architecture/FUNCTIONS_RUNTIME_ADR.md) | Générations, exceptions, runtime et capacité |
+| Catalogue | [ANNONCES_CATALOGUE.md](catalogue/ANNONCES_CATALOGUE.md) | Produit, publication, snapshot, recherche |
+| Interface | [INTERFACE_NAVIGATION.md](ux/INTERFACE_NAVIGATION.md) | Navigation, mobile, focus et transitions |
+| Médias | [IMAGES_MEDIA.md](images/IMAGES_MEDIA.md) | Variantes, upload, Storage et nettoyage |
+| Auth | [AUTHENTIFICATION.md](security/AUTHENTIFICATION.md) | OTP, Google, passkeys et session |
+| Sécurité | [SECURITE_GLOBALE.md](security/SECURITE_GLOBALE.md) | Autorisations, rules, secrets et limites |
+| Client | [ESPACE_CLIENT.md](client/ESPACE_CLIENT.md) | Commandes, documents, favoris et profil |
+| Commerce | [COMMERCE_SYNTHESE.md](commerce/COMMERCE_SYNTHESE.md) | Contrats et qualification ; détail dans [COMMERCE_STRIPE.md](commerce/COMMERCE_STRIPE.md) |
+| Back-office | [BACKOFFICE.md](admin/BACKOFFICE.md) | Vues admin, factures, devis, Stats/Data/Performance |
+| Meta | [INSTAGRAM_OAUTH_RUNBOOK.md](admin/INSTAGRAM_OAUTH_RUNBOOK.md) | Connexion, saga, configuration et recette sociale |
+| E-mails | [EMAILS_TRANSACTIONNELS.md](email/EMAILS_TRANSACTIONNELS.md) | Templates, destinataires, outbox et transport |
+| Données | [DONNEES_ANALYTICS.md](data/DONNEES_ANALYTICS.md) | Collections, analytics, rétention et indexes |
+| Coûts | [AUDIT_COUTS_FIRESTORE.md](data/AUDIT_COUTS_FIRESTORE.md) | Méthode de mesure et baseline **historique**, pas facture actuelle |
+| Infrastructure | [INFRASTRUCTURE.md](infra/INFRASTRUCTURE.md) | Environnements, configuration et déploiement |
+| Cache de livraison | [DEPLOIEMENT_CACHE_CLIENT.md](infra/DEPLOIEMENT_CACHE_CLIENT.md) | Deployment ID, ISR/CDN et rollback |
+| Exploitation | [EXPLOITATION.md](operations/EXPLOITATION.md) | Installation, commandes, incidents et rollback |
+| Tests | [QUALITE_TESTS.md](quality/QUALITE_TESTS.md) | Choix des validations et CI |
+| Recette humaine | [RECETTE_CLIENT_ADMIN.md](quality/RECETTE_CLIENT_ADMIN.md) | Procédure client/admin et M01–M13, sans correction |
+| IA devis | [ASSISTANT_DEVIS.md](ai/ASSISTANT_DEVIS.md) | Collecte active, analyse IA future |
+| Juridique | [CGV_RETOURS_DRAFT.md](legal/CGV_RETOURS_DRAFT.md) | Brouillon à valider, non publiable |
 
-## Plan temporaire actif
+## Suivis à consulter uniquement pour leur chantier
 
-| Perimetre | Document | Statut | Echeance et cloture |
-| --- | --- | --- | --- |
-| temps reel Data, couts et DevOps | [TEMPS_REEL_COUTS_DEVOPS.md](infra/TEMPS_REEL_COUTS_DEVOPS.md) | `IMPLEMENTATION_LOCALE_EN_COURS`, moteur/lecteur codes et tests locaux passes; aucune bascule sandbox | gates P0-P6, revue/cloture cible le 2026-09-30; fusion canonique avant suppression |
-| recette humaine client/admin sandbox | [RECETTE_HUMAINE_SANDBOX.md](quality/RECETTE_HUMAINE_SANDBOX.md) | `AUDIT_TERMINE_CORRECTIONS_OUVERTES`, transactionnel sain, huit constats HRT a corriger/requalifier | revue au plus tard le 2026-09-10, fusion commerce/client/admin/data/operations/qualite puis suppression |
-| stabilisation securite sandbox | [STABILISATION_SECURITE_SANDBOX.md](security/STABILISATION_SECURITE_SANDBOX.md) | `SANDBOX_SECURITY_STABILIZED`, Gates S0-S4 fermees; production explicitement differee | conserver jusqu'a la fusion de la PR #5, puis verifier la fusion canonique et supprimer |
-| publication Meta sans friction | [META_OAUTH_PUBLICATION_PRD.md](admin/META_OAUTH_PUBLICATION_PRD.md) | `IMPLEMENTATION_LOCALE_M1_M3`, OAuth/saga/UI codes, configuration sandbox non lancee | Gates M4-M6, revue au plus tard le 2026-10-31, fusion admin/infra/securite/qualite/carte puis suppression |
-| reprise commerce post-Gate 8 | [COMMERCE_REPRISE.md](commerce/COMMERCE_REPRISE.md) | `PLAN_REPRISE_DIFFERE`, R0 documentaire termine, R1 UX suivant | revue au plus tard le 2026-10-31, fusion canonique puis suppression avec `TODO.md` |
-| recette reelle e-mails Luna | [RECETTE_EMAILS_LUNA.md](email/RECETTE_EMAILS_LUNA.md) | `PLAN_TEMPORAIRE_EXECUTION`, Luna teste et documente sans corriger | execution avant le 2026-08-06, fusion dans les chapitres e-mail/commerce puis suppression |
-| skill client/admin autonome | [.agents/skills/client-admin-test/SKILL.md](../.agents/skills/client-admin-test/SKILL.md) | `LANCEUR_TEMPORAIRE_ACTIF`, execution par l'agent du chat, invocation `$client-admin-test` sans prompt a recopier; guide [TEST_CLIENT_ADMIN_LUNA.md](../TEST_CLIENT_ADMIN_LUNA.md) | fusion avec la recette e-mail puis suppression avant le 2026-08-06 |
+Le statut synthétique et les échéances sont maintenus dans [ETAT_PROJET.md](ETAT_PROJET.md).
+Les fichiers ci-dessous portent les preuves et conditions de fermeture :
 
-## Niveaux de statut
+- [TEMPS_REEL_COUTS_DEVOPS.md](infra/TEMPS_REEL_COUTS_DEVOPS.md)
+- [OPTIMISATION_DASHBOARD_INCIDENTS.md](admin/OPTIMISATION_DASHBOARD_INCIDENTS.md)
+- [RECETTE_HUMAINE_SANDBOX.md](quality/RECETTE_HUMAINE_SANDBOX.md)
+- [COMMERCE_REPRISE.md](commerce/COMMERCE_REPRISE.md)
+- [FINALISATION_MIGRATION_GEN2.md](../apphostingaudit/FINALISATION_MIGRATION_GEN2.md)
+- [anomalies.md](../anomalies.md)
 
-- `REFERENCE_ACTIVE`: verite actuelle, a maintenir avec le code.
-- `PREPROD_READY`: implemente et acceptable pour la demonstration, avec conditions de production explicites.
-- `PREPROD_TRANSACTIONAL_READY`: noyau transactionnel qualifie sur sandbox et
-  fixtures, sans autoriser une activation publique ou live.
-- `PRODUCTION_DEFERRED`: volontairement reporte jusqu'au domaine, aux comptes live ou a une decision metier.
-- `CONCEPTION`: specification conservee mais fonctionnalite non implementee.
-- `DEBT`: dette connue, non bloquante tant que sa condition de reprise n'est pas atteinte.
-- `STABILISATION_ACTIVE`: fonctionnalite codee mais non qualifiee sur son perimetre critique.
-- `PLAN_TEMPORAIRE_EXECUTION`: audit/plan explicitement demande, avec echeance et suppression obligatoire a la cloture.
+[apphostingaudit/README.md](../apphostingaudit/README.md) indexe les preuves
+d'infrastructure, dont des photographies anciennes. Ce n'est pas un deuxième
+état courant du projet.
 
-## Regle d'archivage
+## Règles de maintenance
 
-Git est l'archive. Ne pas recreer un dossier d'anciens rapports dans `_DOCS`.
+Un contrat → un chapitre. Une décision produit globale → README.
+Un statut de chantier → ETAT_PROJET. Un point d'entrée de code → map.
+Les mesures datées ne se réécrivent pas comme des vérités actuelles.
 
-Avant de supprimer ou remplacer une reference canonique:
+Conserver les détails longs s'ils servent à diagnostiquer ou exploiter ;
+privilégier des titres précis et une lecture par section. Ne pas recopier des
+listes d'exports ou chaque rollout dans les documents d'accueil.
+`PREPROD_READY` ou `PREPROD_TRANSACTIONAL_READY` ne vaut jamais GO production.
 
-1. prouver qu'elle est obsolette ou que tout son contenu utile a ete fusionne;
-2. rechercher ses liens avec `rg`;
-3. mettre a jour `AGENTS.md`, `map.md` et ce sommaire;
-4. verifier `git diff --check` et les liens locaux;
-5. mentionner clairement les suppressions dans le compte rendu.
-
-## Ordre de lecture recommande
-
-1. [AGENTS.md](../AGENTS.md) pour les regles et l'etat courant;
-2. [map.md](../map.md) pour localiser routes, modules, donnees et Functions;
-3. le chapitre du domaine touche;
-4. `quality/QUALITE_TESTS.md` pour choisir la validation;
-5. `operations/EXPLOITATION.md` si le travail touche un deploiement, des donnees ou un secret.
+Un plan n'est archivé qu'après transfert des décisions utiles et des points
+encore ouverts. Lire le candidat entièrement, vérifier Git et les références,
+corriger les liens et annoncer son déplacement. Les archives demandées le
+4 septembre sont dans [doc/archives](../doc/archives/README.md), hors parcours
+normal ; `.ignore` les exclut de `rg`, sans les supprimer de Git ni les rendre
+inaccessibles. [Inventaire et méthode](../doc/README.md).

@@ -161,9 +161,10 @@ media conserve toujours les memes limites.
 
 La modale ouverte depuis le bouton `Connexion` de la galerie est l'unique
 porte de connexion visible, pour les clients comme pour les administrateurs.
-Une fois les claims resolus, un compte administrateur est redirige vers
-`/admin` et le header revele le lien `Admin`; un client reste sur la surface
-publique. La route `/admin` n'expose ni formulaire autonome ni message
+Une fois les claims resolus, le header revele le lien `Admin` au compte
+administrateur sans quitter automatiquement la surface publique. Ce contrat
+est present dans HeaderAccountIsland ; la recette humaine HRT-005 reste a
+requalifier selon le suivi qualite. La route `/admin` n'expose ni formulaire autonome ni message
 d'autorisation aux visiteurs, sessions anonymes ou comptes non admin: elle les
 renvoie silencieusement vers `/`. Cette discretion UX ne remplace jamais les
 claims, le registre actif, l'AAL2, App Check, les Rules ou les validations

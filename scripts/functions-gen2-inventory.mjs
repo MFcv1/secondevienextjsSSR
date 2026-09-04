@@ -31,7 +31,8 @@ export const ACTIVE_OBSERVABILITY_EXPORTS = new Set([
   'onCommerceReservationWrittenGen2',
   'projectCommerceFinancialHistoryGen2',
   'projectLegacyFinancialHistoryGen2',
-  'projectNewsletterSubscriberGen2'
+  'projectNewsletterSubscriberGen2',
+  'projectAdminActionSummaryGen2'
 ]);
 export const PENDING_OBSERVABILITY_EXPORTS = new Set([]);
 

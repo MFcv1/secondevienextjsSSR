@@ -1,3 +1,7 @@
+> ARCHIVE — photographie conservée le 2026-09-04 depuis `TEST_CLIENT_ADMIN_LUNA.md`.
+> Contenu historique non applicable comme consigne actuelle. Les liens Markdown ont été rebasés.
+> Références actives : [documentation](../../../_DOCS/README.md).
+
 # Lanceur de recette client et administrateur
 
 Derniere mise a jour: 2026-07-31
