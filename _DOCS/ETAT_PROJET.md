@@ -1,8 +1,10 @@
 # État du projet
 
 Revue documentaire : 2026-09-04. Propriétaire : équipe Seconde Vie.
-Source : code du worktree, historique Git et preuves déjà consignées.
-**Aucun contrôle cloud nouveau n'a été exécuté pendant cette revue.**
+Source : code du worktree, historique Git et preuves de livraison.
+La revue documentaire initiale était sans contrôle cloud. La consolidation
+sandbox du 4 septembre a ensuite été vérifiée ; versions, validations et limites
+figurent dans [la livraison](operations/EXPLOITATION.md#consolidation-main-et-livraison-performance-du-2026-09-04).
 
 Ce document est la synthèse de reprise. Les contrats restent dans les chapitres ;
 les détails de chaque campagne restent dans son suivi. Un statut historique,
@@ -17,7 +19,7 @@ une date dépassée ou un fichier local ne suffisent pas à prouver une livraiso
 | Auth/admin | OTP, Google et passkeys ; claim + registre + AAL2 ; stabilisation sandbox historique fermée | [Auth](security/AUTHENTIFICATION.md), [sécurité](security/SECURITE_GLOBALE.md) |
 | Commerce | `PREPROD_TRANSACTIONAL_READY` ; ouverture durable sandbox `v2_all/v2` décidée le 25 août, dernière révision consignée 77 ; Stripe test, offline off | [Synthèse](commerce/COMMERCE_SYNTHESE.md) |
 | Client | Commandes, documents sandbox, suivi/retours, wishlist, profil/adresse et avantages | [Espace client](client/ESPACE_CLIENT.md) |
-| Back-office | Publication, commandes/retours, livraison, factures manuelles, devis, newsletter, Stats/Data/Incidents | [Back-office](admin/BACKOFFICE.md) |
+| Back-office | Publication, commandes/retours, livraison, factures manuelles, devis, newsletter, Stats/Data/Performance/Incidents | [Back-office](admin/BACKOFFICE.md) |
 | E-mail | Gmail de recette actif ; Resend préparé, non activé ; délivrabilité finale non acquise | [E-mails](email/EMAILS_TRANSACTIONNELS.md) |
 | Meta | Rails Gen2 et rollback documentés ; OAuth historique prouvé, publication sociale réelle à requalifier sur contenu autorisé | [Runbook Meta](admin/INSTAGRAM_OAUTH_RUNBOOK.md) |
 | Infra | App Hosting sandbox ; migration Gen2 réalisée avec trois exceptions Auth Gen1 ; clôture d'observation non prouvée | [ADR runtime](architecture/FUNCTIONS_RUNTIME_ADR.md) |
@@ -30,8 +32,9 @@ une date dépassée ou un fichier local ne suffisent pas à prouver une livraiso
 | --- | --- | --- |
 | Dashboard/Incidents événementiels | Projections, historique financier, compteur newsletter et badge Retours implémentés ; cutover sandbox consigné | Fenêtres longues, mesures segmentaires/coût et rollback final des gates encore ouvertes |
 | Data temps réel P4/P5 | Bootstrap/shadow et lecteur sandbox qualifiés ; rollback App Hosting exercé ; flag dans `apphosting.yaml` | Mesures complètes à froid, p95 utilisateur et coûts/observation P6 |
-| Sessions Data | Livré et qualifié le 4 septembre : build-2026-09-04-001, Function 00009-jen ; dix cartes, pagination par dix, parcours écouté, présence 150 s, suppressions propagées ; preuves dans EXPLOITATION.md | p95 longue durée/Billing et exercice de rollback propre à cette extension non requalifiés |
-| Performance Functions | Onglet et API Next `/api/admin/function-metrics`, cache privé de trois fenêtres ; build et lecteur/cache testés selon le chapitre admin | Déploiement App Hosting, IAM de lecture et recette admin complète non déclarés réalisés |
+| Sessions Data | Livré et qualifié le 4 septembre sur build-2026-09-04-001, maintenu dans la consolidation build-2026-09-04-002 ; Function 00009-jen ; dix cartes, pagination par dix, parcours écouté, présence 150 s, suppressions propagées ; preuves dans EXPLOITATION.md | p95 longue durée/Billing et exercice de rollback propre à cette extension non requalifiés |
+| Performance Functions | Livré sur build-2026-09-04-002, même commit que main local/GitHub ; API protégée, IAM de lecture minimal et cache privé ; Chrome : 158 fonctions, fenêtres 24 h/7 j/30 j et recherche vérifiées | Pas de mesure Billing, p95 froid ou campagne multi-appareils ; fin du retrait physique des index non recontrôlée |
+| CI et clôture locale | Build, lint, tests ciblés/Gen2/Emulator passent ; correction locale des deux assertions de sécurité obsolètes validée par audit statique | CI GitHub non verte ; correction de test et notes finales non poussées ; sept avis de dépendances à traiter séparément, aucun seuil d'audit abaissé |
 | Recette humaine HRT | HRT-004 badge, HRT-006 fuseau et HRT-008 exclusion marqués fermés sandbox | HRT-001 observation ; HRT-002 course checkout, HRT-003 refund live UI, HRT-005 connexion admin à requalifier ; HRT-007 à mesurer |
 | Navigation/Auth | Correctifs vidéo/login des 2 septembre dans Git ; le code local ne force plus une redirection vers admin après connexion publique | La preuve humaine HRT-005 reste distincte du constat de code |
 | Maintenance catalogue | Backend de rollback/reconstruction conservé, mais onglet et appelants UI retirés | L'ancienne procédure par bouton n'est plus applicable ; aucun nouveau parcours opérateur n'a été implémenté dans ce rangement |

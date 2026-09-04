@@ -87,6 +87,7 @@ test('Next admin routes require revoked-token checks, AAL2 and the active regist
   const authorization = read('src/lib/server/adminAuthorization.js');
   const routes = [
     read('app/api/admin/catalog-publication-status/route.js'),
+    read('app/api/admin/function-metrics/route.js'),
     read('app/api/revalidate-catalog/route.js'),
   ].join('\n');
   assert.match(authorization, /verifyIdToken\(token, true\)/);
@@ -112,7 +113,12 @@ test('customer order history has no Firestore email fallback', () => {
   const rules = read('firestore.rules');
   assert.match(orderView, /listMyOrdersV2/);
   assert.doesNotMatch(orderView, /where\(['"]userEmail['"]/);
-  assert.doesNotMatch(orderView, /collection\(db, ['"]orders['"]\)/);
+  // History still uses the authorized callable. The new refund signal is
+  // explicitly bounded and owned by UID, never an email-based fallback.
+  assert.match(orderView, /const liveQuery = query\(\s*collection\(db, 'orders'\),\s*where\('userId', '==', user\.uid\),\s*where\('updatedAt', '>', Timestamp\.fromMillis\(ordersLiveSince\)\),\s*orderBy\('updatedAt', 'asc'\),\s*limit\(25\)/);
+  assert.equal([...orderView.matchAll(/collection\(db, ['"]orders['"]\)/g)].length, 1);
+  assert.match(orderView, /if \(!user\?\.uid \|\| user\.isAnonymous \|\| !ordersLiveSince\) return undefined/);
+  assert.match(orderView, /return onSnapshot\(liveQuery/);
   assert.match(rules, /request\.auth\.uid == resource\.data\.userId/);
   assert.doesNotMatch(rules, /request\.auth\.token\.email == resource\.data\.userEmail/);
 });
@@ -167,6 +173,7 @@ test('the complete Next API inventory is public-bounded or strongly authorized',
   const routeFiles = listJavaScriptFiles('app/api').filter((file) => file.endsWith('/route.js')).sort();
   assert.deepEqual(routeFiles, [
     'app/api/admin/catalog-publication-status/route.js',
+    'app/api/admin/function-metrics/route.js',
     'app/api/catalog/route.js',
     'app/api/catalog/version/route.js',
     'app/api/revalidate-catalog/route.js',
@@ -174,6 +181,11 @@ test('the complete Next API inventory is public-bounded or strongly authorized',
   ]);
 
   const adminStatus = read('app/api/admin/catalog-publication-status/route.js');
+  const metrics = read('app/api/admin/function-metrics/route.js');
+  assert.match(metrics, /await authorizeAdminRequest\(request\)/);
+  assert.match(metrics, /if \(!authorization\.ok\) return/);
+  assert.match(metrics, /Object\.hasOwn\(PERIODS, period\)/);
+  assert.match(metrics, /no-store, max-age=0/);
   const revalidation = read('app/api/revalidate-catalog/route.js');
   const catalog = read('app/api/catalog/route.js');
   const search = read('app/api/search/route.js');

@@ -152,7 +152,7 @@ Le regroupement est porte par `ADMIN_NAV_GROUPS` dans `AdminAppIsland`; `AdminSi
 | `newsletter` | Infos | `AdminNewsletter` | total matérialisé, liste paginée par 50, recherche et export de la page courante |
 | `payment_settings` | Paiement | `AdminPaymentSettings` | Stripe Connect et activation carte |
 | `account` | Mon compte | `AdminAccount`, `BillingOnboardingOperator` | identite admin et pilotage de l'onboarding facturation |
-| `performance` | Performance | `AdminFunctionPerformance` | inventaire/metriques via API Next admin ; livraison encore a qualifier |
+| `performance` | Performance | `AdminFunctionPerformance` | inventaire/metriques via API Next admin ; livraison sandbox et trois fenetres qualifiees le 2026-09-04 |
 | `incidents` | Incidents | `AdminIncidentConsole`, `SystemIncidentConsole` | erreurs systeme materialisees en temps reel, lien Cloud direct, timeline commande et verdict de reprise |
 
 Les labels peuvent evoluer; les ID sont des contrats de navigation et ne doivent pas etre renommes sans migration.
@@ -1012,7 +1012,7 @@ n'existait; les identites partagees ont ete preservees.
 
 ## 9. Performance du back-office
 
-### Ecran Performance des fonctions (implementation locale du 2026-09-04)
+### Ecran Performance des fonctions (livraison sandbox du 2026-09-04)
 
 L'onglet lazy `performance` affiche l'inventaire Functions (Gen1 et Gen2),
 les appels, la moyenne ponderee des durees, le p95 Google (masque sous 30
@@ -1047,12 +1047,14 @@ appels Functions. La borne de fin est decalee de cinq minutes, sans garantir
 que toutes les mesures soient deja arrivees. Des regions inaccessibles ou une
 pagination tronquee echouent explicitement.
 
-Statut: build et lecteur/cache qualifies sur le sandbox depuis le poste;
-pas encore deploye. Le rendu et ses interactions ont ete controles avec un
-releve reel dans un apercu local temporaire. La connexion admin localhost
-est bloquee en amont par App Check (`auth/firebase-app-check-token-is-invalid`),
-sans affaiblissement de cette protection. App Hosting doit recevoir les
-permissions de lecture decrites dans FUNCTIONS_RUNTIME_ADR avant activation.
+Statut: deploye sur App Hosting sandbox `build-2026-09-04-002` depuis `main`
+`5eb4966`. Chrome authentifie affiche 158 fonctions; les trois fenetres et la
+recherche sont qualifiees. Le role de lecture minimal decrit dans
+FUNCTIONS_RUNTIME_ADR est applique, sans affaiblissement App Check/Auth.
+La recette hebergee ne constitue pas une validation de la connexion localhost,
+precedemment bloquee par App Check. Versions, Rules, limites de qualification
+et CI non verte sont consignees dans
+[Exploitation](../operations/EXPLOITATION.md#consolidation-main-et-livraison-performance-du-2026-09-04).
 
 - garder les vues lourdes lazy;
 - ne precharger ni les donnees Ventes/Retours, ni Factures, Livraison ou Devis
