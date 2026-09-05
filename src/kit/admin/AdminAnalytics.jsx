@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useAdminPreference } from './useAdminPreference';
 import {
     Users, Clock, Activity, Smartphone, Monitor, Globe, Trash2, AlertCircle, ChevronDown, ChevronRight,
     TrendingUp, MousePointerClick, ShoppingBag, RefreshCw
@@ -1752,7 +1753,13 @@ const AdminAnalytics = ({ darkMode = false, items = [], onLoadCatalog }) => {
         : legacySessions, [legacySessions, liveSessionState.sessions, liveDetail]);
     const [loading, setLoading] = useState(false);
     const [restoringSessions, setRestoringSessions] = useState(() => cachedAnalyticsSessions === null);
-    const [timeFilter, setTimeFilter] = useState('1j'); // Default to 24h // '1h', '1j', '7j', '1mois', '1ans'
+    const [timeFilter, setTimeFilter] = useAdminPreference('data:period', '1j');
+    const overviewRequestRef = useRef(0);
+    useEffect(() => {
+        const requests = overviewRequestRef;
+        requests.current++;
+        return () => { requests.current++; };
+    }, [timeFilter]);
     const [expandedSessionId, setExpandedSessionId] = useState(null);
     const selectedExists = liveSessionState.sessions.some(session => session.id === expandedSessionId);
     useEffect(() => {
@@ -1941,6 +1948,7 @@ const AdminAnalytics = ({ darkMode = false, items = [], onLoadCatalog }) => {
 
     const loadOverview = useCallback(async ({ force = false } = {}) => {
         if (ANALYTICS_REALTIME_ENABLED) return; // No callable fallback, even on missing/invalid projection.
+        const request = ++overviewRequestRef.current;
         const trace = performanceTraceRef.current;
         const cached = cachedAnalyticsOverviews.get(timeFilter);
         if (!force && cached && (Date.now() - cached.loadedAt) < ADMIN_ANALYTICS_REFRESH_TTL_MS) {
@@ -1959,6 +1967,7 @@ const AdminAnalytics = ({ darkMode = false, items = [], onLoadCatalog }) => {
                     });
             }
             const response = await cachedAnalyticsOverviewBundlePromise;
+            if (request !== overviewRequestRef.current) return;
             recordDataServerTimings(response.data?.serverTimings, trace);
             const overviews = response.data?.overviews || {};
             const loadedAt = Date.now();
@@ -1970,6 +1979,7 @@ const AdminAnalytics = ({ darkMode = false, items = [], onLoadCatalog }) => {
             setOverview(overviews[timeFilter] || null);
             setOverviewStatus(overviews[timeFilter] ? 'ready' : 'error');
         } catch (error) {
+            if (request !== overviewRequestRef.current) return;
             dataPerformance.mark('overview.error', { trace, outcome: 'error' });
             console.error('Analytics overview load error:', error);
             if (!cached) {
@@ -2147,6 +2157,7 @@ const AdminAnalytics = ({ darkMode = false, items = [], onLoadCatalog }) => {
                         {ANALYTICS_TIME_FILTERS.map(tf => (
                             <button
                                 key={tf.id}
+                                aria-pressed={timeFilter === tf.id}
                                 onClick={() => {
                                     if (tf.id === timeFilter) return;
                                     performanceTraceRef.current = startDataPerformance('period');
@@ -2206,7 +2217,7 @@ const AdminAnalytics = ({ darkMode = false, items = [], onLoadCatalog }) => {
                 </div>
                 <div className="min-w-0">
                     <p className={`text-[9px] font-black uppercase tracking-[0.22em] ${darkMode ? 'text-white/60' : 'text-stone-500'}`}>
-                        {overviewStatus === 'ready' ? `Fiabilite ${dataQuality.confidence}` : overviewStatus === 'error' ? 'Données indisponibles' : 'Vérification en cours'}
+                        {overviewStatus === 'ready' ? (ANALYTICS_REALTIME_ENABLED && !dataQuality.isWindowComplete ? 'Historique incomplet sur cette période' : `Fiabilite ${dataQuality.confidence}`) : overviewStatus === 'error' ? 'Données indisponibles' : 'Vérification en cours'}
                     </p>
                     <p className="text-[10px] font-bold text-stone-500 leading-relaxed">
                         {overviewStatus === 'error'

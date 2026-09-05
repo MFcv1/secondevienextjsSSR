@@ -18,6 +18,52 @@ test('I5 : les lecteurs ciblés reconnaissent aussi le nom Cloud Run sans FUNCTI
 });
 const timestamp = (seconds) => ({ seconds, nanoseconds: 0 });
 
+test('liste compacte : mêmes montants/actions, médias omis, détail complet et octets comparables', async () => {
+    const { makeOrder } = require('./commerce/fixtures/order-v2.cjs');
+    const { serializeAdminOrder } = require('../functions/src/commerce/v2OrderQueries');
+    const order = makeOrder();
+    order.items[0].imageVariants = { original: 'https://example.test/' + 'x'.repeat(2000) };
+    order.items[0].description = 'Description catalogue locale '.repeat(100);
+    const snapshot = { id: 'local', data: () => order };
+    const actor = { uid: 'admin', role: 'admin', aal2: true };
+    const before = await serializeAdminOrder(snapshot, actor);
+    const after = await serializeAdminOrder(snapshot, actor, { compact: true });
+    assert.deepEqual(after.amounts, before.amounts);
+    assert.deepEqual(after.allowedActions, before.allowedActions);
+    assert.equal(after.items[0].lineId, before.items[0].lineId);
+    assert.equal(after.items[0].unitAmountCents, before.items[0].unitAmountCents);
+    assert.equal(after.items[0].imageVariants, undefined);
+    assert.ok(order.items[0].imageVariants);
+    const bytes = value => Buffer.byteLength(JSON.stringify(value));
+    console.info('LOCAL_FIXTURE_BYTES', JSON.stringify({ before: bytes(before), after: bytes(after), documentsAdded: 0 }));
+    assert.ok(bytes(after) < bytes(before));
+});
+
+test('Retours : enrichissement groupé identique, une RPC pour deux commandes uniques', async () => {
+    const { makeOrder, fixedClock } = require('./commerce/fixtures/order-v2.cjs');
+    const { createCustomerReturnRequest } = require('../functions/src/commerce/domain/customerReturnRequest');
+    const { createListCustomerReturnRequestsAdminHandler } = require('../functions/src/commerce/v2OrderQueries');
+    const order = makeOrder();
+    const rows = ['a','b','a'].map((id, index) => {
+        const value = createCustomerReturnRequest({ requestId:`r${index}`, order:{...order,id}, lines:[{lineId:'line-0001',quantity:1}],reason:'changed_mind',note:'Fixture locale',requestHash:'a'.repeat(64),clock:fixedClock() });
+        return { id:`r${index}`, data:()=>value, ref:{path:`orders/${id}/customer_return_requests/r${index}`} };
+    });
+    const run = async (batched) => {
+        let rpc=0, documents=0;
+        const query = { orderBy:()=>query, limit:()=>query, get:async()=>({docs:rows,size:3}) };
+        const snapshot = ref => ({exists:true,ref,data:()=>order});
+        const db = { collectionGroup:()=>query, doc:path=>({path,get:async()=>{rpc++;documents++;return snapshot({path});}}) };
+        if (batched) db.getAll = async (...refs) => {rpc++;documents+=refs.length;return refs.map(snapshot);};
+        const result = await createListCustomerReturnRequestsAdminHandler({authorize:async()=>{},dbFactory:()=>db})({pageSize:3},{});
+        return {result,rpc,documents};
+    };
+    const before=await run(false), after=await run(true);
+    assert.deepEqual(after.result,before.result);
+    assert.equal(before.documents,2); assert.equal(after.documents,2);
+    assert.equal(before.rpc,2); assert.equal(after.rpc,1);
+    console.info('LOCAL_RETURN_READS', JSON.stringify({beforeRPC:before.rpc,afterRPC:after.rpc,documents:after.documents}));
+});
+
 function memoryDb(initial) {
     const values = new Map(initial);
     const db = { doc: (key) => ({ path: key }), runTransaction: async (fn) => {

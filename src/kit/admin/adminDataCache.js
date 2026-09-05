@@ -8,6 +8,13 @@ const runtime = globalThis.__svAdminDataCacheRuntime || {
 };
 
 globalThis.__svAdminDataCacheRuntime = runtime;
+runtime.preferences ||= new Map();
+
+export const getAdminPreference = (key, fallback) => runtime.ownerUid
+  ? (runtime.preferences.get(key) ?? fallback) : fallback;
+export const setAdminPreference = (key, value) => {
+  if (runtime.ownerUid) runtime.preferences.set(key, value);
+};
 
 export const getAdminCachedData = (key) => {
   if (!runtime.ownerUid) return null;
@@ -79,6 +86,7 @@ export const invalidateAdminCachedPrefix = (prefix) => {
 export const clearAdminDataCache = () => {
   runtime.generation += 1;
   runtime.entries.clear();
+  runtime.preferences.clear();
   runtime.listeners.forEach((listener) => listener());
 };
 

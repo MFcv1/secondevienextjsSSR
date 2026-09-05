@@ -57,6 +57,9 @@ export const liveSessionsChannel = {
         emit({ status: state.sessions.length ? 'cached' : 'loading' });
         stop = onSnapshot(sessionsQuery(), { includeMetadataChanges: true }, snapshot => {
             if (epoch !== generation) return;
+            if (snapshot.metadata.fromCache && snapshot.empty && recent.size) {
+                emit({ status: 'cached' }); return;
+            }
             try {
                 recent = new Map(snapshot.docs.map(document => [document.id, valid(document)]));
                 recentCursor = snapshot.docs.at(-1) || null;

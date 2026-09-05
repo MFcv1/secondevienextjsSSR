@@ -26,7 +26,7 @@ export function createAnalyticsChannel(listen, validate) {
                 if (currentEpoch !== epoch) return;
                 // An empty local cache is not proof that the server document is missing.
                 if (snapshot.metadata?.fromCache && snapshot.docs?.length !== 2) {
-                    publish({ status: 'loading', data: null });
+                    publish({ status: state.data ? 'cached' : 'loading', data: state.data });
                     return;
                 }
                 try {

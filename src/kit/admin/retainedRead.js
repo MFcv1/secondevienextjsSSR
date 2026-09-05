@@ -31,6 +31,15 @@ export function createRetainedRead(listen, { visibility = () => globalThis.docum
     const generation = ++epoch;
     stop = listen(snapshot => {
       if (epoch !== generation) return;
+      if (value && snapshot.metadata?.fromCache &&
+          (snapshot.size === 0 || (snapshot.exists && !snapshot.exists()))) {
+        // The local SDK cache may be empty after an offline restart. Only a
+        // server snapshot can replace known data with confirmed absence.
+        value = { ...value, docs: value.docs, size: value.size,
+          ...(value.exists ? { exists: value.exists.bind(value), data: value.data.bind(value) } : {}),
+          metadata: { ...value.metadata, fromCache: true } };
+        publish(); return;
+      }
       value = snapshot; failure = null; publish();
     }, error => {
       if (epoch !== generation) return;

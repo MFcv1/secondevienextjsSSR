@@ -20,6 +20,9 @@ test('Stats : 30 retours ne recréent pas les lectures ; pause, fraîcheur, rév
   assert.equal(stops,1); assert.equal(read.get().metadata.fromCache,true);
   unsubscribe = read.subscribe(next, () => {});
   assert.equal(starts,2);
+  callbacks[1].next({docs:[],size:0,metadata:{fromCache:true}});
+  assert.equal(read.get().size,1);
+  assert.equal(read.get().metadata.fromCache,true);
   callbacks[0].next({docs:[],size:0,metadata:{fromCache:false}});
   assert.equal(read.get().size,1); // ancienne connexion ignorée
   callbacks[1].next({docs:[{id:'new'}],size:1,metadata:{fromCache:false}});
@@ -49,6 +52,9 @@ test('Data : reprise conserve les KPI connus, attend serveur et rejette une anci
   callbacks[0]({metadata:{fromCache:false},value:data});
   channel.pause(); assert.equal(channel.getSnapshot().status,'cached');
   channel.start(); assert.equal(channel.getSnapshot().data,data);
+  callbacks[1]({metadata:{fromCache:true},docs:[]});
+  assert.equal(channel.getSnapshot().data,data);
+  assert.equal(channel.getSnapshot().status,'cached');
   callbacks[0]({metadata:{fromCache:false},value:{}});
   assert.equal(channel.getSnapshot().status,'cached');
   callbacks[1]({metadata:{fromCache:false},value:data});

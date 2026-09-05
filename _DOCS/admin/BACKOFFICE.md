@@ -14,6 +14,19 @@ d'autorisation. Les tendances écoutent leur document après apparition du panne
 Le catalogue est différé aux produits à illustrer / au parcours Data ouvert.
 Aucun nouveau writer ni polling.
 
+Correctif local post-qualification du 5 septembre (non livré) : périodes des
+intentions Stats, du graphique financier et de Data conservées en mémoire
+jusqu'à la purge de la session autorisée, sans TTL ni stockage navigateur.
+Un changement de propriétaire/révocation les efface. La sélection Data est
+annoncée par `aria-pressed`. Les réponses financières tardives sont ignorées ;
+l'ordre des années affichées ne modifie plus le tableau partagé du cache.
+Un snapshot local vide ne remplace pas des KPI/sessions déjà connus ; la
+confirmation serveur peut en revanche établir une absence réelle. Une erreur
+de validation reste une indisponibilité, jamais une certification de fraîcheur.
+Data explique « Historique incomplet sur cette période » lorsque sa projection
+valide indique seulement une couverture insuffisante ; la synchronisation est
+annoncée séparément. Aucun historique complet n'est déduit de sa seule présence.
+
 - Stats utilise la présentation Ventes pour paiement/remboursement/logistique ;
   une valeur inconnue reste inconnue. Factures/Commandes distinguent attente,
   échec avec retry et liste vide confirmée. Un résumé absent ne vaut pas zéro.
@@ -43,6 +56,12 @@ Aucun nouveau writer ni polling.
   textuelle libre reste limitée aux lignes chargées. Les curseurs doivent être
   repris avec les mêmes filtres ; une source curseur supprimée impose un refresh.
 - Les références des demandes Retours sont partagées dans une même requête.
+  Le correctif local regroupe les références uniques dans un `getAll` borné
+  par la page : mêmes documents, moins d'appels RPC. Les curseurs et les droits
+  restent identiques. Les listes Commandes `compact:true` omettent uniquement
+  les champs catalogue `images/imageVariants/imageMetadata/photos/description`
+  des lignes ; prix, quantité, identité, états et actions sont conservés. Le
+  lecteur exact conserve les champs complets, sans mutation des snapshots stockés.
   Pour les commandes entièrement remboursées, `compact:true` diffère la dernière
   tentative au clic de détail ; les états non soldés conservent l'enrichissement
   utile aux alertes/actions. Le lecteur exact `orderId` conserve l'autorisation.

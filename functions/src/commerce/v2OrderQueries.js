@@ -149,6 +149,15 @@ function serializeRefundAttempt(snapshot) {
 
 async function serializeAdminOrder(snapshot, actor, { compact = false } = {}) {
     const serialized = serializeOrder(snapshot, actor);
+    // Lists and their inline details use identity, prices and quantities, never
+    // the embedded catalogue media. Keep the full exact-read contract intact.
+    if (compact && Array.isArray(serialized.items)) {
+        serialized.items = serialized.items.map((item) => Object.fromEntries(
+            Object.entries(item).filter(([key]) => ![
+                'images', 'imageVariants', 'imageMetadata', 'photos', 'description'
+            ].includes(key))
+        ));
+    }
     if (compact && serialized.status === 'refunded' && serialized.refundAggregate?.status === 'full') return { ...serialized, refundDetailsDeferred: true };
     if (
         serialized.schemaVersion !== 2 ||
@@ -689,6 +698,19 @@ function createListCustomerReturnRequestsAdminHandler({
         }
         const snapshot = await query.limit(pageSize).get();
         const reads = new Map();
+        // Batch the already-required linked reads: same unique documents,
+        // one RPC rather than one round trip per reference.
+        const paths = new Set();
+        for (const row of snapshot.docs) {
+            const request = serializeCustomerReturnRequest(row);
+            paths.add(`orders/${request.orderId}`);
+            if (request.returnId) paths.add(`orders/${request.orderId}/returns/${request.returnId}`);
+            if (request.refundRequestId) paths.add(`orders/${request.orderId}/refunds/${request.refundRequestId}`);
+        }
+        if (paths.size && typeof db.getAll === 'function') {
+            const linked = await db.getAll(...[...paths].map((path) => db.doc(path)));
+            for (const row of linked) reads.set(row.ref.path, Promise.resolve(row));
+        }
         return {
             requests: await Promise.all(snapshot.docs.map(
                 (requestSnapshot) => serializeCustomerReturnRequestAdmin(

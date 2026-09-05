@@ -12,6 +12,48 @@ let environment; let db; let app;
 const now = Date.parse('2026-09-04T12:00:00Z');
 const since = Date.parse('2026-04-30T22:00:00Z');
 
+test('Data : résultat métier distant, reprise après pause et réseau, sans faux zéro', async () => {
+    const { createAnalyticsChannel, validateAnalyticsSnapshot, realtimeOverview } = await import('../src/kit/admin/adminAnalyticsRealtimeStore.js');
+    const { disableNetwork, enableNetwork } = require('firebase/firestore');
+    await db.doc('sys_admin_access/admin').set({ active: true });
+    const client = environment.authenticatedContext('admin', { admin: true, firebase: { sign_in_provider: 'google.com' } }).firestore();
+    let starts = 0;
+    const channel = createAnalyticsChannel((next, error) => {
+        starts++;
+        return onSnapshot(query(collection(client, 'admin_analytics_realtime'), where(documentId(), 'in', ['recent', 'history'])), { includeMetadataChanges: true }, next, error);
+    }, validateAnalyticsSnapshot);
+    const waitFor = (count, status = 'ready') => new Promise((resolve, reject) => {
+        const timer = setTimeout(() => { stop(); reject(new Error(`Expected ${count} sessions / ${status}`)); }, 10000);
+        const check = () => {
+            const state = channel.getSnapshot();
+            if (state.status === status && realtimeOverview(state.data, '7j', now)?.kpis.totalSessions === count) {
+                clearTimeout(timer); stop(); resolve();
+            }
+        };
+        const stop = channel.subscribe(check);
+        check();
+    });
+    const update = async (id) => {
+        await db.doc(`analytics_sessions/${id}`).set({ userId: id, startedAt: now, sessionActive: true });
+        await projectSession(id, db, now);
+    };
+    channel.setOwner('admin'); channel.start();
+    try {
+        await waitFor(0);
+        await update('visible'); await waitFor(1);
+        for (let i = 0; i < 30; i++) { const off = channel.subscribe(() => {}); off(); channel.start(); }
+        assert.equal(starts, 1);
+        channel.pause(); await update('hidden');
+        await waitFor(1, 'cached'); channel.start(); await waitFor(2);
+        await disableNetwork(client); await waitFor(2, 'cached');
+        await update('offline');
+        assert.equal(realtimeOverview(channel.getSnapshot().data, '7j', now).kpis.totalSessions, 2);
+        await enableNetwork(client); await waitFor(3);
+        await projectSession('offline', db, now); await waitFor(3);
+        channel.setOwner('another-admin'); assert.equal(channel.getSnapshot().data, null);
+    } finally { channel.clear(); await client.terminate(); }
+});
+
 before(async () => {
     assert.equal(process.env.GCLOUD_PROJECT, PROJECT);
     assert.match(process.env.FIRESTORE_EMULATOR_HOST || '', /^(127\.0\.0\.1|localhost):\d+$/);
@@ -31,6 +73,45 @@ beforeEach(async () => {
     await batch.commit();
 });
 after(async () => { await environment?.cleanup(); await app?.delete(); });
+
+test('Stats : projection distante visible, grâce expirée et reprise après masquage', async () => {
+    const { createRetainedRead } = await import('../src/kit/admin/retainedRead.js');
+    await db.doc('sys_admin_access/stats-admin').set({ active: true });
+    const client = environment.authenticatedContext('stats-admin', { admin: true, firebase: { sign_in_provider: 'google.com' } }).firestore();
+    const ref = db.doc('admin_dashboard/finance');
+    await ref.set({ netRevenueCents: 12500, revision: 1 });
+    let expire, visibilityChanged, starts=0, stops=0;
+    const visibility = { visibilityState:'visible', addEventListener:(_name,fn)=>{visibilityChanged=fn;}, removeEventListener:()=>{} };
+    const read = createRetainedRead((next,error)=>{
+        starts++;
+        const off=onSnapshot(doc(client,'admin_dashboard/finance'),{includeMetadataChanges:true},next,error);
+        return ()=>{stops++;off();};
+    }, {visibility:()=>visibility,schedule:fn=>{expire=fn;return 1;},cancel:()=>{expire=null;}});
+    const waitFor = (amount, cached=false) => new Promise((resolve,reject)=>{
+        const timer=setTimeout(()=>{off();reject(new Error(`Expected revenue ${amount}`));},10000);
+        let off=()=>{};
+        const check=snapshot=>{
+            if(snapshot.data()?.netRevenueCents===amount && snapshot.metadata.fromCache===cached){clearTimeout(timer);queueMicrotask(()=>off());resolve();}
+        };
+        off=read.subscribe(check,reject);
+    });
+    let off=read.subscribe(()=>{},()=>{});
+    try {
+        await waitFor(12500);
+        await ref.update({netRevenueCents:25000,revision:2}); await waitFor(25000);
+        for(let i=0;i<30;i++){off();off=read.subscribe(()=>{},()=>{});}
+        assert.equal(starts,1);
+        off(); await Promise.resolve(); expire(); assert.equal(stops,1);
+        await ref.update({netRevenueCents:37500,revision:3});
+        assert.equal(read.get().data().netRevenueCents,25000);
+        off=read.subscribe(()=>{},()=>{}); await waitFor(37500);
+        visibility.visibilityState='hidden'; visibilityChanged();
+        await ref.update({netRevenueCents:50000,revision:4});
+        assert.equal(read.get().data().netRevenueCents,37500);
+        visibility.visibilityState='visible'; visibilityChanged(); await waitFor(50000);
+        assert.equal(starts,3);
+    } finally { off();read.clear();await client.terminate(); }
+});
 
 test('live cards/detail stream securely, deduplicate replays and disappear after admin exclusion', async () => {
     const { projectLiveSession } = require('../functions/src/analytics/liveSessions');

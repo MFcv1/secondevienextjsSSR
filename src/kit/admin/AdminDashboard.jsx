@@ -11,6 +11,7 @@ import {
 import { db } from '../config/firebase';
 import { getCallableFunction } from '../config/firebaseLazy';
 import { loadAdminCachedData } from './adminDataCache';
+import { useAdminPreference } from './useAdminPreference';
 import { getProductImageItems } from '../../utils/imageUtils';
 import { getProductUrl } from '../../utils/slug';
 import { getMillis } from '../../utils/time';
@@ -914,7 +915,7 @@ const AdminDashboard = ({
     const insightsAnchorRef = useRef(null);
     const [insightsRetry, setInsightsRetry] = useState(0);
     const [salesPanelView, setSalesPanelView] = useState('summary');
-    const [timeFilter, setTimeFilter] = useState('1month');
+    const [timeFilter, setTimeFilter] = useAdminPreference('stats:finance-period', '1month');
     const [intradayOrders, setIntradayOrders] = useState(null);
     const [intradayOrdersLoading, setIntradayOrdersLoading] = useState(false);
     const intradayRequestRef = useRef(false);
@@ -928,7 +929,7 @@ const AdminDashboard = ({
         .filter(order => !['cancelled', 'cancelled_by_client', 'canceled'].includes(order.status)));
     const [recentOrdersStatus, setRecentOrdersStatus] = useState(dashboardOrders.get() ? 'ready' : 'loading');
     const [insights, setInsights] = useState(cachedInsights || EMPTY_INSIGHTS);
-    const [quotePeriod, setQuotePeriod] = useState('30d');
+    const [quotePeriod, setQuotePeriod] = useAdminPreference('stats:quote-period', '30d');
     const trendingProducts = useMemo(() => {
         const visuals = buildDashboardProductVisualMap(items);
         return insights.products
@@ -992,7 +993,7 @@ const AdminDashboard = ({
                     return snapshot.docs.map((document) => ({ id: document.id, ...document.data() }));
                 }, { maxAgeMs: 30_000 });
                 if (request !== historyRequestRef.current) return;
-                setDailySales(filterId === 'max' ? rows.reverse() : rows);
+                setDailySales(filterId === 'max' ? [...rows].reverse() : rows);
             } catch (error) {
                 if (request !== historyRequestRef.current) return;
                 console.error('Failed to fetch requested financial history', error?.code || error?.name);

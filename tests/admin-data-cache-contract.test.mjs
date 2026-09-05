@@ -6,12 +6,29 @@ import {
   getAdminCachedData,
   loadAdminCachedData,
   setAdminCacheAuthorization,
+  getAdminPreference,
+  setAdminPreference,
 } from '../src/kit/admin/adminDataCache.js';
 
 test.beforeEach(() => setAdminCacheAuthorization('local-admin'));
 
 test.afterEach(() => {
   clearAdminDataCache();
+});
+
+test('périodes sans TTL, isolées par propriétaire et purgées à la révocation', async () => {
+  setAdminPreference('stats:quote-period', '3m');
+  setAdminPreference('data:period', '7j');
+  await loadAdminCachedData('expired', async () => 3, { maxAgeMs: 0 });
+  assert.equal(getAdminCachedData('expired'), null);
+  assert.equal(getAdminPreference('stats:quote-period', '30d'), '3m');
+  assert.equal(getAdminPreference('data:period', '1j'), '7j');
+  setAdminCacheAuthorization('another-admin');
+  assert.equal(getAdminPreference('data:period', '1j'), '1j');
+  setAdminPreference('data:period', '7j');
+  setAdminCacheAuthorization(null);
+  setAdminCacheAuthorization('another-admin');
+  assert.equal(getAdminPreference('data:period', '1j'), '1j');
 });
 
 test('admin data cache deduplicates concurrent reads and reuses known data', async () => {

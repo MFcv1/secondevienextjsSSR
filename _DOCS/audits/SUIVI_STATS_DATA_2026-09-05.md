@@ -1,5 +1,154 @@
 # Stats et Data — ouvertures et coût de lecture
 
+## Livraison autorisée le 5 septembre — hosting effectué, Functions en attente
+
+L'utilisateur a autorisé la livraison sandbox et le scénario Data synthétique
+borné. Aucune autorisation Q1 réutilisée ; migration des 142 commandes/181 faits
+et activation des index toujours exclues.
+
+App Hosting : `build-2026-09-05-002` READY, trafic relu à 100 %, deployment ID
+`sv-mtok7tji-f3482ed863f6`. Cloud Build
+`655be055-5740-4e51-90bc-c5e9d6ab45c9`. Source isolée à partir du HEAD existant
+avec les sept fichiers frontend corrigés ; changements documentaires antérieurs
+exclus. `/admin`, `/` et `/galerie` renvoient 200 avec le même deployment ID ;
+admin `private, no-store`, public `s-maxage=300`. Capacité identique entre builds :
+CPU 1, 512 Mio, concurrence 80, max 10. Rollback hosting : `build-2026-09-05-001`.
+
+23 contrôles de préflight supplémentaires réussis. Chrome admin après rollout :
+30 cycles Stats/Data, 60 contrôles de période et synchronisation réussis
+(Stats trois mois, Data sept jours). Aucun comptage d'écoutes ou gain de latence
+ne découle de ces seuls contrôles AX. Les premiers essais de mesure CUA rendaient
+un état en retard d'une navigation : exclus de toute comparaison de vitesse.
+Un second onglet admin restaure l'accès ; retour au premier après masquage
+prolongé : sept jours conservés, 9 visiteurs et confirmation serveur. Le mode
+Tout affiche le nouveau libellé d'historique incomplet séparé de la synchronisation.
+
+Source unique autorisée `analytics_sessions/qualif_post_20260905_1354_synthetic` :
+création à 15:58:11 UTC, progression 60 s à 15:58:39, progression 120 s pendant
+la coupure à 15:59:55, exclusion à 16:00:48, suppression à 16:01:32.
+Cinq écritures opérateur avec préconditions, aucun patch des compteurs agrégés.
+Data sept jours passe de 9 visiteurs estimés/12 sessions à 10/13 ; carte Linux
+1 min visible. DevTools Offline confirmé avec `ERR_INTERNET_DISCONNECTED` :
+carte conservée à 1 min, libellé cache, alors que la projection distante vaut
+2 min. Retour No throttling : carte 2 min et synchronisation sans rechargement.
+Les sessions actives ne finalisent pas la durée des KPI : ces progressions
+portent sur la carte live, le total de sessions reste 13.
+
+Après exclusion : retour visible à 9/12, carte retirée. Après suppression :
+source, résumé live, détail et fait absents ; ledger tombstone conservé avec
+contribution nulle. Aucun total global restauré, aucun paiement/e-mail/commande.
+Ces observations prouvent un exemple de convergence et de reconnexion, pas
+un p95, une facture Firebase ni la convergence entre deux identités admin.
+
+Preuves locales : `logs/recette/livraison_correctifs_20260905/` (rollout,
+readbacks, contrôle commerce révision 77 inchangé, HTTP, capacité, cinq phases
+et nettoyage). Les JSON `.private` restent ignorés et ne contiennent pas de
+token d'accès sauvegardé.
+
+Les deux lecteurs **ne sont pas livrés** : révisions actives conservées
+`listordersadminv2gen2-00004-fal` et
+`listcustomerreturnrequestsadminv2gen2-00004-kec`. Le lanceur
+`scripts/deploy-backoffice-source.mjs` refuse les sources non committées avec
+`DEPLOYMENT_INPUTS_NOT_COMMITTED` :
+le commit local étant explicitement distinct dans le périmètre préparé,
+son autorisation a été demandée. Aucun commit/push effectué ; aucun gain
+Commandes/Retours hébergé attribué au correctif local non livré.
+
+## Correctifs locaux après qualification — 5 septembre, 17 h 30 Paris
+
+Travail local uniquement, non committé et non livré. Les sections historiques
+ci-dessous et les preuves de qualification sont conservées. Changements
+préexistants (dont rangement documentaire et suppression des anciens skills)
+préservés. Node **22.23.2** explicitement sélectionné ; guides Next installés
+`use-client` et `lazy-loading` lus avant code.
+
+### Constats confrontés et corrections
+
+- Les périodes étaient initialisées au montage : Stats « 3 mois » et Data
+  « 7j » sont maintenant conservés dans la mémoire de la session autorisée,
+  purgée à la révocation/changement d'UID. Aucun appel ni stockage persistant.
+- Les anciennes connexions sont déjà invalidées par génération. En revanche,
+  un snapshot SDK local vide pouvait remplacer une valeur connue après reprise :
+  correction des canaux KPI Stats, Data et sessions récentes. La mémoire reste
+  annoncée en cache jusqu'à confirmation serveur, sans transformer une erreur
+  de schéma/permission en succès. Les suppressions confirmées restent recevables.
+- Protection ajoutée aux réponses tardives du lecteur Data compatible ; le
+  lecteur realtime calcule toutes les périodes depuis les deux mêmes documents,
+  sans requête par sélection. Stats protégeait déjà ses réponses financières ;
+  le tableau annuel n'est plus inversé en place dans le cache partagé.
+- Data indique « Historique incomplet sur cette période » lorsque la couverture
+  est la seule cause, sans changer la preuve exigée pour un historique complet.
+- Commandes compactes : médias/descriptions catalogue des lignes omis du
+  transport, détails exacts intacts. Aucun changement des documents stockés,
+  prix, droits, actions, filtres ou curseurs.
+- Demandes Retours : références liées uniques lues en un `getAll` borné par la
+  page, au lieu de plusieurs RPC individuelles. Même réponse et mêmes documents.
+  La page Retours conserve ses trois lecteurs parallèles et leur cache partagé :
+  retirer les commandes aurait supprimé des possibilités de remboursement manuel.
+
+### Première ouverture : causes et portée des mesures
+
+Auth forte puis contrôle d'accès restent obligatoires. La qualification hébergée
+avait distingué 372 ms de restauration et 2 775 ms supplémentaires jusqu'à
+l'accès lors d'un exemple froid ; ce délai n'est pas attribuable aux graphiques.
+Les vues lazy attendent ensuite chargement/évaluation de leur code. Stats ajoute
+son écoute KPI, puis les tendances au panneau visible. Commandes attend son
+lecteur et sa sérialisation ; Retours attend le plus lent de ses trois lecteurs,
+avec enrichissement backend des demandes. Factures charge déjà son workspace
+sans produits : aucun appel catalogue à avancer et aucune lecture à ajouter.
+Les corrections portent sur les payloads et RPC évitables, sans modifier Auth
+ni capacité. Pas de nouveau gain en millisecondes Auth/code/backend/peinture
+affirmé : les tests composants doublent les transports et n'émulent pas les
+démarrages froids cloud.
+
+Mesures comparables sur **la même fixture locale et le même processus Node** :
+
+| Mesure | Avant | Après | Limite |
+| --- | ---: | ---: | --- |
+| JSON d'une commande avec médias/descriptif embarqués | 6 916 octets | 1 946 octets | Fixture volontairement riche, pas les 142 commandes hébergées |
+| RPC liées à trois demandes portant sur deux commandes | 2 | 1 | Hors lecture de page et autorisation |
+| Documents liés demandés dans ce scénario | 2 | 2 | Compteur du double de transport, pas Billing |
+| Écoutes Stats sur 30 retours rapprochés | 2 | 2 | Optimisation antérieure conservée, pas un gain nouveau |
+
+Aucun p95, coût Firebase, baisse d'écriture ou gain de vitesse hébergé revendiqué.
+
+### Validations
+
+- 49 tests Node ciblés : cache/UID/expiration, réponses anciennes, projections,
+  sessions, contrats Commandes/Retours ; réponses groupées identiques et compteurs
+  d'appels/documents contrôlés.
+- 7 scénarios Firestore demo : Data atteint 0 → 1 → 2 → 3 sessions après
+  écriture distante visible, pause puis réseau coupé/reconnecté ; rejeu stable.
+  Stats reçoit 12 500 → 25 000 → 37 500 → 50 000 centimes via son canal retenu,
+  après expiration de grâce et masquage ; 30 retours sans nouvelle écoute.
+  Ce test Stats écrit une projection demo, il ne simule pas un paiement réel.
+  Le délai de grâce est déclenché par horloge injectée, pas une attente physique.
+  Les clients/emulateurs sont arrêtés en fin de scénario.
+- 20 passages Playwright desktop/mobile avec composants React réels, transports
+  doublés et réseau externe bloqué : périodes, retours, photo Devis locale et
+  notes conservées, détail Factures avec désignation/quantité/prix, erreurs/retry,
+  réponse Data partie sur 24 h reçue après sélection 7j (77 visiteurs, pas 11).
+- Build avec fixture catalogue réussi ; lint global : 0 erreur, 127 warnings
+  préexistants ; `git diff --check` propre. Aucun fichier source déplacé/supprimé.
+
+Commandes reproductibles : Node 22, `node scripts/test-analytics-realtime-emulator.mjs`,
+`playwright test tests/backoffice-browser.spec.mjs --workers=2`,
+`CATALOG_BUILD_FIXTURE=true npm run build`, `eslint .`.
+Logs locaux conservés dans `logs/recette/correctifs_locaux_20260905/` :
+`sv-qualification-{unit,emulator,browser,lint,build}.log`.
+Un premier runner demo a été arrêté après assertions réussies mais fermeture
+incomplète ; le nettoyage explicite du client a été corrigé et la suite entière
+relancée avec sortie 0. Aucun succès n'est déduit de ce premier arrêt.
+
+### Autorisations restantes
+
+[Livraison ciblée et scénario hébergé avec nettoyage](RECETTE_STATS_DATA_HEBERGEE_A_AUTORISER.md).
+App Hosting et les deux lecteurs modifiés nécessitent un nouvel accord ;
+les mutations synthétiques Data nécessitent leur accord borné distinct.
+Les champs des 142 commandes/181 faits et les drapeaux d'usage des index restent
+inchangés et soumis à une autorisation séparée. Aucun paiement, remboursement,
+e-mail, commit, push ou déploiement effectué.
+
 2026-09-05. Extension demandée après I0–I6, puis commit et livraison sandbox
 effectués. Périmètre Functions à préciser ; aucune autorisation Q1 réutilisée.
 
