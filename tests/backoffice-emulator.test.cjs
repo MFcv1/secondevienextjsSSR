@@ -41,6 +41,18 @@ test('migration approuvée : fermeture puis six documents atomiques, sources int
   assert.equal((await db.collection('admin_newsletter_subscriber_projections').get()).size,1);
   assert.equal((await db.doc(sources[0]).get()).data().status,'closed');
   assert.throws(()=>run('activate'));
+  await db.doc('orders/migration-index').set({status:'paid',totalCents:4200});
+  await db.doc('analytics_session_facts/migration-index').set({contribution:{duration:120}});
+  for(const [collection,patch] of [['orders',{adminArchived:false}],['analytics_session_facts',{shardId:'02'}]]){
+    const response=await fetch(`http://${process.env.FIRESTORE_EMULATOR_HOST}/v1/projects/demo-secondevie-backoffice/databases/(default)/documents/${collection}/migration-index`,{headers:{Authorization:'Bearer owner'}});
+    const document=await response.json();
+    write(`${collection}-schema-dry-run.json`,{project:'secondevienextjsssr',mode:'dry-run',changes:[{path:`${collection}/migration-index`,expectedVersion:document.updateTime,patch}]});
+  }
+  execFileSync(process.execPath,['--require',hook,path.resolve('scripts/migrate-backoffice-index-fields.mjs'),'apply'],{cwd:workspace,env:process.env,stdio:['ignore','pipe','pipe']});
+  const order=(await db.doc('orders/migration-index').get()).data();
+  assert.equal(order.adminArchived,false);assert.equal(order.status,'paid');assert.equal(order.totalCents,4200);
+  const fact=(await db.doc('analytics_session_facts/migration-index').get()).data();
+  assert.equal(fact.shardId,'02');assert.equal(fact.contribution.duration,120);
   fs.rmSync(workspace,{recursive:true,force:true});
 });
 

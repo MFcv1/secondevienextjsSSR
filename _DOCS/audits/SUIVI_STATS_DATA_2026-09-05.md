@@ -45,6 +45,9 @@ dépense active démontrée ; aucune suppression opportuniste de ce code.
 
 ## Livraison et limites
 
+Complément ultérieur : [backend livré et compteurs migrés](LIVRAISON_BACKEND_2026-09-05.md).
+Le paragraphe ci-dessous conserve le périmètre du premier rollout hosting.
+
 Code committé `cb2db14` sur `codex/stats-data-performance`, sans push.
 App Hosting livré : `build-2026-09-05-001`, 100 % du trafic relu après succès.
 Cloud Build `62806d88-bb93-42fc-9f1e-c3e2f835a931` terminé SUCCESS le

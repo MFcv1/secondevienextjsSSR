@@ -1,0 +1,263 @@
+{
+  "date": "2026-09-05",
+  "project": "secondevienextjsssr",
+  "region": "europe-west1",
+  "functions": [
+    {
+      "name": "listOrdersAdminV2Gen2",
+      "before": "listordersadminv2gen2-00002-dor",
+      "after": "listordersadminv2gen2-00004-fal",
+      "state": "ACTIVE",
+      "configurationPreserved": true,
+      "triggerPreserved": true
+    },
+    {
+      "name": "listReturnsAdminV2Gen2",
+      "before": "listreturnsadminv2gen2-00001-pak",
+      "after": "listreturnsadminv2gen2-00003-ham",
+      "state": "ACTIVE",
+      "configurationPreserved": true,
+      "triggerPreserved": true
+    },
+    {
+      "name": "listCustomerReturnRequestsAdminV2Gen2",
+      "before": "listcustomerreturnrequestsadminv2gen2-00002-xon",
+      "after": "listcustomerreturnrequestsadminv2gen2-00004-kec",
+      "state": "ACTIVE",
+      "configurationPreserved": true,
+      "triggerPreserved": true
+    },
+    {
+      "name": "getOrderTimelineAdminV2Gen2",
+      "before": "getordertimelineadminv2gen2-00001-tew",
+      "after": "getordertimelineadminv2gen2-00003-qut",
+      "state": "ACTIVE",
+      "configurationPreserved": true,
+      "triggerPreserved": true
+    },
+    {
+      "name": "getBillingGuideStatusGen2",
+      "before": "getbillingguidestatusgen2-00001-val",
+      "after": "getbillingguidestatusgen2-00003-dam",
+      "state": "ACTIVE",
+      "configurationPreserved": true,
+      "triggerPreserved": true
+    },
+    {
+      "name": "getManualInvoiceWorkspaceAdminGen2",
+      "before": "getmanualinvoiceworkspaceadmingen2-00001-qur",
+      "after": "getmanualinvoiceworkspaceadmingen2-00003-gaz",
+      "state": "ACTIVE",
+      "configurationPreserved": true,
+      "triggerPreserved": true
+    },
+    {
+      "name": "listQuoteRequestsAdminGen2",
+      "before": "listquoterequestsadmingen2-00001-rox",
+      "after": "listquoterequestsadmingen2-00003-siv",
+      "state": "ACTIVE",
+      "configurationPreserved": true,
+      "triggerPreserved": true
+    },
+    {
+      "name": "getQuoteRequestAdminGen2",
+      "before": "getquoterequestadmingen2-00002-xoc",
+      "after": "getquoterequestadmingen2-00004-xah",
+      "state": "ACTIVE",
+      "configurationPreserved": true,
+      "triggerPreserved": true
+    },
+    {
+      "name": "listAdminPaymentLinksGen2",
+      "before": "listadminpaymentlinksgen2-00002-huf",
+      "after": "listadminpaymentlinksgen2-00003-jug",
+      "state": "ACTIVE",
+      "configurationPreserved": true,
+      "triggerPreserved": true
+    },
+    {
+      "name": "projectAdminActionSummaryGen2",
+      "before": "projectadminactionsummarygen2-00006-wov",
+      "after": "projectadminactionsummarygen2-00007-dim",
+      "state": "ACTIVE",
+      "configurationPreserved": true,
+      "triggerPreserved": true
+    },
+    {
+      "name": "projectNewsletterSubscriberGen2",
+      "before": "projectnewslettersubscribergen2-00001-ves",
+      "after": "projectnewslettersubscribergen2-00002-guj",
+      "state": "ACTIVE",
+      "configurationPreserved": true,
+      "triggerPreserved": true
+    },
+    {
+      "name": "initLiveSessionGen2",
+      "before": "initlivesessiongen2-00002-zin",
+      "after": "initlivesessiongen2-00003-poc",
+      "state": "ACTIVE",
+      "configurationPreserved": true,
+      "triggerPreserved": true
+    },
+    {
+      "name": "syncSessionGen2",
+      "before": "syncsessiongen2-00002-saj",
+      "after": "syncsessiongen2-00003-vuz",
+      "state": "ACTIVE",
+      "configurationPreserved": true,
+      "triggerPreserved": true
+    },
+    {
+      "name": "syncSessionBeaconGen2",
+      "before": "syncsessionbeacongen2-00004-vel",
+      "after": "syncsessionbeacongen2-00005-yaq",
+      "state": "ACTIVE",
+      "configurationPreserved": true,
+      "triggerPreserved": true
+    },
+    {
+      "name": "aggregateAnalyticsSessionGen2",
+      "before": "aggregateanalyticssessiongen2-00009-jen",
+      "after": "aggregateanalyticssessiongen2-00010-wow",
+      "state": "ACTIVE",
+      "configurationPreserved": true,
+      "triggerPreserved": true
+    },
+    {
+      "name": "maintainAnalyticsGen2",
+      "before": "maintainanalyticsgen2-00003-pij",
+      "after": "maintainanalyticsgen2-00004-tab",
+      "state": "ACTIVE",
+      "configurationPreserved": true,
+      "triggerPreserved": true
+    },
+    {
+      "name": "dispatchCommerceOutboxTaskGen2",
+      "before": "dispatchcommerceoutboxtaskgen2-00001-hov",
+      "after": "dispatchcommerceoutboxtaskgen2-00002-gev",
+      "state": "ACTIVE",
+      "configurationPreserved": true,
+      "triggerPreserved": true
+    },
+    {
+      "name": "commerceOutboxDispatcherGen2",
+      "before": "commerceoutboxdispatchergen2-00007-maw",
+      "after": "commerceoutboxdispatchergen2-00008-quk",
+      "state": "ACTIVE",
+      "configurationPreserved": true,
+      "triggerPreserved": true
+    },
+    {
+      "name": "onCommerceOutboxWrittenGen2",
+      "before": "oncommerceoutboxwrittengen2-00001-buj",
+      "after": "oncommerceoutboxwrittengen2-00002-zuz",
+      "state": "ACTIVE",
+      "configurationPreserved": true,
+      "triggerPreserved": true
+    },
+    {
+      "name": "archiveOrderAdminGen2",
+      "before": "archiveorderadmingen2-00002-ceg",
+      "after": "archiveorderadmingen2-00003-rig",
+      "state": "ACTIVE",
+      "configurationPreserved": true,
+      "triggerPreserved": true
+    },
+    {
+      "name": "createCheckoutV2Gen2",
+      "before": "createcheckoutv2gen2-00003-suv",
+      "after": "createcheckoutv2gen2-00004-hem",
+      "state": "ACTIVE",
+      "configurationPreserved": true,
+      "triggerPreserved": true
+    },
+    {
+      "name": "createAdminPaymentLinkGen2",
+      "before": "createadminpaymentlinkgen2-00002-kax",
+      "after": "createadminpaymentlinkgen2-00003-puj",
+      "state": "ACTIVE",
+      "configurationPreserved": true,
+      "triggerPreserved": true
+    },
+    {
+      "name": "recreateAdminPaymentLinkGen2",
+      "before": "recreateadminpaymentlinkgen2-00002-jop",
+      "after": "recreateadminpaymentlinkgen2-00003-kad",
+      "state": "ACTIVE",
+      "configurationPreserved": true,
+      "triggerPreserved": true
+    }
+  ],
+  "readersUnauthenticated": [
+    {
+      "target": "listOrdersAdminV2Gen2",
+      "status": 401
+    },
+    {
+      "target": "listReturnsAdminV2Gen2",
+      "status": 401
+    },
+    {
+      "target": "listCustomerReturnRequestsAdminV2Gen2",
+      "status": 401
+    },
+    {
+      "target": "getOrderTimelineAdminV2Gen2",
+      "status": 401
+    },
+    {
+      "target": "getBillingGuideStatusGen2",
+      "status": 401
+    },
+    {
+      "target": "getManualInvoiceWorkspaceAdminGen2",
+      "status": 401
+    },
+    {
+      "target": "listQuoteRequestsAdminGen2",
+      "status": 401
+    },
+    {
+      "target": "getQuoteRequestAdminGen2",
+      "status": 401
+    },
+    {
+      "target": "listAdminPaymentLinksGen2",
+      "status": 401
+    }
+  ],
+  "counters": [
+    {
+      "path": "admin_action_summary/current",
+      "baselineReady": true,
+      "total": 0,
+      "revision": 8
+    },
+    {
+      "path": "admin_newsletter_summary/current",
+      "baselineReady": true,
+      "total": 1,
+      "revision": 2
+    }
+  ],
+  "indexes": [
+    {
+      "group": "orders",
+      "done": true,
+      "error": null,
+      "name": "projects/secondevienextjsssr/databases/(default)/collectionGroups/orders/indexes/CICAgJiljJcK"
+    },
+    {
+      "group": "analytics_session_facts",
+      "done": true,
+      "error": null,
+      "name": "projects/secondevienextjsssr/databases/(default)/collectionGroups/analytics_session_facts/indexes/CICAgJjHoJwK"
+    },
+    {
+      "group": "orders",
+      "done": true,
+      "error": null,
+      "name": "projects/secondevienextjsssr/databases/(default)/collectionGroups/orders/indexes/CICAgOj3mIMK"
+    }
+  ]
+}

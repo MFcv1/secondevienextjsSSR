@@ -37,8 +37,9 @@ Implémentation locale I0–I6 du 2026-09-05 : affichage/insights, cache autoris
 brouillons Devis, séquences sessions et projections, lectures/pagination,
 imports ciblés et outbox ont reçu des corrections et validations locales.
 [Suivi par lot, résultats, migrations et limites](audits/SUIVI_IMPLEMENTATION_BACKOFFICE_2026-09-05.md).
-Frontend livré sur `build-2026-09-05-001` avec l'extension Stats/Data ; Functions
-non livrées, aucune réparation hébergée. Les migrations de baseline/champs,
+Frontend livré sur `build-2026-09-05-001` avec l'extension Stats/Data ;
+[23 Functions livrées, compteurs initialisés](audits/LIVRAISON_BACKEND_2026-09-05.md).
+Le complément de champs archive/shard,
 le premier handler autorisé avec services réels, la comparaison hébergée I7 et QBO-06
 restent explicitement ouverts. Les paragraphes d'audit suivants décrivent leurs
 campagnes historiques et ne sont pas une preuve contre les nouveaux tests métier.

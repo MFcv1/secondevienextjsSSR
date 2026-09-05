@@ -4,7 +4,8 @@ Validation initiale : 2026-09-05, sans commit, push, déploiement ni mutation cl
 Après cette validation, le commit et le frontend ont été livrés dans
 l'[extension Stats/Data](SUIVI_STATS_DATA_2026-09-05.md). Les états du tableau
 ci-dessous décrivent la réception locale initiale ; les Functions et migrations
-restent non livrées.
+ont ensuite fait l'objet de la [livraison backend](LIVRAISON_BACKEND_2026-09-05.md),
+qui précise les migrations appliquées et celles encore en attente.
 Référence : `2c6c5b4358bffbb04674ddc8b869e3239f74ff2d`.
 Le [plan](IMPLEMENTATION_BACKOFFICE_POST_QUALIFICATION_2026-09-05.md), les deux
 rapports et les preuves historiques restent conservés. Les suppressions des

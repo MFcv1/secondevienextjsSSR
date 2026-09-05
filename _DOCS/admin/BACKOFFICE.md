@@ -1,8 +1,10 @@
 # Back-office
 
-Contrat du 2026-09-05 (frontend livré, backend non livré) : voir le
+Contrat du 2026-09-05 (frontend et backend livrés) : voir le
 [suivi I0–I6](../audits/SUIVI_IMPLEMENTATION_BACKOFFICE_2026-09-05.md).
 Les constats cités ci-dessous restent ouverts pour la qualification hébergée.
+La [livraison backend](../audits/LIVRAISON_BACKEND_2026-09-05.md) précise les
+révisions et la migration des compteurs ; activation archive/shard en attente.
 
 Extension Stats/Data : [suivi performance](../audits/SUIVI_STATS_DATA_2026-09-05.md).
 Les écoutes de ces pages bénéficient d'une grâce de navigation de 30 s puis
