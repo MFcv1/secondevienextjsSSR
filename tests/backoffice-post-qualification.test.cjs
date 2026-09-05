@@ -9,6 +9,13 @@ const { createRequire } = require('node:module');
 const { planSessionMessage } = require('../functions/src/analytics/sessionSequence');
 const { planNewsletterProjection } = require('../functions/src/newsletter/newsletterProjectionDomain');
 const { claim } = require('../functions/src/commerce/domain/outboxRepository');
+test('I5 : les lecteurs ciblés reconnaissent aussi le nom Cloud Run sans FUNCTION_TARGET', () => {
+  const { resolveReaderTarget, targets } = require('../functions/src/admin/readerEntrypoint');
+  for (const name of targets) assert.equal(resolveReaderTarget({ K_SERVICE: name.toLowerCase() }), name);
+  assert.equal(resolveReaderTarget({}), undefined);
+  assert.equal(resolveReaderTarget({ K_SERVICE: 'another-service' }), undefined);
+  assert.equal(resolveReaderTarget({ FUNCTION_TARGET: 'explicit', K_SERVICE: targets[0].toLowerCase() }), 'explicit');
+});
 const timestamp = (seconds) => ({ seconds, nanoseconds: 0 });
 
 function memoryDb(initial) {

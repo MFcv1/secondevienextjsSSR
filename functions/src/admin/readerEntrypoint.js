@@ -25,4 +25,9 @@ function loadReaderTarget(target) {
     }, (request) => runObserved(target, request, (data) => handler(data, request)));
 }
 
-module.exports = { loadReaderTarget, targets: [...Object.keys(ORDER_READERS), ...Object.keys(MODULE_READERS)] };
+const targets = [...Object.keys(ORDER_READERS), ...Object.keys(MODULE_READERS)];
+function resolveReaderTarget(environment) {
+    return environment.FUNCTION_TARGET || environment.GOOGLE_FUNCTION_TARGET
+        || targets.find(name => name.toLowerCase() === environment.K_SERVICE);
+}
+module.exports = { loadReaderTarget, resolveReaderTarget, targets };

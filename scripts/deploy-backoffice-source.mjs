@@ -25,6 +25,7 @@ async function request(url, method = 'GET', body) {
 }
 const before = read('functions-before.private.json');
 if (command === 'upload') {
+  if (fs.existsSync(`${directory}/source.json`)) { const previous = read('source.json'); write(`source-${previous.sha256}.json`, previous); }
   const archive = fs.readFileSync(`${directory}/source.zip`);
   const digest = crypto.createHash('sha256').update(archive).digest('hex');
   const upload = await request(`projects/${project}/locations/europe-west1/functions:generateUploadUrl`, 'POST', {});
@@ -49,9 +50,12 @@ if (command === 'upload') {
   for (const name of names) {
     const original = before.find(row => row.name.endsWith(`/${name}`));
     if (!original || original.environment !== 'GEN_2') throw new Error('EXISTING_GEN2_REQUIRED');
+    const previousResult = fs.existsSync(`${directory}/${name}.after.private.json`) ? read(`${name}.after.private.json`) : original;
+    if (fs.existsSync(`${directory}/${name}.operation.json`) && read(`${name}.operation.json`).sourceSha256 === source.sha256) throw new Error(`ALREADY_DISPATCHED:${name}`);
     const current = await request(original.name);
-    if (current.state !== 'ACTIVE' || current.serviceConfig.revision !== original.serviceConfig.revision) throw new Error(`REVISION_CHANGED:${name}`);
+    if (current.state !== 'ACTIVE' || current.serviceConfig.revision !== previousResult.serviceConfig.revision) throw new Error(`REVISION_CHANGED:${name}`);
     const operation = await request(`${original.name}?updateMask=buildConfig.source`, 'PATCH', { buildConfig: { source: { storageSource: source.storageSource } } });
+    if (fs.existsSync(`${directory}/${name}.operation.json`)) { const previous = read(`${name}.operation.json`); write(`${name}-${previous.sourceSha256}.operation.json`, previous); }
     write(`${name}.operation.json`, { name: operation.name, previousRevision: current.serviceConfig.revision, sourceSha256: source.sha256 });
     console.log(JSON.stringify({ target: name, operation: operation.name }));
   }

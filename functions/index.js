@@ -6,9 +6,11 @@
 const admin = require('firebase-admin');
 admin.initializeApp();
 
-const readerTarget = require('./src/admin/readerEntrypoint').loadReaderTarget(process.env.FUNCTION_TARGET);
+const { loadReaderTarget, resolveReaderTarget } = require('./src/admin/readerEntrypoint');
+const readerName = resolveReaderTarget(process.env);
+const readerTarget = loadReaderTarget(readerName);
 if (readerTarget) {
-    exports[process.env.FUNCTION_TARGET] = readerTarget;
+    exports[readerName] = readerTarget;
 } else {
 
 // ── COMMERCE ──────────────────────────────────────────────
