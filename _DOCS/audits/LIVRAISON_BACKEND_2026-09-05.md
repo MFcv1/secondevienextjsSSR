@@ -1,5 +1,13 @@
 # Livraison backend après I0–I6 et Stats/Data
 
+Complément après qualification : les lecteurs Commandes et demandes Retours
+ont reçu le correctif `eccd278` (révisions `00005-feg` et `00005-lex`), sans
+changement de configuration. Hosting est désormais `build-2026-09-05-002`.
+Voir le [résultat et les preuves](SUIVI_STATS_DATA_2026-09-05.md).
+Le compte rendu ci-dessous conserve la livraison initiale et ses migrations ;
+aucune nouvelle migration des 142 commandes/181 faits ni activation de leur
+usage des index n'a été effectuée lors de ce complément.
+
 2026-09-05. Autorisation utilisateur de livrer l'ensemble du backend sandbox,
 puis accord explicite pour la migration bornée des compteurs. Aucune ancienne
 autorisation Q1 réutilisée. Production, paiements, remboursements et e-mails de

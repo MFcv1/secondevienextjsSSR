@@ -1,9 +1,11 @@
-# Recette hébergée après correctifs locaux — non exécutée
+# Recette hébergée après correctifs locaux — exécutée dans le périmètre autorisé
 
 Mise à jour : accord utilisateur reçu le 5 septembre ; hosting et scénario Data
 avec nettoyage exécutés. [Résultat et limites](SUIVI_STATS_DATA_2026-09-05.md).
-La procédure ci-dessous conserve la séparation des périmètres ; le commit local
-requis par la gate Functions reste en attente d'accord, les deux lecteurs non livrés.
+La procédure ci-dessous conserve la séparation des périmètres ; accord
+complémentaire reçu pour le commit local `eccd278` et les deux lecteurs,
+désormais livrés et vérifiés. Aucun push. Les mesures comparatives de vitesse
+et de facturation hébergées ne sont pas établies.
 
 Cette préparation ne vaut pas autorisation. Aucune autorisation Q1 réutilisée.
 

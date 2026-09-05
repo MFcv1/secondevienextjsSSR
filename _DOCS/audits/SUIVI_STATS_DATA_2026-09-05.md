@@ -1,6 +1,6 @@
 # Stats et Data — ouvertures et coût de lecture
 
-## Livraison autorisée le 5 septembre — hosting effectué, Functions en attente
+## Livraison autorisée le 5 septembre — hosting et deux lecteurs livrés
 
 L'utilisateur a autorisé la livraison sandbox et le scénario Data synthétique
 borné. Aucune autorisation Q1 réutilisée ; migration des 142 commandes/181 faits
@@ -45,14 +45,29 @@ readbacks, contrôle commerce révision 77 inchangé, HTTP, capacité, cinq phas
 et nettoyage). Les JSON `.private` restent ignorés et ne contiennent pas de
 token d'accès sauvegardé.
 
-Les deux lecteurs **ne sont pas livrés** : révisions actives conservées
-`listordersadminv2gen2-00004-fal` et
-`listcustomerreturnrequestsadminv2gen2-00004-kec`. Le lanceur
-`scripts/deploy-backoffice-source.mjs` refuse les sources non committées avec
-`DEPLOYMENT_INPUTS_NOT_COMMITTED` :
-le commit local étant explicitement distinct dans le périmètre préparé,
-son autorisation a été demandée. Aucun commit/push effectué ; aucun gain
-Commandes/Retours hébergé attribué au correctif local non livré.
+Après accord utilisateur complémentaire, commit ciblé `eccd278`, sans push.
+30 tests de préflight passent sous Node 22.23.2. Les deux lecteurs sont ACTIVE :
+`listordersadminv2gen2-00005-feg` et
+`listcustomerreturnrequestsadminv2gen2-00005-lex`. Seul `buildConfig.source`
+a été mis à jour ; comparaison intégrale des paramètres de service hors
+révision et des déclencheurs : identiques. Archive SHA-256
+`13d9893ccd2fde6dd310f4f2c951daa48ae1d28545151ae5180d05a6d8749e8e` ;
+seul `src/commerce/v2OrderQueries.js` diffère de l'archive précédente.
+Rollback : sources/configurations des révisions `00004-fal` et `00004-kec`
+sauvegardées dans `livraison_correctifs_20260905/backend-before/`.
+
+Après rechargement admin, Commandes affiche 49 puis 99 commandes distinctes
+après pagination. Le détail C142 conserve panier, total et parcours.
+Retours passe de 38 à 61 dossiers après pagination et affiche les trois
+demandes avec références de commande, articles et étapes enrichies.
+Les journaux HTTP confirment les POST 200 sur les nouvelles
+révisions : liste Commandes 124 697 octets, détail 3 049, page suivante
+118 856 ; demandes Retours 8 637. Ce sont des tailles de réponse Cloud Run,
+pas des documents Firestore facturés. Les premiers POST observés prennent
+6,69 s et 6,17 s ; aucun avant/après comparable, p95 ou gain hébergé déduit.
+Preuves : `backend-verification.json`, `backend-http-readback.json` et
+`backend-artifact.json` dans le dossier de livraison. Aucun changement de
+capacité, migration, paiement, remboursement ou e-mail dans cette livraison.
 
 ## Correctifs locaux après qualification — 5 septembre, 17 h 30 Paris
 
