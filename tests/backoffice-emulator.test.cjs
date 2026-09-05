@@ -7,8 +7,42 @@ admin.initializeApp({projectId:'demo-secondevie-backoffice'});
 const db = admin.firestore();
 const { createOutboxRepository } = require('../functions/src/commerce/domain/outboxRepository');
 const { readAdminPage } = require('../functions/src/admin/readPage');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const crypto = require('node:crypto');
+const { execFileSync } = require('node:child_process');
 
 test.after(async () => { await admin.app().delete(); });
+
+test('migration approuvée : fermeture puis six documents atomiques, sources intactes', async () => {
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'sv-counter-migration-'));
+  const directory = path.join(workspace, 'logs/recette/backend_delivery_20260905');
+  fs.mkdirSync(directory, {recursive:true});
+  const write = (name, value) => fs.writeFileSync(path.join(directory,name),JSON.stringify(value));
+  const sources = ['orders/migration/customer_return_requests/a','orders/migration/customer_return_requests/b','orders/migration/customer_return_requests/c'];
+  await db.doc('admin_action_summary/current').set({revision:1,pendingReturns:7});
+  await db.doc('admin_newsletter_summary/current').set({revision:1,activeCount:20});
+  for(const source of sources) await db.doc(source).set({status:'closed'});
+  await db.doc('newsletter_subscribers/migration').set({status:'active'});
+  write('returns-dry-run.json',{input:{sources:sources.map(id=>({id:crypto.createHash('sha256').update(id).digest('hex')}))}});
+  write('newsletter-dry-run.json',{input:{sources:[{id:'migration'}]}});
+  for(const name of ['projectAdminActionSummaryGen2','projectNewsletterSubscriberGen2'])write(`${name}.after.private.json`,{state:'ACTIVE',_observedActiveAt:'2020-01-01T00:00:00Z'});
+  // Redirect every Firestore request to demo; gcloud is replaced before ESM import.
+  const hook=path.join(workspace,'demo-hook.cjs');
+  fs.writeFileSync(hook, `const child=require('node:child_process');child.execFileSync=()=> 'owner';require('node:module').syncBuiltinESMExports();const nativeFetch=global.fetch;global.fetch=async(url,options)=>{if(!url.startsWith('https://firestore.googleapis.com/v1/projects/secondevienextjsssr/'))throw Error('NETWORK_FORBIDDEN');const response=await nativeFetch(url.replace('https://firestore.googleapis.com','http://'+process.env.FIRESTORE_EMULATOR_HOST).replaceAll('secondevienextjsssr','demo-secondevie-backoffice'),{...options,body:options.body.replaceAll('secondevienextjsssr','demo-secondevie-backoffice')});const text=await response.text();if(!response.ok)throw Error('DEMO_RESPONSE:'+text);return new Response(text.replaceAll('demo-secondevie-backoffice','secondevienextjsssr'),{status:response.status});};`);
+  const run = phase => execFileSync(process.execPath,['--require',hook,path.resolve('scripts/migrate-backoffice-counters.mjs'),phase],{cwd:workspace,env:process.env,stdio:['ignore','pipe','pipe']});
+  run('close');
+  assert.equal((await db.doc('admin_action_summary/current').get()).data().ledgerBaselineReady,false);
+  run('activate');
+  assert.equal((await db.doc('admin_action_summary/current').get()).data().pendingReturns,0);
+  assert.equal((await db.doc('admin_newsletter_summary/current').get()).data().activeCount,1);
+  assert.equal((await db.collection('admin_action_projections').get()).size,3);
+  assert.equal((await db.collection('admin_newsletter_subscriber_projections').get()).size,1);
+  assert.equal((await db.doc(sources[0]).get()).data().status,'closed');
+  assert.throws(()=>run('activate'));
+  fs.rmSync(workspace,{recursive:true,force:true});
+});
 
 test('I6 transaction : une seule prise concurrente, échéance protégée et reprise ambiguë interdite', async () => {
   const repository = createOutboxRepository({db,refs:{outbox:id=>db.doc(`commerce_outbox/${id}`)}});

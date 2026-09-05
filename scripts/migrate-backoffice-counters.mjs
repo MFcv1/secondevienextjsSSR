@@ -23,7 +23,8 @@ if (phase === 'activate') {
   read('migration-close-result.json');
   for (const name of ['projectAdminActionSummaryGen2', 'projectNewsletterSubscriberGen2']) {
     const deployed = read(`${name}.after.private.json`);
-    if (deployed.state !== 'ACTIVE' || Date.now() - Date.parse(deployed.updateTime) < 65_000) throw new Error('WAIT_FOR_OLD_PROJECTOR_REQUESTS');
+    const observedAt = Date.parse(deployed._observedActiveAt);
+    if (deployed.state !== 'ACTIVE' || !Number.isFinite(observedAt) || Date.now() - observedAt < 65_000) throw new Error('WAIT_FOR_OLD_PROJECTOR_REQUESTS');
   }
 }
 const { transaction } = await call(':beginTransaction', {});

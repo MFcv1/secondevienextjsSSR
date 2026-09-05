@@ -64,7 +64,10 @@ if (command === 'upload') {
     const operation = read(`${name}.operation.json`);
     const result = await request(operation.name);
     const current = result.done && !result.error ? await request(before.find(row => row.name.endsWith(`/${name}`)).name) : null;
-    if (current) write(`${name}.after.private.json`, current);
+    if (current) {
+      const previous = fs.existsSync(`${directory}/${name}.after.private.json`) ? read(`${name}.after.private.json`) : null;
+      write(`${name}.after.private.json`, { ...current, _observedActiveAt: previous?.serviceConfig?.revision === current.serviceConfig.revision ? previous._observedActiveAt || new Date().toISOString() : new Date().toISOString() });
+    }
     console.log(JSON.stringify({ target: name, done: Boolean(result.done), error: result.error || null, revision: current?.serviceConfig.revision, state: current?.state }));
   }
 } else throw new Error('Usage: upload | deploy names | status names');
