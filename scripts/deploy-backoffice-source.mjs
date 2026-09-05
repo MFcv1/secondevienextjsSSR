@@ -28,9 +28,10 @@ if (command === 'upload') {
   const archive = fs.readFileSync(`${directory}/source.zip`);
   const digest = crypto.createHash('sha256').update(archive).digest('hex');
   const upload = await request(`projects/${project}/locations/europe-west1/functions:generateUploadUrl`, 'POST', {});
-  const response = await fetch(upload.uploadUrl, { method: 'PUT', headers: { 'Content-Type': 'application/zip', 'x-goog-content-length-range': '0,123289600' }, body: archive });
+  const signed = new URL(upload.uploadUrl).searchParams.has('GoogleAccessId');
+  const response = await fetch(upload.uploadUrl, { method: 'PUT', headers: { 'Content-Type': 'application/zip', ...(!signed ? { Authorization: `Bearer ${token}` } : {}) }, body: archive });
   if (!response.ok) throw new Error(`SOURCE_UPLOAD_HTTP_${response.status}`);
-  write('source.json', { sha256: digest, size: archive.length, storageSource: upload.storageSource });
+  write('source.json', { sha256: digest, size: archive.length, storageSource: { ...upload.storageSource, generation: response.headers.get('x-goog-generation') || upload.storageSource.generation } });
   console.log(JSON.stringify({ uploaded: true, sha256: digest, size: archive.length }));
 } else if (command === 'deploy') {
   const currentCommit = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
