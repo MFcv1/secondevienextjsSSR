@@ -100,7 +100,7 @@ test('factures manuelles: UI lazy, callables et stockages privÃ©s restent alignÃ
 
     assert.match(admin, /const loadAdminInvoices = \(\) => import\('\.\.\/\.\.\/src\/kit\/admin\/AdminInvoices'\)/);
     assert.match(admin, /React\.lazy\(loadAdminInvoices\)/);
-    assert.match(admin, /preloadAdminInvoicesData/);
+    assert.match(ui, /preloadAdminInvoicesData/);
     assert.doesNotMatch(ui, /if \(status === 'loading'\) return/);
     for (const callable of [
         'getManualInvoiceWorkspaceAdmin',

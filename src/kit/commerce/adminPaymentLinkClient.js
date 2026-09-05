@@ -8,8 +8,8 @@ const execute = async (name, payload = {}) => {
 
 export const createAdminPaymentLink = (payload) => execute('createAdminPaymentLink', payload);
 
-export const listAdminPaymentLinks = ({ pageSize = 50 } = {}) => (
-  execute('listAdminPaymentLinks', { pageSize })
+export const listAdminPaymentLinks = ({ pageSize = 50, cursor = null, reference = null } = {}) => (
+  execute('listAdminPaymentLinks', { pageSize, cursor, reference })
 );
 
 export const extendAdminPaymentLink = (orderId, expiryMinutes) => (

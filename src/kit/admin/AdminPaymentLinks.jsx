@@ -86,6 +86,8 @@ const isSelectableProduct = (item) => (
 export default function AdminPaymentLinks({ darkMode, items = [], mutationsEnabled }) {
   const [state, setState] = useState({ status: 'loading', links: [], setup: null, error: '' });
   const [query, setQuery] = useState('');
+  const [reference, setReference] = useState('');
+  const [appliedReference, setAppliedReference] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [email, setEmail] = useState('');
   const [deliveryModeId, setDeliveryModeId] = useState('');
@@ -93,16 +95,19 @@ export default function AdminPaymentLinks({ darkMode, items = [], mutationsEnabl
   const [action, setAction] = useState('');
   const [notice, setNotice] = useState('');
 
-  const refresh = useCallback(async ({ silent = false } = {}) => {
+  const refresh = useCallback(async ({ silent = false, cursor = null, reference = null } = {}) => {
     if (!silent) setState((current) => ({ ...current, status: 'loading', error: '' }));
     try {
-      const result = await listAdminPaymentLinks({ pageSize: 50 });
-      setState({
+      const result = await listAdminPaymentLinks({ pageSize: 50, cursor, reference });
+      setAppliedReference(reference);
+      setState((current) => ({
         status: 'ready',
-        links: result.links || [],
+        links: cursor ? [...current.links, ...(result.links || []).filter((row) => !current.links.some((old) => old.orderId === row.orderId))] : result.links || [],
+        nextCursor: result.nextCursor || null,
+        supportsReference: typeof result.hasMore === 'boolean',
         setup: result.setup || null,
         error: '',
-      });
+      }));
       setDeliveryModeId((current) => current || result.setup?.deliveryModes?.[0]?.id || '');
     } catch (error) {
       setState((current) => ({
@@ -401,6 +406,8 @@ export default function AdminPaymentLinks({ darkMode, items = [], mutationsEnabl
             <span className={`shrink-0 text-xs tabular-nums ${surfaces.muted}`}>{state.links.length}</span>
           </div>
 
+          {state.supportsReference && <form className="flex gap-2 p-4" onSubmit={(event) => { event.preventDefault(); void refresh({ reference: reference.trim() || null }); }}><input className="min-h-11 min-w-0 flex-1 rounded-xl border border-stone-300 bg-transparent px-3 text-sm dark:border-white/10" aria-label="Référence exacte de commande" placeholder="C142" value={reference} onChange={(event) => setReference(event.target.value)} /><button type="submit" className="px-3 text-xs font-bold">Rechercher</button></form>}
+          {state.nextCursor && <button type="button" className="min-h-11 px-4 text-xs font-bold" disabled={state.status === 'loading'} onClick={() => refresh({ cursor: state.nextCursor, reference: appliedReference })}>Charger la suite des liens</button>}
           {state.status === 'loading' ? (
             <div className={`flex min-h-40 items-center justify-center gap-3 text-sm font-semibold ${surfaces.muted}`}>
               <Loader2 className="animate-spin" size={16} /> Chargement…

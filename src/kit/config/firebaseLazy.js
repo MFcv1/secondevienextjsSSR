@@ -1,5 +1,6 @@
 import { app, functionsRegion } from './firebaseCore';
 import { getFunctionTarget } from './functionTargets';
+import { getAdminCacheGeneration, setAdminCacheAuthorization } from '../admin/adminDataCache';
 
 let firestoreModulePromise = null;
 let functionsModulePromise = null;
@@ -163,6 +164,7 @@ export const getCallableFunction = async (name) => {
   ]);
   const callable = httpsCallable(functions, getFunctionTarget(name));
   return async (payload) => {
+    const authorizationGeneration = getAdminCacheGeneration();
     try {
       if (!OBSERVED_CALLABLES.has(name)) {
         return await callable(payload);
@@ -188,6 +190,7 @@ export const getCallableFunction = async (name) => {
         },
       });
     } catch (error) {
+      if (authorizationGeneration === getAdminCacheGeneration() && ['functions/permission-denied', 'functions/unauthenticated'].includes(error?.code)) setAdminCacheAuthorization(null);
       emitAdminStepUpRequired(error);
       throw error;
     }

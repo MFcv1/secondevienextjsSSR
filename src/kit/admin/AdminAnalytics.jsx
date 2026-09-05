@@ -1742,7 +1742,7 @@ const BoutiqueAnalytics = ({ darkMode, sessions = [], onRefreshSessions, session
 // ─── Analytics Principal ───────────────────────────────────────────────────────
 void BoutiqueAnalytics;
 
-const AdminAnalytics = ({ darkMode = false, items = [] }) => {
+const AdminAnalytics = ({ darkMode = false, items = [], onLoadCatalog }) => {
     const [legacySessions, setSessions] = useState(() => cachedAnalyticsSessions || []);
     const liveSessionState = useLiveSessions();
     const [liveDetail, setLiveDetail] = useState(null);
@@ -1756,12 +1756,24 @@ const AdminAnalytics = ({ darkMode = false, items = [] }) => {
     const [expandedSessionId, setExpandedSessionId] = useState(null);
     const selectedExists = liveSessionState.sessions.some(session => session.id === expandedSessionId);
     useEffect(() => {
+        if (expandedSessionId) void Promise.resolve(onLoadCatalog?.()).catch(() => {});
+    }, [expandedSessionId, onLoadCatalog]);
+    useEffect(() => {
         setLiveDetail(null);
         if (!ANALYTICS_REALTIME_ENABLED || !expandedSessionId || !selectedExists) { setDetailStatus('idle'); return; }
-        setDetailStatus('loading');
-        return listenSessionDetail(expandedSessionId, value => {
-            setLiveDetail(value); setDetailStatus(value ? 'ready' : 'missing');
-        }, () => { setLiveDetail(null); setDetailStatus('error'); });
+        let stop = null, generation = 0;
+        const update = () => {
+            generation++; stop?.(); stop = null;
+            if (document.visibilityState === 'hidden') { setLiveDetail(null); setDetailStatus('idle'); return; }
+            setDetailStatus('loading');
+            const current = generation;
+            stop = listenSessionDetail(expandedSessionId, value => {
+                if (current !== generation) return;
+                setLiveDetail(value); setDetailStatus(value ? 'ready' : 'missing');
+            }, () => { if (current === generation) { setLiveDetail(null); setDetailStatus('error'); } });
+        };
+        update(); document.addEventListener('visibilitychange', update);
+        return () => { generation++; stop?.(); document.removeEventListener('visibilitychange', update); };
     }, [expandedSessionId, selectedExists]);
     const [now, setNow] = useState(Date.now());
     const [liveNow, setLiveNow] = useState(Date.now());

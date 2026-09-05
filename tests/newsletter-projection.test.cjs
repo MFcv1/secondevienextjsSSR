@@ -16,6 +16,7 @@ test('le compteur newsletter applique ajout et retrait une seule fois', () => {
     const created = planNewsletterProjection({
         currentCount: 20,
         ledger: null,
+        baselineMember: false,
         present: true,
         sourceUpdateTime: timestamp(10),
         eventId: 'create'
@@ -39,7 +40,7 @@ test('le compteur newsletter applique ajout et retrait une seule fois', () => {
     assert.equal(planNewsletterProjection({
         currentCount: 20,
         ledger: null,
-        previousPresent: true,
+        baselineMember: true,
         present: false,
         sourceUpdateTime: timestamp(12),
         eventId: 'delete-pre-baseline-contact'

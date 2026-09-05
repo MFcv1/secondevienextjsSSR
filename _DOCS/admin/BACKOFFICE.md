@@ -1,5 +1,62 @@
 # Back-office
 
+Contrat local du 2026-09-05 (non livré) : voir le
+[suivi I0–I6](../audits/SUIVI_IMPLEMENTATION_BACKOFFICE_2026-09-05.md).
+Les constats cités ci-dessous restent ouverts pour la qualification hébergée.
+
+Extension Stats/Data : [suivi performance](../audits/SUIVI_STATS_DATA_2026-09-05.md).
+Les écoutes de ces pages bénéficient d'une grâce de navigation de 30 s puis
+sont suspendues, immédiatement si le navigateur est masqué. La mémoire connue
+s'affiche au retour avec actualisation jusqu'au serveur ; purge sur génération
+d'autorisation. Les tendances écoutent leur document après apparition du panneau.
+Le catalogue est différé aux produits à illustrer / au parcours Data ouvert.
+Aucun nouveau writer ni polling.
+
+- Stats utilise la présentation Ventes pour paiement/remboursement/logistique ;
+  une valeur inconnue reste inconnue. Factures/Commandes distinguent attente,
+  échec avec retry et liste vide confirmée. Un résumé absent ne vaut pas zéro.
+- Insights attend l'apparition réelle du panneau après le squelette. Chaque
+  effet possède son propre verrou ; son cleanup ne condamne pas la nouvelle
+  souscription à une promesse dédupliquée. Un changement de marque Performance
+  ne réinitialise pas les données. La forme complète du document est validée.
+- Le cache admin est en mémoire uniquement, propriétaire UID + génération,
+  100 entrées maximum. Une transition Auth ou un refus purge les données et
+  invalide les réponses en vol ; les vues montées sont recréées à la génération
+  suivante. Fraîcheur : Devis/listes/détails/photos 30 s ; workspace Factures
+  et premières pages commerce 120 s ; produits du sélecteur Factures 30 s.
+  Une réponse périmée n'est pas retournée par `getAdminCachedData`. Ces durées
+  n'affirment pas une fraîcheur entre deux administrateurs.
+- La ligne Devis amorce immédiatement le suivi ; sans photo, aucun détail
+  supplémentaire. Avec photos, cache par ID/version/propriétaire, expiration
+  signée explicite à quinze minutes, relecture au besoin après 30 s. Le brouillon
+  garde son `expectedVersion` lors d'Actualiser et de la réception des photos.
+  Un conflit exige comparaison puis adoption explicite de la nouvelle version ;
+  aucun rapprochement ni enregistrement automatique.
+- `getManualInvoiceWorkspaceAdmin({includeProducts:false})` ne lit pas de
+  produits. `productsOnly:true` réserve leur lecture au sélecteur, sans relire
+  les factures. L'ancien appel sans paramètres reste compatible. Sauvegarde et
+  émission invalident le cache Factures ; les documents émis restent immuables.
+- Devis/Factures/liens exposent des curseurs et une couverture bornée. Les
+  références exactes permettent d'atteindre les anciens dossiers ; la recherche
+  textuelle libre reste limitée aux lignes chargées. Les curseurs doivent être
+  repris avec les mêmes filtres ; une source curseur supprimée impose un refresh.
+- Les références des demandes Retours sont partagées dans une même requête.
+  Pour les commandes entièrement remboursées, `compact:true` diffère la dernière
+  tentative au clic de détail ; les états non soldés conservent l'enrichissement
+  utile aux alertes/actions. Le lecteur exact `orderId` conserve l'autorisation.
+  Le filtrage archive avant pagination reste conditionné au backfill puis à
+  `ADMIN_ORDER_ARCHIVE_INDEX_READY` ; aucun ancien dossier n'est silencieusement
+  exclu avant cette activation.
+
+Relecture du 2026-09-05 : l’[audit backend](../audits/AUDIT_BACKEND_2026-09-05.md)
+identifie des compteurs Retours/Newsletter non convergents dans certains ordres
+d’événements (BA-01/BA-02), des chargements coûteux ou incomplets (BA-08), une
+purge générique du cache insuffisamment liée aux droits (BA-11) et des absences
+ou erreurs parfois présentées comme zéro/vide (BA-12). Ces constats restent
+ouverts ; ils nuancent le statut fonctionnel historique ci-dessous. Le
+[plan proposé](../audits/PLAN_BACKEND_2026-09-05.md) précise les critères de
+correction, sans modifier les parcours ni les autorisations dans cette campagne.
+
 Sessions Data (2026-09-04): graphiques inchanges, dix cartes recentes poussees
 par Firestore et parcours selectionne ecoute uniquement tant qu'il est ouvert.
 L'historique s'ouvre par pages de dix, une seule page ecoutee a la fois, avec

@@ -40,50 +40,47 @@ const projectAdminActionSummaryFirebaseHandler = onDocumentWritten({
     const database = admin.firestore();
     const summaryRef = database.doc('admin_action_summary/current');
     const ledgerRef = database.doc(`admin_action_projections/${ledgerId}`);
-    const delta = actionSummaryDelta(before, after);
-
-    // Les changements de texte ou de metadata d'une demande ne modifient pas
-    // le badge et ne doivent donc provoquer aucune lecture/ecriture projetee.
-    if (delta === 0) {
-        console.info('admin_action_projection_no_effect', {
-            beforeStatus: before?.status || null,
-            afterStatus: after?.status || null
-        });
-        return;
-    }
 
     await database.runTransaction(async (transaction) => {
-        const [summarySnapshot, ledgerSnapshot] = await Promise.all([
+        const [summarySnapshot, ledgerSnapshot, sourceSnapshot] = await Promise.all([
             transaction.get(summaryRef),
-            transaction.get(ledgerRef)
+            transaction.get(ledgerRef),
+            transaction.get(database.doc(sourcePath))
         ]);
         const ledger = ledgerSnapshot.exists ? ledgerSnapshot.data() : null;
-        if (compareTimestamps(sourceUpdateTime, ledger?.sourceUpdateTime) <= 0) return;
+        const version = sourceSnapshot.exists ? sourceSnapshot.updateTime : sourceUpdateTime;
+        if (compareTimestamps(version, ledger?.sourceUpdateTime) <= 0) return;
         const current = summarySnapshot.exists ? summarySnapshot.data() : {};
+        if (current.ledgerBaselineReady !== true) throw new Error('ADMIN_ACTION_BASELINE_REQUIRED');
+        if (!ledger && current.ledgerBaselineReady !== true) throw new Error('ADMIN_ACTION_BASELINE_REQUIRED');
+        const active = sourceSnapshot.exists && needsReview(sourceSnapshot.data());
+        const delta = Number(active) - Number(ledger?.active === true);
         const pendingReturns = Number(current.pendingReturns || 0) + delta;
         if (!Number.isSafeInteger(pendingReturns) || pendingReturns < 0) {
             throw new Error('ADMIN_ACTION_SUMMARY_INVALID');
         }
         transaction.set(summaryRef, {
             schemaVersion: 1,
+            ledgerBaselineReady: current.ledgerBaselineReady === true,
             pendingReturns,
             totalPending: pendingReturns,
             revision: Math.max(0, Number(current.revision || 0)) + 1,
-            sourceUpdateTime,
+            sourceUpdateTime: version,
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
         });
         transaction.set(ledgerRef, {
             schemaVersion: 1,
-            active: needsReview(after),
+            active,
+            tombstone: !sourceSnapshot.exists,
             sourcePathHash: ledgerId,
-            sourceUpdateTime,
+            sourceUpdateTime: version,
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
         });
     });
     console.info('admin_action_projection_applied', {
         beforeStatus: before?.status || null,
         afterStatus: after?.status || null,
-        delta
+        source: 'current_transactional'
     });
 });
 

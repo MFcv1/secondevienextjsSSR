@@ -242,11 +242,11 @@ async function listAdminPaymentLinksHandler(data, context) {
         if (!Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > 50) {
             throw new functions.https.HttpsError('invalid-argument', 'Taille de page invalide.');
         }
-        const [links, setup] = await Promise.all([
-            runtime().list({ pageSize }),
+        const [page, setup] = await Promise.all([
+            runtime().list({ pageSize, cursor: data?.cursor, reference: data?.reference, paginated: true }),
             runtime().getSetup()
         ]);
-        return { links, setup };
+        return { ...page, setup };
     } catch (error) {
         throw mapError(error);
     }

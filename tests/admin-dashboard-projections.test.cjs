@@ -176,8 +176,9 @@ test('la table d incidents couvre tous les codes statiques emis par les writers 
 test('le chemin Stats est borne, listener-driven et sans fallback couteux', () => {
     const dashboard = read('src/kit/admin/AdminDashboard.jsx');
     const island = read('app/admin/AdminAppIsland.jsx');
-    assert.match(dashboard, /where\(documentId\(\), 'in', CRITICAL_DOCUMENT_IDS\)/);
-    assert.match(dashboard, /includeMetadataChanges:\s*true/);
+    const reads = read('src/kit/admin/dashboardReads.js');
+    assert.match(reads, /where\(documentId\(\), 'in', CRITICAL_DOCUMENT_IDS\)/);
+    assert.match(reads, /includeMetadataChanges:\s*true/);
     assert.match(dashboard, /admin-dashboard-backoffice-ready-to-kpi/);
     assert.match(dashboard, /admin-dashboard-strong-auth-to-kpi/);
     assert.match(read('functions/src/observability/businessEvents.js'), /admin_dashboard_projection_completed/);

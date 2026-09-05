@@ -1,6 +1,7 @@
 'use client';
 
 import { getFirebaseAuth, loadAuthModule } from '../config/firebaseLazy';
+import { setAdminCacheAuthorization } from '../admin/adminDataCache';
 import {
   clearAuthRedirectPending,
   hasAuthRedirectPending,
@@ -54,6 +55,8 @@ const emitLegacyBridge = (snapshot) => {
 
 const publish = (patch) => {
   runtime.snapshot = Object.freeze({ ...runtime.snapshot, ...patch });
+  const { user, claims, status } = runtime.snapshot;
+  setAdminCacheAuthorization(status === 'authenticated' && claims.admin && claims.authAssurance === 'aal2' ? user?.uid || null : null);
   emitLegacyBridge(runtime.snapshot);
   runtime.listeners.forEach((listener) => listener());
   return runtime.snapshot;
@@ -159,6 +162,7 @@ const syncClaims = async (user) => {
 export const syncAuthStoreUser = (user, { lastAuthMethod } = {}) => {
   const status = user && !user.isAnonymous ? 'authenticated' : 'anonymous';
   publish({
+    ...(runtime.snapshot.user?.uid !== user?.uid ? { claims: initialSnapshot.claims } : {}),
     status,
     user: user || null,
     authReady: true,

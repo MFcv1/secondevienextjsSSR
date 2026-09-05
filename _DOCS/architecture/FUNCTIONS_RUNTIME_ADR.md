@@ -3,7 +3,29 @@
 Derniere mise a jour: 2026-09-02
 Statut: `ACCEPTE - TOPOLOGIE_COMPLETE - FINALISATION_POST_AUDIT_EN_COURS`
 
+Relecture d’architecture du 2026-09-05 : l’[audit backend](../audits/AUDIT_BACKEND_2026-09-05.md)
+confirme 155 Gen2 et trois exceptions Auth Gen1 dans le cloud. Il constate
+cependant un chargement global lourd et une concurrence de 1 sur 154 Gen2
+(BA-05). La topologie acceptée ne prouve pas la capacité en charge. Le
+[lot D proposé](../audits/PLAN_BACKEND_2026-09-05.md) distingue réduction du
+graphe d’imports et expériences CPU/concurrence avec minimum zéro ; il ne
+réouvre pas automatiquement la migration ni ne change les paramètres acceptés.
+Les résultats et refus du burst historique ci-dessous ne suffisent pas à
+qualifier plusieurs admins simultanés.
+
 ## Decision
+
+Évolution locale I5 du 2026-09-05, non livrée : `readerEntrypoint.js` sélectionne
+huit lecteurs connus lorsque `FUNCTION_TARGET` les désigne. Sans cible ou pour
+une autre cible, l'entrée conserve la découverte complète. Les callables
+Commandes/Retours/timeline appellent les factories métier directement ;
+Factures/Devis/Facturation réutilisent leurs exports, en différant Sharp, PDF et
+transport e-mail. Région, options de capacité, App Check et secrets sont inchangés.
+La comparaison locale vérifie l'égalité des huit metadata d'endpoints et les
+refus Auth, et compte les modules/temps/RSS sur trois processus frais. Les
+limites de mesure et cibles sont dans le
+[suivi I0–I6](../audits/SUIVI_IMPLEMENTATION_BACKOFFICE_2026-09-05.md).
+Le handler autorisé avec services réels et le gain cloud attendent I7.
 
 Le sandbox conserve un seul codebase Firebase Functions `main`. Une scission
 par domaine ajouterait maintenant des deploiements, IAM et archives sans gain

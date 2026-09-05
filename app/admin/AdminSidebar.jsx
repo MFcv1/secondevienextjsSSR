@@ -76,6 +76,7 @@ export default function AdminSidebar({
                       <Icon size={16} strokeWidth={1.8} className={`shrink-0 transition-transform duration-200 ${isActive ? '' : 'group-hover:translate-x-0.5'}`} />
                       <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
                         <span>{tab.label}</span>
+                        {tab.id === 'returns' && actionCounts[tab.id] == null && <span aria-label="Nombre de retours indisponible">—</span>}
                         {tab.id === 'incidents' && incidentCount > 0 && (
                           <span
                             aria-label={`${incidentCount} incident${incidentCount > 1 ? 's' : ''} actif${incidentCount > 1 ? 's' : ''}`}

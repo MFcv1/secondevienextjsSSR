@@ -5,7 +5,10 @@ import {
   clearAdminDataCache,
   getAdminCachedData,
   loadAdminCachedData,
+  setAdminCacheAuthorization,
 } from '../src/kit/admin/adminDataCache.js';
+
+test.beforeEach(() => setAdminCacheAuthorization('local-admin'));
 
 test.afterEach(() => {
   clearAdminDataCache();
@@ -47,6 +50,30 @@ test('an in-flight read cannot repopulate the cache after logout', async () => {
   await Promise.resolve();
   clearAdminDataCache();
   resolveLoader({ totalOrders: 24 });
-  assert.deepEqual(await pending, { totalOrders: 24 });
+  await assert.rejects(pending, { code: 'admin/authorization-changed' });
   assert.equal(getAdminCachedData('dashboard'), null);
+});
+
+test('logout hors admin puis autre propriétaire et révocation même UID purgent les données', async () => {
+  await loadAdminCachedData('quotes', async () => ['private-a']);
+  setAdminCacheAuthorization(null);
+  assert.equal(getAdminCachedData('quotes'), null);
+  await assert.rejects(loadAdminCachedData('quotes', async () => ['forbidden']), { code: 'admin/authorization-changed' });
+  setAdminCacheAuthorization('admin-b');
+  assert.deepEqual(await loadAdminCachedData('quotes', async () => ['private-b']), ['private-b']);
+  await assert.rejects(loadAdminCachedData('denied', async () => { throw Object.assign(new Error('Denied'), {code:'permission-denied'}); }));
+  assert.equal(getAdminCachedData('quotes'), null);
+  setAdminCacheAuthorization('admin-b');
+  assert.deepEqual(await loadAdminCachedData('quotes', async () => ['fresh-b']), ['fresh-b']);
+});
+
+test('un refus tardif du premier admin ne purge pas les données du suivant', async () => {
+  let rejectLoader;
+  const pending = loadAdminCachedData('old', () => new Promise((_, reject) => { rejectLoader = reject; }));
+  await Promise.resolve();
+  setAdminCacheAuthorization('admin-b');
+  await loadAdminCachedData('current', async () => ['private-b']);
+  rejectLoader(Object.assign(new Error('Denied'), { code: 'permission-denied' }));
+  await assert.rejects(pending, { code: 'permission-denied' });
+  assert.deepEqual(getAdminCachedData('current'), ['private-b']);
 });

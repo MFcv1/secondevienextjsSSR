@@ -396,6 +396,18 @@ commerce tant qu'aucune recette visuelle sandbox ne l'a accepte.
 
 Les e-mails commerce v2 passent par `commerce_outbox`:
 
+Durcissement local I6 du 2026-09-05, non livré : la prise transactionnelle vérifie
+échéance, tentative attendue et lease. `deliveryContractVersion:2` distingue les
+nouvelles prises ; `deliveryStartedAt` est écrit avant d'appeler le sender. Une
+reprise après expiration avec marque d'envoi, ou un ancien processing sans ce
+contrat, devient `delivery_unknown`. Une acceptation suivie d'un échec de
+persistance ne devient pas un échec automatiquement rejouable. Les tâches
+prématurées/obsolètes reprogramment l'état courant avec une identité de reprise.
+Les tâches anciennes restent soumises à échéance et lease. Aucun retry de queue
+n'est augmenté. Une marque Firestore n'établit pas une livraison exactement une
+fois chez SMTP ; les cas incertains restent hors automatisme. Voir le
+[suivi et rollback](../audits/SUIVI_IMPLEMENTATION_BACKOFFICE_2026-09-05.md).
+
 ```text
 evenement durable
   -> intention outbox deterministe dans la transaction metier

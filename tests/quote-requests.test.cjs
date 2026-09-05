@@ -103,7 +103,7 @@ test('devis: UI lazy, callables et stockages privés restent alignés', () => {
   assert.match(constants, /\{ id: 'quotes',\s+label: 'Devis'/);
   assert.match(admin, /const loadAdminQuotes = \(\) => import\('\.\.\/\.\.\/src\/kit\/admin\/AdminQuotes'\)/);
   assert.match(admin, /React\.lazy\(loadAdminQuotes\)/);
-  assert.match(admin, /preloadAdminQuotesData/);
+  assert.match(source('src/kit/admin/AdminQuotes.jsx'), /preloadAdminQuotesData/);
   assert.match(publicForm, /submitQuoteRequest/);
   assert.match(publicForm, /quote_submitted/);
   assert.doesNotMatch(publicForm, /window\.location\.href\s*=\s*`mailto:/);
@@ -119,7 +119,8 @@ test('devis: UI lazy, callables et stockages privés restent alignés', () => {
     assert.match(functionsIndex, new RegExp(`exports\\.${callable}`));
   }
   assert.match(quoteFunctions, /checkActiveStrongAdmin/);
-  assert.match(quoteFunctions, /limit\(MAX_ADMIN_QUOTES \+ 1\)/);
+  assert.match(quoteFunctions, /pageSize: MAX_ADMIN_QUOTES/);
+  assert.match(source('functions/src/admin/readPage.js'), /limit\(pageSize \+ 1\)/);
   assert.match(firestoreRules, /match \/quote_requests\/\{quoteId\}/);
   assert.match(firestoreRules, /match \/sys_audit_quotes\/\{auditId\}/);
   assert.match(storageRules, /match \/quote-requests\/\{allPaths=\*\*\}/);

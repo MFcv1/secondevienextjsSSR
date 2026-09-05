@@ -93,8 +93,24 @@ async function dispatchOutboxTask(request) {
     const outboxId = String(request.data?.outboxId || '');
     if (!outboxId) throw new Error('COMMERCE_OUTBOX_TASK_INVALID');
     try {
-        return await createOutboxRuntime().worker.process(outboxId);
+        return await createOutboxRuntime().worker.process(outboxId, {
+            expectedAttemptCount: request.data?.attemptCount,
+            expectedNextAttemptAt: request.data?.nextAttemptAt
+        });
     } catch (error) {
+        if (['COMMERCE_OUTBOX_NOT_DUE', 'COMMERCE_OUTBOX_STALE_ATTEMPT'].includes(error?.code)) {
+            const snapshot = await admin.firestore().doc(`commerce_outbox/${outboxId}`).get();
+            const schedule = snapshot.exists ? outboxSchedule(snapshot.data()) : null;
+            if (schedule) {
+                const identity = { outboxId, ...schedule };
+                await enqueueOnce(OUTBOX_TASK, { schemaVersion: 1, ...identity }, {
+                    id: taskId('outbox-recovery', { ...identity, rejectedDelivery: request.id || Date.now() }),
+                    scheduleTime: new Date(Math.max(Date.now(), schedule.nextAttemptAt)),
+                    dispatchDeadlineSeconds: 300
+                });
+            }
+            return { outcome: 'rescheduled', outboxId };
+        }
         if (['COMMERCE_OUTBOX_NOT_CLAIMABLE', 'COMMERCE_OUTBOX_MISSING'].includes(error?.code)) {
             return { outcome: 'stale', outboxId };
         }

@@ -147,8 +147,9 @@ function serializeRefundAttempt(snapshot) {
     };
 }
 
-async function serializeAdminOrder(snapshot, actor) {
+async function serializeAdminOrder(snapshot, actor, { compact = false } = {}) {
     const serialized = serializeOrder(snapshot, actor);
+    if (compact && serialized.status === 'refunded' && serialized.refundAggregate?.status === 'full') return { ...serialized, refundDetailsDeferred: true };
     if (
         serialized.schemaVersion !== 2 ||
         Number(serialized.refundAggregate?.requestedCents || 0) <= 0
@@ -276,7 +277,7 @@ function serializeCustomerReturnRequest(snapshot) {
     };
 }
 
-async function serializeCustomerReturnRequestAdmin(snapshot, db) {
+async function serializeCustomerReturnRequestAdmin(snapshot, db, reads = new Map()) {
     const request = serializeCustomerReturnRequest(snapshot);
     const orderRef = db.doc(`orders/${request.orderId}`);
     const linkedRefs = [orderRef];
@@ -286,7 +287,10 @@ async function serializeCustomerReturnRequestAdmin(snapshot, db) {
     if (request.refundRequestId) {
         linkedRefs.push(db.doc(`orders/${request.orderId}/refunds/${request.refundRequestId}`));
     }
-    const snapshots = await Promise.all(linkedRefs.map((reference) => reference.get()));
+    const snapshots = await Promise.all(linkedRefs.map((reference) => {
+        if (!reads.has(reference.path)) reads.set(reference.path, reference.get());
+        return reads.get(reference.path);
+    }));
     const orderSnapshot = snapshots[0];
     if (!orderSnapshot.exists) {
         throw new functions.https.HttpsError('not-found', 'Commande de la demande introuvable.');
@@ -595,8 +599,14 @@ function createListOrdersAdminHandler({
             : null;
         const db = dbFactory();
         const orders = db.collection('orders');
+        const archiveIndexReady = process.env.ADMIN_ORDER_ARCHIVE_INDEX_READY === 'true';
+        if (data?.orderId) {
+            const snapshot = await orders.doc(normalizeFirestoreId(data.orderId, 'Commande')).get();
+            if (!snapshot.exists) throw new functions.https.HttpsError('not-found', 'Commande introuvable.');
+            return { orders: [await serializeAdminOrder(snapshot, { uid: context.auth.uid, role: 'admin', aal2: true })], nextCursor: null };
+        }
         const result = await paginatedQuery({
-            query: orders.orderBy('createdAt', 'desc'),
+            query: (archiveIndexReady ? orders.where('adminArchived', '==', false) : orders).orderBy('createdAt', 'desc'),
             cursorId,
             cursorCollection: orders,
             pageSize
@@ -611,8 +621,9 @@ function createListOrdersAdminHandler({
         );
         return {
             orders: await Promise.all(activeOrders.map(
-                (snapshot) => serializeAdminOrder(snapshot, actor)
+                (snapshot) => serializeAdminOrder(snapshot, actor, { compact: data?.compact === true })
             )),
+            coverage: archiveIndexReady ? 'active_index' : 'legacy_archive_filter',
             nextCursor: result.nextCursor
         };
     };
@@ -677,11 +688,13 @@ function createListCustomerReturnRequestsAdminHandler({
             query = query.startAfter(cursor);
         }
         const snapshot = await query.limit(pageSize).get();
+        const reads = new Map();
         return {
             requests: await Promise.all(snapshot.docs.map(
                 (requestSnapshot) => serializeCustomerReturnRequestAdmin(
                     requestSnapshot,
-                    db
+                    db,
+                    reads
                 )
             )),
             nextCursor: snapshot.size === pageSize

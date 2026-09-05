@@ -389,13 +389,23 @@ function createAdminPaymentLinkCoordinator({
         };
     }
 
-    async function list({ pageSize = 50 }) {
-        const snapshot = await db.collection('orders')
+    async function list({ pageSize = 50, cursor = null, paginated = false, reference = null }) {
+        let query = db.collection('orders')
             .where('checkout.channel', '==', ADMIN_PAYMENT_LINK_CHANNEL)
-            .orderBy('createdAt', 'desc')
-            .limit(pageSize)
-            .get();
-        return snapshot.docs.map((document) => serializeAdminOrder({
+            .orderBy('createdAt', 'desc');
+        if (reference) {
+            if (typeof reference !== 'string' || !/^C?\d{1,12}$/i.test(reference)) throw coordinatorError('COMMERCE_REFERENCE_INVALID');
+            query = query.where('orderNumber', '==', Number(reference.replace(/^C/i, '')));
+        }
+        if (cursor) {
+            if (typeof cursor !== 'string' || !/^[\w-]{1,200}$/.test(cursor)) throw coordinatorError('COMMERCE_CURSOR_INVALID');
+            const anchor = await db.collection('orders').doc(cursor).get();
+            if (!anchor.exists || anchor.data()?.checkout?.channel !== ADMIN_PAYMENT_LINK_CHANNEL) throw coordinatorError('COMMERCE_CURSOR_INVALID');
+            query = query.startAfter(anchor);
+        }
+        const snapshot = await query.limit(pageSize + (paginated ? 1 : 0)).get();
+        const documents = snapshot.docs.slice(0, pageSize);
+        const links = documents.map((document) => serializeAdminOrder({
             id: document.id,
             ...document.data()
         }, {
@@ -403,6 +413,7 @@ function createAdminPaymentLinkCoordinator({
             tokenSecret,
             nowMillis: clock.nowMillis()
         }));
+        return paginated ? { links, hasMore: snapshot.size > pageSize, nextCursor: snapshot.size > pageSize ? documents.at(-1).id : null } : links;
     }
 
     async function mutateActiveOrder({

@@ -21,7 +21,12 @@ function assertFence(entry, leaseToken, nowMillis) {
     }
 }
 
-function claim(entry, { leaseToken, nowMillis, leaseMs }) {
+function claim(entry, { leaseToken, nowMillis, leaseMs, expectedAttemptCount, expectedNextAttemptAt }) {
+    if (Number.isFinite(entry.nextAttemptAt) && entry.nextAttemptAt > nowMillis) throw outboxError('COMMERCE_OUTBOX_NOT_DUE');
+    if ((expectedAttemptCount !== undefined && expectedAttemptCount !== entry.attemptCount)
+        || (expectedNextAttemptAt !== undefined && expectedNextAttemptAt !== (entry.nextAttemptAt || 0))) {
+        throw outboxError('COMMERCE_OUTBOX_STALE_ATTEMPT');
+    }
     const expired = entry.status === 'processing' &&
         Number.isSafeInteger(entry.processingUntil) &&
         entry.processingUntil <= nowMillis;
@@ -35,9 +40,13 @@ function claim(entry, { leaseToken, nowMillis, leaseMs }) {
     ) {
         throw outboxError('COMMERCE_OUTBOX_NOT_CLAIMABLE');
     }
+    if (expired && (entry.deliveryStartedAt != null || entry.deliveryContractVersion !== 2)) return {
+        ...entry, status: 'delivery_unknown', leaseToken: null, processingUntil: null, nextAttemptAt: null
+    };
     return {
         ...entry,
         status: 'processing',
+        deliveryContractVersion: 2,
         leaseToken,
         processingUntil: nowMillis + leaseMs,
         attemptCount: entry.attemptCount + 1
@@ -50,6 +59,16 @@ function createOutboxRepository({ db, refs }) {
     }
 
     return Object.freeze({
+        async beginDelivery(outboxId, { leaseToken, nowMillis }) {
+            const ref = refs.outbox(outboxId);
+            return db.runTransaction(async (transaction) => {
+                const snapshot = await transaction.get(ref);
+                if (!snapshotExists(snapshot)) throw outboxError('COMMERCE_OUTBOX_MISSING');
+                const entry = snapshot.data();
+                assertFence(entry, leaseToken, nowMillis);
+                transaction.set(ref, { ...entry, deliveryStartedAt: nowMillis });
+            });
+        },
         async claim(outboxId, lease) {
             const ref = refs.outbox(outboxId);
             return db.runTransaction(async (transaction) => {
@@ -144,6 +163,7 @@ function createOutboxRepository({ db, refs }) {
                     leaseToken: null,
                     processingUntil: null,
                     nextAttemptAt: deadLetter ? null : nowMillis + delay,
+                    deliveryStartedAt: null,
                     lastError: String(errorMessage || 'unknown').slice(0, 500)
                 };
                 transaction.set(ref, next);

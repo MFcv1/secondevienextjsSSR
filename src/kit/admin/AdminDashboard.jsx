@@ -5,16 +5,18 @@ import {
     Archive, Users, Eye, FileText, Send, CircleDollarSign, PackageCheck
 } from 'lucide-react';
 import {
-    collection, doc, documentId, getDoc, getDocs, limit, onSnapshot,
+    collection, getDocs, limit,
     orderBy, query, where, Timestamp
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { getCallableFunction } from '../config/firebaseLazy';
-import { getAdminCachedData, invalidateAdminCachedData, loadAdminCachedData } from './adminDataCache';
+import { loadAdminCachedData } from './adminDataCache';
 import { getProductImageItems } from '../../utils/imageUtils';
 import { getProductUrl } from '../../utils/slug';
 import { getMillis } from '../../utils/time';
 import { downloadCsv } from './exportCsv';
+import { getOrderJourney } from './components/orders/orderPresentation';
+import { dashboardKpis, dashboardOrders, dashboardInsights } from './dashboardReads';
 import orderReferenceModule from '../../../shared/orderReference.cjs';
 import {
     CRITICAL_DOCUMENT_IDS,
@@ -821,10 +823,9 @@ const buildDashboardProductVisualMap = (items) => {
     return products;
 };
 
-const getOrderStatus = (status) => {
-    if (status === 'shipped') return { label: 'Expédiée', tone: 'info' };
-    if (status === 'completed' || status === 'paid') return { label: 'Payée', tone: 'success' };
-    return { label: 'En attente', tone: 'warning' };
+const getOrderStatus = (order) => {
+    const journey = getOrderJourney(order);
+    return { ...journey, tone: ({ positive: 'success', transit: 'info', progress: 'warning', danger: 'warning', neutral: 'info' })[journey.tone] || journey.tone };
 };
 
 const getRelativeOrderDate = (value) => {
@@ -837,7 +838,6 @@ const getRelativeOrderDate = (value) => {
     return new Date(timestamp).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
 };
 
-const DASHBOARD_INSIGHTS_CACHE_KEY = 'admin-dashboard:insights';
 const QUOTE_PERIODS = Object.freeze([
     { id: '30d', label: '30 jours', shortLabel: '30 j' },
     { id: '3m', label: '3 mois', shortLabel: '3 mois' },
@@ -859,11 +859,8 @@ const EMPTY_INSIGHTS = Object.freeze({
     productViewingSessions: 0
 });
 
-const loadAdminDashboardInsightsData = ({ force = false } = {}) => loadAdminCachedData(
-    DASHBOARD_INSIGHTS_CACHE_KEY,
-    async () => {
-        const snapshot = await getDoc(doc(db, 'admin_dashboard', 'insights'));
-        const data = snapshot.exists() ? validateInsights(snapshot.data()) : null;
+const readInsights = (snapshot) => {
+        const data = snapshot?.exists() ? validateInsights(snapshot.data()) : null;
         if (!data) throw new Error('ADMIN_DASHBOARD_INSIGHTS_UNAVAILABLE');
         return {
             loading: false,
@@ -878,9 +875,7 @@ const loadAdminDashboardInsightsData = ({ force = false } = {}) => loadAdminCach
             totalProductViews: data.products.reduce((sum, product) => sum + Number(product.views || 0), 0),
             productViewingSessions: Number(data.productViewingSessions || 0)
         };
-    },
-    { maxAgeMs: 120_000, force }
-);
+};
 
 // The Stats data path is listener-driven. This export remains a code-preload
 // compatibility hook and deliberately performs no Firestore read.
@@ -899,11 +894,14 @@ const AdminDashboard = ({
 }) => {
     void isSuperAdmin;
     void commerceStatus;
-    const cachedInsights = getAdminCachedData(DASHBOARD_INSIGHTS_CACHE_KEY);
+    let cachedInsights = null;
+    try { cachedInsights = readInsights(dashboardInsights.get()); } catch { /* Première lecture ou projection invalide. */ }
     const unavailableDomains = () => Object.fromEntries(
         CRITICAL_DOCUMENT_IDS.map((id) => [id, { status: 'unavailable', data: null }])
     );
-    const [projection, setProjection] = useState({
+    const [projection, setProjection] = useState(() => dashboardKpis.get() ? {
+        ...validateCriticalSnapshot(dashboardKpis.get()), loading: false
+    } : {
         loading: true,
         fromCache: false,
         serverConfirmed: false,
@@ -911,17 +909,24 @@ const AdminDashboard = ({
     });
     const [criticalAccessFailed, setCriticalAccessFailed] = useState(false);
     const revisionsRef = useRef({});
+    const timingRef = useRef({ backOfficeReadyAt, strongAuthReadyAt });
+    timingRef.current = { backOfficeReadyAt, strongAuthReadyAt };
     const insightsAnchorRef = useRef(null);
-    const insightsRequestedRef = useRef(false);
+    const [insightsRetry, setInsightsRetry] = useState(0);
     const [salesPanelView, setSalesPanelView] = useState('summary');
     const [timeFilter, setTimeFilter] = useState('1month');
     const [intradayOrders, setIntradayOrders] = useState(null);
     const [intradayOrdersLoading, setIntradayOrdersLoading] = useState(false);
     const intradayRequestRef = useRef(false);
+    const historyRequestRef = useRef(0);
+    useEffect(() => () => { historyRequestRef.current++; }, []);
     const [dailySales, setDailySales] = useState([]);
     const [financialHistoryLoading, setFinancialHistoryLoading] = useState(false);
     const [financialHistoryError, setFinancialHistoryError] = useState(false);
-    const [recentOrders, setRecentOrders] = useState([]);
+    const [recentOrders, setRecentOrders] = useState(() => (dashboardOrders.get()?.docs || [])
+        .map(document => ({ id: document.id, ...document.data() }))
+        .filter(order => !['cancelled', 'cancelled_by_client', 'canceled'].includes(order.status)));
+    const [recentOrdersStatus, setRecentOrdersStatus] = useState(dashboardOrders.get() ? 'ready' : 'loading');
     const [insights, setInsights] = useState(cachedInsights || EMPTY_INSIGHTS);
     const [quotePeriod, setQuotePeriod] = useState('30d');
     const trendingProducts = useMemo(() => {
@@ -945,6 +950,7 @@ const AdminDashboard = ({
     const [exportingUsers, setExportingUsers] = useState(false);
 
     const selectTimeFilter = async (filterId) => {
+        const request = ++historyRequestRef.current;
         setTimeFilter(filterId);
         if (!['1hour', '1day'].includes(filterId)) {
             setFinancialHistoryLoading(true);
@@ -980,15 +986,20 @@ const AdminDashboard = ({
                         limit(50)
                     );
                 }
-                const snapshot = await getDocs(historyQuery);
-                const rows = snapshot.docs.map((document) => ({ id: document.id, ...document.data() }));
+                const key = `admin-dashboard:history:${filterId}:${new Date().toISOString().slice(0, 10)}:${projection.domains.finance.data?.revision ?? 'unknown'}`;
+                const rows = await loadAdminCachedData(key, async () => {
+                    const snapshot = await getDocs(historyQuery);
+                    return snapshot.docs.map((document) => ({ id: document.id, ...document.data() }));
+                }, { maxAgeMs: 30_000 });
+                if (request !== historyRequestRef.current) return;
                 setDailySales(filterId === 'max' ? rows.reverse() : rows);
             } catch (error) {
+                if (request !== historyRequestRef.current) return;
                 console.error('Failed to fetch requested financial history', error?.code || error?.name);
                 setDailySales([]);
                 setFinancialHistoryError(true);
             } finally {
-                setFinancialHistoryLoading(false);
+                if (request === historyRequestRef.current) setFinancialHistoryLoading(false);
             }
             return;
         }
@@ -1132,22 +1143,17 @@ const AdminDashboard = ({
     }, [chartData]);
     useEffect(() => {
         revisionsRef.current = {};
-        insightsRequestedRef.current = false;
         setInsights(EMPTY_INSIGHTS);
-        setProjection({ loading: true, fromCache: false, serverConfirmed: false, domains: unavailableDomains() });
+        if (!dashboardKpis.get()) setProjection({ loading: true, fromCache: false, serverConfirmed: false, domains: unavailableDomains() });
         setCriticalAccessFailed(false);
-        setRecentOrders([]);
         setDailySales([]);
         setFinancialHistoryLoading(false);
         setFinancialHistoryError(false);
         setIntradayOrders(null);
         if (!user?.uid) return undefined;
         if (typeof performance !== 'undefined') performance.mark('admin-dashboard-listener-start');
-        const criticalQuery = query(
-            collection(db, 'admin_dashboard'),
-            where(documentId(), 'in', CRITICAL_DOCUMENT_IDS)
-        );
-        return onSnapshot(criticalQuery, { includeMetadataChanges: true }, (snapshot) => {
+        return dashboardKpis.subscribe((snapshot) => {
+            const { backOfficeReadyAt, strongAuthReadyAt } = timingRef.current;
             const validated = validateCriticalSnapshot(snapshot, revisionsRef.current);
             revisionsRef.current = validated.revisions;
             setCriticalAccessFailed(false);
@@ -1183,40 +1189,45 @@ const AdminDashboard = ({
             setRecentOrders([]);
             setDailySales([]);
             setIntradayOrders(null);
-            setInsights(EMPTY_INSIGHTS);
-            invalidateAdminCachedData(DASHBOARD_INSIGHTS_CACHE_KEY);
+            setInsights({ ...EMPTY_INSIGHTS, loading: false, error: true });
+            dashboardInsights.clear();
             setCriticalAccessFailed(true);
             setProjection({ loading: false, fromCache: false, serverConfirmed: false, domains: unavailableDomains() });
         });
-    }, [backOfficeReadyAt, strongAuthReadyAt, user?.uid]);
+    }, [user?.uid]);
 
     useEffect(() => {
         if (projection.loading || criticalAccessFailed || !user?.uid) return undefined;
-        const recentOrdersQuery = query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(5));
-        return onSnapshot(recentOrdersQuery, (snapshot) => {
+        return dashboardOrders.subscribe((snapshot) => {
+            setRecentOrdersStatus(snapshot.metadata?.fromCache && snapshot.size === 0 ? 'loading' : 'ready');
             setRecentOrders(snapshot.docs
                 .map((document) => ({ id: document.id, ...document.data() }))
                 .filter((order) => !['cancelled', 'cancelled_by_client', 'canceled'].includes(order.status)));
-        }, () => setRecentOrders([]));
+        }, () => { setRecentOrders([]); setRecentOrdersStatus('error'); });
     }, [criticalAccessFailed, projection.loading, user?.uid]);
 
     useEffect(() => {
         const anchor = insightsAnchorRef.current;
-        if (!anchor || criticalAccessFailed || insightsRequestedRef.current) return undefined;
+        if (!anchor || projection.loading || criticalAccessFailed || !user?.uid) return undefined;
         let cancelled = false;
+        let requested = false;
+        let stopInsights;
         const requestInsights = () => {
-            if (insightsRequestedRef.current) return;
-            insightsRequestedRef.current = true;
-            void Promise.resolve(onLoadCatalog?.()).catch(() => {});
-            void loadAdminDashboardInsightsData()
-                .then((data) => { if (!cancelled) setInsights(data); })
-                .catch(() => {
-                    if (!cancelled) setInsights((previous) => ({ ...previous, loading: false, error: true }));
-                });
+            if (requested || cancelled) return;
+            requested = true;
+            stopInsights = dashboardInsights.subscribe(snapshot => {
+                if (cancelled) return;
+                try {
+                    const data = readInsights(snapshot);
+                    setInsights(data);
+                    if (data.products.length) void Promise.resolve(onLoadCatalog?.()).catch(() => {});
+                }
+                catch { setInsights({ ...EMPTY_INSIGHTS, loading: false, error: true }); }
+            }, () => { if (!cancelled) setInsights({ ...EMPTY_INSIGHTS, loading: false, error: true }); });
         };
         if (typeof IntersectionObserver !== 'function') {
             requestInsights();
-            return () => { cancelled = true; };
+            return () => { cancelled = true; stopInsights?.(); };
         }
         const observer = new IntersectionObserver(([entry]) => {
             if (entry?.isIntersecting) {
@@ -1227,9 +1238,10 @@ const AdminDashboard = ({
         observer.observe(anchor);
         return () => {
             cancelled = true;
+            stopInsights?.();
             observer.disconnect();
         };
-    }, [criticalAccessFailed, onLoadCatalog, user?.uid]);
+    }, [criticalAccessFailed, projection.loading, onLoadCatalog, user?.uid, insightsRetry]);
     // ─── ACTIONS ───
     const handleExportUsers = async () => {
         setExportingUsers(true);
@@ -1275,7 +1287,9 @@ const AdminDashboard = ({
     const displayedOrderCount = Number(orderSummary?.totalOrders || 0);
     const paidOrderCount = Number(financialAmounts?.capturedOrderCount || 0);
     const averagePaidOrderValue = paidOrderCount > 0 ? capturedRevenue / paidOrderCount : 0;
-    const projectionFreshnessLabel = projection.serverConfirmed ? 'À jour' : 'Actualisation…';
+    const projectionFreshnessLabel = criticalAccessFailed ? 'Lecture impossible' : projection.serverConfirmed
+        ? Object.values(projection.domains).every(domain => domain.status === 'ready') ? 'Synchronisés' : 'Données partielles'
+        : 'Actualisation…';
     const selectedQuotePeriod = QUOTE_PERIODS.find(({ id }) => id === quotePeriod) || QUOTE_PERIODS[0];
     const selectedQuote = insights.quoteWindows?.[selectedQuotePeriod.id] || EMPTY_QUOTE_WINDOWS[selectedQuotePeriod.id];
 
@@ -1312,6 +1326,7 @@ const AdminDashboard = ({
         >
             <p aria-live="polite" className={`text-right text-[10px] font-semibold ${textMuted}`}>
                 KPI · {projectionFreshnessLabel}
+                {criticalAccessFailed && <button className="ml-3 underline" onClick={() => dashboardKpis.retry()}>Réessayer</button>}
             </p>
             <motion.div custom={0} variants={sectionVariants} className="grid gap-5 lg:grid-cols-12">
                 <KpiCard
@@ -1506,6 +1521,7 @@ const AdminDashboard = ({
             </motion.div>
 
             <motion.div ref={insightsAnchorRef} custom={2} variants={sectionVariants} className="grid min-w-0 max-w-full gap-5 lg:grid-cols-12">
+                {insights.error && <button type="button" className="lg:col-span-12" onClick={() => { dashboardInsights.retry(); setInsights(EMPTY_INSIGHTS); setInsightsRetry((value) => value + 1); }}>Réessayer le chargement des tendances</button>}
                 <PanelFrame darkMode={darkMode} className="min-w-0 lg:col-span-5" innerClassName="overflow-hidden p-5 sm:p-7">
                     <div className="mb-5 flex items-start justify-between gap-4">
                         <div>
@@ -1603,13 +1619,15 @@ const AdminDashboard = ({
                                 </tr>
                             </thead>
                             <tbody>
-                                {recentOrders.length === 0 ? (
+                                {recentOrdersStatus !== 'ready' ? (
+                                    <tr><td colSpan={4} className="p-6 text-center text-sm">{recentOrdersStatus === 'loading' ? 'Chargement des commandes…' : <button onClick={() => dashboardOrders.retry()}>Lecture impossible · Réessayer</button>}</td></tr>
+                                ) : recentOrders.length === 0 ? (
                                     <tr>
                                         <td colSpan="5" className={`rounded-2xl py-12 text-center text-xs ${textMuted}`}>Aucune transaction récente.</td>
                                     </tr>
                                 ) : (
                                     recentOrders.map((order) => {
-                                        const status = getOrderStatus(order.status);
+                                        const status = getOrderStatus(order);
                                         const clientName = order.shipping?.fullName || 'Client invité';
                                         const initials = clientName.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase();
                                         return (

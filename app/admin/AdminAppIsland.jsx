@@ -41,6 +41,8 @@ import {
 } from '../../src/kit/config/firebaseLazy';
 import {
   clearAdminDataCache,
+  getAdminCacheGeneration,
+  subscribeAdminCacheGeneration,
   invalidateAdminCachedData,
 } from '../../src/kit/admin/adminDataCache';
 import { db } from '../../src/kit/config/firebase';
@@ -53,6 +55,7 @@ import AdminSidebar from './AdminSidebar';
 import { dataPerformance, startDataPerformance } from '../../src/kit/admin/adminAnalyticsPerformance';
 import { ANALYTICS_REALTIME_ENABLED, analyticsChannel } from '../../src/kit/admin/adminAnalyticsRealtime';
 import { liveSessionsChannel } from '../../src/kit/admin/liveSessionsChannel';
+import { createReadLease } from '../../src/kit/admin/retainedRead';
 
 const loadAdminDashboard = () => import('../../src/kit/admin/AdminDashboard');
 const loadAdminOrders = () => import('../../src/kit/admin/AdminOrders');
@@ -115,7 +118,7 @@ const adminTabs = KIT_CONFIG.adminTabs.map((tab, index) => ({
   icon: TAB_ICONS[tab.id] ?? COLLECTION_ICONS[index % COLLECTION_ICONS.length],
 }));
 
-const ADMIN_PUBLIC_CATALOG_TABS = new Set(['analytics', 'inventory', 'payment_links', 'promotions']);
+const ADMIN_PUBLIC_CATALOG_TABS = new Set(['inventory', 'payment_links', 'promotions']);
 const readAdminOrderTarget = () => {
   if (typeof window === 'undefined') return null;
   const orderId = new URLSearchParams(window.location.search).get('order_id');
@@ -158,6 +161,7 @@ const ADMIN_NAV_GROUPS = [
 /** Onglets qui pilotent leur propre hauteur : liste et detail scrollent separement. */
 const IMMERSIVE_TABS = new Set(['furniture', 'orders']);
 function AdminContent() {
+  const cacheGeneration = React.useSyncExternalStore(subscribeAdminCacheGeneration, getAdminCacheGeneration, getAdminCacheGeneration);
   const { user, isAdmin, isSuperAdmin, hasStrongAuth, loading } = useAuth();
   const router = useRouter();
   const [focusedOrderId, setFocusedOrderId] = useState(null);
@@ -281,13 +285,19 @@ function AdminContent() {
     analyticsChannel.setOwner(owner || null);
     liveSessionsChannel.setOwner(owner || null);
     return () => { analyticsChannel.clear(); liveSessionsChannel.clear(); };
-  }, [backOfficeReady, hasStrongAuth, isAdmin, user?.uid]);
+  }, [backOfficeReady, hasStrongAuth, isAdmin, user?.uid, cacheGeneration]);
+  const analyticsLease = React.useMemo(() => createReadLease({
+    start() { analyticsChannel.start(); liveSessionsChannel.start(); },
+    pause() { analyticsChannel.pause(); liveSessionsChannel.pause(); },
+  }), []);
   React.useEffect(() => {
-    if (ANALYTICS_REALTIME_ENABLED && isAdmin && hasStrongAuth && backOfficeReady && adminCollection === 'analytics') {
-      analyticsChannel.start();
-      liveSessionsChannel.start();
-    }
-  }, [adminCollection, backOfficeReady, hasStrongAuth, isAdmin, user?.uid]);
+    const active = ANALYTICS_REALTIME_ENABLED && isAdmin && hasStrongAuth && backOfficeReady && adminCollection === 'analytics';
+    const update = () => analyticsLease.update(active, document.visibilityState !== 'hidden');
+    update();
+    document.addEventListener('visibilitychange', update);
+    return () => document.removeEventListener('visibilitychange', update);
+  }, [adminCollection, backOfficeReady, hasStrongAuth, isAdmin, user?.uid, cacheGeneration, analyticsLease]);
+  React.useEffect(() => () => analyticsLease.dispose(), [analyticsLease]);
   const perfNow = typeof performance !== 'undefined' ? performance.now() : null;
   if (user?.uid && isAdmin && hasStrongAuth) {
     if (strongAuthReadyAtRef.current === null) strongAuthReadyAtRef.current = perfNow;
@@ -325,7 +335,7 @@ function AdminContent() {
     if (!user?.uid || !isAdmin || !hasStrongAuth || !backOfficeReady) return undefined;
     return onSnapshot(doc(db, 'admin_action_summary', 'current'), (snapshot) => {
       if (!snapshot.exists()) {
-        setActionSummary({ schemaVersion: 1, pendingReturns: 0, totalPending: 0, revision: 0 });
+        setActionSummary(null);
         return;
       }
       const data = snapshot.data();
@@ -358,7 +368,7 @@ function AdminContent() {
     setSystemIncidentState({ status: 'loading', data: null });
     return onSnapshot(doc(db, 'admin_system_incident_summary', 'current'), (snapshot) => {
       if (!snapshot.exists()) {
-        setSystemIncidentState({ status: 'ready', data: { schemaVersion: 1, revision: 0, incidents: [] } });
+        setSystemIncidentState({ status: 'error', data: null });
         return;
       }
       const data = snapshot.data();
@@ -606,7 +616,7 @@ function AdminContent() {
   const immersiveLayout = IMMERSIVE_TABS.has(adminCollection);
 
   return (
-    <div className={`${immersiveLayout ? 'xl:h-[100dvh] xl:overflow-hidden' : 'min-h-screen'} ${darkMode ? 'bg-[#0A0A0A] text-white' : 'bg-[#FAFAF9] text-stone-900'}`}>
+    <div key={cacheGeneration} className={`${immersiveLayout ? 'xl:h-[100dvh] xl:overflow-hidden' : 'min-h-screen'} ${darkMode ? 'bg-[#0A0A0A] text-white' : 'bg-[#FAFAF9] text-stone-900'}`}>
       <AdminSidebar
         activeTabId={adminCollection}
         darkMode={darkMode}
@@ -614,7 +624,7 @@ function AdminContent() {
         incidentCount={(incidentSummary?.activeTotal || 0) + (
           (systemIncidentState.data?.revision || 0) > systemIncidentSeenRevision ? 1 : 0
         )}
-        actionCounts={{ returns: actionSummary?.pendingReturns || 0 }}
+        actionCounts={{ returns: actionSummary?.pendingReturns ?? null }}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         onIntent={(tabId) => {
@@ -713,7 +723,7 @@ function AdminContent() {
                 loading={catalogState.status === 'loading'}
                 onRetry={ensureAdminCatalog}
               />
-              <AdminAnalytics darkMode={darkMode} items={catalogState.items} />
+              <AdminAnalytics darkMode={darkMode} items={catalogState.items} onLoadCatalog={ensureAdminCatalog} />
             </div>
           ) : adminCollection === 'incidents' ? (
             <AdminIncidentConsole darkMode={darkMode} systemIncidentState={systemIncidentState} />

@@ -54,16 +54,22 @@ export const liveSessionsChannel = {
     start() {
         if (!owner || stop) return;
         const epoch = generation;
-        emit({ status: 'loading' });
+        emit({ status: state.sessions.length ? 'cached' : 'loading' });
         stop = onSnapshot(sessionsQuery(), { includeMetadataChanges: true }, snapshot => {
             if (epoch !== generation) return;
             try {
                 recent = new Map(snapshot.docs.map(document => [document.id, valid(document)]));
                 recentCursor = snapshot.docs.at(-1) || null;
-                emit({ status: state.status === 'error' ? 'error' : snapshot.metadata.fromCache ? 'cached' : 'ready',
+                emit({ status: snapshot.metadata.fromCache ? 'cached' : 'ready',
                     ...(!state.historyPage ? { more: snapshot.size === 10 } : {}) });
             } catch { emit({ status: 'error', sessions: [] }); }
         }, () => { if (epoch === generation) emit({ status: 'error', sessions: [] }); });
+        if (state.historyPage) openHistory(state.historyPage);
+    },
+    pause() {
+        generation++; pageGeneration++;
+        stop?.(); stop = null; historyStop?.(); historyStop = null;
+        emit({ status: state.status === 'error' ? 'error' : 'cached', loadingMore: false });
     },
     older() {
         if (!owner || !state.more || state.loadingMore || state.status === 'error') return;

@@ -1,6 +1,47 @@
 # Donnees, Firestore et analytics
 
+Relecture du 2026-09-05 : l’[audit backend](../audits/AUDIT_BACKEND_2026-09-05.md)
+reproduit une course sync/beacon dans la source et une régression des anciens
+faits analytics (BA-03/BA-04). La relecture transactionnelle des nouvelles
+projections protège contre les événements Firestore désordonnés, mais ne
+rend pas monotone un payload client ancien écrit ensuite dans la source.
+Les garanties du contrat ci-dessous portent sur ce que contient cette source.
+Les coûts cumulés des producteurs, la contention, les anciens index et la
+compaction encore absente des auxiliaires realtime sont analysés en
+BA-06/BA-07/BA-13 ; les [corrections proposées](../audits/PLAN_BACKEND_2026-09-05.md)
+ne sont pas implémentées. Aucun recalcul ni nettoyage cloud effectué par l’audit.
+
 ## Sessions en direct — contrat du 2026-09-04
+
+Évolution locale I3 du 2026-09-05, non livrée :
+[suivi et transition](../audits/SUIVI_IMPLEMENTATION_BACKOFFICE_2026-09-05.md).
+Les nouveaux clients annoncent `syncProtocolVersion:1`. Init/reprise attribue
+une `syncGeneration` et remet `syncSequence` à zéro. Sync et beacon partagent
+la séquence du collecteur ; la transaction relit le token et refuse les
+générations incorrectes ou les séquences anciennes. Une vraie reprise reçoit
+une génération distincte ; un onglet concurrent rejeté repart sur une nouvelle
+session. Les réponses `missing`, `invalidToken` et `generationMismatch` ne sont
+pas des succès métier et réinitialisent le collecteur. Le mode ancien est borné
+dans le temps et offre une garantie réduite, décrite dans le suivi.
+
+Retours et Newsletter appliquent la contribution de la source relue dans la
+transaction moins celle du ledger, avec version et tombstone. Le projecteur
+reste fermé tant que `ledgerBaselineReady` n'est pas vrai. Une baseline de
+total seul ne prouve jamais l'appartenance d'un contact : les ledgers doivent
+être rapprochés avant activation et rattrapage des événements en attente.
+
+Les faits historiques relisent source/exclusion ; un ancien payload ne peut
+remplacer l'état courant. Les corrections d'identité/date reconstruisent le
+shard ; les suppressions par exclusion et corrections se propagent aux périodes
+et insights. La suppression normale après archivage conserve le fait historique.
+La reconstruction parcourt le jour par pages de 500 dans une transaction,
+sans refus permanent à 2 000 faits. Après backfill du champ `shardId` et index
+READY, `ANALYTICS_FACT_SHARD_INDEX_READY=true` réduit la requête au jour + shard.
+Avant activation, le filtrage en mémoire reste compatible avec les anciens faits.
+Jour/mois/année/insights relisent et écrivent transactionnellement
+pour éviter qu'une construction ancienne n'écrase une nouvelle. Ceci ne remplace
+pas le chantier de compaction/rétention I8, ni une mesure de limite transactionnelle
+au volume hébergé. Aucune nouvelle collection de production ni TTL n'est ajoutée.
 
 Les graphiques restent sur les deux projections KPI existantes. Le trigger
 `aggregateAnalyticsSessionGen2` produit aussi deux documents allowlistes par

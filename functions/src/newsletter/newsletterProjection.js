@@ -47,21 +47,23 @@ async function projectNewsletterSubscriber(event) {
     const result = await db.runTransaction(async (transaction) => {
         const summaryRef = db.doc(SUMMARY_DOCUMENT);
         const ledgerRef = db.doc(`${LEDGER_COLLECTION}/${subscriberId}`);
-        const [summarySnapshot, ledgerSnapshot] = await Promise.all([
+        const [summarySnapshot, ledgerSnapshot, sourceSnapshot] = await Promise.all([
             transaction.get(summaryRef),
-            transaction.get(ledgerRef)
+            transaction.get(ledgerRef),
+            transaction.get(db.doc(`newsletter_subscribers/${subscriberId}`))
         ]);
         if (!summarySnapshot.exists) {
             throw projectionError('ADMIN_NEWSLETTER_SUMMARY_BASELINE_MISSING');
         }
         const summary = summarySnapshot.data();
+        if (summary.ledgerBaselineReady !== true) throw projectionError('ADMIN_NEWSLETTER_MEMBERSHIP_REQUIRED');
         const ledger = ledgerSnapshot.exists ? ledgerSnapshot.data() : null;
         const plan = planNewsletterProjection({
             currentCount: Number(summary.activeCount),
             ledger,
-            previousPresent: beforeExists,
-            present: afterExists,
-            sourceUpdateTime,
+            baselineMember: summary.ledgerBaselineReady === true ? false : undefined,
+            present: sourceSnapshot.exists,
+            sourceUpdateTime: sourceSnapshot.exists ? sourceSnapshot.updateTime : sourceUpdateTime,
             eventId: event.id
         });
         if (plan.outcome === 'noop') return plan;
@@ -69,6 +71,7 @@ async function projectNewsletterSubscriber(event) {
         const revision = Math.max(0, Number(summary.revision || 0)) + 1;
         transaction.set(summaryRef, {
             schemaVersion: 1,
+            ledgerBaselineReady: summary.ledgerBaselineReady === true,
             activeCount: plan.activeCount,
             additionsSinceBaseline: Math.max(0, Number(summary.additionsSinceBaseline || 0)) +
                 (plan.delta > 0 ? 1 : 0),
@@ -83,9 +86,9 @@ async function projectNewsletterSubscriber(event) {
         transaction.set(ledgerRef, {
             schemaVersion: 1,
             subscriberId,
-            present: afterExists,
-            tombstone: !afterExists,
-            sourceUpdateTime,
+            present: sourceSnapshot.exists,
+            tombstone: !sourceSnapshot.exists,
+            sourceUpdateTime: sourceSnapshot.exists ? sourceSnapshot.updateTime : sourceUpdateTime,
             eventId: event.id,
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
         });

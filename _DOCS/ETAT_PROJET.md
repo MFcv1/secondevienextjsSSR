@@ -1,6 +1,6 @@
 # État du projet
 
-Revue documentaire : 2026-09-04. Propriétaire : équipe Seconde Vie.
+Revue documentaire : 2026-09-05. Propriétaire : équipe Seconde Vie.
 Source : code du worktree, historique Git et preuves de livraison.
 La revue documentaire initiale était sans contrôle cloud. La consolidation
 sandbox du 4 septembre a ensuite été vérifiée ; versions, validations et limites
@@ -28,6 +28,29 @@ une date dépassée ou un fichier local ne suffisent pas à prouver une livraiso
 | Juridique | Brouillon non publiable sans validation | [CGV/retours](legal/CGV_RETOURS_DRAFT.md) |
 
 ## Travaux récents et preuves restantes
+
+Stats/Data : retours rapides sans recréation d'écoutes, suspension au masquage
+ou après 30 s hors page, catalogue différé et actualisation des tendances.
+[Implémentation, tests et livraison](audits/SUIVI_STATS_DATA_2026-09-05.md).
+
+Implémentation locale I0–I6 du 2026-09-05 : affichage/insights, cache autorisé,
+brouillons Devis, séquences sessions et projections, lectures/pagination,
+imports ciblés et outbox ont reçu des corrections et validations locales.
+[Suivi par lot, résultats, migrations et limites](audits/SUIVI_IMPLEMENTATION_BACKOFFICE_2026-09-05.md).
+Aucune livraison ni réparation hébergée. Les migrations de baseline/champs,
+le premier handler autorisé avec services réels, la comparaison hébergée I7 et QBO-06
+restent explicitement ouverts. Les paragraphes d'audit suivants décrivent leurs
+campagnes historiques et ne sont pas une preuve contre les nouveaux tests métier.
+
+L’[audit backend du 5 septembre](audits/AUDIT_BACKEND_2026-09-05.md) confronte
+code, configuration cloud et documentation : 13 constats ouverts, dont cinq
+défauts reproduits hors ligne sur les compteurs, sessions/faits analytics et
+l’échéance outbox. Les 366 tests existants exécutés sous Node 22 passent ; cela
+ne couvre pas ces défauts ni la charge. Le [plan proposé](audits/PLAN_BACKEND_2026-09-05.md)
+sépare fiabilité, lecture admin, démarrage/capacité, coût et rétention.
+Aucun code applicatif corrigé ni déploiement dans cette campagne ; aucune gate
+antérieure fermée. Les statuts de livraison ci-dessous restent des preuves
+fonctionnelles datées, pas une certification de toutes les données admin.
 
 | Sujet | Ce que l'on sait | Ce qui n'est pas terminé |
 | --- | --- | --- |

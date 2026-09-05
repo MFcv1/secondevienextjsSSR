@@ -72,6 +72,8 @@ const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled =
     const [search, setSearch] = useState('');
     const [orderLimit, setOrderLimit] = useState(50);
     const [isLoading, setIsLoading] = useState(!cachedPage);
+    const [readError, setReadError] = useState(false);
+    const [readRetry, setReadRetry] = useState(0);
     const [activeOrderId, setActiveOrderId] = useState(null);
     const [nextCursor, setNextCursor] = useState(null);
     const [orderTimelines, setOrderTimelines] = useState({});
@@ -83,6 +85,7 @@ const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled =
     const listRef = useRef(null);
 
     useEffect(() => {
+        setReadError(false);
         setIsLoading(!getAdminCachedData(ADMIN_ORDERS_FIRST_PAGE_KEY));
         if (COMMERCE_V2_ADMIN_READERS_ENABLED) {
             let cancelled = false;
@@ -96,6 +99,7 @@ const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled =
                 .catch((error) => {
                     if (cancelled) return;
                     console.error('Admin v2 orders read failed:', error);
+                    setReadError(true);
                     setIsLoading(false);
                 });
             return () => {
@@ -107,9 +111,9 @@ const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled =
         const unsub = onSnapshot(q, (snap) => {
             setOrders(normalizeAdminOrders(snap.docs.map((document) => ({ id: document.id, ...document.data() }))));
             setIsLoading(false);
-        });
+        }, () => { setReadError(true); setIsLoading(false); });
         return () => unsub();
-    }, [orderLimit]);
+    }, [orderLimit, readRetry]);
 
     const loadOrderTimeline = useCallback(async (order) => {
         if (orderTimelines[order.id] || timelineLoadingId === order.id) return;
@@ -129,6 +133,9 @@ const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled =
         setSelectedOrderId(order.id);
         setActionError('');
         loadOrderTimeline(order);
+        if (order.refundDetailsDeferred) void listOrdersAdminV2({ orderId: order.id }).then((result) => {
+            setOrders((current) => current.map((row) => row.id === order.id ? normalizeAdminOrders(result.orders)[0] : row));
+        }).catch(() => setActionError('Détails du remboursement indisponibles. Rouvrez le dossier pour réessayer.'));
     }, [loadOrderTimeline]);
 
     // Arrivee depuis une notification : la commande visee s'ouvre d'elle-meme.
@@ -358,7 +365,7 @@ const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled =
                             aria-label="Liste des commandes chargées"
                             className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1 custom-scrollbar"
                         >
-                            {isLoading && orders.length === 0 ? (
+                            {readError ? <div role="alert">Impossible de charger les commandes. <button type="button" onClick={() => setReadRetry((value) => value + 1)}>Réessayer</button></div> : isLoading && orders.length === 0 ? (
                                 <div className="space-y-2 px-1 py-1" aria-busy="true" aria-label="Chargement des commandes">
                                     {Array.from({ length: 8 }, (_, index) => (
                                         <div

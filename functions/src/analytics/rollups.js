@@ -49,7 +49,7 @@ const ARCHIVE_PAGE_SIZE = 500;
 const MAX_ARCHIVE_PARTS = 100;
 const MAX_ADMIN_PAGE_SIZE = 50;
 const MAX_ADMIN_HISTORY_YEARS = 50;
-const MAX_FACTS_PER_REBUILD_DAY = 2000;
+const FACT_REBUILD_PAGE_SIZE = 500;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const BUSINESS_TIME_ZONE = 'Europe/Paris';
 const BUSINESS_DATE_TIME_FORMATTER = new Intl.DateTimeFormat('en-CA', {
@@ -378,23 +378,30 @@ function applyContributionDelta(shard, next, previous) {
     return result;
 }
 
-async function materializeSessionFact(sessionId, session, db = admin.firestore()) {
-    if (!session || session.type === 'admin') return 'ignored';
-    const contribution = contributionFor(sessionId, session);
-    const hash = contributionHash(contribution);
+async function materializeSessionFact(sessionId, _session, db = admin.firestore()) {
     const shardId = String(parseInt(hashOpaque(sessionId).slice(0, 8), 16) % SHARD_COUNT).padStart(2, '0');
     const factRef = db.doc(`analytics_session_facts/${sessionId}`);
-    const shardRef = db.doc(`analytics_rollup_days/${contribution.dateKey}/summary_shards/${shardId}`);
-    return db.runTransaction(async (transaction) => {
+    let changedDate;
+    const result = await db.runTransaction(async (transaction) => {
+        const [source, exclusion] = await Promise.all([
+            transaction.get(db.doc(`analytics_sessions/${sessionId}`)),
+            transaction.get(db.doc(`analytics_session_exclusions/${sessionId}`))
+        ]);
+        if (exclusion.exists || source.data()?.type === 'admin') return 'excluded';
+        if (!source.exists) return 'ignored';
+        const contribution = contributionFor(sessionId, source.data());
+        const hash = contributionHash(contribution);
+        const shardRef = db.doc(`analytics_rollup_days/${contribution.dateKey}/summary_shards/${shardId}`);
         const [factSnap, shardSnap] = await Promise.all([
             transaction.get(factRef),
             transaction.get(shardRef)
         ]);
         const previousFact = factSnap.exists ? factSnap.data() : null;
         if (previousFact?.contributionHash === hash) return 'noop';
-        if (previousFact?.contribution?.dateKey && previousFact.contribution.dateKey !== contribution.dateKey) {
-            throw new Error('ANALYTICS_SESSION_DATE_CHANGED');
+        if (previousFact?.contribution && (previousFact.contribution.dateKey !== contribution.dateKey || previousFact.contribution.subject !== contribution.subject)) {
+            return 'rebuild_identity';
         }
+        changedDate = contribution.dateKey;
         const nextShard = applyContributionDelta(
             { shardId, ...(shardSnap.exists ? shardSnap.data() : {}) },
             contribution,
@@ -412,11 +419,29 @@ async function materializeSessionFact(sessionId, session, db = admin.firestore()
             shardId,
             contribution,
             contributionHash: hash,
+            sourceUpdateTime: source.updateTime,
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
             expireAt: timestampAfterDays(FACT_RETENTION_DAYS)
         });
         return previousFact ? 'updated' : 'created';
     });
+    if (result === 'excluded') return removeMaterializedSessionFact(sessionId, db);
+    if (result === 'rebuild_identity') {
+        await removeMaterializedSessionFact(sessionId, db);
+        const rebuilt = await materializeSessionFact(sessionId, null, db);
+        const fact = await db.doc(`analytics_session_facts/${sessionId}`).get();
+        if (fact.exists) await refreshHistoricalPeriods(fact.data().dateKey, db);
+        return rebuilt;
+    }
+    if (result === 'updated') await refreshHistoricalPeriods(changedDate, db);
+    return result;
+}
+
+async function refreshHistoricalPeriods(date, db) {
+    await compactDay(date, db);
+    await compactMonth(date.slice(0, 7), db);
+    await compactYear(date.slice(0, 4), db);
+    await materializeDashboardInsights(db);
 }
 
 function rebuildShardFromFacts(date, shardId, documents, excludedSessionId = null) {
@@ -446,19 +471,26 @@ async function removeMaterializedSessionFact(sessionId, db = admin.firestore()) 
     if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date || ''))) {
         throw new Error('ANALYTICS_FACT_DATE_INVALID');
     }
-    const factsQuery = db.collection('analytics_session_facts')
-        .where('contribution.dateKey', '==', date)
-        .limit(MAX_FACTS_PER_REBUILD_DAY + 1);
+    let factsQuery = db.collection('analytics_session_facts')
+        .where('contribution.dateKey', '==', date);
+    // Pendant le rollout les faits anciens peuvent ne pas porter shardId.
+    // La lecture reste paginée ; le filtre local de rebuild conserve leur contribution.
+    if (process.env.ANALYTICS_FACT_SHARD_INDEX_READY === 'true') factsQuery = factsQuery.where('shardId', '==', shardId);
+    factsQuery = factsQuery
+        .orderBy(admin.firestore.FieldPath.documentId())
+        .limit(FACT_REBUILD_PAGE_SIZE);
     await db.runTransaction(async (transaction) => {
-        const [currentFact, dayFacts] = await Promise.all([
-            transaction.get(factRef),
-            transaction.get(factsQuery)
-        ]);
+        const currentFact = await transaction.get(factRef);
         if (!currentFact.exists) return;
-        if (dayFacts.size > MAX_FACTS_PER_REBUILD_DAY) {
-            throw new Error('ANALYTICS_FACT_REBUILD_LIMIT');
+        const documents = [];
+        let pageQuery = factsQuery;
+        while (true) {
+            const page = await transaction.get(pageQuery);
+            documents.push(...page.docs);
+            if (page.size < FACT_REBUILD_PAGE_SIZE) break;
+            pageQuery = factsQuery.startAfter(page.docs.at(-1));
         }
-        const rebuilt = rebuildShardFromFacts(date, shardId, dayFacts.docs, sessionId);
+        const rebuilt = rebuildShardFromFacts(date, shardId, documents, sessionId);
         const shardRef = db.doc(`analytics_rollup_days/${date}/summary_shards/${shardId}`);
         if (Number(rebuilt.sessions || 0) === 0) transaction.delete(shardRef);
         else transaction.set(shardRef, {
@@ -468,7 +500,7 @@ async function removeMaterializedSessionFact(sessionId, db = admin.firestore()) 
         });
         transaction.delete(factRef);
     });
-    await compactDay(date, db);
+    await refreshHistoricalPeriods(date, db);
     return 'removed';
 }
 
@@ -544,12 +576,13 @@ function finalizeAggregate(value) {
 }
 
 async function compactDay(key, db = admin.firestore()) {
-    const shards = await db.collection(`analytics_rollup_days/${key}/summary_shards`).limit(SHARD_COUNT).get();
+    return db.runTransaction(async (transaction) => {
+    const shards = await transaction.get(db.collection(`analytics_rollup_days/${key}/summary_shards`).limit(SHARD_COUNT));
     const aggregate = emptyAggregate();
     for (const shard of shards.docs) mergeAggregate(aggregate, shard.data());
     const compact = finalizeAggregate(aggregate);
     const ref = db.doc(`analytics_rollup_days/${key}`);
-    const current = await ref.get();
+    const current = await transaction.get(ref);
     const stableContent = {
         schemaVersion: 1,
         dateKey: key,
@@ -562,11 +595,12 @@ async function compactDay(key, db = admin.firestore()) {
         ...stableContent,
         ...Object.fromEntries(Object.keys(stableContent).map((field) => [field, currentContent[field]]))
     });
-    if (!unchanged) await ref.set({
+    if (!unchanged) transaction.set(ref, {
         ...stableContent,
         compactedAt: admin.firestore.FieldValue.serverTimestamp()
     });
     return { ...compact, changed: !unchanged };
+    });
 }
 
 const INSIGHT_QUOTE_PERIODS = Object.freeze({
@@ -621,6 +655,7 @@ function buildDashboardInsightsContent(dailyRollups, monthlyRollups) {
 }
 
 async function materializeDashboardInsights(db = admin.firestore(), nowMillis = Date.now()) {
+    return db.runTransaction(async (transaction) => {
     const currentDateKey = dateKey(nowMillis);
     const dayKeys = Array.from({ length: 30 }, (_, index) => shiftDateKey(currentDateKey, index - 29));
     const monthKeys = Array.from({ length: 12 }, (_, offset) => {
@@ -628,8 +663,8 @@ async function materializeDashboardInsights(db = admin.firestore(), nowMillis = 
         return monthKey(value.getTime());
     });
     const [daySnapshots, monthSnapshots] = await Promise.all([
-        getAllRefs(db, dayKeys.map((key) => db.doc(`analytics_rollup_days/${key}`))),
-        getAllRefs(db, monthKeys.map((key) => db.doc(`analytics_rollup_months/${key}`)))
+        getAllRefs(transaction, dayKeys.map((key) => db.doc(`analytics_rollup_days/${key}`))),
+        getAllRefs(transaction, monthKeys.map((key) => db.doc(`analytics_rollup_months/${key}`)))
     ]);
     const dailyRollups = daySnapshots.filter((snapshot) => snapshot.exists).map((snapshot) => snapshot.data());
     const monthlyRollups = monthSnapshots.filter((snapshot) => snapshot.exists).map((snapshot) => snapshot.data());
@@ -645,11 +680,11 @@ async function materializeDashboardInsights(db = admin.firestore(), nowMillis = 
     };
     const sourceDigest = contributionHash(source);
     const ref = db.doc('admin_dashboard/insights');
-    const current = await ref.get();
+    const current = await transaction.get(ref);
     if (current.exists && current.data()?.sourceDigest === sourceDigest) {
         return { changed: false, sourceDays: dailyRollups.length, sourceMonths: monthlyRollups.length };
     }
-    await ref.set({
+    transaction.set(ref, {
         schemaVersion: 2,
         windowDays: 30,
         quote: content.quoteWindows['30d'],
@@ -666,6 +701,7 @@ async function materializeDashboardInsights(db = admin.firestore(), nowMillis = 
         revision: Math.max(0, Number(current.data()?.revision || 0)) + 1
     });
     return { changed: true, sourceDays: dailyRollups.length, sourceMonths: monthlyRollups.length };
+    });
 }
 
 function keysInMonth(key) {
@@ -682,12 +718,13 @@ async function getAllRefs(db, refs) {
 }
 
 async function compactMonth(key, db = admin.firestore()) {
+    return db.runTransaction(async (transaction) => {
     const refs = keysInMonth(key).map((day) => db.doc(`analytics_rollup_days/${day}`));
-    const snapshots = await getAllRefs(db, refs);
+    const snapshots = await getAllRefs(transaction, refs);
     const aggregate = emptyAggregate();
     for (const snapshot of snapshots) if (snapshot.exists) mergeAggregate(aggregate, snapshot.data());
     const compact = finalizeAggregate(aggregate);
-    await db.doc(`analytics_rollup_months/${key}`).set({
+    transaction.set(db.doc(`analytics_rollup_months/${key}`), {
         schemaVersion: 1,
         monthKey: key,
         ...compact,
@@ -697,17 +734,19 @@ async function compactMonth(key, db = admin.firestore()) {
         compactedAt: admin.firestore.FieldValue.serverTimestamp()
     });
     return compact;
+    });
 }
 
 async function compactYear(key, db = admin.firestore()) {
+    return db.runTransaction(async (transaction) => {
     const refs = Array.from({ length: 12 }, (_, month) => (
         db.doc(`analytics_rollup_months/${key}-${String(month + 1).padStart(2, '0')}`)
     ));
-    const snapshots = await getAllRefs(db, refs);
+    const snapshots = await getAllRefs(transaction, refs);
     const aggregate = emptyAggregate();
     for (const snapshot of snapshots) if (snapshot.exists) mergeAggregate(aggregate, snapshot.data());
     const compact = finalizeAggregate(aggregate);
-    await db.doc(`analytics_rollup_years/${key}`).set({
+    transaction.set(db.doc(`analytics_rollup_years/${key}`), {
         schemaVersion: 1,
         yearKey: key,
         ...compact,
@@ -717,6 +756,7 @@ async function compactYear(key, db = admin.firestore()) {
         compactedAt: admin.firestore.FieldValue.serverTimestamp()
     });
     return compact;
+    });
 }
 
 async function finalizeInactiveSessions(db = admin.firestore()) {
@@ -1138,11 +1178,12 @@ const aggregateAnalyticsSessionFirebaseHandler = onDocumentWritten(
             const exclusion = await admin.firestore()
                 .doc(`analytics_session_exclusions/${event.params.sessionId}`)
                 .get();
-            if (!exclusion.exists || exclusion.data()?.reason !== 'admin_identity_resolved') return;
+            if (!exclusion.exists) return;
             await removeMaterializedSessionFact(event.params.sessionId);
             return;
         }
-        if (after.type === 'admin' || after.sessionActive !== false) return;
+        if (after.type === 'admin') { await removeMaterializedSessionFact(event.params.sessionId); return; }
+        if (after.sessionActive !== false) return;
         const becameClosed = after.sessionActive === false && before?.sessionActive !== false;
         const closedChanged = after.sessionActive === false && contributionHash(contributionFor(event.params.sessionId, after)) !== contributionHash(contributionFor(event.params.sessionId, before || {}));
         if (!becameClosed && !closedChanged) return;

@@ -1,11 +1,12 @@
 'use strict';
 
 const crypto = require('node:crypto');
+const { readAdminPage } = require('../admin/readPage');
 const admin = require('firebase-admin');
 const functions = require('firebase-functions/v1');
 const { onCall } = require('firebase-functions/v2/https');
 const { onDocumentUpdated } = require('firebase-functions/v2/firestore');
-const sharp = require('sharp');
+const sharp = (...args) => require('sharp')(...args);
 const { getRateLimitClientIp } = require('../../helpers/clientIp');
 const { checkActiveStrongAdmin, normalizeFirestoreId } = require('../../helpers/security');
 const { regionalFunctions } = require('../../helpers/runtime');
@@ -17,7 +18,7 @@ const {
     RESEND_FROM_EMAIL,
     TRANSACTIONAL_EMAIL_PROVIDER
 } = require('../../helpers/secrets');
-const { createTransactionalEmailRuntime } = require('../email/transactionalEmailRuntime');
+const createTransactionalEmailRuntime = (...args) => require('../email/transactionalEmailRuntime').createTransactionalEmailRuntime(...args);
 const {
     MAX_PHOTOS,
     MAX_PHOTO_BYTES,
@@ -395,15 +396,14 @@ async function finalizeQuoteRequestHandler(data) {
     }
 }
 
-async function listQuoteRequestsAdminHandler(_data, context) {
+async function listQuoteRequestsAdminHandler(data, context) {
     await checkActiveStrongAdmin(context);
-    const snapshot = await db.collection(QUOTES_COLLECTION)
-        .orderBy('createdAt', 'desc')
-        .limit(MAX_ADMIN_QUOTES + 1)
-        .get();
+    const page = await readAdminPage({ collection: db.collection(QUOTES_COLLECTION), sortField: 'createdAt', pageSize: MAX_ADMIN_QUOTES, cursor: data?.cursor, referenceField: 'requestNumber', reference: data?.reference });
     return {
-        quotes: snapshot.docs.slice(0, MAX_ADMIN_QUOTES).map((entry) => serializeQuote(entry.id, entry.data())),
-        hasMore: snapshot.size > MAX_ADMIN_QUOTES,
+        quotes: page.docs.map((entry) => serializeQuote(entry.id, entry.data())),
+        hasMore: page.hasMore,
+        nextCursor: page.nextCursor,
+        coverage: page.coverage,
         limit: MAX_ADMIN_QUOTES
     };
 }
@@ -414,13 +414,14 @@ async function getQuoteRequestAdminHandler(data, context) {
     const snapshot = await db.collection(QUOTES_COLLECTION).doc(quoteId).get();
     if (!snapshot.exists) throw new functions.https.HttpsError('not-found', 'Demande introuvable.');
     const value = snapshot.data();
+    const photosExpireAt = Date.now() + (15 * 60 * 1000);
     const photos = await Promise.all((value.photos || []).map(async (photo) => {
         let url = null;
         try {
             [url] = await admin.storage().bucket().file(photo.storagePath).getSignedUrl({
                 version: 'v4',
                 action: 'read',
-                expires: Date.now() + (15 * 60 * 1000)
+                expires: photosExpireAt
             });
         } catch (error) {
             console.warn('Quote photo signing failed', {
@@ -435,6 +436,7 @@ async function getQuoteRequestAdminHandler(data, context) {
             width: photo.width,
             height: photo.height,
             size: photo.size,
+            expiresAt: photosExpireAt,
             url
         };
     }));

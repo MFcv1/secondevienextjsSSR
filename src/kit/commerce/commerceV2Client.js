@@ -69,11 +69,11 @@ export const prepareCommerceDocumentDelivery = async (orderId, documentId) => {
   return execute('prepareCommerceDocumentDelivery', { orderId, documentId });
 };
 
-export const listOrdersAdminV2 = async ({ pageSize = 50, cursor = null } = {}) => {
+export const listOrdersAdminV2 = async ({ pageSize = 50, cursor = null, orderId = null } = {}) => {
   if (!COMMERCE_V2_ADMIN_READERS_ENABLED) {
     throw new Error('COMMERCE_V2_ADMIN_READERS_OFF');
   }
-  return execute('listOrdersAdminV2', { pageSize, cursor });
+  return execute('listOrdersAdminV2', { pageSize, cursor, orderId, compact: true });
 };
 
 export const getOrderTimelineAdminV2 = async (orderId) => {

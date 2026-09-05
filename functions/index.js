@@ -6,6 +6,11 @@
 const admin = require('firebase-admin');
 admin.initializeApp();
 
+const readerTarget = require('./src/admin/readerEntrypoint').loadReaderTarget(process.env.FUNCTION_TARGET);
+if (readerTarget) {
+    exports[process.env.FUNCTION_TARGET] = readerTarget;
+} else {
+
 // ── COMMERCE ──────────────────────────────────────────────
 
 // ── COMMERCE V2 (controle serveur fail-closed) ───────────
@@ -412,3 +417,4 @@ exports.catalogMediaGarbageCollector = catalogMediaGarbageCollector;
 exports.getCatalogPublicationStatusGen2 = getCatalogPublicationStatusGen2;
 exports.rebuildCatalogSnapshotGen2 = rebuildCatalogSnapshotGen2;
 exports.rollbackCatalogSnapshotGen2 = rollbackCatalogSnapshotGen2;
+}

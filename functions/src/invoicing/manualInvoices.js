@@ -1,6 +1,7 @@
 'use strict';
 
 const crypto = require('node:crypto');
+const { readAdminPage } = require('../admin/readPage');
 const admin = require('firebase-admin');
 const functions = require('firebase-functions/v1');
 const { onCall } = require('firebase-functions/v2/https');
@@ -16,16 +17,14 @@ const {
     RESEND_FROM_EMAIL,
     TRANSACTIONAL_EMAIL_PROVIDER
 } = require('../../helpers/secrets');
-const {
-    createTransactionalEmailRuntime
-} = require('../email/transactionalEmailRuntime');
+const createTransactionalEmailRuntime = (...args) => require('../email/transactionalEmailRuntime').createTransactionalEmailRuntime(...args);
 const {
     email,
     hashInvoice,
     invoiceNumber,
     normalizeInvoiceDraft
 } = require('./manualInvoiceDomain');
-const { renderManualInvoicePdf } = require('./manualInvoicePdf');
+const renderManualInvoicePdf = (...args) => require('./manualInvoicePdf').renderManualInvoicePdf(...args);
 const { invoiceEmail } = require('./manualInvoiceEmailTemplate');
 
 const db = admin.firestore();
@@ -148,16 +147,19 @@ function defaultSellerProfile() {
     };
 }
 
-async function getManualInvoiceWorkspaceHandler(_data, context) {
+async function getManualInvoiceWorkspaceHandler(data, context) {
     await checkActiveStrongAdmin(context);
     const [profileSnapshot, invoicesSnapshot, productsSnapshot] = await Promise.all([
         db.doc(PROFILE_REF).get(),
-        db.collection(INVOICES_COLLECTION).orderBy('updatedAt', 'desc').limit(MAX_RECENT_INVOICES).get(),
-        db.collection(PRODUCTS_COLLECTION).limit(MAX_PRODUCTS).get()
+        data?.productsOnly === true ? Promise.resolve({ docs: [] }) : readAdminPage({ collection: db.collection(INVOICES_COLLECTION), sortField: 'updatedAt', pageSize: MAX_RECENT_INVOICES, cursor: data?.cursor, referenceField: 'number', reference: data?.reference }),
+        data?.includeProducts === false ? Promise.resolve({ docs: [] }) : db.collection(PRODUCTS_COLLECTION).limit(MAX_PRODUCTS).get()
     ]);
     return {
         seller: profileSnapshot.exists ? profileSnapshot.data().seller : defaultSellerProfile(),
         invoices: invoicesSnapshot.docs.map(serializeInvoice),
+        nextCursor: invoicesSnapshot.nextCursor || null,
+        hasMore: invoicesSnapshot.hasMore === true,
+        coverage: invoicesSnapshot.coverage || 'complete',
         products: productsSnapshot.docs
             .map(serializeProduct)
             .sort((left, right) => left.name.localeCompare(right.name, 'fr'))

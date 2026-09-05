@@ -11,7 +11,7 @@ function projectionError(code) {
 function planNewsletterProjection({
     currentCount,
     ledger,
-    previousPresent = false,
+    baselineMember,
     present,
     sourceUpdateTime,
     eventId
@@ -25,9 +25,8 @@ function planNewsletterProjection({
     ) {
         return { outcome: 'noop', activeCount: currentCount, delta: 0 };
     }
-    const delta = Number(present === true) - Number(
-        ledger ? ledger.present === true : previousPresent === true
-    );
+    if (!ledger && typeof baselineMember !== 'boolean') throw projectionError('ADMIN_NEWSLETTER_MEMBERSHIP_REQUIRED');
+    const delta = Number(present === true) - Number(ledger ? ledger.present === true : baselineMember);
     const activeCount = currentCount + delta;
     if (!Number.isSafeInteger(activeCount) || activeCount < 0) {
         throw projectionError('ADMIN_NEWSLETTER_SUMMARY_UNDERFLOW');

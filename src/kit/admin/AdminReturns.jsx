@@ -28,7 +28,7 @@ import {
     listOrdersAdminV2,
     listReturnsAdminV2,
 } from '../commerce/commerceV2Client';
-import { getAdminCachedData } from './adminDataCache';
+import { getAdminCachedData, loadAdminCachedData } from './adminDataCache';
 import {
     ADMIN_RETURNS_FIRST_PAGE_KEY,
     loadAdminReturnsFirstPage,
@@ -308,6 +308,13 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
     const [refundAmount, setRefundAmount] = useState('');
     const [decisionDraft, setDecisionDraft] = useState(null);
     const [returnDraft, setReturnDraft] = useState(null);
+    const loadRefundDetails = async (order) => {
+        if (!order.refundDetailsDeferred) return;
+        try {
+            const result = await loadAdminCachedData(`admin-order-detail:${order.id}:${order.stateVersion}`, () => listOrdersAdminV2({ orderId: order.id }), { maxAgeMs: 30_000 });
+            setOrders((current) => current.map((row) => row.id === order.id ? normalizeAdminOrder(result.orders[0]) : row));
+        } catch { setNotice({ type: 'error', message: 'Détails indisponibles. Refermez puis rouvrez le dossier pour réessayer.' }); }
+    };
 
     const applyFirstPage = useCallback(({
         ordersOutcome,
@@ -1195,7 +1202,7 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                                     </div>
 
                                     {(Array.isArray(order.returnCases) && order.returnCases.length > 0) || order.stripePaymentIntentId ? (
-                                        <details className={`rounded-xl border md:col-span-3 lg:col-span-4 ${softPanel}`}>
+                                        <details onToggle={(event) => { if (event.currentTarget.open) void loadRefundDetails(order); }} className={`rounded-xl border md:col-span-3 lg:col-span-4 ${softPanel}`}>
                                             <summary className="cursor-pointer px-4 py-3 text-xs font-bold">Détails du dossier</summary>
                                             <div className={`border-t p-4 ${darkMode ? 'border-white/10' : 'border-stone-200'}`}>
                                                 <div className={`grid gap-2 text-[11px] md:grid-cols-2 ${mutedText}`}>

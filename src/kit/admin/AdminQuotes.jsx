@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowUpRight,
   CalendarClock,
@@ -136,6 +136,8 @@ export default function AdminQuotes({ darkMode = false }) {
   const cached = getAdminCachedData(ADMIN_QUOTES_CACHE_KEY);
   const [quotes, setQuotes] = useState(cached?.quotes || []);
   const [hasMore, setHasMore] = useState(Boolean(cached?.hasMore));
+  const [supportsReference, setSupportsReference] = useState(typeof cached?.hasMore === 'boolean');
+  const [nextCursor, setNextCursor] = useState(cached?.nextCursor || null);
   const [status, setStatus] = useState(cached ? 'ready' : 'loading');
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
@@ -145,16 +147,26 @@ export default function AdminQuotes({ darkMode = false }) {
   const [detailStatus, setDetailStatus] = useState('idle');
   const [detailRefreshKey, setDetailRefreshKey] = useState(0);
   const [draft, setDraft] = useState({ status: 'new', internalNotes: '' });
+  const draftRef = useRef(null);
+  draftRef.current = draft;
+  const selectionRef = useRef(selectedId);
+  selectionRef.current = selectedId;
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
+  const listSequenceRef = useRef(0);
 
-  const load = useCallback(async ({ force = false } = {}) => {
+  const load = useCallback(async ({ force = false, cursor = null, reference = null } = {}) => {
+    const sequence = ++listSequenceRef.current;
     if (!quotes.length) setStatus('loading');
     setError('');
     try {
-      const workspace = await loadQuoteRequestsAdmin({ force });
-      setQuotes(workspace.quotes || []);
+      const workspace = await loadQuoteRequestsAdmin({ force, cursor, reference });
+      if (sequence !== listSequenceRef.current) return;
+      if (reference) setStatusFilter('all');
+      setQuotes((current) => cursor ? [...current, ...(workspace.quotes || []).filter((row) => !current.some((old) => old.quoteId === row.quoteId))] : workspace.quotes || []);
       setHasMore(Boolean(workspace.hasMore));
+      setSupportsReference(typeof workspace.hasMore === 'boolean');
+      setNextCursor(workspace.nextCursor || null);
       setSelectedId((current) => (
         (workspace.quotes || []).some((quote) => quote.quoteId === current)
           ? current
@@ -162,6 +174,7 @@ export default function AdminQuotes({ darkMode = false }) {
       ));
       setStatus('ready');
     } catch {
+      if (sequence !== listSequenceRef.current) return;
       setStatus(quotes.length ? 'ready' : 'error');
       setError('Impossible de charger les demandes pour le moment.');
     }
@@ -178,18 +191,32 @@ export default function AdminQuotes({ darkMode = false }) {
       return undefined;
     }
     let cancelled = false;
-    setDetailStatus('loading');
+    const row = quotes.find((quote) => quote.quoteId === selectedId);
+    if (row) {
+      setDetail(row);
+      if (draftRef.current?.quoteId !== selectedId) {
+        const initial = { quoteId: selectedId, expectedVersion: row.version, status: row.status, internalNotes: row.internalNotes || '' };
+        draftRef.current = initial;
+        setDraft(initial);
+      }
+    }
+    setDetailStatus(row ? 'ready' : 'loading');
     setSaveMessage('');
-    getQuoteRequestAdmin(selectedId).then(({ quote }) => {
+    if (row && !row.photoCount) return undefined;
+    getQuoteRequestAdmin(selectedId, row?.version, { force: detailRefreshKey > 0 }).then(({ quote }) => {
       if (cancelled) return;
       setDetail(quote);
-      setDraft({ status: quote.status || 'new', internalNotes: quote.internalNotes || '' });
+      if (!draftRef.current || draftRef.current.quoteId !== selectedId) {
+        const initial = { quoteId: selectedId, expectedVersion: quote.version, status: quote.status || 'new', internalNotes: quote.internalNotes || '' };
+        draftRef.current = initial;
+        setDraft(initial);
+      }
       setDetailStatus('ready');
     }).catch(() => {
-      if (!cancelled) setDetailStatus('error');
+      if (!cancelled) { setDetailStatus(row ? 'ready' : 'error'); setSaveMessage('Photos indisponibles. Actualisez pour réessayer.'); }
     });
     return () => { cancelled = true; };
-  }, [detailRefreshKey, selectedId]);
+  }, [detailRefreshKey, selectedId, quotes]);
 
   const filteredQuotes = useMemo(() => {
     const term = query.trim().toLocaleLowerCase('fr');
@@ -235,13 +262,18 @@ export default function AdminQuotes({ darkMode = false }) {
     try {
       const result = await updateQuoteRequestAdmin({
         quoteId: detail.quoteId,
-        expectedVersion: detail.version,
+        expectedVersion: draft.expectedVersion,
         status: draft.status,
         internalNotes: draft.internalNotes,
       });
       const updated = result.quote;
+      if (selectionRef.current !== updated.quoteId) return;
       setDetail(updated);
-      setDraft({ status: updated.status, internalNotes: updated.internalNotes || '' });
+      if (draftRef.current === draft) {
+        const nextDraft = { quoteId: updated.quoteId, expectedVersion: updated.version, status: updated.status, internalNotes: updated.internalNotes || '' };
+        draftRef.current = nextDraft;
+        setDraft(nextDraft);
+      }
       setQuotes((current) => current.map((quote) => (
         quote.quoteId === updated.quoteId ? { ...quote, ...updated, photos: undefined } : quote
       )));
@@ -250,7 +282,7 @@ export default function AdminQuotes({ darkMode = false }) {
       const conflict = String(saveError?.details?.reason || saveError?.code || '').includes('conflict')
         || String(saveError?.code || '').includes('aborted');
       setSaveMessage(conflict
-        ? 'La fiche a changé ailleurs. Actualisez avant de recommencer.'
+        ? 'La fiche a changé ailleurs. Votre saisie est conservée ; comparez-la à la version actualisée avant de la reprendre.'
         : 'Les modifications n’ont pas pu être enregistrées.');
     } finally {
       setSaving(false);
@@ -314,7 +346,9 @@ export default function AdminQuotes({ darkMode = false }) {
               <option value="all">Toutes les demandes</option>
               {STATUS_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </select>
-            <p className={`text-[11px] ${muted}`}>{filteredQuotes.length} affichée{filteredQuotes.length > 1 ? 's' : ''}{hasMore ? ' · 100 dernières demandes' : ''}</p>
+            <p className={`text-[11px] ${muted}`}>{filteredQuotes.length} affichée{filteredQuotes.length > 1 ? 's' : ''}{hasMore ? ' · Liste partielle' : ''}</p>
+            {nextCursor && <button type="button" onClick={() => load({ cursor: nextCursor })}>Charger la suite</button>}
+            {supportsReference && query.trim() && <button type="button" onClick={() => load({ reference: query.trim(), force: true })}>Rechercher cette référence exacte dans tous les dossiers</button>}
           </div>
 
           <div className="max-h-[720px] overflow-y-auto p-2">
@@ -469,7 +503,8 @@ export default function AdminQuotes({ darkMode = false }) {
                     </div>
                   </section>
 
-                  <button type="button" onClick={() => void save()} disabled={saving} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-stone-950 px-4 text-xs font-black text-white transition hover:bg-stone-800 disabled:cursor-wait disabled:opacity-60 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200">
+                  {draft.expectedVersion !== detail.version && <div role="alert" className="space-y-2 text-sm"><p>Une autre version est disponible. Notes reçues : {detail.internalNotes || 'Aucune note'}</p><button type="button" onClick={() => setDraft((current) => ({ ...current, expectedVersion: detail.version }))}>Conserver ma saisie après comparaison avec cette version</button></div>}
+                  <button type="button" onClick={() => void save()} disabled={saving || draft.expectedVersion !== detail.version} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-stone-950 px-4 text-xs font-black text-white transition hover:bg-stone-800 disabled:cursor-wait disabled:opacity-60 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200">
                     {saving ? <RefreshCw className="animate-spin" size={15} /> : <Save size={15} />}
                     {saving ? 'Enregistrement…' : 'Enregistrer le suivi'}
                   </button>

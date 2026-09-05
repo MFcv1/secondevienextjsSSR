@@ -27,14 +27,14 @@ import {
   X,
 } from 'lucide-react';
 import { getCallableFunction } from '../config/firebaseLazy';
-import { getAdminCachedData, loadAdminCachedData } from './adminDataCache';
+import { getAdminCachedData, invalidateAdminCachedPrefix, loadAdminCachedData } from './adminDataCache';
 
 const INVOICE_WORKSPACE_CACHE_KEY = 'manual-invoices:workspace';
 const EMPTY_WORKSPACE = Object.freeze({ seller: null, products: [], invoices: [] });
 
 const fetchAdminInvoicesWorkspace = async () => {
   const callable = await getCallableFunction('getManualInvoiceWorkspaceAdmin');
-  const result = await callable({});
+  const result = await callable({ includeProducts: false });
   return result.data;
 };
 
@@ -476,31 +476,68 @@ export default function AdminInvoices({ darkMode = false }) {
   const [error, setError] = useState(null);
   const [view, setView] = useState('home');
   const [activeInvoice, setActiveInvoice] = useState(null);
+  const [reference, setReference] = useState('');
+  const readSequenceRef = useRef(0);
 
   const load = useCallback(async ({ foreground = true, force = true } = {}) => {
-    if (foreground) setStatus('loading');
+    const sequence = ++readSequenceRef.current;
+    setStatus(foreground ? 'loading' : 'refreshing');
     setError(null);
     try {
       const nextWorkspace = await preloadAdminInvoicesData({ force });
+      if (sequence !== readSequenceRef.current) return;
       setWorkspace(nextWorkspace);
       setStatus('ready');
     } catch (loadError) {
+      if (sequence !== readSequenceRef.current) return;
       setError(loadError?.message || 'Les factures ne sont pas disponibles.');
-      if (!initialWorkspaceRef.current) setStatus('error');
+      setStatus('error');
     }
   }, []);
   useEffect(() => {
     void load({
       foreground: !initialWorkspaceRef.current,
-      force: Boolean(initialWorkspaceRef.current),
+      force: false,
     });
   }, [load]);
 
-  const upsertInvoice = (invoice) => setWorkspace((current) => ({
+  const upsertInvoice = (invoice) => { invalidateAdminCachedPrefix('manual-invoices:'); setWorkspace((current) => ({
     ...current,
     seller: invoice.seller || current.seller,
     invoices: [invoice, ...current.invoices.filter((item) => item.invoiceId !== invoice.invoiceId)],
-  }));
+  })); };
+
+  const openPicker = async () => {
+    const sequence = ++readSequenceRef.current;
+    setStatus('refreshing');
+    try {
+      const callable = await getCallableFunction('getManualInvoiceWorkspaceAdmin');
+      const data = await loadAdminCachedData('manual-invoices:products', async () => (await callable({ includeProducts: true, productsOnly: true })).data, { maxAgeMs: 30_000 });
+      if (sequence !== readSequenceRef.current) return;
+      setWorkspace((current) => ({ ...current, products: data.products }));
+      setStatus('ready');
+      setView('picker');
+    } catch (loadError) {
+      if (sequence !== readSequenceRef.current) return;
+      setError(loadError?.message || 'Catalogue indisponible.'); setStatus('error');
+    }
+  };
+
+  const loadInvoicePage = async (cursor = null) => {
+    const sequence = ++readSequenceRef.current;
+    setStatus('refreshing');
+    try {
+      const callable = await getCallableFunction('getManualInvoiceWorkspaceAdmin');
+      const payload = { includeProducts: false, cursor, reference: reference.trim() || null };
+      const data = await loadAdminCachedData(`manual-invoices:page:${JSON.stringify(payload)}`, async () => (await callable(payload)).data, { force: true });
+      if (sequence !== readSequenceRef.current) return;
+      setWorkspace((current) => ({ ...current, ...data, invoices: cursor ? [...current.invoices, ...data.invoices.filter((row) => !current.invoices.some((old) => old.invoiceId === row.invoiceId))] : data.invoices }));
+      setStatus('ready');
+    } catch (loadError) {
+      if (sequence !== readSequenceRef.current) return;
+      setError(loadError?.message || 'Lecture impossible.'); setStatus('error');
+    }
+  };
 
   if (view === 'picker') return <ProductPicker darkMode={darkMode} onBack={() => setView('home')} onContinue={(products) => { setActiveInvoice(createDraft(workspace.seller, products)); setView('editor'); }} products={workspace.products} />;
   if (view === 'editor' && activeInvoice) return <Editor darkMode={darkMode} initialInvoice={activeInvoice} onBack={() => { setView('home'); setActiveInvoice(null); }} onSaved={(invoice) => { upsertInvoice(invoice); setActiveInvoice(invoice); }} onSent={(invoice) => { upsertInvoice(invoice); setActiveInvoice(invoice); }} />;
@@ -513,14 +550,16 @@ export default function AdminInvoices({ darkMode = false }) {
           <span className="inline-flex items-center gap-2 rounded-lg bg-white/70 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] text-stone-600 backdrop-blur dark:bg-white/10 dark:text-stone-300"><FileText size={13} /> Atelier de facturation</span>
           <h3 className="mt-5 text-4xl font-black tracking-[-0.04em] md:text-5xl">Une facture prête en quelques minutes.</h3>
           <p className="mt-4 max-w-xl text-sm leading-6 text-stone-600 dark:text-stone-400">Choisissez les meubles, complétez les coordonnées du client, vérifiez l’aperçu puis envoyez le PDF par e-mail.</p>
-          <button className="mt-7 inline-flex min-h-12 items-center gap-3 rounded-xl bg-stone-950 px-5 text-sm font-bold text-white transition hover:bg-stone-800 active:translate-y-px disabled:cursor-wait disabled:opacity-60 dark:bg-white dark:text-stone-950" disabled={status !== 'ready'} onClick={() => setView('picker')} type="button"><FilePlus2 size={18} /> {status === 'loading' ? 'Catalogue en cours de synchronisation…' : 'Créer une facture'} {status === 'ready' ? <ArrowRight size={17} /> : null}</button>
+          <button className="mt-7 inline-flex min-h-12 items-center gap-3 rounded-xl bg-stone-950 px-5 text-sm font-bold text-white transition hover:bg-stone-800 active:translate-y-px disabled:cursor-wait disabled:opacity-60 dark:bg-white dark:text-stone-950" disabled={status !== 'ready'} onClick={openPicker} type="button"><FilePlus2 size={18} /> {status === 'loading' ? 'Chargement des factures…' : 'Créer une facture'} {status === 'ready' ? <ArrowRight size={17} /> : null}</button>
         </div>
         <div className="relative mt-8 grid max-w-2xl grid-cols-3 gap-2 text-center md:gap-3">{[['01', 'Meubles'], ['02', 'Coordonnées'], ['03', 'Envoi PDF']].map(([number, label]) => <div className={`rounded-xl border px-2 py-3 ${darkMode ? 'border-white/10 bg-white/[.04]' : 'border-white/80 bg-white/60'}`} key={number}><p className="text-[10px] font-black text-amber-700 dark:text-amber-400">{number}</p><p className="mt-1 text-xs font-bold">{label}</p></div>)}</div>
       </div>
 
       <section>
-        <div className="mb-4 flex items-center justify-between gap-4"><div><h4 className="text-xl font-black">Factures enregistrées</h4><p className="mt-1 text-sm text-stone-500">Reprenez un brouillon ou renvoyez une facture déjà émise.</p></div><span className="text-xs font-bold text-stone-400">{status === 'loading' ? 'Synchronisation…' : `${workspace.invoices.length} document${workspace.invoices.length > 1 ? 's' : ''}`}</span></div>
-        {status === 'error' ? <div className={`rounded-2xl border p-6 text-center ${darkMode ? 'border-red-400/20 bg-red-400/10' : 'border-red-200 bg-red-50'}`}><p className="font-black">Les données de facturation ne sont pas disponibles</p><p className="mt-2 text-sm text-stone-500">{error}</p><button className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl bg-stone-950 px-4 text-sm font-bold text-white dark:bg-white dark:text-stone-950" onClick={() => load()} type="button"><RefreshCw size={15} /> Réessayer</button></div> : workspace.invoices.length ? <div className={`overflow-hidden rounded-2xl border ${darkMode ? 'border-white/10' : 'border-stone-200 bg-white'}`}>
+        {typeof workspace.hasMore === 'boolean' && <form className="mb-4 flex gap-2" onSubmit={(event) => { event.preventDefault(); void loadInvoicePage(); }}><input className="min-h-11 min-w-0 flex-1 rounded-xl border border-stone-300 bg-transparent px-3 text-sm dark:border-white/10" aria-label="Référence exacte de facture" placeholder="FAC-AAAA-NNNNNN" value={reference} onChange={(event) => setReference(event.target.value)} /><button className="px-3 text-xs font-bold" type="submit" disabled={status === 'refreshing'}>Rechercher la référence exacte</button></form>}
+        {workspace.nextCursor && <button className="mb-4 min-h-11 px-4 text-xs font-bold" type="button" disabled={status === 'refreshing'} onClick={() => loadInvoicePage(workspace.nextCursor)}>Charger la suite des factures</button>}
+        <div className="mb-4 flex items-center justify-between gap-4"><div><h4 className="text-xl font-black">Factures enregistrées</h4><p className="mt-1 text-sm text-stone-500">Reprenez un brouillon ou renvoyez une facture déjà émise.</p></div><span className="text-xs font-bold text-stone-400">{['loading', 'refreshing'].includes(status) ? 'Synchronisation…' : `${workspace.invoices.length} document${workspace.invoices.length > 1 ? 's' : ''}`}</span></div>
+        {status === 'loading' ? <p role="status">Chargement des factures…</p> : status === 'error' ? <div className={`rounded-2xl border p-6 text-center ${darkMode ? 'border-red-400/20 bg-red-400/10' : 'border-red-200 bg-red-50'}`}><p className="font-black">Les données de facturation ne sont pas disponibles</p><p className="mt-2 text-sm text-stone-500">{error}</p><button className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl bg-stone-950 px-4 text-sm font-bold text-white dark:bg-white dark:text-stone-950" onClick={() => load()} type="button"><RefreshCw size={15} /> Réessayer</button></div> : workspace.invoices.length ? <div className={`overflow-hidden rounded-2xl border ${darkMode ? 'border-white/10' : 'border-stone-200 bg-white'}`}>
           {workspace.invoices.map((invoice, index) => {
             const name = invoice.customer?.customerType === 'business' ? invoice.customer.businessName : [invoice.customer?.firstName, invoice.customer?.lastName].filter(Boolean).join(' ');
             return <button className={`grid w-full grid-cols-[auto_1fr_auto] items-center gap-4 px-4 py-4 text-left transition hover:bg-stone-50 dark:hover:bg-white/[.04] md:px-5 ${index ? 'border-t border-stone-200 dark:border-white/10' : ''}`} key={invoice.invoiceId} onClick={() => { setActiveInvoice(normalizeLoadedInvoice(invoice)); setView('editor'); }} type="button"><span className={`grid h-10 w-10 place-items-center rounded-xl ${invoice.status === 'issued' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-400/15 dark:text-amber-300'}`}>{invoice.status === 'issued' ? <CheckCircle2 size={18} /> : <FileText size={18} />}</span><span className="min-w-0"><span className="flex flex-wrap items-center gap-2"><strong className="truncate text-sm">{name || 'Client à compléter'}</strong><span className="text-[10px] font-bold uppercase tracking-wide text-stone-400">{invoice.status === 'issued' ? invoice.number : 'Brouillon'}</span></span><span className="mt-1 block truncate text-xs text-stone-500">{invoice.lines?.map((line) => line.name).join(', ') || 'Aucun élément'} · {formatDate(invoice.issueDate)}</span></span><span className="text-right"><strong className="block text-sm tabular-nums">{euro(invoice.totalCents)}</strong><span className="mt-1 inline-flex items-center gap-1 text-[10px] font-bold text-stone-400">{invoice.emailStatus === 'sent' ? <><Mail size={11} /> Envoyée</> : invoice.status === 'draft' ? 'À compléter' : 'Non envoyée'}</span></span></button>;

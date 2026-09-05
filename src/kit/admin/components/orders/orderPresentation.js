@@ -133,6 +133,7 @@ const EXCEPTIONS = {
     canceled: { label: 'Annulée', tone: 'danger' },
     cancelled_by_client: { label: 'Annulée par le client', tone: 'danger' },
     pending_payment: { label: 'En attente de paiement', tone: 'progress' },
+    pending: { label: 'En attente', tone: 'progress' },
 };
 
 export const isOrderPaid = (order) => (
@@ -186,6 +187,7 @@ export const getOrderJourney = (order) => {
         };
     }
 
+    if (!paid) return { kind: 'exception', stage: 0, label: 'Statut inconnu', tone: 'neutral', detail: null };
     const label = stage <= 1 ? 'Payée' : fulfillmentLabel || 'Payée';
     return {
         kind: 'progress',

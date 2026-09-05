@@ -156,6 +156,7 @@ function createOrderCommandRepository({ db, refs, clock, failpoints = null }) {
                             ...current,
                             stateVersion: current.stateVersion + 1,
                             archivedAt: clock.now(),
+                            adminArchived: true,
                             archivedBy: actor.uid,
                             archiveReason: reason,
                             updatedAt: clock.now()

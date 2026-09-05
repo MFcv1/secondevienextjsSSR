@@ -300,6 +300,7 @@ function createOrderV2({
     const now = clock.now();
     const order = {
         schemaVersion: 2,
+        adminArchived: false,
         ...(Number.isSafeInteger(orderNumber) ? { orderNumber } : {}),
         stateVersion: 0,
         legacyProjectionVersion: 1,

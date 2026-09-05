@@ -29,13 +29,15 @@ function createOutboxWorker({
         throw workerError('COMMERCE_OUTBOX_WORKER_DEPENDENCY_INVALID');
     }
 
-    async function process(outboxId) {
+    async function process(outboxId, attempt = {}) {
         const leaseToken = ids.leaseToken();
         const entry = await repository.claim(outboxId, {
             leaseToken,
             nowMillis: clock.nowMillis(),
-            leaseMs
+            leaseMs,
+            ...attempt
         });
+        if (entry.status === 'delivery_unknown') return entry;
         if (entry.testContext?.runId || entry.testContext?.fixtureScopeVersion) {
             if (typeof repository.markSuppressed !== 'function') {
                 throw workerError('COMMERCE_OUTBOX_FIXTURE_SUPPRESSION_UNAVAILABLE');
@@ -48,7 +50,9 @@ function createOutboxWorker({
                 purgeAt: new Date(nowMillis + retentionMs)
             });
         }
+        let accepted = false;
         try {
+            if (repository.beginDelivery) await repository.beginDelivery(outboxId, { leaseToken, nowMillis: clock.nowMillis() });
             const response = await send({
                 idempotencyKey: entry.outboxId,
                 template: entry.template,
@@ -68,7 +72,8 @@ function createOutboxWorker({
             if (!response || typeof response.providerMessageId !== 'string') {
                 throw workerError('COMMERCE_OUTBOX_PROVIDER_RESPONSE_INVALID');
             }
-            return repository.markSent(outboxId, {
+            accepted = true;
+            return await repository.markSent(outboxId, {
                 leaseToken,
                 nowMillis: clock.nowMillis(),
                 providerMessageId: response.providerMessageId,
@@ -77,7 +82,7 @@ function createOutboxWorker({
             });
         } catch (cause) {
             try {
-                if (cause?.deliveryUnknown === true || cause?.code === 'GMAIL_DELIVERY_UNKNOWN') {
+                if (accepted || cause?.deliveryUnknown === true || cause?.code === 'GMAIL_DELIVERY_UNKNOWN') {
                     await repository.markDeliveryUnknown(outboxId, {
                         leaseToken,
                         nowMillis: clock.nowMillis(),

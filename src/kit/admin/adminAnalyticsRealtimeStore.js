@@ -21,7 +21,7 @@ export function createAnalyticsChannel(listen, validate) {
         start() {
             if (!owner || stop) return;
             const currentEpoch = ++epoch;
-            publish({ status: 'loading', data: null });
+            publish({ status: state.data ? 'cached' : 'loading', data: state.data });
             const accept = snapshot => {
                 if (currentEpoch !== epoch) return;
                 // An empty local cache is not proof that the server document is missing.
@@ -48,6 +48,10 @@ export function createAnalyticsChannel(listen, validate) {
                     if (currentEpoch === epoch) publish({ status: 'error', data: null });
                 });
             } catch { publish({ status: 'error', data: null }); }
+        },
+        pause() {
+            epoch += 1; stop?.(); stop = null;
+            if (state.data) publish({ status: 'cached', data: state.data });
         },
         clear() { owner = null; clear(); }
     };

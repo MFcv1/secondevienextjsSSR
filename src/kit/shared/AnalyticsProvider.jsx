@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { httpsCallable } from 'firebase/functions';
 import { functions, functionsRegion } from '../config/firebase';
 import { getFunctionTarget } from '../config/functionTargets';
@@ -87,6 +87,9 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
     const { user, isAdmin } = useAuth();
     const sessionIdRef = useRef(null);
     const syncTokenRef = useRef(null);
+    const syncGenerationRef = useRef(null);
+    const syncSequenceRef = useRef(0);
+    const [sessionRestart, setSessionRestart] = useState(0);
     const initCalledRef = useRef(false);
     const journeyToSend = useRef([]);
     const journeyHistoryRef = useRef([]);
@@ -245,10 +248,14 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
         journeyToSend.current = [];
         syncInFlightRef.current = true;
         lastSyncAtRef.current = Date.now();
+        const requestSessionId = sessionIdRef.current;
+        const requestGeneration = syncGenerationRef.current;
 
         try {
-            await httpsCallable(functions, getFunctionTarget('syncSession'))({
+            const result = await httpsCallable(functions, getFunctionTarget('syncSession'))({
                 sessionId: sessionIdRef.current,
+                syncGeneration: syncGenerationRef.current,
+                syncSequence: ++syncSequenceRef.current,
                 syncToken: syncTokenRef.current,
                 duration: getTrackedDuration(),
                 journey: journeyHistoryRef.current,
@@ -259,6 +266,16 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
                 sessionActive,
                 reason
             });
+            if (requestSessionId !== sessionIdRef.current || requestGeneration !== syncGenerationRef.current) return false;
+            if (!result.data?.success || result.data?.missing) {
+                if (result.data?.missing || result.data?.invalidToken || result.data?.generationMismatch) {
+                    sessionIdRef.current = null;
+                    persistAnalyticsSession(null, null);
+                    initCalledRef.current = false;
+                    setSessionRestart((value) => value + 1);
+                }
+                throw new Error('ANALYTICS_SYNC_REJECTED');
+            }
             return true;
         } catch {
             journeyToSend.current = [...chunk, ...journeyToSend.current];
@@ -308,10 +325,12 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
             }
 
             try {
-                const initRes = await httpsCallable(functions, getFunctionTarget('initLiveSession'))(userInfo);
+                const initRes = await httpsCallable(functions, getFunctionTarget('initLiveSession'))({ ...userInfo, syncProtocolVersion: 1 });
                 if (initRes.data.success && isMounted) {
                     sessionIdRef.current = initRes.data.sessionId;
                     syncTokenRef.current = initRes.data.syncToken || null;
+                    syncGenerationRef.current = initRes.data.syncGeneration || null;
+                    syncSequenceRef.current = 0;
                     const startedAtMs = Number(initRes.data.startedAtMs);
                     if (Number.isFinite(startedAtMs) && startedAtMs > 0) {
                         startTimeRef.current = startedAtMs;
@@ -358,7 +377,7 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
             isMounted = false;
             clearTimeout(timeout);
         };
-    }, [user, isAdmin, recordCurrentView]);
+    }, [user, isAdmin, recordCurrentView, sessionRestart]);
 
     useEffect(() => {
         if (recordCurrentView({ allowPartialDetail: true })) scheduleRouteSync();
@@ -430,6 +449,8 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
 
             const payload = JSON.stringify({
                 sessionId: sessionIdRef.current,
+                syncGeneration: syncGenerationRef.current,
+                syncSequence: ++syncSequenceRef.current,
                 syncToken: syncTokenRef.current,
                 duration: totalDuration,
                 journey: journeyHistoryRef.current,
