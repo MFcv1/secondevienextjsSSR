@@ -311,8 +311,11 @@ Contrat du moteur:
 - avec le flag temps reel actif, l'admin lit les deux projections KPI et les
   cartes/detail bornes decrits en ouverture ; `overview_bundle` et son plafond
   historique de 50 relevent uniquement du lecteur legacy hors flag ;
-- l'onglet Stats ne lit jamais `analytics_sessions`; il charge une fois
-  `admin_dashboard/insights` lorsque le panneau approche du viewport;
+- l'onglet Stats ne lit jamais `analytics_sessions`; il écoute
+  `admin_dashboard/insights` lorsque le panneau approche du viewport ;
+  les écoutes Stats/Data sont partagées pendant les retours rapprochés, puis
+  suspendues après 30 s hors page ou immédiatement au masquage du navigateur.
+  La reprise affiche la mémoire comme en actualisation jusqu'au serveur ;
 - chaque fait de session et rollup journalier porte les drapeaux de session
   `quoteSessions.visits/starts/submitted`; le document v2 materialise les
   fenetres 30 jours, 3 mois, 6 mois et 1 an avec au plus 30 rollups journaliers

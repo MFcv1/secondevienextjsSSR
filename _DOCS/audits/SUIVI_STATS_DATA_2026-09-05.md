@@ -1,7 +1,7 @@
 # Stats et Data — ouvertures et coût de lecture
 
 2026-09-05. Extension demandée après I0–I6, puis commit et livraison sandbox
-demandés. Périmètre Functions à préciser ; aucune autorisation Q1 réutilisée.
+effectués. Périmètre Functions à préciser ; aucune autorisation Q1 réutilisée.
 
 ## Code et contrat
 
@@ -44,6 +44,16 @@ contenant la requête de 3 000 clics n'est pas monté dans Data. Ce n'est pas un
 dépense active démontrée ; aucune suppression opportuniste de ce code.
 
 ## Livraison et limites
+
+Code committé `cb2db14` sur `codex/stats-data-performance`, sans push.
+App Hosting livré : `build-2026-09-05-001`, 100 % du trafic relu après succès.
+Cloud Build `62806d88-bb93-42fc-9f1e-c3e2f835a931` terminé SUCCESS le
+2026-09-05 à 12:54:43 UTC. Révision de rollback relevée avant livraison :
+`secondevie-next-sandbox-build-2026-09-04-004` (100 % avant mutation).
+Contrôle commerce relu : revision 77, `v2_all/v2`, offline off, inchangé.
+Functions, indexes, baselines, capacité, paiements et e-mails non modifiés.
+Les correctifs backend I0–I6 sont committés mais ne sont pas actifs par ce
+déploiement hosting. La qualification comparative n'a pas été exécutée.
 
 Cible : `secondevie-next-sandbox`, projet `secondevienextjsssr`, `europe-west4`.
 Configuration relue : Analytics temps réel activé ; capacité inchangée.

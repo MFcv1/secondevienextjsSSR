@@ -1,6 +1,6 @@
 # Back-office
 
-Contrat local du 2026-09-05 (non livré) : voir le
+Contrat du 2026-09-05 (frontend livré, backend non livré) : voir le
 [suivi I0–I6](../audits/SUIVI_IMPLEMENTATION_BACKOFFICE_2026-09-05.md).
 Les constats cités ci-dessous restent ouverts pour la qualification hébergée.
 
