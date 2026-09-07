@@ -10,6 +10,11 @@ Ce document est la synthèse de reprise. Les contrats restent dans les chapitres
 les détails de chaque campagne restent dans son suivi. Un statut historique,
 une date dépassée ou un fichier local ne suffisent pas à prouver une livraison.
 
+Préparation du 7 septembre : sources enregistrées sur `codex/livraison-interactions-20260907`,
+tests/build/émulateurs qualifiés ; **déploiement bloqué par la gate de dépendances CLI**.
+La sandbox sert toujours la version antérieure. Preuves, périmètre et recette dans le
+[dossier de livraison](audits/2026-09-07-livraison-interactions/README.md).
+
 ## Socle et fonctionnalités
 
 | Domaine | État documenté | Référence |

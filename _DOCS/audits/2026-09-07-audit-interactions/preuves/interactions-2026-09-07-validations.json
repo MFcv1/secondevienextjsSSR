@@ -1,0 +1,44 @@
+{
+  "date": "2026-09-07",
+  "node": "22.23.2",
+  "tests": {
+    "tests": 439,
+    "pass": 439,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "eslint": {
+    "files": 439,
+    "errors": 0,
+    "warnings": 127
+  },
+  "tapSha256": "b29239193f2b6ea732a705bbae8b523df002dc1865180de9f1b2b43deceddcf6",
+  "eslintSha256": "d12174aa3dc71054e1d3fe7bc03eafae4d068e9bf4d8043fbb89ae236549248e",
+  "testCommand": "node --require ./tests/commerce/helpers/no-network.cjs --test tests/commerce/domain/*.test.cjs tests/commerce/faults/*.test.cjs tests/commerce/resilience/checkout-boundaries.test.cjs tests/catalog/*.test.cjs tests/wishlist-interactions.test.mjs tests/public-search-audit.test.mjs tests/cart-event-handoff.test.mjs tests/cart-persistence-contract.test.cjs tests/passkey-registration-audit.test.cjs tests/auth-claims.test.cjs tests/auth-store-contract.test.cjs tests/auth-custom-token-sign-in.test.mjs tests/auth-google-diagnostics.test.mjs tests/auth-unified-otp-contract.test.cjs tests/auth-backend-transitions.test.cjs tests/auth-admin-revocation.test.cjs tests/auth-assurance.test.cjs tests/auth-region-convergence.test.cjs tests/auth-email-provider-adapter.test.cjs tests/passkey-portability-contract.test.cjs tests/passkey-server-hardening.test.cjs tests/admin-token-retry.test.mjs tests/admin-data-cache-contract.test.mjs tests/admin-navigation-contract.test.mjs tests/quote-requests.test.cjs tests/quote-receipt-audit.test.cjs tests/newsletter-rewards.test.cjs tests/invoicing/manual-invoices.test.cjs tests/invoicing/manual-invoice-delivery-audit.test.cjs tests/security-hardening.test.mjs tests/security-client-ip.test.cjs tests/security-output-encoding.test.cjs tests/public-keyboard-accessibility.test.mjs tests/account-route-contract.test.mjs tests/support-chat-privacy.test.mjs tests/email-visual-system.test.cjs tests/backend-closeout.test.cjs",
+  "eslintCommand": "node node_modules/eslint/bin/eslint.js app src shared functions/src functions/helpers functions/index.js --no-ignore --format json",
+  "requirements": "Exécuter avec Node 22 depuis la racine du dépôt, dépendances déjà installées. Le preload no-network interdit les appels réseau des tests.",
+  "newRegressionTestFiles": [
+    "tests/commerce/domain/interaction-audit.test.cjs",
+    "tests/commerce/domain/provider-create-window.test.cjs",
+    "tests/wishlist-interactions.test.mjs",
+    "tests/public-search-audit.test.mjs",
+    "tests/cart-event-handoff.test.mjs",
+    "tests/passkey-registration-audit.test.cjs",
+    "tests/invoicing/manual-invoice-delivery-audit.test.cjs",
+    "tests/quote-receipt-audit.test.cjs"
+  ],
+  "notRun": [
+    "build Next",
+    "serveur local",
+    "navigateur/Playwright",
+    "émulateurs Firebase",
+    "tests Stripe hébergés",
+    "envoi réel d’email",
+    "logs/analytics Google Cloud",
+    "audit réseau des dépendances",
+    "déploiement"
+  ],
+  "limits": "Tests de domaine, contrats statiques et dépendances simulées. Ce résultat ne prouve pas le comportement servi en sandbox ni chaque ligne de la codebase."
+}

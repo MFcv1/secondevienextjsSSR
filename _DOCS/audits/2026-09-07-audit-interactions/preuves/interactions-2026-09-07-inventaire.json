@@ -1,0 +1,4430 @@
+{
+  "date": "2026-09-07",
+  "baselineCommit": "10c6b1b8b402a6011045b37b683acf185c1e06b8",
+  "branch": "codex/stats-data-performance",
+  "baselineWasDirty": true,
+  "scope": "Inventaire des sources app/src/shared/functions et règles ; ne comprend pas toutes les données, tests, scripts, assets ou documents du dépôt. Une revue ciblée ne certifie pas chaque ligne du fichier.",
+  "baselineFiles": 437,
+  "files": [
+    {
+      "file": "app/AnalyticsCollectorIsland.jsx",
+      "review": "analytics différés ; inventorié",
+      "changedDuringAudit": false,
+      "baselineSha256": "109319bc7488a482799902750943cc7b430d9bb5942f13549eebcce67389f873",
+      "currentSha256": "109319bc7488a482799902750943cc7b430d9bb5942f13549eebcce67389f873",
+      "currentLines": 71,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "app/GalleryMobileShellIsland.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "78874aee64d0152b1e8260d83d8724a8b723ebe4672d35dc338026bad04cafd4",
+      "currentSha256": "78874aee64d0152b1e8260d83d8724a8b723ebe4672d35dc338026bad04cafd4",
+      "currentLines": 167,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "app/HeroVideoSliderIsland.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "f66199c4b029a03b2e23b72f1ee72de66eb71a4c3643d2be7c0251fd7820c841",
+      "currentSha256": "f66199c4b029a03b2e23b72f1ee72de66eb71a4c3643d2be7c0251fd7820c841",
+      "currentLines": 104,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "app/HomeMotionIslandV4.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "8e4b1ca200d88a053539ab1084faf3888094a1f74348eb7e01286cdbda5394ba",
+      "currentSha256": "8e4b1ca200d88a053539ab1084faf3888094a1f74348eb7e01286cdbda5394ba",
+      "currentLines": 217,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "app/MobileNavIsland.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "a9fa083652e700897f64a9f7c3ef820e5bf485d8e5158f02e3513c2acec16ddc",
+      "currentSha256": "a9fa083652e700897f64a9f7c3ef820e5bf485d8e5158f02e3513c2acec16ddc",
+      "currentLines": 163,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "app/PerformanceMonitoringIsland.jsx",
+      "review": "analytics différés ; inventorié",
+      "changedDuringAudit": false,
+      "baselineSha256": "34a63cd962217c844b39deab58797ac03d3c8db25921c536a8d3a15571f06713",
+      "currentSha256": "34a63cd962217c844b39deab58797ac03d3c8db25921c536a8d3a15571f06713",
+      "currentLines": 46,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "app/RouteClientProviders.jsx",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "381c7bda5219eb05f1f9eda535ba8aed570f86211846550044bfc508aae15959",
+      "currentSha256": "381c7bda5219eb05f1f9eda535ba8aed570f86211846550044bfc508aae15959",
+      "currentLines": 15,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "app/RouteTransitionIsland.jsx",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": true,
+      "baselineSha256": "a0ab98bd09338b38a8a672310601c8ca42a4d0f9210150155787350f4c04a6da",
+      "currentSha256": "ea4e3182b9a8f9211ac04e1117797c813bd370ffd038164fa8e23d184c373baf",
+      "currentLines": 460,
+      "addedLines": 9,
+      "removedLines": 1
+    },
+    {
+      "file": "app/ViewportHeightSyncIsland.jsx",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "1ec594778c6c33aae07a3f6809733cbe00d3e0c438590813aa355692c55f4c29",
+      "currentSha256": "1ec594778c6c33aae07a3f6809733cbe00d3e0c438590813aa355692c55f4c29",
+      "currentLines": 55,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "app/a-propos/page.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "f483e6ff9e5edc39c31de0fdf4c722e67fcf12be4328d97f181ee15bd16cf97e",
+      "currentSha256": "f483e6ff9e5edc39c31de0fdf4c722e67fcf12be4328d97f181ee15bd16cf97e",
+      "currentLines": 101,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "app/admin/AdminAppIsland.jsx",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "8be7ce89200aed9707057b102ec74666408915658217e7d955addcfa5c234615",
+      "currentSha256": "8be7ce89200aed9707057b102ec74666408915658217e7d955addcfa5c234615",
+      "currentLines": 808,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "app/admin/AdminSidebar.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "098f84d8de04136f2bc22b290c948668afe5a36a256216a83dfa47cd1940922c",
+      "currentSha256": "098f84d8de04136f2bc22b290c948668afe5a36a256216a83dfa47cd1940922c",
+      "currentLines": 117,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "app/admin/layout.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "012e47ed485e5b03ce29e6aa6e63baf307ed779997684f1a5fe3e51436022ad8",
+      "currentSha256": "012e47ed485e5b03ce29e6aa6e63baf307ed779997684f1a5fe3e51436022ad8",
+      "currentLines": 3,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "app/admin/page.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "b39b393ab14831d3e612ba62d23a62769a3bd88d889b983201502ceb860e0a7d",
+      "currentSha256": "b39b393ab14831d3e612ba62d23a62769a3bd88d889b983201502ceb860e0a7d",
+      "currentLines": 19,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "app/api/admin/catalog-publication-status/route.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "4462d222b9a195b19a09b13e6b6aa732702c86ac24ccdaf4c40c1568c796403b",
+      "currentSha256": "4462d222b9a195b19a09b13e6b6aa732702c86ac24ccdaf4c40c1568c796403b",
+      "currentLines": 49,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "app/api/admin/function-metrics/route.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "90b44a88f64e76b429e53e64285089de0d3f6af7a12dc01f06c627ac03e052bf",
+      "currentSha256": "90b44a88f64e76b429e53e64285089de0d3f6af7a12dc01f06c627ac03e052bf",
+      "currentLines": 20,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "app/api/catalog/route.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "db4fcaa2708f3942821c4f38ed94c06714ca7e4ed7bc92eeb4959d431dc98230",
+      "currentSha256": "db4fcaa2708f3942821c4f38ed94c06714ca7e4ed7bc92eeb4959d431dc98230",
+      "currentLines": 101,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "app/api/catalog/version/route.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "3914be57181e6cb303add0b3ed7e9376ab49b96ddf558147c795b330d722be9c",
+      "currentSha256": "3914be57181e6cb303add0b3ed7e9376ab49b96ddf558147c795b330d722be9c",
+      "currentLines": 20,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "app/api/revalidate-catalog/route.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "00e0ae41276c5025c4b6af7640d1ea0e84480c2e38fb3d6f0281634e382cd895",
+      "currentSha256": "00e0ae41276c5025c4b6af7640d1ea0e84480c2e38fb3d6f0281634e382cd895",
+      "currentLines": 71,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "app/api/search/route.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": true,
+      "baselineSha256": "e0eabe8a74e051834169e1681325383fae2418be6939c6ef6725f7f30e014495",
+      "currentSha256": "a307dd9732f38837b812735c47e4c951f5c57b850326c8b6d93b51c8c4358fb4",
+      "currentLines": 35,
+      "addedLines": 2,
+      "removedLines": 1
+    },
+    {
+      "file": "app/categorie/[categoryId]/page.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "402f9ca1cab2ff9979cc6dc1e60e05c012b674a8c3de2e95e0d7880b4bc5d960",
+      "currentSha256": "402f9ca1cab2ff9979cc6dc1e60e05c012b674a8c3de2e95e0d7880b4bc5d960",
+      "currentLines": 152,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "app/checkout/CheckoutPageIsland.jsx",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": true,
+      "baselineSha256": "d4423213c33041f224334356896e40ad58ea6b88399479c7029fc054555669c2",
+      "currentSha256": "44c40ae163f2a942a24d72d3cf9f2aee44547ee658fdf5dce10a0114e571e26b",
+      "currentLines": 510,
+      "addedLines": 3,
+      "removedLines": 12
+    },
+    {
+      "file": "app/checkout/page.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "407a813b75bbe736ff9d8a222fa500728d6f15358cc64c9569b5b5655a998def",
+      "currentSha256": "407a813b75bbe736ff9d8a222fa500728d6f15358cc64c9569b5b5655a998def",
+      "currentLines": 21,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "app/devis/page.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "ca752747a4715e79d81fd255c80325ccbdde94dc09fa069f4294d10b7c64653a",
+      "currentSha256": "ca752747a4715e79d81fd255c80325ccbdde94dc09fa069f4294d10b7c64653a",
+      "currentLines": 77,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "app/error.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "fddee78f8d2d428bb3ff9179b6d53f604b44fbe394fee2b2aebc56e6e55275b3",
+      "currentSha256": "fddee78f8d2d428bb3ff9179b6d53f604b44fbe394fee2b2aebc56e6e55275b3",
+      "currentLines": 34,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "app/galerie/page.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "bbebcf1ec267e0553709374a23fe9888517c4dea5a0492fd47a137914271c9a3",
+      "currentSha256": "bbebcf1ec267e0553709374a23fe9888517c4dea5a0492fd47a137914271c9a3",
+      "currentLines": 13,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "app/layout.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "67017ad75d1a36b10ec9c0f17f88c76e277cb93c524da66de7ab823fa59e68f0",
+      "currentSha256": "67017ad75d1a36b10ec9c0f17f88c76e277cb93c524da66de7ab823fa59e68f0",
+      "currentLines": 156,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "app/mes-commandes/OrdersPageIsland.jsx",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "6dca7c7bfbe22261f8722f92b47351d0a3ae4d05016c6f9938b8e6443c9b6917",
+      "currentSha256": "6dca7c7bfbe22261f8722f92b47351d0a3ae4d05016c6f9938b8e6443c9b6917",
+      "currentLines": 206,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "app/mes-commandes/page.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "395c48a824efddb122e9bbf7ee27994cc83b84aa974bef4eba2e52d3ba80ad79",
+      "currentSha256": "395c48a824efddb122e9bbf7ee27994cc83b84aa974bef4eba2e52d3ba80ad79",
+      "currentLines": 20,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "app/not-found.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "8d63a29e338e9614ec45008b71ced924204292f74d3a1a86cfdc5763987de521",
+      "currentSha256": "8d63a29e338e9614ec45008b71ced924204292f74d3a1a86cfdc5763987de521",
+      "currentLines": 26,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "app/page.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "2815a0bfc44628b2cd07e1c0d25662e41d3aa504739485bb84d89dd62b258a08",
+      "currentSha256": "2815a0bfc44628b2cd07e1c0d25662e41d3aa504739485bb84d89dd62b258a08",
+      "currentLines": 13,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "app/payer/[orderId]/[token]/PaymentLinkPageIsland.jsx",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": true,
+      "baselineSha256": "55c89551a5d7037c95e1306b8a55be649d5deabf37225af7d5d78e5026338529",
+      "currentSha256": "c0e9127ac05deeb0657732b5a5a58f7778f70968d20f822f2b969347a470a10b",
+      "currentLines": 410,
+      "addedLines": 32,
+      "removedLines": 8
+    },
+    {
+      "file": "app/payer/[orderId]/[token]/page.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "440f41e7e85b1a397ffc099533c615ef05da6330ec774fc6082900efcb61fcdc",
+      "currentSha256": "440f41e7e85b1a397ffc099533c615ef05da6330ec774fc6082900efcb61fcdc",
+      "currentLines": 13,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "app/produit/[slugOrId]/page.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "fc634694cc82089a4d00ea3b873b4ae6984f5513733e73c17bdaf32221ecd8eb",
+      "currentSha256": "fc634694cc82089a4d00ea3b873b4ae6984f5513733e73c17bdaf32221ecd8eb",
+      "currentLines": 159,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "app/recherche/page.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "d0e9cba7b39e04dd1b7bf9379d7833a855e860d781417a76ea66e81b871caeda",
+      "currentSha256": "d0e9cba7b39e04dd1b7bf9379d7833a855e860d781417a76ea66e81b871caeda",
+      "currentLines": 38,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "app/robots.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "217c2be84a716f57ac5eabe24845c1f908caca74fb642c02836d7bdfd6b44c4a",
+      "currentSha256": "217c2be84a716f57ac5eabe24845c1f908caca74fb642c02836d7bdfd6b44c4a",
+      "currentLines": 16,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "app/route-transition.config.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "49437b53205bb38fee845040ff18de17d0852c8dfc0240fc0b6bb8ebd0ac5d48",
+      "currentSha256": "49437b53205bb38fee845040ff18de17d0852c8dfc0240fc0b6bb8ebd0ac5d48",
+      "currentLines": 51,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "app/sitemap.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "381245f07b7cfe9e4292caab35754aea1b66d06f88cbcb11c3026aab4d119d59",
+      "currentSha256": "381245f07b7cfe9e4292caab35754aea1b66d06f88cbcb11c3026aab4d119d59",
+      "currentLines": 88,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "app/wishlist/WishlistPageIsland.jsx",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "2f35c059a0afb458d3e043dde2ba20c00bdec59129ac6f8922b4405c21f4e795",
+      "currentSha256": "2f35c059a0afb458d3e043dde2ba20c00bdec59129ac6f8922b4405c21f4e795",
+      "currentLines": 141,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "app/wishlist/page.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "f52ce92faa4b9b5670be49e9568f3f18f726cbf27397845265e0ed9fae2e631d",
+      "currentSha256": "f52ce92faa4b9b5670be49e9568f3f18f726cbf27397845265e0ed9fae2e631d",
+      "currentLines": 18,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "firestore.rules",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "a6d41a73a589ae71db8cb56402011f3f489795418f57d5669014cc676c4dca7c",
+      "currentSha256": "a6d41a73a589ae71db8cb56402011f3f489795418f57d5669014cc676c4dca7c",
+      "currentLines": 629,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/helpers/clientIp.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "4bf821562424e5e563605ad950aca46331e9ae2eb53cc6a0b66346a5a25e79e4",
+      "currentSha256": "4bf821562424e5e563605ad950aca46331e9ae2eb53cc6a0b66346a5a25e79e4",
+      "currentLines": 74,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/helpers/config.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "b553931fd64efce3b9dec5b6772dfc9463a25ff052bdc60cab57a2938750693d",
+      "currentSha256": "b553931fd64efce3b9dec5b6772dfc9463a25ff052bdc60cab57a2938750693d",
+      "currentLines": 21,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/helpers/gcloudFirestoreEvent.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "a330b112d3577f85c4364c6d6df4d1ea69b8c3f264fde2ecd77a74becd779cd2",
+      "currentSha256": "a330b112d3577f85c4364c6d6df4d1ea69b8c3f264fde2ecd77a74becd779cd2",
+      "currentLines": 34,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/helpers/observability.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "8c2a9dd54b2be4a32f7f00252a9848891f7e5d72fd82d585efa27127c1bccb86",
+      "currentSha256": "8c2a9dd54b2be4a32f7f00252a9848891f7e5d72fd82d585efa27127c1bccb86",
+      "currentLines": 172,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/helpers/retention.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "82a00395419221b1f1a39eb29ff0ce8c013ee98354955923edb7b604f3683c0a",
+      "currentSha256": "82a00395419221b1f1a39eb29ff0ce8c013ee98354955923edb7b604f3683c0a",
+      "currentLines": 28,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/helpers/runtime.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "4b06d15085bf85354d207224fe9fcb8f57344b8d25b2934e1829954bee2d6c0e",
+      "currentSha256": "4b06d15085bf85354d207224fe9fcb8f57344b8d25b2934e1829954bee2d6c0e",
+      "currentLines": 39,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/helpers/secrets.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "77c18d3a2960731812ff8597b8732ffc0408b36a95a210a99c49cf769fc655a1",
+      "currentSha256": "77c18d3a2960731812ff8597b8732ffc0408b36a95a210a99c49cf769fc655a1",
+      "currentLines": 51,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/helpers/security.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "a0e96ae4e3483a5bfec5290e9957c8f3db1c529d23b0c0df0880d39aa9e007d0",
+      "currentSha256": "a0e96ae4e3483a5bfec5290e9957c8f3db1c529d23b0c0df0880d39aa9e007d0",
+      "currentLines": 312,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/index.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "d442d98d56e5c0703635ca4c3f47702f53b888b10c977f66f0f9d4f5acb05823",
+      "currentSha256": "d442d98d56e5c0703635ca4c3f47702f53b888b10c977f66f0f9d4f5acb05823",
+      "currentLines": 422,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/admin/actionSummaryProjection.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "9909221ab12a51605c2e49bac41d470c1d4f38f3a8c0612072262908f1e5ac4c",
+      "currentSha256": "9909221ab12a51605c2e49bac41d470c1d4f38f3a8c0612072262908f1e5ac4c",
+      "currentLines": 104,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/admin/dashboardProjection.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "b3bb6cae69db2092b85d5ba813a6bd816277737cde6833a671bdb59402409e37",
+      "currentSha256": "b3bb6cae69db2092b85d5ba813a6bd816277737cde6833a671bdb59402409e37",
+      "currentLines": 202,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/admin/financialHistoryDomain.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "279d0e1ce90fbfb2d581692c3f68446e895cc6ee9c6cec6c405c6e4f5f923f98",
+      "currentSha256": "279d0e1ce90fbfb2d581692c3f68446e895cc6ee9c6cec6c405c6e4f5f923f98",
+      "currentLines": 63,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/admin/financialHistoryProjection.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "01deaac1ab0e322c830396b8c89776111c8caf21c215212b38da2da882ae9852",
+      "currentSha256": "01deaac1ab0e322c830396b8c89776111c8caf21c215212b38da2da882ae9852",
+      "currentLines": 151,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/admin/readPage.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "12d1f9b78567d0a98691ddf542816e041ad26388d9d96bdbe0997f7b634d075c",
+      "currentSha256": "12d1f9b78567d0a98691ddf542816e041ad26388d9d96bdbe0997f7b634d075c",
+      "currentLines": 21,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/admin/readerEntrypoint.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "b2e8bcee04534656fda01222e5c9bd6f39c1a50b90d9d3ac73d96c850e70cc5c",
+      "currentSha256": "b2e8bcee04534656fda01222e5c9bd6f39c1a50b90d9d3ac73d96c850e70cc5c",
+      "currentLines": 34,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/analytics/adminIP.js",
+      "review": "analytics différés ; inventorié",
+      "changedDuringAudit": false,
+      "baselineSha256": "b6512a87b388d83dca759b4164214578b1c5bd92c64c3dee7ce57dd322f29f70",
+      "currentSha256": "b6512a87b388d83dca759b4164214578b1c5bd92c64c3dee7ce57dd322f29f70",
+      "currentLines": 39,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/analytics/constants.js",
+      "review": "analytics différés ; inventorié",
+      "changedDuringAudit": false,
+      "baselineSha256": "b780824a7af2adaa62b16f209de9f0d057286b4b6a2aeb79e20d68db82872fb5",
+      "currentSha256": "b780824a7af2adaa62b16f209de9f0d057286b4b6a2aeb79e20d68db82872fb5",
+      "currentLines": 42,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/analytics/ip.js",
+      "review": "analytics différés ; inventorié",
+      "changedDuringAudit": false,
+      "baselineSha256": "939cafcc86e9f77e0b035567cb848844c1c6a8c458772187bdfaa7e70822dbf4",
+      "currentSha256": "939cafcc86e9f77e0b035567cb848844c1c6a8c458772187bdfaa7e70822dbf4",
+      "currentLines": 114,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/analytics/liveSessions.js",
+      "review": "analytics différés ; inventorié",
+      "changedDuringAudit": false,
+      "baselineSha256": "d79df7cbeba06d1379ea5226494ab51250af93fa9bb1e1411faed3868e34e2e4",
+      "currentSha256": "d79df7cbeba06d1379ea5226494ab51250af93fa9bb1e1411faed3868e34e2e4",
+      "currentLines": 61,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/analytics/realtime.js",
+      "review": "analytics différés ; inventorié",
+      "changedDuringAudit": false,
+      "baselineSha256": "92015e788299ae8bc167c6a0dc5c7175965bf4e8c6ca097a194e65641f67a2fe",
+      "currentSha256": "92015e788299ae8bc167c6a0dc5c7175965bf4e8c6ca097a194e65641f67a2fe",
+      "currentLines": 273,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/analytics/rollups.js",
+      "review": "analytics différés ; inventorié",
+      "changedDuringAudit": false,
+      "baselineSha256": "25a084901a40e9a3fb894aaf516126b6f9a4146f6449cecea253fede6cddd0f8",
+      "currentSha256": "25a084901a40e9a3fb894aaf516126b6f9a4146f6449cecea253fede6cddd0f8",
+      "currentLines": 1247,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/analytics/sessionAuthorizationCache.js",
+      "review": "analytics différés ; inventorié",
+      "changedDuringAudit": false,
+      "baselineSha256": "b89d32b359dbdfa3783fd11b4c82c63dabaddb354000982f8852f3e0743649e4",
+      "currentSha256": "b89d32b359dbdfa3783fd11b4c82c63dabaddb354000982f8852f3e0743649e4",
+      "currentLines": 64,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/analytics/sessionMaintenance.js",
+      "review": "analytics différés ; inventorié",
+      "changedDuringAudit": false,
+      "baselineSha256": "fa47c434d38f18824a8f4cf97f1fa140f58b9363046bc2c5d151ba7487850df1",
+      "currentSha256": "fa47c434d38f18824a8f4cf97f1fa140f58b9363046bc2c5d151ba7487850df1",
+      "currentLines": 160,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/analytics/sessionSecurity.js",
+      "review": "analytics différés ; inventorié",
+      "changedDuringAudit": false,
+      "baselineSha256": "a32cc0787c1e01bb31a5959ee2aeb4e00492f4a2af6f30d49ae18c6772bd4bb5",
+      "currentSha256": "a32cc0787c1e01bb31a5959ee2aeb4e00492f4a2af6f30d49ae18c6772bd4bb5",
+      "currentLines": 50,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/analytics/sessionSequence.js",
+      "review": "analytics différés ; inventorié",
+      "changedDuringAudit": false,
+      "baselineSha256": "1f14913ef7c0ccb2a444624bc4cd49d31602a9679495d731b55ab951fd3d71a5",
+      "currentSha256": "1f14913ef7c0ccb2a444624bc4cd49d31602a9679495d731b55ab951fd3d71a5",
+      "currentLines": 23,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/analytics/sessions.js",
+      "review": "analytics différés ; inventorié",
+      "changedDuringAudit": false,
+      "baselineSha256": "ff322df4f27f992eac3bc3a67b7f9eca6700f165cb438de5f7e3d11e6eb6e165",
+      "currentSha256": "ff322df4f27f992eac3bc3a67b7f9eca6700f165cb438de5f7e3d11e6eb6e165",
+      "currentLines": 513,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/analytics/updateUserSessions.js",
+      "review": "analytics différés ; inventorié",
+      "changedDuringAudit": false,
+      "baselineSha256": "752f018753e513864cb3d517fb25985636f9619aa62f1586bb0ff54a47a24c73",
+      "currentSha256": "752f018753e513864cb3d517fb25985636f9619aa62f1586bb0ff54a47a24c73",
+      "currentLines": 92,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/auth/adminManagement.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "b5bba72225259fedb197ab802e0977d1607d0027e202563f59901949555b2907",
+      "currentSha256": "b5bba72225259fedb197ab802e0977d1607d0027e202563f59901949555b2907",
+      "currentLines": 599,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/auth/customerLoginOtp.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "a2740467896c178685bfe322aaede5a14a5323eaf02d8aea166a981ef2c8d13a",
+      "currentSha256": "a2740467896c178685bfe322aaede5a14a5323eaf02d8aea166a981ef2c8d13a",
+      "currentLines": 456,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/auth/grantAdmin.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "29511eb389a5f633b22a0918873e6eb2e50f6f29ab67e9ccd40a41bf4041ba2d",
+      "currentSha256": "29511eb389a5f633b22a0918873e6eb2e50f6f29ab67e9ccd40a41bf4041ba2d",
+      "currentLines": 97,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/auth/guestCheckoutOtp.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "9e7735c0df2a462f89a0717cf47ebf895573726bc4917f42695c64fc4fcfcf7d",
+      "currentSha256": "9e7735c0df2a462f89a0717cf47ebf895573726bc4917f42695c64fc4fcfcf7d",
+      "currentLines": 349,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/auth/passkeyRegistration.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": true,
+      "baselineSha256": null,
+      "currentSha256": "4356db7d9bd573f94a7374ac4f22867f74e5b32822d60486d1324a6134e5352d",
+      "currentLines": 24,
+      "addedLines": 24,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/auth/passkeys.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": true,
+      "baselineSha256": "bb259f27a42d89acded3f35d8890ffbaf3e74ddb6e0d3496d64dbe1142f2f669",
+      "currentSha256": "e0d70451f8bfa9de48bbb428bc2a61bc2b8fbe4e409ec3860d429168d6e4c9a5",
+      "currentLines": 577,
+      "addedLines": 3,
+      "removedLines": 6
+    },
+    {
+      "file": "functions/src/auth/userStats.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "8e3147c5fe908068f5f4fc407d60e99f7ea8191b6d7065de9a1abd13a62cebc0",
+      "currentSha256": "8e3147c5fe908068f5f4fc407d60e99f7ea8191b6d7065de9a1abd13a62cebc0",
+      "currentLines": 84,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/catalog/availability.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "0221dc5966383ac8cb712c50cf3421826d71bd591388f2a988f935e5f0b4edbf",
+      "currentSha256": "0221dc5966383ac8cb712c50cf3421826d71bd591388f2a988f935e5f0b4edbf",
+      "currentLines": 29,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/catalog/buildCatalogSnapshot.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "3e5cbfec03652cb08fe4f5bf2ac8830054a38091c40705316fb52036e8882e52",
+      "currentSha256": "3e5cbfec03652cb08fe4f5bf2ac8830054a38091c40705316fb52036e8882e52",
+      "currentLines": 682,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/catalog/catalogConfig.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "47459031a968729dd31969b608d1e98a1c0f1183438cead85cbf058661e2db6b",
+      "currentSha256": "47459031a968729dd31969b608d1e98a1c0f1183438cead85cbf058661e2db6b",
+      "currentLines": 15,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/catalog/catalogMaintenance.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "8d47b4a2389b9fc21c41f7f9a6bb3e6fc0c1ea32a85f1a274b821b9ba20200a4",
+      "currentSha256": "8d47b4a2389b9fc21c41f7f9a6bb3e6fc0c1ea32a85f1a274b821b9ba20200a4",
+      "currentLines": 485,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/catalog/catalogMutationRecorder.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "97d528337a32db2c1a14781cc3ba8c4ccd7ede7833d62411990243faa2193f83",
+      "currentSha256": "97d528337a32db2c1a14781cc3ba8c4ccd7ede7833d62411990243faa2193f83",
+      "currentLines": 126,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/catalog/catalogReconciler.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "849d92dc727daa2def608b35e56f9105bb0138eec75d0b1661a597d75e0460ed",
+      "currentSha256": "849d92dc727daa2def608b35e56f9105bb0138eec75d0b1661a597d75e0460ed",
+      "currentLines": 601,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/catalog/catalogRevalidation.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "04475876c002f0b3a80871324afb3f606c2bb8594a9251c34f6f5bc98d84be7b",
+      "currentSha256": "04475876c002f0b3a80871324afb3f606c2bb8594a9251c34f6f5bc98d84be7b",
+      "currentLines": 406,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/catalog/catalogRoutes.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "5bf1ca35bf1bc71ad8935ec027e43a4d023db1db73f45897766a7e7e257dc3e4",
+      "currentSha256": "5bf1ca35bf1bc71ad8935ec027e43a4d023db1db73f45897766a7e7e257dc3e4",
+      "currentLines": 55,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/catalog/impactPlan.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "b3bc5b7dbc87ab0f14f4ee6c1001b84e758442e50b65305c280dbc3b69c11f3b",
+      "currentSha256": "b3bc5b7dbc87ab0f14f4ee6c1001b84e758442e50b65305c280dbc3b69c11f3b",
+      "currentLines": 181,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/catalog/inventoryProjection.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "b9dfa448db5224fe2da2f6b7f3b758b6c5755581eb926d64441c81007f935126",
+      "currentSha256": "b9dfa448db5224fe2da2f6b7f3b758b6c5755581eb926d64441c81007f935126",
+      "currentLines": 34,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/catalog/mediaGarbageCollection.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "f64ad2a5d3cda02aee173cecbe8b0748db561da39afc2281a21a602adfc1daa0",
+      "currentSha256": "f64ad2a5d3cda02aee173cecbe8b0748db561da39afc2281a21a602adfc1daa0",
+      "currentLines": 224,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/catalog/mutationClassifier.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "30c262070fb53419de9ddf1bb512ae5faf3b40e277a22bad2b2650552334450e",
+      "currentSha256": "30c262070fb53419de9ddf1bb512ae5faf3b40e277a22bad2b2650552334450e",
+      "currentLines": 60,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/catalog/onCatalogSourceWrite.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "0c7042bdcdf92aa1184ae39892257c28a97b4cf0ad7032a9f066e2f2404db498",
+      "currentSha256": "0c7042bdcdf92aa1184ae39892257c28a97b4cf0ad7032a9f066e2f2404db498",
+      "currentLines": 75,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/catalog/publicProjection.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "0a5bf82fdb236541156f516a5c10c40ca93fcd7528fcd748945bc7fb4f6f86d9",
+      "currentSha256": "0a5bf82fdb236541156f516a5c10c40ca93fcd7528fcd748945bc7fb4f6f86d9",
+      "currentLines": 269,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/catalog/publicationState.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "553274c081c6462ce11b406b20624f31a9ef4672aa128b876b4807fd6922dbd3",
+      "currentSha256": "553274c081c6462ce11b406b20624f31a9ef4672aa128b876b4807fd6922dbd3",
+      "currentLines": 302,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/catalog/releaseGarbageCollection.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "cf74818f25077e2d6c22c1b10215e0bd1e86094e4828f7c34afc107db8dd086e",
+      "currentSha256": "cf74818f25077e2d6c22c1b10215e0bd1e86094e4828f7c34afc107db8dd086e",
+      "currentLines": 120,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/catalog/snapshotStorage.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "d5b2551c4eaae2233716c7bd32539d5c8f74c0e562f55f85bcc1eff90decf419",
+      "currentSha256": "d5b2551c4eaae2233716c7bd32539d5c8f74c0e562f55f85bcc1eff90decf419",
+      "currentLines": 512,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/catalog/structuredLog.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "094c48a00cb5503e6866d44a003e7bd43b1ac24fe4021bc618882ccd9dada9f4",
+      "currentSha256": "094c48a00cb5503e6866d44a003e7bd43b1ac24fe4021bc618882ccd9dada9f4",
+      "currentLines": 44,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/checkoutEmailIdentity.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": true,
+      "baselineSha256": null,
+      "currentSha256": "8c5730fc76d10fafb3866dfdc2b49851443967e967363e2ab2810a79ddc7ce22",
+      "currentLines": 19,
+      "addedLines": 19,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/commerceEventDispatch.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "c6336ea6df5cb1fa17f6675fc9699e321bf6ec7f10b00770319f868d28264dfa",
+      "currentSha256": "c6336ea6df5cb1fa17f6675fc9699e321bf6ec7f10b00770319f868d28264dfa",
+      "currentLines": 212,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/createOrder.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "2a13dccf17f8640dae50c6b117f679eccd013b14353eca972f1aa695d988421a",
+      "currentSha256": "2a13dccf17f8640dae50c6b117f679eccd013b14353eca972f1aa695d988421a",
+      "currentLines": 618,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/adminPaymentLink.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "f9dc6a31dab3b383b5b6e87d4ea5b35194e7d382cb4749b65bcc6af1db7d686a",
+      "currentSha256": "f9dc6a31dab3b383b5b6e87d4ea5b35194e7d382cb4749b65bcc6af1db7d686a",
+      "currentLines": 171,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/adminPaymentLinkCoordinator.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "001cc912a7ca34b93c378481a990027db8d87ad251106879a14c1d3c3b53b814",
+      "currentSha256": "001cc912a7ca34b93c378481a990027db8d87ad251106879a14c1d3c3b53b814",
+      "currentLines": 648,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/allowedActions.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "df6568d06c57f1a5bd6b3e0edda3889bb713ef5941baf5059268a2feeba7029d",
+      "currentSha256": "df6568d06c57f1a5bd6b3e0edda3889bb713ef5941baf5059268a2feeba7029d",
+      "currentLines": 84,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/boundedWorkerSweeper.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "282305e7c555ef5ef71701cdb3d652ad48822120b4d0cc668488d7dfdfb6f853",
+      "currentSha256": "282305e7c555ef5ef71701cdb3d652ad48822120b4d0cc668488d7dfdfb6f853",
+      "currentLines": 85,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/cancellationAuditRepository.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "5ab7bccb68ed3dc07ede8ae676febdaf98e677e1e6e770be3b97b8da6dc85ec7",
+      "currentSha256": "5ab7bccb68ed3dc07ede8ae676febdaf98e677e1e6e770be3b97b8da6dc85ec7",
+      "currentLines": 115,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/cancellationCoordinator.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "13e0d1581195b4375df9cd0357301bd0b27f9bc959fa272a6a4f464f26382a57",
+      "currentSha256": "13e0d1581195b4375df9cd0357301bd0b27f9bc959fa272a6a4f464f26382a57",
+      "currentLines": 76,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/checkoutAccessToken.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "ffb7abef074170653e7f9d277c3b40287657efd91aea01fd9f37428683a3ee59",
+      "currentSha256": "ffb7abef074170653e7f9d277c3b40287657efd91aea01fd9f37428683a3ee59",
+      "currentLines": 88,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/checkoutAccessTokenRepository.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "3c7d9305230f55f4bc84a6b8d84e47217e1af6d86ce5c2e436a47d080fb84cb5",
+      "currentSha256": "3c7d9305230f55f4bc84a6b8d84e47217e1af6d86ce5c2e436a47d080fb84cb5",
+      "currentLines": 124,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/checkoutCoordinator.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "6213dd4f64f89cfb67dd0c9cc90cf4116004d5c79e7e53b1e8193bc3e70b3af7",
+      "currentSha256": "6213dd4f64f89cfb67dd0c9cc90cf4116004d5c79e7e53b1e8193bc3e70b3af7",
+      "currentLines": 105,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/checkoutInput.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "9066ea418fd7a1384d17660cd00b3a2189dc1637fecc6bce244255c6cb9d1323",
+      "currentSha256": "9066ea418fd7a1384d17660cd00b3a2189dc1637fecc6bce244255c6cb9d1323",
+      "currentLines": 144,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/checkoutRepository.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "109ab6325c994a749efb71315c68883593c47021a21ba5597ed6eb980d326b00",
+      "currentSha256": "109ab6325c994a749efb71315c68883593c47021a21ba5597ed6eb980d326b00",
+      "currentLines": 600,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/checkoutSaga.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "d6c90cbd116488b5b0715bf9174a97a65a14d9b376761180c49fecf34e2033bc",
+      "currentSha256": "d6c90cbd116488b5b0715bf9174a97a65a14d9b376761180c49fecf34e2033bc",
+      "currentLines": 185,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/checkoutSagaRepository.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "816bdbd88a2d0924829e2d317518346edb16f5cc0e2ee71aace58e94050239bf",
+      "currentSha256": "816bdbd88a2d0924829e2d317518346edb16f5cc0e2ee71aace58e94050239bf",
+      "currentLines": 43,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/checkoutSagaService.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": true,
+      "baselineSha256": "53b65d16f9e0e6fed2e75ba4e3a9cd445b5d9e2d21a9d144181674ffcb3e345b",
+      "currentSha256": "20c0a55c7a43fbca2adef0f5005b60235945134a25d5c42c7d2f52a7b3ee6ffa",
+      "currentLines": 182,
+      "addedLines": 3,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/commerceDocumentArtifact.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "16ecfadceb6db196d718c6092039c6850437d8871f4aecbbdc733e7a87ee01b1",
+      "currentSha256": "16ecfadceb6db196d718c6092039c6850437d8871f4aecbbdc733e7a87ee01b1",
+      "currentLines": 369,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/commerceDocumentStorage.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "01c80d6bd977fdfc76c1f6ecb3a3f6234cc32422782c127d4b9b1027b0584a9b",
+      "currentSha256": "01c80d6bd977fdfc76c1f6ecb3a3f6234cc32422782c127d4b9b1027b0584a9b",
+      "currentLines": 34,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/commerceDocuments.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "19891fcad8de0f5dc176e8aa3fd3b2f76992b229e192b5922cb2b8e1f66cd0fb",
+      "currentSha256": "19891fcad8de0f5dc176e8aa3fd3b2f76992b229e192b5922cb2b8e1f66cd0fb",
+      "currentLines": 118,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/commerceEffects.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "0c3e386688d04fb77470d223d2a38200deedf935229acbc36558ecc28c8f627c",
+      "currentSha256": "0c3e386688d04fb77470d223d2a38200deedf935229acbc36558ecc28c8f627c",
+      "currentLines": 115,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/connectPolicy.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "f9b9ad35572ed88886d17bcd16f77c9db9e34ad7633e7fb76afd1a67378e3a4c",
+      "currentSha256": "f9b9ad35572ed88886d17bcd16f77c9db9e34ad7633e7fb76afd1a67378e3a4c",
+      "currentLines": 45,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/customerReturnRequest.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "0c89e59be41c863e8d267e5a06421481570cd69f8eef06ab67c06914983f063f",
+      "currentSha256": "0c89e59be41c863e8d267e5a06421481570cd69f8eef06ab67c06914983f063f",
+      "currentLines": 148,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/dependencies.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "a57006dc2a376a0319c0dbbadc52dc36782de15bd980b1a1095cf719bb87f836",
+      "currentSha256": "a57006dc2a376a0319c0dbbadc52dc36782de15bd980b1a1095cf719bb87f836",
+      "currentLines": 30,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/eventDispatch.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "fa4e466ba6bc839172ef7d9060ed62eef29bd9cb094778ed6a4aeb09eedd802b",
+      "currentSha256": "fa4e466ba6bc839172ef7d9060ed62eef29bd9cb094778ed6a4aeb09eedd802b",
+      "currentLines": 36,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/failpoints.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "0b70d225e2e0d8902f201ae20f56918ff6ef9ca29d11662c2bf1cca48f7f9bd3",
+      "currentSha256": "0b70d225e2e0d8902f201ae20f56918ff6ef9ca29d11662c2bf1cca48f7f9bd3",
+      "currentLines": 53,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/financialProjection.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "b281735d1eef31d74e5bdbe494cdadd290c32b8784f20e6501920093b949db8b",
+      "currentSha256": "b281735d1eef31d74e5bdbe494cdadd290c32b8784f20e6501920093b949db8b",
+      "currentLines": 146,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/financialRollup.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "166b9a742c8062d9050cc520dcbed25df7743739e7a175e9edcd8f8b7530fa05",
+      "currentSha256": "166b9a742c8062d9050cc520dcbed25df7743739e7a175e9edcd8f8b7530fa05",
+      "currentLines": 87,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/firestoreWorkerQueries.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "f4ca45bfa81f9f4d1cbce8707cd36de9686e850b5caaf28b089c39c3e7927680",
+      "currentSha256": "f4ca45bfa81f9f4d1cbce8707cd36de9686e850b5caaf28b089c39c3e7927680",
+      "currentLines": 98,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/fixtureCleanup.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "8acf9acad05cbf9641f810180754c5d2f7acd51bd89c7d6c20219a1a6538e49a",
+      "currentSha256": "8acf9acad05cbf9641f810180754c5d2f7acd51bd89c7d6c20219a1a6538e49a",
+      "currentLines": 95,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/fixtureScope.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "a3cbc3217c3a15e13f39647e227e051b5480347a8696826ca12e63de51b7cdf3",
+      "currentSha256": "a3cbc3217c3a15e13f39647e227e051b5480347a8696826ca12e63de51b7cdf3",
+      "currentLines": 131,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/guestCheckoutCoordinator.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "e8891d21a0ea014cb5bfd33f8973cc0e1cd80ccc1ad98f2d042af5b3ca1c912a",
+      "currentSha256": "e8891d21a0ea014cb5bfd33f8973cc0e1cd80ccc1ad98f2d042af5b3ca1c912a",
+      "currentLines": 42,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/idempotency.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "6964637b7a89b1ac077d2f7ca7bff56cc35fa4793392a7b580dda46a9dd09e46",
+      "currentSha256": "6964637b7a89b1ac077d2f7ca7bff56cc35fa4793392a7b580dda46a9dd09e46",
+      "currentLines": 94,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/inventoryInvariants.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "1f80ebdf746a5d54d31422a39d02d521dbf0a2f568ffc9be14972418493ebe3d",
+      "currentSha256": "1f80ebdf746a5d54d31422a39d02d521dbf0a2f568ffc9be14972418493ebe3d",
+      "currentLines": 100,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/inventoryKey.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "2a0c9ea94dc556945df07f193608cf03624f29f4d6b5e5d25ca49a0066c46a2b",
+      "currentSha256": "2a0c9ea94dc556945df07f193608cf03624f29f4d6b5e5d25ca49a0066c46a2b",
+      "currentLines": 59,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/legacyClassification.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "628e9ee359c80f725312ccb2e274304e0dde0d3d6c62587819b4009acd2b57d4",
+      "currentSha256": "628e9ee359c80f725312ccb2e274304e0dde0d3d6c62587819b4009acd2b57d4",
+      "currentLines": 258,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/legacyProjection.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "2991d947d9e4e77883b581be99ba4d92f3b845a48566560e46c8d34f56b191bb",
+      "currentSha256": "2991d947d9e4e77883b581be99ba4d92f3b845a48566560e46c8d34f56b191bb",
+      "currentLines": 90,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/money.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "5650ff956678d5377ffde6427ef2b48a825ed70595ad155f3177cc9bbe8784e4",
+      "currentSha256": "5650ff956678d5377ffde6427ef2b48a825ed70595ad155f3177cc9bbe8784e4",
+      "currentLines": 114,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/operationsHealth.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "0006fc05f0961f6a65b9208c024e4f950f43faec6caaca6eb2055e630916c690",
+      "currentSha256": "0006fc05f0961f6a65b9208c024e4f950f43faec6caaca6eb2055e630916c690",
+      "currentLines": 158,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/orderCommandRepository.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "d23826825347e7819a28157fd26c76def21ba2bda14a916111e527ed88e63b72",
+      "currentSha256": "d23826825347e7819a28157fd26c76def21ba2bda14a916111e527ed88e63b72",
+      "currentLines": 259,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/orderState.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "09e4d69ca3162a756adcdc7e5ea10cb336f11fd07ae1d0b13ded963eab084bb2",
+      "currentSha256": "09e4d69ca3162a756adcdc7e5ea10cb336f11fd07ae1d0b13ded963eab084bb2",
+      "currentLines": 717,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/outboxRepository.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "f0601eb838d26d06affd8c7a3b2881948ee3edbb7d0ee64c01ed2935202a4081",
+      "currentSha256": "f0601eb838d26d06affd8c7a3b2881948ee3edbb7d0ee64c01ed2935202a4081",
+      "currentLines": 206,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/outboxWorker.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": true,
+      "baselineSha256": "aeedb198df7d760c1323bf3fb81121982157b36147354c8c126bd3a6078476c9",
+      "currentSha256": "2a6b4f0d20c208e7f59aab892d9850bba5e302cc7fbaa33a69217d8cedd3f289",
+      "currentLines": 116,
+      "addedLines": 4,
+      "removedLines": 2
+    },
+    {
+      "file": "functions/src/commerce/domain/paymentEffectApplier.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "6b35d1c883a5e98a4b1f4bdb916d2d36505c79794b8468716e2be5a568949026",
+      "currentSha256": "6b35d1c883a5e98a4b1f4bdb916d2d36505c79794b8468716e2be5a568949026",
+      "currentLines": 500,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/policy.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "d778dbf6cce73cbc8a4222ffd3886a4dad46225160a06874394088b945dd40a4",
+      "currentSha256": "d778dbf6cce73cbc8a4222ffd3886a4dad46225160a06874394088b945dd40a4",
+      "currentLines": 185,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/productCommandRepository.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "b36b686f88eb3e467ce6026330d0f3e6f0d0e7ab90cd0545e9a6c3b5cfafcfa8",
+      "currentSha256": "b36b686f88eb3e467ce6026330d0f3e6f0d0e7ab90cd0545e9a6c3b5cfafcfa8",
+      "currentLines": 160,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/productCommands.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "a451577dc52c130bcc7249860ad1fa7739e8ceae77d1d2bff550aa5e9694971d",
+      "currentSha256": "a451577dc52c130bcc7249860ad1fa7739e8ceae77d1d2bff550aa5e9694971d",
+      "currentLines": 414,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/promotionCode.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "d5c3d6ec1dd24a4ad44ad523e89d8de5cbb7115cb60fdb8b9c1a65e657dfdce1",
+      "currentSha256": "d5c3d6ec1dd24a4ad44ad523e89d8de5cbb7115cb60fdb8b9c1a65e657dfdce1",
+      "currentLines": 179,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/providerCreateWindow.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": true,
+      "baselineSha256": null,
+      "currentSha256": "c6dbd09e0d92724cec0b39b9aa2289f3a99aa104caadfe23088a2df444928f90",
+      "currentLines": 18,
+      "addedLines": 18,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/reconcilePayment.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "7f325b8f6ea9ad59bbf6692ebfb51c468b1021fc40445e628ddd236416d7c330",
+      "currentSha256": "7f325b8f6ea9ad59bbf6692ebfb51c468b1021fc40445e628ddd236416d7c330",
+      "currentLines": 156,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/refundCoordinator.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "99fe0d8b725500026aa5ea21a9ef78cc9e38ec3c7123f02a5275ad1612316c6c",
+      "currentSha256": "99fe0d8b725500026aa5ea21a9ef78cc9e38ec3c7123f02a5275ad1612316c6c",
+      "currentLines": 28,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/refundEffectApplier.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "7201f7c6006dadefbd7b19f67357b939020be827e9e24e860da8113f7ac0ff76",
+      "currentSha256": "7201f7c6006dadefbd7b19f67357b939020be827e9e24e860da8113f7ac0ff76",
+      "currentLines": 369,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/refundRepository.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "4524bb01bac663fcb0213e879cb8fb3a02aff890f68ee731ea42d9e2e8832c55",
+      "currentSha256": "4524bb01bac663fcb0213e879cb8fb3a02aff890f68ee731ea42d9e2e8832c55",
+      "currentLines": 423,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/refundSaga.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "17bc6143ab8d4fb7b79929a5a51ac44c41e4f02ce5deb685c57d9fc9833d9f98",
+      "currentSha256": "17bc6143ab8d4fb7b79929a5a51ac44c41e4f02ce5deb685c57d9fc9833d9f98",
+      "currentLines": 164,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/refundSagaService.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": true,
+      "baselineSha256": "ad88475a34292f7e1866694a613e2ea2e17794627aaac22c12ac2e0b92aa78d4",
+      "currentSha256": "a8edfcba02e6c6dbffff552c1474bcde69d6cb285234cf4d5a70988b53083f06",
+      "currentLines": 87,
+      "addedLines": 5,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/reservationExpiryWorker.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "98faa59f54b019c17d194cf4bab75f7168fa53cffed6e51e6add9091271fc5d1",
+      "currentSha256": "98faa59f54b019c17d194cf4bab75f7168fa53cffed6e51e6add9091271fc5d1",
+      "currentLines": 43,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/reservationRepository.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "7af6287436ecb089d6a1911c8f87a5fe8dc9365346b087d7bffb92fac75026a2",
+      "currentSha256": "7af6287436ecb089d6a1911c8f87a5fe8dc9365346b087d7bffb92fac75026a2",
+      "currentLines": 216,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/returnCase.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "f2cc1fa6dd07c698ace24a880497b22ee1fa1df27a5317f4bd218ecfc3043bbc",
+      "currentSha256": "f2cc1fa6dd07c698ace24a880497b22ee1fa1df27a5317f4bd218ecfc3043bbc",
+      "currentLines": 235,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/returnRepository.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "e9670a6ede34d0503b95f88a4052066f5e675225c46e8544dad581b68f37bb60",
+      "currentSha256": "e9670a6ede34d0503b95f88a4052066f5e675225c46e8544dad581b68f37bb60",
+      "currentLines": 374,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/schedulerFence.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "b19f3e69f66ea57f4c246a2c2990c32943170693c7a24b670d8812fb86454937",
+      "currentSha256": "b19f3e69f66ea57f4c246a2c2990c32943170693c7a24b670d8812fb86454937",
+      "currentLines": 83,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/shippingTracking.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "882162e621cf204ec8480023a19b918009f23907317023c963d6517dc9b8acb1",
+      "currentSha256": "882162e621cf204ec8480023a19b918009f23907317023c963d6517dc9b8acb1",
+      "currentLines": 71,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/stripeWebhookIngress.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "136161757dcd57082b20674149db7e30aae3c811037fa52ca2bf5533f1d8625c",
+      "currentSha256": "136161757dcd57082b20674149db7e30aae3c811037fa52ca2bf5533f1d8625c",
+      "currentLines": 92,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/v2Runtime.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "07acd517fd4464bcf611c88766957ebd478808489fe95b3db3e47ecb8c3d51f7",
+      "currentSha256": "07acd517fd4464bcf611c88766957ebd478808489fe95b3db3e47ecb8c3d51f7",
+      "currentLines": 713,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/webhookInbox.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "b0c74ca10ee5609307aeac7d0ab9ca1a4348ba081064d762ce1d1423cf6f1c03",
+      "currentSha256": "b0c74ca10ee5609307aeac7d0ab9ca1a4348ba081064d762ce1d1423cf6f1c03",
+      "currentLines": 139,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/webhookInboxRepository.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "b08781c601200aff94e4784c63851177bf2b917e548eadd77cb4de81becc02b3",
+      "currentSha256": "b08781c601200aff94e4784c63851177bf2b917e548eadd77cb4de81becc02b3",
+      "currentLines": 104,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/webhookWorker.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "6fff05c6f4b5c7168e0ee8fbd50d3b771f81727b1110bcc4f0f07c2a709744df",
+      "currentSha256": "6fff05c6f4b5c7168e0ee8fbd50d3b771f81727b1110bcc4f0f07c2a709744df",
+      "currentLines": 104,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/domain/workerRunHealth.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "5291328e4667ef98170c835e98906c48a5b91e3aacbad68ff4006f907621b02a",
+      "currentSha256": "5291328e4667ef98170c835e98906c48a5b91e3aacbad68ff4006f907621b02a",
+      "currentLines": 70,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/gen2G8.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "6ef921fa59e7cb439dab0e7e55cbe4c305c47ce884c52a5fb5587d4ad8605421",
+      "currentSha256": "6ef921fa59e7cb439dab0e7e55cbe4c305c47ce884c52a5fb5587d4ad8605421",
+      "currentLines": 90,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/gen2G9.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "c38c8fb1227d8acc9ce8e782a4ef7dac1484e16b67c791eccd7edf02210da9b6",
+      "currentSha256": "c38c8fb1227d8acc9ce8e782a4ef7dac1484e16b67c791eccd7edf02210da9b6",
+      "currentLines": 143,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/legacyContainment.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "5ef5c61f5bdcd8d942039f522e1759dfb3176670c2aa4622166d621f73d5ba5d",
+      "currentSha256": "5ef5c61f5bdcd8d942039f522e1759dfb3176670c2aa4622166d621f73d5ba5d",
+      "currentLines": 83,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/orderStats.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "1a22b256f400d524b8a431ae5229cdaddc1073a4c4b8810813b6abbca9cd4e0b",
+      "currentSha256": "1a22b256f400d524b8a431ae5229cdaddc1073a4c4b8810813b6abbca9cd4e0b",
+      "currentLines": 302,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/orderStatus.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "5bace385f9eee8e839c39ab8f502597eea2e7defbf938c9c05cf95318d0e5fb9",
+      "currentSha256": "5bace385f9eee8e839c39ab8f502597eea2e7defbf938c9c05cf95318d0e5fb9",
+      "currentLines": 72,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/promotionMaterialization.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "e22d7c1eee427ee8eb91b0784180994134abf3c4a14546c87d88c17c9877b812",
+      "currentSha256": "e22d7c1eee427ee8eb91b0784180994134abf3c4a14546c87d88c17c9877b812",
+      "currentLines": 34,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/stripeConnect.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "9e91a1c5159cd103bf7474e96162cbbfddfd56ba63b0d4b35d81ae8bf0f57c95",
+      "currentSha256": "9e91a1c5159cd103bf7474e96162cbbfddfd56ba63b0d4b35d81ae8bf0f57c95",
+      "currentLines": 368,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/v2AdminPaymentLinks.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": true,
+      "baselineSha256": "bd6bf79083e476f0d553fb4f71eefd6076b1a34ec8412a6ebeb627a8d7d9ab14",
+      "currentSha256": "cf3406fbc26b761b4c691b224898d279ed8d159f614fb51f01837f71e88e5e36",
+      "currentLines": 451,
+      "addedLines": 7,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/v2Cancellation.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": true,
+      "baselineSha256": "6aaacaa869d6893a79a4694fdde390add456535c5012c402dbd85f86d12db91f",
+      "currentSha256": "73b6316e90f4072ad42f270d638f2236d6d64ed933cd019c18e2fbb197852535",
+      "currentLines": 156,
+      "addedLines": 7,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/v2Checkout.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": true,
+      "baselineSha256": "bd7216e640e463bcf008dc321e1b127add53b8fac2900c75975d486a405508d9",
+      "currentSha256": "3bf9978827951de8eb42b811e6e187e32eae9302d060a1edab8923c67169f468",
+      "currentLines": 214,
+      "addedLines": 11,
+      "removedLines": 1
+    },
+    {
+      "file": "functions/src/commerce/v2ControlGuard.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "0bf300fde28e0f9c4b001fc4a5cd5c4366c8cf04cd64ce467e7927e4ad7d60ce",
+      "currentSha256": "0bf300fde28e0f9c4b001fc4a5cd5c4366c8cf04cd64ce467e7927e4ad7d60ce",
+      "currentLines": 83,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/v2CustomerReturnRequests.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": true,
+      "baselineSha256": "b0ed43da54de003e1dea3ad930de694b6c0af955edd793bb5d97504ae58d8a42",
+      "currentSha256": "f41207b52bbf15eea1765d7e00b338d9533ab5399afa8e0915a685d5d1787482",
+      "currentLines": 500,
+      "addedLines": 7,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/v2DeliveryPolicyAdmin.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "e92a5af70f3cdffa2e8172ec66389a1e3499c76e900235abeed078a9d5f0f50e",
+      "currentSha256": "e92a5af70f3cdffa2e8172ec66389a1e3499c76e900235abeed078a9d5f0f50e",
+      "currentLines": 328,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/v2DocumentDelivery.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "eb20026ca99b810f243a132aaf677664479b755d8a239fcb1d432ebdc6358720",
+      "currentSha256": "eb20026ca99b810f243a132aaf677664479b755d8a239fcb1d432ebdc6358720",
+      "currentLines": 235,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/v2Operations.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": true,
+      "baselineSha256": "1f680a729e3d5f2998418ee0c180654ad6afefa147f3a45428e8386185c2f313",
+      "currentSha256": "2612cda5f5d708878195f2379b9fa688864d1f050893069a9eaa5dd372f65bbd",
+      "currentLines": 946,
+      "addedLines": 11,
+      "removedLines": 257
+    },
+    {
+      "file": "functions/src/commerce/v2OrderCommands.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "b2a48f547308ecf7d87daf6c975a2751d073d1b59641bc291dc974da1e8d26cc",
+      "currentSha256": "b2a48f547308ecf7d87daf6c975a2751d073d1b59641bc291dc974da1e8d26cc",
+      "currentLines": 227,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/v2OrderQueries.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "57d6ee0124408356f0145756dbe9558941ef6616328d38f5a0fd164b2c916724",
+      "currentSha256": "57d6ee0124408356f0145756dbe9558941ef6616328d38f5a0fd164b2c916724",
+      "currentLines": 768,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/v2ProductCommands.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "8a41e9b6e743e669ca8ca3bae51d7816525d11c49eed19bcb5531fffff5ac2d1",
+      "currentSha256": "8a41e9b6e743e669ca8ca3bae51d7816525d11c49eed19bcb5531fffff5ac2d1",
+      "currentLines": 193,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/v2PromotionCodes.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "b0b4788e080b9551ae1340ac02309f12cc1502b8df19509a7fb76fce3fa19388",
+      "currentSha256": "b0b4788e080b9551ae1340ac02309f12cc1502b8df19509a7fb76fce3fa19388",
+      "currentLines": 297,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/v2RefundCommands.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": true,
+      "baselineSha256": "f4e3f8ecf64fe675a6894894eab2c4f64aa6ac8a28c6e615994341b8f95a4bcb",
+      "currentSha256": "7c46e9e4c6df8758306eac92e3ed6b1bfa26127ac5c0a059eb8559bda0114675",
+      "currentLines": 161,
+      "addedLines": 7,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/v2ReservationExpiry.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "8f878d5cdb5eaeede2ce52aa607d197be9e007c7ebf17feceae0202bcf9e2805",
+      "currentSha256": "8f878d5cdb5eaeede2ce52aa607d197be9e007c7ebf17feceae0202bcf9e2805",
+      "currentLines": 72,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/v2ReturnCommands.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "e5df3b765fbe74d0a42a69fc44c1872d6d3f51acdc69b08df082212526ceeabf",
+      "currentSha256": "e5df3b765fbe74d0a42a69fc44c1872d6d3f51acdc69b08df082212526ceeabf",
+      "currentLines": 246,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/commerce/v2Webhooks.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "30ff0d5d9b5c14bcffd9a3892fbd48c9aad2c212f18c1d6e500dfe56b664fd90",
+      "currentSha256": "30ff0d5d9b5c14bcffd9a3892fbd48c9aad2c212f18c1d6e500dfe56b664fd90",
+      "currentLines": 106,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/email/commerceEmailTemplates.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "c31f4252c3be598c5e9f9edc075982d18b11346d0881702ab8a1d02dd99c2ee2",
+      "currentSha256": "c31f4252c3be598c5e9f9edc075982d18b11346d0881702ab8a1d02dd99c2ee2",
+      "currentLines": 535,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/email/emailDesignSystem.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "81affda2ec6129100bf85c0859c16b502862b4a80354a869bf53b3deca31dcc2",
+      "currentSha256": "81affda2ec6129100bf85c0859c16b502862b4a80354a869bf53b3deca31dcc2",
+      "currentLines": 185,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/email/legacyOrderEmailDelivery.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "b23b1f80de9ff61d2299cd38029a47aa6bf8c7a718ccb7387a7d7c204caf2223",
+      "currentSha256": "b23b1f80de9ff61d2299cd38029a47aa6bf8c7a718ccb7387a7d7c204caf2223",
+      "currentLines": 225,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/email/orderEmails.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "7e21d1e8454db7f1c5a75b677d07d8bd82e3044704d426e6370fb3cd06a915ff",
+      "currentSha256": "7e21d1e8454db7f1c5a75b677d07d8bd82e3044704d426e6370fb3cd06a915ff",
+      "currentLines": 609,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/email/otpEmailTemplates.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "c5f743745ac9fffa70fc4a9b62832b4958bbf37a8d3f4b9987b42508042fd476",
+      "currentSha256": "c5f743745ac9fffa70fc4a9b62832b4958bbf37a8d3f4b9987b42508042fd476",
+      "currentLines": 84,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/email/transactionalEmail.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "1887002331b0fe19008d8990d9110310a32f12c1b0675367c3a6a6d4be6b0e24",
+      "currentSha256": "1887002331b0fe19008d8990d9110310a32f12c1b0675367c3a6a6d4be6b0e24",
+      "currentLines": 259,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/email/transactionalEmailRuntime.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "c1a580adc203479028e8d3b859fd6e9fe2808a40adc58b1aaf1614bb66dd5b1d",
+      "currentSha256": "c1a580adc203479028e8d3b859fd6e9fe2808a40adc58b1aaf1614bb66dd5b1d",
+      "currentLines": 70,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/integrations/meta.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "05cf37c5543875caa207796f96db688e37851e46ab6b1cd77c88b7837194cd8b",
+      "currentSha256": "05cf37c5543875caa207796f96db688e37851e46ab6b1cd77c88b7837194cd8b",
+      "currentLines": 1150,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/integrations/metaContract.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "1639457e9720a7666c30d8e3632bb9287c2e8dd7311f58400a6f403dae2f90ef",
+      "currentSha256": "1639457e9720a7666c30d8e3632bb9287c2e8dd7311f58400a6f403dae2f90ef",
+      "currentLines": 284,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/invoicing/manualInvoiceDomain.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "38b29cf96653d814c628b38982b7d6ad96fdbd930e79ea614b3b1805a4b4e65a",
+      "currentSha256": "38b29cf96653d814c628b38982b7d6ad96fdbd930e79ea614b3b1805a4b4e65a",
+      "currentLines": 182,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/invoicing/manualInvoiceEmailTemplate.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "9d875f734ab5d2f88da8b21f279f0500a492f65d72f0d464834b00a141c7324b",
+      "currentSha256": "9d875f734ab5d2f88da8b21f279f0500a492f65d72f0d464834b00a141c7324b",
+      "currentLines": 77,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/invoicing/manualInvoicePdf.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "38ca0b40df036b07bf09286fbf6e19d23accb36dd1bd78141c86b5f2b69d6168",
+      "currentSha256": "38ca0b40df036b07bf09286fbf6e19d23accb36dd1bd78141c86b5f2b69d6168",
+      "currentLines": 277,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/invoicing/manualInvoices.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": true,
+      "baselineSha256": "0f86befff1a97e4bc33ca0bca89a1b07240eb4993509225cb0143ec57cb6050d",
+      "currentSha256": "4b7791d91ddb6e008738c3706e11bf4f57059918230da032ef61382967cf6433",
+      "currentLines": 513,
+      "addedLines": 25,
+      "removedLines": 16
+    },
+    {
+      "file": "functions/src/newsletter/newsletterProjection.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "41c8a0739a8c1e123791d0385c71a8ab27f74bdb980de19c26987798e665f23d",
+      "currentSha256": "41c8a0739a8c1e123791d0385c71a8ab27f74bdb980de19c26987798e665f23d",
+      "currentLines": 127,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/newsletter/newsletterProjectionDomain.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "ed82529a9f24316cda6fc7e774902abcc5950bbb424bd1e71bae8d95e2f07566",
+      "currentSha256": "ed82529a9f24316cda6fc7e774902abcc5950bbb424bd1e71bae8d95e2f07566",
+      "currentLines": 37,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/newsletter/newsletterRewardDomain.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "ba4a6a3183c74d0d5105dff79296605e0a304884ae22d17e65fe374d2ea7ca2d",
+      "currentSha256": "ba4a6a3183c74d0d5105dff79296605e0a304884ae22d17e65fe374d2ea7ca2d",
+      "currentLines": 116,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/newsletter/newsletterRewardEmail.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "417c6049d3fdca7029e07885b6d7d8e831461c09d4b0a0c8c7b2974b8341d3c4",
+      "currentSha256": "417c6049d3fdca7029e07885b6d7d8e831461c09d4b0a0c8c7b2974b8341d3c4",
+      "currentLines": 66,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/newsletter/newsletterRewards.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "19b65e32300c084eb2bb5c30ccfafc2c10cb3c0fbdbb13bf6af7cb34ad7af21d",
+      "currentSha256": "19b65e32300c084eb2bb5c30ccfafc2c10cb3c0fbdbb13bf6af7cb34ad7af21d",
+      "currentLines": 322,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/observability/businessEvents.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "979f066e11f295fdb1211b851333df2294e6ac548b28aa86ec937152519a9c39",
+      "currentSha256": "979f066e11f295fdb1211b851333df2294e6ac548b28aa86ec937152519a9c39",
+      "currentLines": 463,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/observability/diagnosticTimeline.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "c81b47ec670900e678299cb7d832a854ed09a9a561f7534180d73c5de18ceb59",
+      "currentSha256": "c81b47ec670900e678299cb7d832a854ed09a9a561f7534180d73c5de18ceb59",
+      "currentLines": 415,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/observability/incidentProjection.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "62c70277971c91bbc6be5510132d0bf4128336418cb654acba03a3eb2dd565d6",
+      "currentSha256": "62c70277971c91bbc6be5510132d0bf4128336418cb654acba03a3eb2dd565d6",
+      "currentLines": 127,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/observability/systemIncidentProjection.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "9060ac2881d22646ed557dfaf19be5eaba79a6de07b73c08575532a8e0587719",
+      "currentSha256": "9060ac2881d22646ed557dfaf19be5eaba79a6de07b73c08575532a8e0587719",
+      "currentLines": 247,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/observability/systemIncidents.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "dafc55acee4a530098f960b7a7be284e438b639229ee6b9bcedc71ae1124988e",
+      "currentSha256": "dafc55acee4a530098f960b7a7be284e438b639229ee6b9bcedc71ae1124988e",
+      "currentLines": 275,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/onboarding/billingGuide.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "8ed616b4c98c85433f8a2f812e5a1c63ee21fae65c817f239dd7f768758911b4",
+      "currentSha256": "8ed616b4c98c85433f8a2f812e5a1c63ee21fae65c817f239dd7f768758911b4",
+      "currentLines": 383,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/onboarding/billingGuideContract.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "23facacc11e0cf3e3b7a78b3c4ff5984c42816a98d37972a24586be718737def",
+      "currentSha256": "23facacc11e0cf3e3b7a78b3c4ff5984c42816a98d37972a24586be718737def",
+      "currentLines": 66,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/publication/productPublication.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "de4ec418f5ecfbe94fffa4b6780ac8ac5852ddeeb3add9101b725e1e70ea2ef4",
+      "currentSha256": "de4ec418f5ecfbe94fffa4b6780ac8ac5852ddeeb3add9101b725e1e70ea2ef4",
+      "currentLines": 502,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/quotes/quoteEmailTemplates.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "ea7ebb42523f4ba0dc9d83fb8c9ea433183b9d960d6a013160190880f188eb83",
+      "currentSha256": "ea7ebb42523f4ba0dc9d83fb8c9ea433183b9d960d6a013160190880f188eb83",
+      "currentLines": 85,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/quotes/quoteRequestDomain.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "dceeb2301b61f9e42ec2339b75f68180d4988409e9b14e1de1d89fb99581cf35",
+      "currentSha256": "dceeb2301b61f9e42ec2339b75f68180d4988409e9b14e1de1d89fb99581cf35",
+      "currentLines": 243,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/quotes/quoteRequests.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": true,
+      "baselineSha256": "ad2166373164c39e96941ec4af5fc28be5cba4c0c8d2ab2ec53a841a4b31b299",
+      "currentSha256": "799f5bf1a0042e5b470737be47b6cf85beb76a1f318710cf3eb2201668eee1e3",
+      "currentLines": 637,
+      "addedLines": 15,
+      "removedLines": 3
+    },
+    {
+      "file": "functions/src/shared/orderReference.cjs",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "639c3389445cd0cb2c1ff1736e2756e7471604b299795f10f56848e6d750ba82",
+      "currentSha256": "639c3389445cd0cb2c1ff1736e2756e7471604b299795f10f56848e6d750ba82",
+      "currentLines": 31,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/triggers/mediaCleanup.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "013dc6c9cb89e30871cfc2fb17ade5938183e80a46323f49502b4b78f5fb982e",
+      "currentSha256": "013dc6c9cb89e30871cfc2fb17ade5938183e80a46323f49502b4b78f5fb982e",
+      "currentLines": 82,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/triggers/onArtifactDeleted.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "68bc11053855763818343b09aa46ad796bd50ef1b486bca34988df8d7e52479b",
+      "currentSha256": "68bc11053855763818343b09aa46ad796bd50ef1b486bca34988df8d7e52479b",
+      "currentLines": 54,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "functions/src/triggers/onArtifactUpdated.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "888b9f8577c2701cb45ed553f6e6d069b87d47119b6788599c3a6df3efa58112",
+      "currentSha256": "888b9f8577c2701cb45ed553f6e6d069b87d47119b6788599c3a6df3efa58112",
+      "currentLines": 62,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "next.config.mjs",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "897aa60c48b94297356db4d233ca51700cac048ab7279e81b20eb6679de95757",
+      "currentSha256": "897aa60c48b94297356db4d233ca51700cac048ab7279e81b20eb6679de95757",
+      "currentLines": 91,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "shared/orderReference.cjs",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "639c3389445cd0cb2c1ff1736e2756e7471604b299795f10f56848e6d750ba82",
+      "currentSha256": "639c3389445cd0cb2c1ff1736e2756e7471604b299795f10f56848e6d750ba82",
+      "currentLines": 31,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/AdminAccount.jsx",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "f81c96ccbc9e86ed60c27dc5ad2a4a3f53f9108cc03fb484d55d53f9ad6ef54a",
+      "currentSha256": "f81c96ccbc9e86ed60c27dc5ad2a4a3f53f9108cc03fb484d55d53f9ad6ef54a",
+      "currentLines": 71,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/AdminAnalytics.jsx",
+      "review": "analytics différés ; inventorié",
+      "changedDuringAudit": false,
+      "baselineSha256": "f9530cb1df9a6ec429a3630793bddc4a37379e7f6b680a6331c8d0e7ce43d2ab",
+      "currentSha256": "f9530cb1df9a6ec429a3630793bddc4a37379e7f6b680a6331c8d0e7ce43d2ab",
+      "currentLines": 2434,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/AdminDashboard.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "3361140a0414b5d02596bc319e0cba471277ca23c1c5e0f7a3ea9a8d7c3df2ec",
+      "currentSha256": "3361140a0414b5d02596bc319e0cba471277ca23c1c5e0f7a3ea9a8d7c3df2ec",
+      "currentLines": 1675,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/AdminForm.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "423fdc61abe0412c06dca8b54a666f6562ecd558685b22ac4542c696fa41cfee",
+      "currentSha256": "423fdc61abe0412c06dca8b54a666f6562ecd558685b22ac4542c696fa41cfee",
+      "currentLines": 1556,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/AdminFunctionPerformance.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "23f3505ac8569204ceaa1504b4c03273f4ab93da9dac0ac71d29a5e3396a53a3",
+      "currentSha256": "23f3505ac8569204ceaa1504b4c03273f4ab93da9dac0ac71d29a5e3396a53a3",
+      "currentLines": 86,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/AdminHomepage.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "ab47cfb6de4fbc19a070abdf7e1340ed53f332f24ef305ff3783a1adce57fb44",
+      "currentSha256": "ab47cfb6de4fbc19a070abdf7e1340ed53f332f24ef305ff3783a1adce57fb44",
+      "currentLines": 1130,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/AdminIPManager.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "749d36750bc01ed3751dfa22e5ec5b871f0dac8ca34260225b5bf67b6fd21090",
+      "currentSha256": "749d36750bc01ed3751dfa22e5ec5b871f0dac8ca34260225b5bf67b6fd21090",
+      "currentLines": 170,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/AdminIPTracker.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "9dbd3df09b0c72727bdf4b5836cf609a13bc7a1656967ccef830849a67e0a54e",
+      "currentSha256": "9dbd3df09b0c72727bdf4b5836cf609a13bc7a1656967ccef830849a67e0a54e",
+      "currentLines": 41,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/AdminIncidentConsole.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "e7031f30fe4c8ed3efeed769096e6bfe9c0d86f4b6cc5eb66f5d5aad0e320f65",
+      "currentSha256": "e7031f30fe4c8ed3efeed769096e6bfe9c0d86f4b6cc5eb66f5d5aad0e320f65",
+      "currentLines": 282,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/AdminInvoices.jsx",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": true,
+      "baselineSha256": "76eca1bff0a40baa2638648666528803ce1cb898d1814dca64852859efaaf37a",
+      "currentSha256": "8e8d040741dbacc4fdc421bad0c4140b7a4e7615f969c8828eeb30d0916a8dbd",
+      "currentLines": 585,
+      "addedLines": 11,
+      "removedLines": 1
+    },
+    {
+      "file": "src/kit/admin/AdminItemList.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "60348b099f0f92d927bf5c746198fe106b9f7d6683626739178581d7bfeed507",
+      "currentSha256": "60348b099f0f92d927bf5c746198fe106b9f7d6683626739178581d7bfeed507",
+      "currentLines": 409,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/AdminLivraison.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "5177f0a7a66cba8b6d98efdce2f848b39fced36c13172a315312b7a0c2ac2300",
+      "currentSha256": "5177f0a7a66cba8b6d98efdce2f848b39fced36c13172a315312b7a0c2ac2300",
+      "currentLines": 269,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/AdminNewsletter.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "dc6074d3063c5469a2d62650dde740470955d051d0539ff2e4dea6fc0aa47607",
+      "currentSha256": "dc6074d3063c5469a2d62650dde740470955d051d0539ff2e4dea6fc0aa47607",
+      "currentLines": 234,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/AdminOrders.jsx",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "56f06f17a1201b7bbc9fd64dc0d397962d207dc167099f3897c06082c8c3d6c3",
+      "currentSha256": "56f06f17a1201b7bbc9fd64dc0d397962d207dc167099f3897c06082c8c3d6c3",
+      "currentLines": 499,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/AdminPaymentLinks.jsx",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "d9f131fcaceb8b2466b57f4ef9cf65abeb27a49d3d4fe8c66fd4cd1d05446437",
+      "currentSha256": "d9f131fcaceb8b2466b57f4ef9cf65abeb27a49d3d4fe8c66fd4cd1d05446437",
+      "currentLines": 517,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/AdminPaymentSettings.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "0c267b51135f19e4d3a267f5e7953a112856f7d9aed69516dd340ed7c244f191",
+      "currentSha256": "0c267b51135f19e4d3a267f5e7953a112856f7d9aed69516dd340ed7c244f191",
+      "currentLines": 404,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/AdminPromotionCodes.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "6fa17aaa912f94a6fb7e7b48b7b485434fd85950a1c8a5f37ad6c52dbc7f88ee",
+      "currentSha256": "6fa17aaa912f94a6fb7e7b48b7b485434fd85950a1c8a5f37ad6c52dbc7f88ee",
+      "currentLines": 241,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/AdminPublicationWorkspace.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "83664c6187f33a6cac48e974869b26a5eed196763987ad9f68f9b245ba1ef3a4",
+      "currentSha256": "83664c6187f33a6cac48e974869b26a5eed196763987ad9f68f9b245ba1ef3a4",
+      "currentLines": 200,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/AdminQuotes.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "2d20a607ff8aebdbd2c092022f79803429a7ea1c1ad4768d35a6a3817bed6d0d",
+      "currentSha256": "2d20a607ff8aebdbd2c092022f79803429a7ea1c1ad4768d35a6a3817bed6d0d",
+      "currentLines": 530,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/AdminReturns.jsx",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "3bf5818c70e710214d1dfd372bfa92598b87db01646ebf59031075aa3f26a697",
+      "currentSha256": "3bf5818c70e710214d1dfd372bfa92598b87db01646ebf59031075aa3f26a697",
+      "currentLines": 1288,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/AdminSEO.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "7411f500786fcd46bd46d3e2a589044749bbc56383ab7c50863e01d3b6175b36",
+      "currentSha256": "7411f500786fcd46bd46d3e2a589044749bbc56383ab7c50863e01d3b6175b36",
+      "currentLines": 231,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/AdminStudio.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "b8714ed98e26a69f0a0fe6c841b5e356c46a33c6d3b062233412829f034979fe",
+      "currentSha256": "b8714ed98e26a69f0a0fe6c841b5e356c46a33c6d3b062233412829f034979fe",
+      "currentLines": 132,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/AdminUsers.jsx",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "d8f92170bc7cf6f86e8ac7e65397e2808df0ac2af5ad95b73f7e5516d816a1ff",
+      "currentSha256": "d8f92170bc7cf6f86e8ac7e65397e2808df0ac2af5ad95b73f7e5516d816a1ff",
+      "currentLines": 249,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/BillingOnboardingGuide.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "5b19420f41cbe4154f5010ab2ce5501d4f96aeb2305e404b3687c0e481b147c6",
+      "currentSha256": "5b19420f41cbe4154f5010ab2ce5501d4f96aeb2305e404b3687c0e481b147c6",
+      "currentLines": 492,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/BillingOnboardingOperator.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "b64cb4b22fecd8873842a5184c0d82ba20fe2429399216790d9502c6387f47d7",
+      "currentSha256": "b64cb4b22fecd8873842a5184c0d82ba20fe2429399216790d9502c6387f47d7",
+      "currentLines": 204,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/GlobalInventoryView.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "49f59e0a33214281a2d61f894eb5fce060e2d8cd43baed4355ad5e989f295b0f",
+      "currentSha256": "49f59e0a33214281a2d61f894eb5fce060e2d8cd43baed4355ad5e989f295b0f",
+      "currentLines": 423,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/SystemIncidentConsole.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "c7f46fc7f1de28d8d4ec8be41074533c7f9ded8aa78ab8e3cd63a3368ab8a8ad",
+      "currentSha256": "c7f46fc7f1de28d8d4ec8be41074533c7f9ded8aa78ab8e3cd63a3368ab8a8ad",
+      "currentLines": 317,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/adminAnalyticsPerformance.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "71b6eda2f1dfac635975c5c8d5a0ecbfe7b9538142cfd9cc900f46c4ee5f42c0",
+      "currentSha256": "71b6eda2f1dfac635975c5c8d5a0ecbfe7b9538142cfd9cc900f46c4ee5f42c0",
+      "currentLines": 117,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/adminAnalyticsRealtime.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "7e30a546d64535c7189343d936a692b5e2f328b7413207cc734ee1f16671cd8a",
+      "currentSha256": "7e30a546d64535c7189343d936a692b5e2f328b7413207cc734ee1f16671cd8a",
+      "currentLines": 13,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/adminAnalyticsRealtimeStore.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "818b540f5f8d5ca7f99fabe13052b646ab4cd43d56824d55087e0bebb498c922",
+      "currentSha256": "818b540f5f8d5ca7f99fabe13052b646ab4cd43d56824d55087e0bebb498c922",
+      "currentLines": 174,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/adminAuthorization.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "2567865bbb69b8d4f397998c0b9c671c4ed2af5a0056ae50e561fd762fc002a2",
+      "currentSha256": "2567865bbb69b8d4f397998c0b9c671c4ed2af5a0056ae50e561fd762fc002a2",
+      "currentLines": 15,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/adminCommerceData.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "f7ac34c179a73acc54ede3993abdc4c29a4a4eee4821699b048fb69e9dcc6521",
+      "currentSha256": "f7ac34c179a73acc54ede3993abdc4c29a4a4eee4821699b048fb69e9dcc6521",
+      "currentLines": 56,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/adminDashboardProjection.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "a235bf375f36d5447c245e7e6fda53710e909b3a1209926c970a2ee1eeca9c5c",
+      "currentSha256": "a235bf375f36d5447c245e7e6fda53710e909b3a1209926c970a2ee1eeca9c5c",
+      "currentLines": 93,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/adminDataCache.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "0f6f13b5f04be6e44812c80fca572f9fec195b96ced5253be46c1ceed72734e8",
+      "currentSha256": "0f6f13b5f04be6e44812c80fca572f9fec195b96ced5253be46c1ceed72734e8",
+      "currentLines": 101,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/adminPublicCatalog.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "1e78302528954856b78b904f8a545580fa693f108843339f8c2eb0cecd088748",
+      "currentSha256": "1e78302528954856b78b904f8a545580fa693f108843339f8c2eb0cecd088748",
+      "currentLines": 40,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/adminTokenRetry.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "e91d5e19d38ce5c2525c30997816e374ceb15127d5093dbaea2d5dc2fc97e179",
+      "currentSha256": "e91d5e19d38ce5c2525c30997816e374ceb15127d5093dbaea2d5dc2fc97e179",
+      "currentLines": 24,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/adminUiKit.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "a82ca416b163cb6c25ad41610e616659f0f39fb8de5fd9c631e9f23569645329",
+      "currentSha256": "a82ca416b163cb6c25ad41610e616659f0f39fb8de5fd9c631e9f23569645329",
+      "currentLines": 155,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/analyticsReliability.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "54c65e1b436ada2e713fea980038138dc1c12c2e872a9c072fbd75a0f15814e0",
+      "currentSha256": "54c65e1b436ada2e713fea980038138dc1c12c2e872a9c072fbd75a0f15814e0",
+      "currentLines": 426,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/components/AdminImageCard.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "c0e996b55bc672986bd3354850dc51075dfb137bc402e03458c6866f8abfcfbd",
+      "currentSha256": "c0e996b55bc672986bd3354850dc51075dfb137bc402e03458c6866f8abfcfbd",
+      "currentLines": 156,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/components/FacebookPublicationPreview.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "a5ad54a600674fa12626e3c8aece7202fde20cc3bbfbf8d1023cd5fc95e4055f",
+      "currentSha256": "a5ad54a600674fa12626e3c8aece7202fde20cc3bbfbf8d1023cd5fc95e4055f",
+      "currentLines": 200,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/components/ImageCropperModal.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "acad0331e4e1e742d2442822971717c48631f9cb7ab497ff764f53c8f18cb23d",
+      "currentSha256": "acad0331e4e1e742d2442822971717c48631f9cb7ab497ff764f53c8f18cb23d",
+      "currentLines": 133,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/components/InstagramPublicationPreview.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "0a8957fcf1b773ea0aabe312777e33c7fd22aa71533282e1d83b7fbcadfb01b5",
+      "currentSha256": "0a8957fcf1b773ea0aabe312777e33c7fd22aa71533282e1d83b7fbcadfb01b5",
+      "currentLines": 163,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/components/MetaConnectionBadge.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "5df25feb0fae94e627a1bbe4043d78a47b533ebf12cd732ca9da5e14ba293b61",
+      "currentSha256": "5df25feb0fae94e627a1bbe4043d78a47b533ebf12cd732ca9da5e14ba293b61",
+      "currentLines": 218,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/components/PublicationActionBar.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "e1cd57a2fdf61954df9cfb203db0d291917e61265ff7005772b77f4f015bfa93",
+      "currentSha256": "e1cd57a2fdf61954df9cfb203db0d291917e61265ff7005772b77f4f015bfa93",
+      "currentLines": 208,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/components/PublicationBatchControl.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "ca44eb1ee264d57498a6b63d9334a77beb1162b80ac97e0eee706000b8729542",
+      "currentSha256": "ca44eb1ee264d57498a6b63d9334a77beb1162b80ac97e0eee706000b8729542",
+      "currentLines": 73,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/components/PublicationDestinations.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "3ffcca4dc4d8a2647ff69431b3b7aad2056ee27d574d50a941a84c34b9b1f8a9",
+      "currentSha256": "3ffcca4dc4d8a2647ff69431b3b7aad2056ee27d574d50a941a84c34b9b1f8a9",
+      "currentLines": 178,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/components/PublicationPhoneShell.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "654dbf5944325f2f5a055c846606e2146f87c0dfdb9223ba77d6a3755187bde9",
+      "currentSha256": "654dbf5944325f2f5a055c846606e2146f87c0dfdb9223ba77d6a3755187bde9",
+      "currentLines": 127,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/components/PublicationProgressDialog.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "fc0dda23c3c3bc19d266a93adabb0e2159d593ed1655b281954431978bfc2c3a",
+      "currentSha256": "fc0dda23c3c3bc19d266a93adabb0e2159d593ed1655b281954431978bfc2c3a",
+      "currentLines": 77,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/components/PublicationReviewStep.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "89277521d7279f369d1f87d13d67aa9a1c8465a173f1c77802367fa7c3967892",
+      "currentSha256": "89277521d7279f369d1f87d13d67aa9a1c8465a173f1c77802367fa7c3967892",
+      "currentLines": 340,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/components/SitePublicationPreview.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "6fad89eecf7ce36f7dcbe0d381edfada6666b07c3ffe028d849df6b5194a0d8a",
+      "currentSha256": "6fad89eecf7ce36f7dcbe0d381edfada6666b07c3ffe028d849df6b5194a0d8a",
+      "currentLines": 119,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/components/StoryEditor.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "d25f09da77676633195ce0d08b77836552e1948e377675fb121433b4d83e3f4e",
+      "currentSha256": "d25f09da77676633195ce0d08b77836552e1948e377675fb121433b4d83e3f4e",
+      "currentLines": 511,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/components/TextEditorModal.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "2856b3beb247d149caab48d3413dd008f9f04729139ca2ef2d916bdf84a21733",
+      "currentSha256": "2856b3beb247d149caab48d3413dd008f9f04729139ca2ef2d916bdf84a21733",
+      "currentLines": 126,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/components/orders/ConfirmDialog.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "920daee4a538a2f7b8c88ec39b85391e13421297c8505bb58355835d00d397ff",
+      "currentSha256": "920daee4a538a2f7b8c88ec39b85391e13421297c8505bb58355835d00d397ff",
+      "currentLines": 53,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/components/orders/OrderActionButtons.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "3de7050ba5670990b7b8469b5616eaf769eaf028e5c2952c70b7c82d8dbab691",
+      "currentSha256": "3de7050ba5670990b7b8469b5616eaf769eaf028e5c2952c70b7c82d8dbab691",
+      "currentLines": 59,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/components/orders/OrderDetailPanel.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "585264003099a03d8e3dfcdf5140a6ad4669ec058773a3ba19b3a596feec22d5",
+      "currentSha256": "585264003099a03d8e3dfcdf5140a6ad4669ec058773a3ba19b3a596feec22d5",
+      "currentLines": 324,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/components/orders/OrderModalShell.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "f995ef33136d0e311542334e1ea138d06517676873c5283e09988fa40c93ead3",
+      "currentSha256": "f995ef33136d0e311542334e1ea138d06517676873c5283e09988fa40c93ead3",
+      "currentLines": 93,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/components/orders/OrderRow.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "ca2e1e01b4ad705528344c8775ec68d626d18369fab24b76c2894bd599f5a3ca",
+      "currentSha256": "ca2e1e01b4ad705528344c8775ec68d626d18369fab24b76c2894bd599f5a3ca",
+      "currentLines": 115,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/components/orders/OrdersOverviewPanel.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "073f04ead52e03d43210e3469236b6082ac146e50b531489a83fb179454e7361",
+      "currentSha256": "073f04ead52e03d43210e3469236b6082ac146e50b531489a83fb179454e7361",
+      "currentLines": 69,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/components/orders/ShipmentDialog.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "4742b943ecfe1ba64c6c73b1995b09b5b51b5323e19643663a380f78e222cacf",
+      "currentSha256": "4742b943ecfe1ba64c6c73b1995b09b5b51b5323e19643663a380f78e222cacf",
+      "currentLines": 187,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/components/orders/orderPresentation.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "48d33226953b4eb68498f0ac222501ece6bbef1e1ef4065454481f84c8da78cf",
+      "currentSha256": "48d33226953b4eb68498f0ac222501ece6bbef1e1ef4065454481f84c8da78cf",
+      "currentLines": 493,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/components/orders/orderTones.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "205ff437d7c55ac64ffe89e6edcaa2bcb004f0d93127babe1c2ed7380bce9556",
+      "currentSha256": "205ff437d7c55ac64ffe89e6edcaa2bcb004f0d93127babe1c2ed7380bce9556",
+      "currentLines": 64,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/components/publicationContent.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "9792f8e76530abe82207af46cb1a68e6b5d9c7ff81a0f1a3f654bafec4f9d7b5",
+      "currentSha256": "9792f8e76530abe82207af46cb1a68e6b5d9c7ff81a0f1a3f654bafec4f9d7b5",
+      "currentLines": 22,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/components/useMetaConnection.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "9c7ecf7a11a5688bd9d3128984b3ae7e94bb2a30c994a0ef8e4af24f34dbf41b",
+      "currentSha256": "9c7ecf7a11a5688bd9d3128984b3ae7e94bb2a30c994a0ef8e4af24f34dbf41b",
+      "currentLines": 245,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/dashboardReads.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "298bb10822d3ba21ea8e416bf9a5195c3f0dc0717f0c46f8c1c2cd17dc969f87",
+      "currentSha256": "298bb10822d3ba21ea8e416bf9a5195c3f0dc0717f0c46f8c1c2cd17dc969f87",
+      "currentLines": 18,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/exportCsv.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "3ac2e69888a569ce801c4824c7cece6ebf99a145362d88fc143e9a0bcfb75e50",
+      "currentSha256": "3ac2e69888a569ce801c4824c7cece6ebf99a145362d88fc143e9a0bcfb75e50",
+      "currentLines": 38,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/liveSessionPresence.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "a7156d647c3bfc73d0f97bbe176d0815842079258e06f231d7573cbbeddf5b83",
+      "currentSha256": "a7156d647c3bfc73d0f97bbe176d0815842079258e06f231d7573cbbeddf5b83",
+      "currentLines": 8,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/liveSessionsChannel.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "9dca39358b263980b8be23e72837f9c473c437ee616d428914e50f33d96f46ba",
+      "currentSha256": "9dca39358b263980b8be23e72837f9c473c437ee616d428914e50f33d96f46ba",
+      "currentLines": 97,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/metaPublicationClient.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "7c98488b2d4b1597daab3a9374562a69b060314d1bc93606bc10168f59776a50",
+      "currentSha256": "7c98488b2d4b1597daab3a9374562a69b060314d1bc93606bc10168f59776a50",
+      "currentLines": 60,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/productPublicationClient.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "dea9e9b04e0796cc1ca52ff9d1a4531e112d4af954a74bb8650de67813718aaa",
+      "currentSha256": "dea9e9b04e0796cc1ca52ff9d1a4531e112d4af954a74bb8650de67813718aaa",
+      "currentLines": 124,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/promotionCodeClient.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "67f562bc0c772be15a6531ec3ead319c306681468086e3620a243c925edb3ba6",
+      "currentSha256": "67f562bc0c772be15a6531ec3ead319c306681468086e3620a243c925edb3ba6",
+      "currentLines": 14,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/quoteAdminClient.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "5e0d2cdbbc10c815f1443ec67f49348ca7e838535f77d02ab4468989d3b1113b",
+      "currentSha256": "5e0d2cdbbc10c815f1443ec67f49348ca7e838535f77d02ab4468989d3b1113b",
+      "currentLines": 37,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/retainedRead.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "4d8d7c3eca4f9cf0c065f6d39273a5c5b68c22f337194b07323bc20f4b9fc6c4",
+      "currentSha256": "4d8d7c3eca4f9cf0c065f6d39273a5c5b68c22f337194b07323bc20f4b9fc6c4",
+      "currentLines": 71,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/admin/useAdminPreference.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "1cfbd353011ca746af0b9d62e10aeeca39228e537c3952dfb03a55bcd7ffd496",
+      "currentSha256": "1cfbd353011ca746af0b9d62e10aeeca39228e537c3952dfb03a55bcd7ffd496",
+      "currentLines": 14,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/auth/LoginBackgroundVideo.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "d0ab8ff586005a9a81be6a297f1a58389320bf6953f75c7b64c5623a067f347e",
+      "currentSha256": "d0ab8ff586005a9a81be6a297f1a58389320bf6953f75c7b64c5623a067f347e",
+      "currentLines": 100,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/auth/authStore.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "4ebf49e130663bef7f43f0ca1ee4068ea89b0188bd6ce4567b8b9f701d0e275f",
+      "currentSha256": "4ebf49e130663bef7f43f0ca1ee4068ea89b0188bd6ce4567b8b9f701d0e275f",
+      "currentLines": 213,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/auth/customTokenSignIn.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "4f856d488036d4f42f7ba050f165aabb2f21ae997d55b70c99c3b7bea520ee80",
+      "currentSha256": "4f856d488036d4f42f7ba050f165aabb2f21ae997d55b70c99c3b7bea520ee80",
+      "currentLines": 30,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/auth/googleAuthDiagnostics.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "35fedd1747d77ab2335cabe510d25fc5d78cd0ed45ded7649f0668324e4180ff",
+      "currentSha256": "35fedd1747d77ab2335cabe510d25fc5d78cd0ed45ded7649f0668324e4180ff",
+      "currentLines": 104,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/auth/redirectState.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "9ccf6940f3f5f4ce7c6bed9d2ede6aa93904ef89bb53eb2dd0be124f064b16a3",
+      "currentSha256": "9ccf6940f3f5f4ce7c6bed9d2ede6aa93904ef89bb53eb2dd0be124f064b16a3",
+      "currentLines": 68,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/commerce/CancellationConfirmation.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "6d4f7dc6977c97fa6f3183abffe0ab9a536bb5d3e64c7ae41c6f334c922b3e4f",
+      "currentSha256": "6d4f7dc6977c97fa6f3183abffe0ab9a536bb5d3e64c7ae41c6f334c922b3e4f",
+      "currentLines": 38,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/commerce/CartSidebar.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "e8ad7370de24d69a0a2129e10fefe59a427e77e7f714b20c8c8a3f02a0172178",
+      "currentSha256": "e8ad7370de24d69a0a2129e10fefe59a427e77e7f714b20c8c8a3f02a0172178",
+      "currentLines": 253,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/commerce/CheckoutPaymentStep.jsx",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "75bb0026e05ad390b06d7bc6dbbfda6c8772a68c91d6af700fc906075564cd2e",
+      "currentSha256": "75bb0026e05ad390b06d7bc6dbbfda6c8772a68c91d6af700fc906075564cd2e",
+      "currentLines": 167,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/commerce/CheckoutRecoveryPrompt.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "6db01b0d2828afc816c5b57bf68b43522470957fb7b1cec55d7793b5ee3b59ed",
+      "currentSha256": "6db01b0d2828afc816c5b57bf68b43522470957fb7b1cec55d7793b5ee3b59ed",
+      "currentLines": 95,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/commerce/CheckoutStripeModal.jsx",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "d2858e5f15ffaf5a4f5d242525febf04e2627ca5ba12fbcdc359a3d69a4a1605",
+      "currentSha256": "d2858e5f15ffaf5a4f5d242525febf04e2627ca5ba12fbcdc359a3d69a4a1605",
+      "currentLines": 391,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/commerce/CheckoutView.jsx",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": true,
+      "baselineSha256": "c05a1e5052f8fa6e4b8ffca82267bdd025165abbe79c1cee2a470c1bb7e1be0f",
+      "currentSha256": "484848cada562bcd255a31cde0b79b7a98ebecd531ca8944c426df07b48a1d0a",
+      "currentLines": 1726,
+      "addedLines": 17,
+      "removedLines": 9
+    },
+    {
+      "file": "src/kit/commerce/CommerceDocumentModal.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "fda7ba84165dce6a7e2a617ae5cf403f15acd764f1c60bae31277b63dd0d330b",
+      "currentSha256": "fda7ba84165dce6a7e2a617ae5cf403f15acd764f1c60bae31277b63dd0d330b",
+      "currentLines": 352,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/commerce/LoginView.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "6bd582df663f71516e9108b9f58243d145d60f2946cd0357c7c12ff648735580",
+      "currentSha256": "6bd582df663f71516e9108b9f58243d145d60f2946cd0357c7c12ff648735580",
+      "currentLines": 163,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/commerce/MyOrdersView.jsx",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": true,
+      "baselineSha256": "772dede0abe37e05d0a9cf13715bb56bda54579fe5ea4a3317246df83db3b592",
+      "currentSha256": "dfc83d23198908b5ceb357d7e44eac19fef03b1ee4f3dc42757a723c3c703a01",
+      "currentLines": 2550,
+      "addedLines": 3,
+      "removedLines": 3
+    },
+    {
+      "file": "src/kit/commerce/OrderSuccessModal.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "47f52173c664ef1d1bbabff7544cc1b3d5e4e7de0053c54763136bf8a670fcd2",
+      "currentSha256": "47f52173c664ef1d1bbabff7544cc1b3d5e4e7de0053c54763136bf8a670fcd2",
+      "currentLines": 151,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/commerce/adminPaymentLinkClient.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "669ac46ff3cf7261addb60d571a34eebed065a3a571e1058674573e012cd2016",
+      "currentSha256": "669ac46ff3cf7261addb60d571a34eebed065a3a571e1058674573e012cd2016",
+      "currentLines": 49,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/commerce/adminProductCommandClient.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "6268abeb1cb935a8feaf50e0925c2fc321aa5c4ec861201ec786e3f681f7bb86",
+      "currentSha256": "6268abeb1cb935a8feaf50e0925c2fc321aa5c4ec861201ec786e3f681f7bb86",
+      "currentLines": 156,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/commerce/checkoutContract.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "eada98a666d319e1dbe7af059ebe5caa811334733a76cd487197f266bfea3ded",
+      "currentSha256": "eada98a666d319e1dbe7af059ebe5caa811334733a76cd487197f266bfea3ded",
+      "currentLines": 40,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/commerce/checkoutController.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "3fca67cd1e440f929266cedd5896fdcc84308888c9edb6613b1418c6c6b1bbc3",
+      "currentSha256": "3fca67cd1e440f929266cedd5896fdcc84308888c9edb6613b1418c6c6b1bbc3",
+      "currentLines": 78,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/commerce/checkoutDialogStyles.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "feff2609c04f98996af0447da65f9a150b471cf9bc197082115a63464548ee2b",
+      "currentSha256": "feff2609c04f98996af0447da65f9a150b471cf9bc197082115a63464548ee2b",
+      "currentLines": 4,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/commerce/checkoutRecovery.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "5ff6f4c844f16264fbea92865892d05005b4bcb5f71605f339b1e41895aa9024",
+      "currentSha256": "5ff6f4c844f16264fbea92865892d05005b4bcb5f71605f339b1e41895aa9024",
+      "currentLines": 167,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/commerce/checkoutRequestIdentity.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "cb8b1f34c6ab135e4f4ad2019c4eab3cc5a62f224ad26bfed56cd0abc33d5c54",
+      "currentSha256": "cb8b1f34c6ab135e4f4ad2019c4eab3cc5a62f224ad26bfed56cd0abc33d5c54",
+      "currentLines": 26,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/commerce/commerceCommandClient.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "16a9ea310d79524ebd7f2106883ee1f90e55b89def6bb4f8227c517570413539",
+      "currentSha256": "16a9ea310d79524ebd7f2106883ee1f90e55b89def6bb4f8227c517570413539",
+      "currentLines": 271,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/commerce/commerceUiFlags.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "f2d5c1cb47a305174ac71c0ab722aaeb7c8976bddd803bbe49398fd3a336d796",
+      "currentSha256": "f2d5c1cb47a305174ac71c0ab722aaeb7c8976bddd803bbe49398fd3a336d796",
+      "currentLines": 4,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/commerce/commerceV2Client.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": true,
+      "baselineSha256": "3cdee871f64a8e97006382d68632959efc8b36a504f153c5ed44361ea0bc6cb9",
+      "currentSha256": "855ede80897ae325bcbc8aeaa357fad362cedaee7b1d6fa494af4f47e8259046",
+      "currentLines": 114,
+      "addedLines": 4,
+      "removedLines": 2
+    },
+    {
+      "file": "src/kit/commerce/deliveryEligibility.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "11c6a1c99e9a2e76ba91f8953743bc46f8089af94d5101b5f8fe8c29459926d8",
+      "currentSha256": "11c6a1c99e9a2e76ba91f8953743bc46f8089af94d5101b5f8fe8c29459926d8",
+      "currentLines": 8,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/commerce/deliveryPolicyAdminClient.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "1b096faa4f1107d62495625d3d38dce2aeaa6e0b851932cd87a3e6bdd5d08736",
+      "currentSha256": "1b096faa4f1107d62495625d3d38dce2aeaa6e0b851932cd87a3e6bdd5d08736",
+      "currentLines": 21,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/commerce/gate8FixtureSession.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "20560f11deba4ed1512863a42ae74c4a317209df0c7735fd55ff165d8f73b155",
+      "currentSha256": "20560f11deba4ed1512863a42ae74c4a317209df0c7735fd55ff165d8f73b155",
+      "currentLines": 104,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/commerce/guestCart.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "acbe1e096ef008aaf4a0a7267345dac9d2dfea6654fb63ce318c093dcc1dceca",
+      "currentSha256": "acbe1e096ef008aaf4a0a7267345dac9d2dfea6654fb63ce318c093dcc1dceca",
+      "currentLines": 121,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/commerce/orderAdapter.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "46d88fa9da45cc244e8bcb3de930b354b9e4f0f3b7d9cbc289cb3116f1a3590b",
+      "currentSha256": "46d88fa9da45cc244e8bcb3de930b354b9e4f0f3b7d9cbc289cb3116f1a3590b",
+      "currentLines": 57,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/commerce/paymentSubmission.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "0de6ddb712c950d2a0195cb6718e386505018e9de71ceb8036e6abb586081d71",
+      "currentSha256": "0de6ddb712c950d2a0195cb6718e386505018e9de71ceb8036e6abb586081d71",
+      "currentLines": 30,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/commerce/pendingCheckout.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "0ccb50168f3d14741cf9f19e1f7476310e079309d45c54b5184dc7c15ad8f240",
+      "currentSha256": "0ccb50168f3d14741cf9f19e1f7476310e079309d45c54b5184dc7c15ad8f240",
+      "currentLines": 23,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/commerce/purchasability.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "e2a099e816fc7a20f7c4028ba3c043d57039264e9a58255fe003aac7d78813cc",
+      "currentSha256": "e2a099e816fc7a20f7c4028ba3c043d57039264e9a58255fe003aac7d78813cc",
+      "currentLines": 42,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/commerce/purchasedCartCleanup.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": true,
+      "baselineSha256": null,
+      "currentSha256": "f076509292584808ac400c448d2903ae8b253bed86e4dd34b304e79f94d20293",
+      "currentLines": 18,
+      "addedLines": 18,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/commerce/shippingCarriers.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "57cd578149af898fbadfed558cba7b3c5a3559e2efcc9efa5e74305a337edd50",
+      "currentSha256": "57cd578149af898fbadfed558cba7b3c5a3559e2efcc9efa5e74305a337edd50",
+      "currentLines": 14,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/config/constants.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "3971179018fcd14825ebd531893e31f3f54e240cfc49d11006f79d51e5d00b43",
+      "currentSha256": "3971179018fcd14825ebd531893e31f3f54e240cfc49d11006f79d51e5d00b43",
+      "currentLines": 210,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/config/firebase.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "28dd204b0454dd7819e75bf96fd7400db0c138a0e06c05dbf78348eccf7638f1",
+      "currentSha256": "28dd204b0454dd7819e75bf96fd7400db0c138a0e06c05dbf78348eccf7638f1",
+      "currentLines": 52,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/config/firebaseCore.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "b99928c5dbfe3154c117c77676a190bf83d76e105381b8950f9f61eb42487887",
+      "currentSha256": "b99928c5dbfe3154c117c77676a190bf83d76e105381b8950f9f61eb42487887",
+      "currentLines": 17,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/config/firebaseEnv.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "c51dbdc349dc39300b755425dff1b0945eb28352d344a520ea81c91b3642e0b1",
+      "currentSha256": "c51dbdc349dc39300b755425dff1b0945eb28352d344a520ea81c91b3642e0b1",
+      "currentLines": 2,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/config/firebaseLazy.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "2d3508db2534e703d4a449e50d170d30afb493f2cbf738037ab610b4c1374d5f",
+      "currentSha256": "2d3508db2534e703d4a449e50d170d30afb493f2cbf738037ab610b4c1374d5f",
+      "currentLines": 223,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/config/firebaseStorage.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "8391146d6241242d0092ea53b592fe9b371ddf1e73d29793f7af987404a1f7b8",
+      "currentSha256": "8391146d6241242d0092ea53b592fe9b371ddf1e73d29793f7af987404a1f7b8",
+      "currentLines": 1,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/config/functionTargets.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "c1a6a2f4d0f895626851a4acea4e8763b2f0e692914ebdd1da2dfd909f74d387",
+      "currentSha256": "c1a6a2f4d0f895626851a4acea4e8763b2f0e692914ebdd1da2dfd909f74d387",
+      "currentLines": 121,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/config/stripe.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "3022214898ba7bd3ad088f2e316fc21bb8bd81f7182494930a6b303a534724a5",
+      "currentSha256": "3022214898ba7bd3ad088f2e316fc21bb8bd81f7182494930a6b303a534724a5",
+      "currentLines": 22,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/config/theme.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "f3d7f36f6d614e6b12c0b27ab455f1d905a41ea5adc83d0d2137714d0b1179c6",
+      "currentSha256": "f3d7f36f6d614e6b12c0b27ab455f1d905a41ea5adc83d0d2137714d0b1179c6",
+      "currentLines": 106,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/contexts/AuthContext.jsx",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "0b1529aedd5c0fc71d6038f068be6a2096f3fe3fc85d5b015c3b11aefb28d112",
+      "currentSha256": "0b1529aedd5c0fc71d6038f068be6a2096f3fe3fc85d5b015c3b11aefb28d112",
+      "currentLines": 312,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/layout/GlobalMenu.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "7e6a2e3928e884bdc24767e4deb6f3b751d788538f41cd3920e90e2855bf2717",
+      "currentSha256": "7e6a2e3928e884bdc24767e4deb6f3b751d788538f41cd3920e90e2855bf2717",
+      "currentLines": 482,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/layout/GlobalMenuDesktop.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "5d156ac381a0fffd43d7a282624cce65db56b52a29360c57e5a4ca1ef072d87d",
+      "currentSha256": "5d156ac381a0fffd43d7a282624cce65db56b52a29360c57e5a4ca1ef072d87d",
+      "currentLines": 699,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/layout/GlobalMenuMobile.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "24e1229ebe1475630ea5b41f5283c1262896401f655a4907d66e4e3617ae508c",
+      "currentSha256": "24e1229ebe1475630ea5b41f5283c1262896401f655a4907d66e4e3617ae508c",
+      "currentLines": 303,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/AnnouncementBannerServer.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "06fe4f5acd04b26b21fe56af976a867869364915817c9e003528a251c58089a0",
+      "currentSha256": "06fe4f5acd04b26b21fe56af976a867869364915817c9e003528a251c58089a0",
+      "currentLines": 41,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/ArchitecturalHeaderServer.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "2362b56609ef82ef65d84432ba3580f43867f9469e09e4c460b0c4a369da58b9",
+      "currentSha256": "2362b56609ef82ef65d84432ba3580f43867f9469e09e4c460b0c4a369da58b9",
+      "currentLines": 76,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/CartPanelIsland.jsx",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": true,
+      "baselineSha256": "8d8948686cfad846a102fa0ca84e8700b94f87f55b2710440a9b1a7b5bd63ba8",
+      "currentSha256": "2fc85b8b8ee6327e257ca171a4ce70be1a97aaf6a9705210f53c8e344d7ec772",
+      "currentLines": 275,
+      "addedLines": 11,
+      "removedLines": 44
+    },
+    {
+      "file": "src/kit/marketplace/CatalogVersionSyncIsland.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "9844e25c5850b67a7fd1e90e5d623f35c6e17d4e72fa0a61f1621a60c3b09cc8",
+      "currentSha256": "9844e25c5850b67a7fd1e90e5d623f35c6e17d4e72fa0a61f1621a60c3b09cc8",
+      "currentLines": 185,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/CategoryControlsIsland.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "506475c3efc350be3a04e5214b35f00328eadb9642b24774a8be876acc6bb3c2",
+      "currentSha256": "506475c3efc350be3a04e5214b35f00328eadb9642b24774a8be876acc6bb3c2",
+      "currentLines": 352,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/CategoryRailServer.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "e47ee2af6d9393c3580c0de326e54ca6f6363677533b36993703610f73002d48",
+      "currentSha256": "e47ee2af6d9393c3580c0de326e54ca6f6363677533b36993703610f73002d48",
+      "currentLines": 97,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/CategoryServerView.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "b527d39fd944d45fc285653297ca55510c3ef996d7049907f40bb1cd08451584",
+      "currentSha256": "b527d39fd944d45fc285653297ca55510c3ef996d7049907f40bb1cd08451584",
+      "currentLines": 525,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/DarkModeToggleIsland.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "d6e9526089385afce16ba3ed1e475f2dafb9003e4ca3a7542dcc8f1aa6cc335f",
+      "currentSha256": "d6e9526089385afce16ba3ed1e475f2dafb9003e4ca3a7542dcc8f1aa6cc335f",
+      "currentLines": 55,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/FooterBackToTopButtonIsland.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "1343fa3c335ebed81b1162984c021b89ca0d0a25cba9a75a43e02643630beea3",
+      "currentSha256": "1343fa3c335ebed81b1162984c021b89ca0d0a25cba9a75a43e02643630beea3",
+      "currentLines": 26,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/FooterMapFrameIsland.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "34bee347f8e256dbd251f3225cf557014f14f4b29ed9db2efbbff09a52e8dc11",
+      "currentSha256": "34bee347f8e256dbd251f3225cf557014f14f4b29ed9db2efbbff09a52e8dc11",
+      "currentLines": 114,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/FooterServer.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "07eb02e86f2dd7322bfc20260dd7f677f8d46677ca4a97dfafcb0a69e9b2d150",
+      "currentSha256": "07eb02e86f2dd7322bfc20260dd7f677f8d46677ca4a97dfafcb0a69e9b2d150",
+      "currentLines": 311,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/GalleryFixedSectionsInteractions.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "4b300ee2cf74b9fca53f3ea0cae3cc0a015273abe4d32ec2e7cead287a6db727",
+      "currentSha256": "4b300ee2cf74b9fca53f3ea0cae3cc0a015273abe4d32ec2e7cead287a6db727",
+      "currentLines": 2083,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/GalleryGridActionsIsland.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "ba25aee3987d41e1a6544a7bfa66d4b2d38b0b8bb4e64c3276a4c97d3884e1a5",
+      "currentSha256": "ba25aee3987d41e1a6544a7bfa66d4b2d38b0b8bb4e64c3276a4c97d3884e1a5",
+      "currentLines": 285,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/GalleryLiveProductGridIsland.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "5e4d9561b22c61a4f83fcd18582e1288e6f1fd14891cdb77d5ddfecda577b10a",
+      "currentSha256": "5e4d9561b22c61a4f83fcd18582e1288e6f1fd14891cdb77d5ddfecda577b10a",
+      "currentLines": 217,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/GalleryProductCardServer.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "e60edb4301d1457df0d605cacc75b1358df24321091c230fd77c960a1eec7b66",
+      "currentSha256": "e60edb4301d1457df0d605cacc75b1358df24321091c230fd77c960a1eec7b66",
+      "currentLines": 138,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/GalleryRoutePage.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "c3ff1b45faa12cefd928c0c5c7f458b36f6649c92c209bbf4fab4fffafafcb9a",
+      "currentSha256": "c3ff1b45faa12cefd928c0c5c7f458b36f6649c92c209bbf4fab4fffafafcb9a",
+      "currentLines": 119,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/GalleryServerView.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "322fcb8ac43c73a4f9839271905b86c6b16bb2b890195c87bf2a3355dcda2560",
+      "currentSha256": "322fcb8ac43c73a4f9839271905b86c6b16bb2b890195c87bf2a3355dcda2560",
+      "currentLines": 191,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/GlobalMenuTriggerIsland.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "4350583f351652ddc47de3b1744330f6dd2b58d217efd30005c3e177af25b077",
+      "currentSha256": "4350583f351652ddc47de3b1744330f6dd2b58d217efd30005c3e177af25b077",
+      "currentLines": 423,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/HeaderAccountIsland.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "79a10eb937c37f732fe88e69e9002d28fde7cb0752421943dc81329a99397882",
+      "currentSha256": "79a10eb937c37f732fe88e69e9002d28fde7cb0752421943dc81329a99397882",
+      "currentLines": 138,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/HeroMotionIsland.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "7f1e011d84a62c97a3a0e1547f7dd77a622fe05e98d7a6f6db25920eac393c0a",
+      "currentSha256": "7f1e011d84a62c97a3a0e1547f7dd77a622fe05e98d7a6f6db25920eac393c0a",
+      "currentLines": 300,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/InstagramFloatingTokensReveal.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "a8f417db718671af63e289ccceaf93045e514647deb0f4d1951108f33b84d218",
+      "currentSha256": "a8f417db718671af63e289ccceaf93045e514647deb0f4d1951108f33b84d218",
+      "currentLines": 450,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/LazyCartPanelIsland.jsx",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": true,
+      "baselineSha256": "c2d41c0e320345b58504405dd5e5c7bd53f2a6b01e1cee13c65edcd12da0b591",
+      "currentSha256": "692c20b5651b2a7b449225d6b5ae7d03116792209c9f5cbf245dba3c7800321f",
+      "currentLines": 300,
+      "addedLines": 10,
+      "removedLines": 1
+    },
+    {
+      "file": "src/kit/marketplace/LegacyLoginModalFullIsland.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "4e66d58f52a001d51a3d749341840e401aeb6618029127856b1839cc17eae52c",
+      "currentSha256": "4e66d58f52a001d51a3d749341840e401aeb6618029127856b1839cc17eae52c",
+      "currentLines": 1113,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/MarketplaceHeroServer.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "6c5b116d36b4fcb910d5177dd7eacadbf214eca12872a44d76febd43a53d65b3",
+      "currentSha256": "6c5b116d36b4fcb910d5177dd7eacadbf214eca12872a44d76febd43a53d65b3",
+      "currentLines": 179,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/PageBreadcrumb.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "a6a9ed327a9822c3866dedaf18933b0ed511d65735912ec5ca8c5847caae04d6",
+      "currentSha256": "a6a9ed327a9822c3866dedaf18933b0ed511d65735912ec5ca8c5847caae04d6",
+      "currentLines": 36,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/PremiumMegaMenuIsland.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "19215f8c8ff7c365afa02eceb8bf3ce2da76b8a8e82f348e427622e9d7539080",
+      "currentSha256": "19215f8c8ff7c365afa02eceb8bf3ce2da76b8a8e82f348e427622e9d7539080",
+      "currentLines": 409,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/PremiumMegaMenuLazyIsland.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "0da7d5cb944d323a9b22e958dcf19887d40d12cb95c43a011964e0ccd38ee10a",
+      "currentSha256": "0da7d5cb944d323a9b22e958dcf19887d40d12cb95c43a011964e0ccd38ee10a",
+      "currentLines": 35,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/ProductCardMediaServer.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "4d1280fcf9baa23fdb13d53aeacf9a10eb825d00b4b46c0dcdee2bd56463dbcd",
+      "currentSha256": "4d1280fcf9baa23fdb13d53aeacf9a10eb825d00b4b46c0dcdee2bd56463dbcd",
+      "currentLines": 76,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/ProductDetailActionsIsland.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "d670f5571b39e1bbac307da014eb25cb403f861fa54cac8d5d8332573290a06c",
+      "currentSha256": "d670f5571b39e1bbac307da014eb25cb403f861fa54cac8d5d8332573290a06c",
+      "currentLines": 220,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/ProductDetailLightboxIsland.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "2b119f8a854aafaf874d2d9cf274a08479c3eda9501651108730b27140ce6235",
+      "currentSha256": "2b119f8a854aafaf874d2d9cf274a08479c3eda9501651108730b27140ce6235",
+      "currentLines": 394,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/ProductDetailServerView.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "9c1c960d6a42763e94e619d348730bb5ab802268ac5c2ebaba98802a4df9d88d",
+      "currentSha256": "9c1c960d6a42763e94e619d348730bb5ab802268ac5c2ebaba98802a4df9d88d",
+      "currentLines": 165,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/ProductDetailShellIsland.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "92e2f701f4deed629fd18a58d098da2619bf2cfe3f2dcdeb9f8069d13af98177",
+      "currentSha256": "92e2f701f4deed629fd18a58d098da2619bf2cfe3f2dcdeb9f8069d13af98177",
+      "currentLines": 1411,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/ProductReturnRestoreIsland.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "e978ed5477e9b0b960e12984f9bc37c7d3ff61d5e289b2ea02044648530603d9",
+      "currentSha256": "e978ed5477e9b0b960e12984f9bc37c7d3ff61d5e289b2ea02044648530603d9",
+      "currentLines": 398,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/ProductSectionsServer.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "205b41ceac58ff5163a920beec6e3eb170f41f00af332c5a4b9fd5f5ebfa8067",
+      "currentSha256": "205b41ceac58ff5163a920beec6e3eb170f41f00af332c5a4b9fd5f5ebfa8067",
+      "currentLines": 1173,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/QuoteFormDeferredIsland.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "fa5836e9ba94ee3c9e1f37c9914a05eb8baa5103c3c320b74d7f215e1f2632e0",
+      "currentSha256": "fa5836e9ba94ee3c9e1f37c9914a05eb8baa5103c3c320b74d7f215e1f2632e0",
+      "currentLines": 39,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/QuoteFormIsland.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "b72aa4a3a6294ecefddd588a4c28dccf467966465c777a085523e84cd443b062",
+      "currentSha256": "b72aa4a3a6294ecefddd588a4c28dccf467966465c777a085523e84cd443b062",
+      "currentLines": 1171,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/QuoteFormSsrShell.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "cd1bbbc4f34a387e2112deb99f1f01bf8bffc53023721bff74d83b52e8dea8ad",
+      "currentSha256": "cd1bbbc4f34a387e2112deb99f1f01bf8bffc53023721bff74d83b52e8dea8ad",
+      "currentLines": 399,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/QuoteRequestServerView.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "64d6da14e037bd2f62c134eb3159e97ac33da8b8f43bdcaf9bc89900144f849d",
+      "currentSha256": "64d6da14e037bd2f62c134eb3159e97ac33da8b8f43bdcaf9bc89900144f849d",
+      "currentLines": 212,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/QuoteRevealIsland.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "0e9cb4c5cfd5df9c00a5ab2433a79e00b8b80628d48dd9857e839aeab3bc23e0",
+      "currentSha256": "0e9cb4c5cfd5df9c00a5ab2433a79e00b8b80628d48dd9857e839aeab3bc23e0",
+      "currentLines": 224,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/SearchResultsIsland.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "bf29cfd54291af925342fc73f51130cdd98e58ca95f236b4f6033cd065383de8",
+      "currentSha256": "bf29cfd54291af925342fc73f51130cdd98e58ca95f236b4f6033cd065383de8",
+      "currentLines": 185,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/SearchSuggestIsland.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "f3393e88455f94939647f24992abd6cb0d592bd83021508df8fb2742023d60d0",
+      "currentSha256": "f3393e88455f94939647f24992abd6cb0d592bd83021508df8fb2742023d60d0",
+      "currentLines": 511,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/SupportChatLauncherIsland.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "bc5e6b14854a9950c57ab4fcb945dd0b0ec61510d98969afe63e3a4cdc096dd2",
+      "currentSha256": "bc5e6b14854a9950c57ab4fcb945dd0b0ec61510d98969afe63e3a4cdc096dd2",
+      "currentLines": 116,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/SupportChatPanel.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "5c428c9dc694ba726aef87d7b0783686310aaccad609da85356e6dd140ea185e",
+      "currentSha256": "5c428c9dc694ba726aef87d7b0783686310aaccad609da85356e6dd140ea185e",
+      "currentLines": 338,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/WishlistToggleIsland.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "223cbb8fbd9e715a69326121fd788f9abad4da8ae8d888c8803f44dbd6f13f32",
+      "currentSha256": "223cbb8fbd9e715a69326121fd788f9abad4da8ae8d888c8803f44dbd6f13f32",
+      "currentLines": 35,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/WishlistView.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "4317565ddeeb21975576610df5c2bef2b48e3014adc9d5831e9bbe5c6699dceb",
+      "currentSha256": "4317565ddeeb21975576610df5c2bef2b48e3014adc9d5831e9bbe5c6699dceb",
+      "currentLines": 211,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/cartEventHandoff.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": true,
+      "baselineSha256": null,
+      "currentSha256": "8f2f4ca38dc04f5941d3ef90c7bc44e86c5f9e5103588cd8f23686551ad5aa74",
+      "currentLines": 19,
+      "addedLines": 19,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/categoryViewModel.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "5d31b0d267b78d64cbd218d8b27ed980e823b60dd5cad3b399d2fbd874eeb0ed",
+      "currentSha256": "5d31b0d267b78d64cbd218d8b27ed980e823b60dd5cad3b399d2fbd874eeb0ed",
+      "currentLines": 228,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/newsletterRewardClient.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "7ddaf5237217b800b7cbd0b94a22249b350ecb9715968586fd78534d52dc0437",
+      "currentSha256": "7ddaf5237217b800b7cbd0b94a22249b350ecb9715968586fd78534d52dc0437",
+      "currentLines": 148,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/publicCatalogWishlist.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": true,
+      "baselineSha256": "ae9b90e19f01c08418371f36527c5eb0e301f2b20cda84767f4063d55c7366aa",
+      "currentSha256": "1a76c78e0e5fd8b0eac8d23d0f3ce4b2d257120b0b60f446ce27598834172a66",
+      "currentLines": 58,
+      "addedLines": 6,
+      "removedLines": 5
+    },
+    {
+      "file": "src/kit/marketplace/quoteRequestClient.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "b9b213a5bd407822eeb47775cc9d6561f737ccf3bd88b7cda7cb827cf4b8422d",
+      "currentSha256": "b9b213a5bd407822eeb47775cc9d6561f737ccf3bd88b7cda7cb827cf4b8422d",
+      "currentLines": 157,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/quoteTheme.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "fb071036bbcdc55f9602afde5155c41b9d3a65b20d9aa2e1c400676f5367d27d",
+      "currentSha256": "fb071036bbcdc55f9602afde5155c41b9d3a65b20d9aa2e1c400676f5367d27d",
+      "currentLines": 129,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/searchModel.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "1210066c7232d8d57a8e04d75149a388ef7a4673704f5edc7e54d2dd5386a192",
+      "currentSha256": "1210066c7232d8d57a8e04d75149a388ef7a4673704f5edc7e54d2dd5386a192",
+      "currentLines": 264,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/seoCopy.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "bad1318920f63466205676a349c2caf560c5742ca3d833098cd49b88534b7e44",
+      "currentSha256": "bad1318920f63466205676a349c2caf560c5742ca3d833098cd49b88534b7e44",
+      "currentLines": 154,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/supportPageUrl.mjs",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "24c7cf1d7fcd5fca3a32e0e038d3bd562cd9b569738b27dd7a80097a1c247682",
+      "currentSha256": "24c7cf1d7fcd5fca3a32e0e038d3bd562cd9b569738b27dd7a80097a1c247682",
+      "currentLines": 17,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/marketplace/wishlistState.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": true,
+      "baselineSha256": "061978f731845588b97cf3c4e7cdddcc2eb5a1d5788e61f5c051df88dd038030",
+      "currentSha256": "4749846a7a384c15fb8096bbfd992f10d086fbd6c56c9ba8acdb1ed2dcc4e8bb",
+      "currentLines": 239,
+      "addedLines": 80,
+      "removedLines": 30
+    },
+    {
+      "file": "src/kit/shared/AnalyticsProvider.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "c867094e6b6435bf19fd81f5d0983351c8e3c51501aaa6229a7164375e2c3e8b",
+      "currentSha256": "c867094e6b6435bf19fd81f5d0983351c8e3c51501aaa6229a7164375e2c3e8b",
+      "currentLines": 518,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/shared/AnalyticsRuntimeIsland.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "f5070c06034722f61ffaf0fd28f87732e2091c6c578cd486e0e41d650db7d855",
+      "currentSha256": "f5070c06034722f61ffaf0fd28f87732e2091c6c578cd486e0e41d650db7d855",
+      "currentLines": 14,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/shared/CustomerTestimonialsCarousel.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "11a058fad9a8b201b525c64a49f1e18dfbbcdec1ab349af2e8699d1c2e6e9be8",
+      "currentSha256": "11a058fad9a8b201b525c64a49f1e18dfbbcdec1ab349af2e8699d1c2e6e9be8",
+      "currentLines": 340,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/shared/ErrorBoundary.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "18e81c6b7653319b62da9f435df6ba6e076628551380c1ea36b1eea9b148cb22",
+      "currentSha256": "18e81c6b7653319b62da9f435df6ba6e076628551380c1ea36b1eea9b148cb22",
+      "currentLines": 54,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/shared/RichTextStory.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "9147f3d048f285380ef98d6e70c2d9195733b596188eea6afd65e767f70f1229",
+      "currentSha256": "9147f3d048f285380ef98d6e70c2d9195733b596188eea6afd65e767f70f1229",
+      "currentLines": 32,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/shared/analyticsEvents.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "2f9e50185bea1f05853f44945bae2e377f565942f235ea22e410034a79df2df1",
+      "currentSha256": "2f9e50185bea1f05853f44945bae2e377f565942f235ea22e410034a79df2df1",
+      "currentLines": 52,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/shared/clientPerf.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "638d7886defa4657cd48d489cae053d8054311dd8e0ea79be9529ffc5ecc6131",
+      "currentSha256": "638d7886defa4657cd48d489cae053d8054311dd8e0ea79be9529ffc5ecc6131",
+      "currentLines": 34,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/shared/performanceRoutePolicy.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "ee235cc0a4193d1790a0185586d77b0187ed2853e71b87b8bea77b282ab04107",
+      "currentSha256": "ee235cc0a4193d1790a0185586d77b0187ed2853e71b87b8bea77b282ab04107",
+      "currentLines": 31,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/ui/Toast.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "68dc762a15acda41b9db524d45f97622f99945aa9d749077f5697b81d1246386",
+      "currentSha256": "68dc762a15acda41b9db524d45f97622f99945aa9d749077f5697b81d1246386",
+      "currentLines": 64,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/ui/dialogFocus.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "1d629da62d30be62e9cc41c421a36691b4d42565361818791d22b70bf204bb92",
+      "currentSha256": "1d629da62d30be62e9cc41c421a36691b4d42565361818791d22b70bf204bb92",
+      "currentLines": 55,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/vitrine/AboutBeforeAfterIsland.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "0aa1df4016b04edfd1819e4656bf33922c12d7c6ccfea06963b642cd7b2b6f0e",
+      "currentSha256": "0aa1df4016b04edfd1819e4656bf33922c12d7c6ccfea06963b642cd7b2b6f0e",
+      "currentLines": 184,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/vitrine/AboutCriticalStyles.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "4b273c66fa9ff2fd24921503d899dc500349048d67344ffcf863ef699954f9e9",
+      "currentSha256": "4b273c66fa9ff2fd24921503d899dc500349048d67344ffcf863ef699954f9e9",
+      "currentLines": 474,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/vitrine/AboutFaqIsland.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "9b8d6650d1059cac5c404aace4f9845b7df3aa70b040f7f519e5ee02c21eb37b",
+      "currentSha256": "9b8d6650d1059cac5c404aace4f9845b7df3aa70b040f7f519e5ee02c21eb37b",
+      "currentLines": 41,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/vitrine/AboutInstagramCounterIsland.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "daa20caea8154343d651fbf20a3bfa8d73a158af9e5b1f73937094d49cd7904c",
+      "currentSha256": "daa20caea8154343d651fbf20a3bfa8d73a158af9e5b1f73937094d49cd7904c",
+      "currentLines": 21,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/vitrine/AboutMotionDeferredIsland.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "756fb83f57e2c8659bd4bd981fe9892cad8906abaf4dc1673d46fb576a56ae11",
+      "currentSha256": "756fb83f57e2c8659bd4bd981fe9892cad8906abaf4dc1673d46fb576a56ae11",
+      "currentLines": 37,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/vitrine/AboutMotionIsland.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "151caab5c966daa3b36c26b7c2e577b55252b7de565856a70173cd8e90bbb4c8",
+      "currentSha256": "151caab5c966daa3b36c26b7c2e577b55252b7de565856a70173cd8e90bbb4c8",
+      "currentLines": 767,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/vitrine/AboutServerView.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "7bb3adea54a6954d69b88b598fff2a391a045c528f071fa01557f0daa7d391d0",
+      "currentSha256": "7bb3adea54a6954d69b88b598fff2a391a045c528f071fa01557f0daa7d391d0",
+      "currentLines": 531,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/vitrine/AboutStylesIsland.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "8d0a6f82317d9036c49d264282f9bad23cee2e7bf2b46315585149e8985cf35e",
+      "currentSha256": "8d0a6f82317d9036c49d264282f9bad23cee2e7bf2b46315585149e8985cf35e",
+      "currentLines": 12,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/vitrine/AboutSv4HeroMotionIsland.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "b19dd1e217db8432bdb52cff91d3983b33c62571293690c762369c6aa21eb754",
+      "currentSha256": "b19dd1e217db8432bdb52cff91d3983b33c62571293690c762369c6aa21eb754",
+      "currentLines": 76,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/vitrine/AboutTestimonialsIsland.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "83ba7ec7a5b9236a36f57b77dc2adc7ae604ca87ee23f635df920a0c3fd071b6",
+      "currentSha256": "83ba7ec7a5b9236a36f57b77dc2adc7ae604ca87ee23f635df920a0c3fd071b6",
+      "currentLines": 12,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/vitrine/Sv4HomeHero.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "2df3a3e18119f5aa06826abbfe6641c2408f81eb6183297d866aa06ef37f0221",
+      "currentSha256": "2df3a3e18119f5aa06826abbfe6641c2408f81eb6183297d866aa06ef37f0221",
+      "currentLines": 122,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/vitrine/Sv4SiteNav.jsx",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "e9b6df049415bf71b8068a71be6c1181b54e6fd3dbf7e0a322d13e270957d4a2",
+      "currentSha256": "e9b6df049415bf71b8068a71be6c1181b54e6fd3dbf7e0a322d13e270957d4a2",
+      "currentLines": 43,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/kit/vitrine/aboutContent.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "176463765cfd58229bb439ea52c5cc2826a1d1472c597f279a9fc4b2a5a0a52c",
+      "currentSha256": "176463765cfd58229bb439ea52c5cc2826a1d1472c597f279a9fc4b2a5a0a52c",
+      "currentLines": 181,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/lib/content/storyFormatting.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "429a36c5ef7057ec7a75e072912835d73ccc5dce18ac2b974a586d54df828abc",
+      "currentSha256": "429a36c5ef7057ec7a75e072912835d73ccc5dce18ac2b974a586d54df828abc",
+      "currentLines": 96,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/lib/seo/categories.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "2da15f7be743304f5e1ddb5773d20e89cc47676d0790962222cb1fd3284cf4de",
+      "currentSha256": "2da15f7be743304f5e1ddb5773d20e89cc47676d0790962222cb1fd3284cf4de",
+      "currentLines": 129,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/lib/seo/indexability.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "5dc2e20698ca0ec888908e84274a1bcd271d0de587278da04643c717ee89af8a",
+      "currentSha256": "5dc2e20698ca0ec888908e84274a1bcd271d0de587278da04643c717ee89af8a",
+      "currentLines": 52,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/lib/seo/productStructuredData.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "86e69de736d66a802c1f1367a331bc0f85ed49f267ee44eb4b898b3da0927a6e",
+      "currentSha256": "86e69de736d66a802c1f1367a331bc0f85ed49f267ee44eb4b898b3da0927a6e",
+      "currentLines": 125,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/lib/server/about.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "2ddb7572e31248ff1f67fddab4ea39344fc6bb72fbf91052c8aa8d097ee28d66",
+      "currentSha256": "2ddb7572e31248ff1f67fddab4ea39344fc6bb72fbf91052c8aa8d097ee28d66",
+      "currentLines": 27,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/lib/server/adminAuthorization.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "d0a36967b40693348368f413032dcf55a326e2ad8765e2ee63aeb09ddee8d259",
+      "currentSha256": "d0a36967b40693348368f413032dcf55a326e2ad8765e2ee63aeb09ddee8d259",
+      "currentLines": 85,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/lib/server/catalogRevalidationContract.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "26686a7f524fb03f45474f8cbdcd5990a33995c961d00a5949c82ef6e867d5a1",
+      "currentSha256": "26686a7f524fb03f45474f8cbdcd5990a33995c961d00a5949c82ef6e867d5a1",
+      "currentLines": 156,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/lib/server/catalogVersionContract.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "373103d0f5ea02f1d536f7423beeda4c30b52d63ad653ecfef128e7ac5d77316",
+      "currentSha256": "373103d0f5ea02f1d536f7423beeda4c30b52d63ad653ecfef128e7ac5d77316",
+      "currentLines": 22,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/lib/server/env.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "d33fc03efed118ac3c2700ac0ede8ea4a5d0fcdb08f5cc5b822d22b6fbe363d2",
+      "currentSha256": "d33fc03efed118ac3c2700ac0ede8ea4a5d0fcdb08f5cc5b822d22b6fbe363d2",
+      "currentLines": 32,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/lib/server/firebaseAdmin.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "cd00496f963145658c477c997c40fe2db2ea35a8665bc61a174fd82fab74d7a7",
+      "currentSha256": "cd00496f963145658c477c997c40fe2db2ea35a8665bc61a174fd82fab74d7a7",
+      "currentLines": 62,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/lib/server/functionMetrics.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "c8eed2a9a1ba34ff06364bfbd75b27532ecbcf50ec3f4d8b09d7c8792103492a",
+      "currentSha256": "c8eed2a9a1ba34ff06364bfbd75b27532ecbcf50ec3f4d8b09d7c8792103492a",
+      "currentLines": 16,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/lib/server/functionMetricsCache.mjs",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "88f360ce693ca7d337326bddf29a0b45d29469cec61cd1d8734d2a1e44fd8114",
+      "currentSha256": "88f360ce693ca7d337326bddf29a0b45d29469cec61cd1d8734d2a1e44fd8114",
+      "currentLines": 34,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/lib/server/functionMetricsCore.mjs",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "b1e2de6ec806bcd2c9dfe2c6d32622fc6db52b7a74b7c93756a3ec0e7603631a",
+      "currentSha256": "b1e2de6ec806bcd2c9dfe2c6d32622fc6db52b7a74b7c93756a3ec0e7603631a",
+      "currentLines": 99,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/lib/server/galleryPersonalization.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "156bd9da166d866d6ea0b3431e9707711bf37faccd64c36db4a7f71511090351",
+      "currentSha256": "156bd9da166d866d6ea0b3431e9707711bf37faccd64c36db4a7f71511090351",
+      "currentLines": 44,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/lib/server/materializedCatalog.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "ab10e533cbd15e023897286bc0dfd715f5bc07d883524d015da1e8c02502171c",
+      "currentSha256": "ab10e533cbd15e023897286bc0dfd715f5bc07d883524d015da1e8c02502171c",
+      "currentLines": 169,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/lib/server/materializedCatalogValidation.cjs",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "696a9eb982f3826ec23f211ca41909c49468283b0019fcca1bc0410f99759dc3",
+      "currentSha256": "696a9eb982f3826ec23f211ca41909c49468283b0019fcca1bc0410f99759dc3",
+      "currentLines": 48,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/lib/server/productRoute.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "e1908ee974b5133b3b05b768d36a4d45232bfa77d65da45dde79f335baefb10c",
+      "currentSha256": "e1908ee974b5133b3b05b768d36a4d45232bfa77d65da45dde79f335baefb10c",
+      "currentLines": 14,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/lib/server/products.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "83d3dbbf98ace6687fd80ff894d8a61766446e57ed7c383dbc624ca0090f14d4",
+      "currentSha256": "83d3dbbf98ace6687fd80ff894d8a61766446e57ed7c383dbc624ca0090f14d4",
+      "currentLines": 61,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/lib/server/requestBody.js",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "63f12115c9c1ab50a4210570cb4039e02aca4931da6b78bdc199384ebb242dbe",
+      "currentSha256": "63f12115c9c1ab50a4210570cb4039e02aca4931da6b78bdc199384ebb242dbe",
+      "currentLines": 63,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/lib/server/theme.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "2d8598d081441b873a879b992d8950312a9d2ba3cf9a0c6bbedc58660ba34c02",
+      "currentSha256": "2d8598d081441b873a879b992d8950312a9d2ba3cf9a0c6bbedc58660ba34c02",
+      "currentLines": 15,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/utils/imageUtils.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "7a02b92d207c0bca91d61dab80a8fc1888fb116a42c73dd230366c65deee66ee",
+      "currentSha256": "7a02b92d207c0bca91d61dab80a8fc1888fb116a42c73dd230366c65deee66ee",
+      "currentLines": 603,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/utils/shippingAddress.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "13e7ce101ddb56ddb256755876e27481d633b96541615a60d797ae81d282f0d1",
+      "currentSha256": "13e7ce101ddb56ddb256755876e27481d633b96541615a60d797ae81d282f0d1",
+      "currentLines": 20,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/utils/slug.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "ce81492b5e30694ac04c3871d90a7be14d40f7532d862722cc404d84b4068ce7",
+      "currentSha256": "ce81492b5e30694ac04c3871d90a7be14d40f7532d862722cc404d84b4068ce7",
+      "currentLines": 22,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "src/utils/time.js",
+      "review": "inventaire et contrôles statiques seulement",
+      "changedDuringAudit": false,
+      "baselineSha256": "c3db6b426a8d4e00eaedd7508af283b74a6413f1cf8eb7ba464355aec8fbac4b",
+      "currentSha256": "c3db6b426a8d4e00eaedd7508af283b74a6413f1cf8eb7ba464355aec8fbac4b",
+      "currentLines": 26,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    {
+      "file": "storage.rules",
+      "review": "revue manuelle ciblée",
+      "changedDuringAudit": false,
+      "baselineSha256": "78fe6197d5e3174e6edda17d2d9fce2f41efb717901ee68cdf2f2806b38324a9",
+      "currentSha256": "78fe6197d5e3174e6edda17d2d9fce2f41efb717901ee68cdf2f2806b38324a9",
+      "currentLines": 117,
+      "addedLines": 0,
+      "removedLines": 0
+    }
+  ]
+}

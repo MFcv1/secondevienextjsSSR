@@ -1,0 +1,1187 @@
+{
+  "status": "BLOCKED_BEFORE_DEPLOYMENT",
+  "observedAt": "2026-09-07T18:41:58.101Z",
+  "sourceCommit": "6326dabf367916dc2f62dbca8fe59150e8d371da",
+  "branch": "codex/livraison-interactions-20260907",
+  "runtime": {
+    "node": "22.23.2",
+    "pnpm": "11.7.0",
+    "next": "16.3.0",
+    "react": "19.2.7",
+    "java": 21
+  },
+  "deployment": {
+    "executed": false,
+    "servedBuild": "build-2026-09-06-002",
+    "servedDeploymentId": "sv-mtp4ho36-474b1fdfaa07",
+    "components": [],
+    "localBuildDeploymentId": "sv-mtrl1pb4-d387502fd9ea"
+  },
+  "auditTests": {
+    "counts": {
+      "tests": 591,
+      "pass": 591,
+      "fail": 0,
+      "skipped": 0
+    },
+    "commandArgv": [
+      "/Users/matthis/.nvm/versions/node/v22.23.2/bin/node",
+      "--require",
+      "./tests/commerce/helpers/no-network.cjs",
+      "--test",
+      "tests/commerce/domain/gate2-policy-inventory.test.cjs",
+      "tests/commerce/domain/gate6-migration.test.cjs",
+      "tests/commerce/domain/compatibility.test.cjs",
+      "tests/commerce/domain/event-dispatch.test.cjs",
+      "tests/commerce/domain/gate5-consumers.test.cjs",
+      "tests/commerce/domain/legacy-entrypoint-audit.test.cjs",
+      "tests/commerce/domain/interaction-audit.test.cjs",
+      "tests/commerce/domain/gate7a-operations.test.cjs",
+      "tests/commerce/domain/delivery-policy-admin.test.cjs",
+      "tests/commerce/domain/regression-matrix.test.cjs",
+      "tests/commerce/domain/admin-orders-presentation.test.cjs",
+      "tests/commerce/domain/return-decision-audit.test.cjs",
+      "tests/commerce/domain/property.test.cjs",
+      "tests/commerce/domain/provider-create-window.test.cjs",
+      "tests/commerce/domain/document-delivery.test.cjs",
+      "tests/commerce/domain/payment-reconstruction.test.cjs",
+      "tests/commerce/domain/customer-return-requests.test.cjs",
+      "tests/commerce/domain/admin-payment-link.test.cjs",
+      "tests/commerce/domain/outbox-runtime-audit.test.cjs",
+      "tests/commerce/domain/order-state.test.cjs",
+      "tests/commerce/domain/gate4-commands-returns.test.cjs",
+      "tests/commerce/domain/promotion-code.test.cjs",
+      "tests/commerce/faults/gate3-saga.test.cjs",
+      "tests/commerce/faults/gate3-workers.test.cjs",
+      "tests/commerce/faults/idempotency.test.cjs",
+      "tests/commerce/faults/gate4-refund.test.cjs",
+      "tests/commerce/resilience/checkout-boundaries.test.cjs",
+      "tests/catalog/core.test.cjs",
+      "tests/catalog/product-publication.test.cjs",
+      "tests/catalog/security.test.cjs",
+      "tests/catalog/availability-concurrency.test.cjs",
+      "tests/catalog/resilience.test.cjs",
+      "tests/catalog/publication-concurrency-audit.test.cjs",
+      "tests/catalog/mutation-deletion-audit.test.cjs",
+      "tests/wishlist-interactions.test.mjs",
+      "tests/public-search-audit.test.mjs",
+      "tests/cart-event-handoff.test.mjs",
+      "tests/cart-persistence-contract.test.cjs",
+      "tests/passkey-registration-audit.test.cjs",
+      "tests/auth-claims.test.cjs",
+      "tests/auth-store-contract.test.cjs",
+      "tests/auth-custom-token-sign-in.test.mjs",
+      "tests/auth-google-diagnostics.test.mjs",
+      "tests/auth-unified-otp-contract.test.cjs",
+      "tests/auth-backend-transitions.test.cjs",
+      "tests/auth-admin-revocation.test.cjs",
+      "tests/auth-assurance.test.cjs",
+      "tests/auth-region-convergence.test.cjs",
+      "tests/auth-email-provider-adapter.test.cjs",
+      "tests/passkey-portability-contract.test.cjs",
+      "tests/passkey-server-hardening.test.cjs",
+      "tests/admin-token-retry.test.mjs",
+      "tests/admin-data-cache-contract.test.mjs",
+      "tests/admin-navigation-contract.test.mjs",
+      "tests/quote-requests.test.cjs",
+      "tests/quote-receipt-audit.test.cjs",
+      "tests/newsletter-rewards.test.cjs",
+      "tests/invoicing/manual-invoices.test.cjs",
+      "tests/invoicing/manual-invoice-delivery-audit.test.cjs",
+      "tests/security-hardening.test.mjs",
+      "tests/security-client-ip.test.cjs",
+      "tests/security-output-encoding.test.cjs",
+      "tests/public-keyboard-accessibility.test.mjs",
+      "tests/account-route-contract.test.mjs",
+      "tests/support-chat-privacy.test.mjs",
+      "tests/email-visual-system.test.cjs",
+      "tests/backend-closeout.test.cjs",
+      "tests/admin-migration-audit.test.cjs",
+      "tests/otp-state-audit.test.cjs",
+      "tests/passkey-transaction-audit.test.cjs",
+      "tests/quote-photo-audit.test.cjs",
+      "tests/newsletter-delivery-audit.test.cjs",
+      "tests/financial-history-projection.test.cjs",
+      "tests/meta-authorization-audit.test.cjs",
+      "tests/auth-redirect-audit.test.cjs",
+      "tests/commerce/domain/customer-ui-audit.test.cjs",
+      "tests/admin-export-audit.test.cjs",
+      "tests/admin-returns-audit.test.cjs",
+      "tests/invoicing/manual-invoice-artifact-audit.test.cjs",
+      "tests/commerce/domain/expiry-extension-audit.test.cjs",
+      "tests/publication-concurrency-audit.test.mjs",
+      "tests/commerce/domain/cart-recovery-races-audit.test.cjs",
+      "tests/admin-public-catalog-audit.test.mjs",
+      "tests/inventory-ordering-audit.test.mjs",
+      "tests/category-filter-audit.test.mjs",
+      "tests/login-retry-isolation-audit.test.mjs",
+      "tests/dom-lifetime-audit.test.mjs",
+      "tests/quote-client-audit.test.mjs",
+      "tests/system-incidents.test.cjs",
+      "tests/analytics-events-buffer.test.mjs",
+      "tests/analytics-realtime.test.mjs",
+      "tests/observability-contract.test.cjs",
+      "tests/function-metrics.test.mjs",
+      "tests/analytics-rollups-contract.test.cjs",
+      "tests/analytics-live-sessions.test.mjs",
+      "tests/admin-analytics-performance.test.mjs",
+      "tests/commerce/resilience/incident-console.test.cjs",
+      "tests/manual-audit-completion.test.cjs"
+    ]
+  },
+  "firstPassGates": [
+    {
+      "script": "lint:functions",
+      "exitCode": 0,
+      "log": "logs/livraison/2026-09-07-interactions/lint-functions.log"
+    },
+    {
+      "script": "security:audit",
+      "exitCode": 1,
+      "log": "logs/livraison/2026-09-07-interactions/security-audit.log"
+    },
+    {
+      "script": "test:functions-gen2",
+      "exitCode": 0,
+      "log": "logs/livraison/2026-09-07-interactions/test-functions-gen2.log"
+    },
+    {
+      "script": "test:auth",
+      "exitCode": 0,
+      "log": "logs/livraison/2026-09-07-interactions/test-auth.log"
+    },
+    {
+      "script": "test:support-privacy",
+      "exitCode": 0,
+      "log": "logs/livraison/2026-09-07-interactions/test-support-privacy.log"
+    },
+    {
+      "script": "test:release-contract",
+      "exitCode": 0,
+      "log": "logs/livraison/2026-09-07-interactions/test-release-contract.log"
+    },
+    {
+      "script": "test:a11y",
+      "exitCode": 0,
+      "log": "logs/livraison/2026-09-07-interactions/test-a11y.log"
+    },
+    {
+      "script": "test:quotes",
+      "exitCode": 0,
+      "log": "logs/livraison/2026-09-07-interactions/test-quotes.log"
+    },
+    {
+      "script": "test:newsletter",
+      "exitCode": 0,
+      "log": "logs/livraison/2026-09-07-interactions/test-newsletter.log"
+    },
+    {
+      "script": "appcheck:audit",
+      "exitCode": 0,
+      "log": "logs/livraison/2026-09-07-interactions/appcheck-audit.log"
+    },
+    {
+      "script": "test:analytics",
+      "exitCode": 0,
+      "log": "logs/livraison/2026-09-07-interactions/test-analytics.log"
+    },
+    {
+      "script": "test:retention",
+      "exitCode": 0,
+      "log": "logs/livraison/2026-09-07-interactions/test-retention.log"
+    },
+    {
+      "script": "test:observability",
+      "exitCode": 0,
+      "log": "logs/livraison/2026-09-07-interactions/test-observability.log"
+    },
+    {
+      "script": "test:billing-onboarding",
+      "exitCode": 1,
+      "log": "logs/livraison/2026-09-07-interactions/test-billing-onboarding.log"
+    },
+    {
+      "script": "test:invoices",
+      "exitCode": 0,
+      "log": "logs/livraison/2026-09-07-interactions/test-invoices.log"
+    },
+    {
+      "script": "test:admin-cache",
+      "exitCode": 0,
+      "log": "logs/livraison/2026-09-07-interactions/test-admin-cache.log"
+    },
+    {
+      "script": "test:admin-dashboard",
+      "exitCode": 0,
+      "log": "logs/livraison/2026-09-07-interactions/test-admin-dashboard.log"
+    },
+    {
+      "script": "test:realtime-ops",
+      "exitCode": 0,
+      "log": "logs/livraison/2026-09-07-interactions/test-realtime-ops.log"
+    },
+    {
+      "script": "test:meta",
+      "exitCode": 0,
+      "log": "logs/livraison/2026-09-07-interactions/test-meta.log"
+    },
+    {
+      "script": "test:deployment-cache",
+      "exitCode": 0,
+      "log": "logs/livraison/2026-09-07-interactions/test-deployment-cache.log"
+    },
+    {
+      "script": "seo:surface",
+      "exitCode": 0,
+      "log": "logs/livraison/2026-09-07-interactions/seo-surface.log"
+    },
+    {
+      "script": "security:audit:bundle",
+      "exitCode": 0,
+      "log": "logs/livraison/2026-09-07-interactions/security-audit-bundle.log"
+    },
+    {
+      "script": "seo:origin",
+      "exitCode": 0,
+      "log": "logs/livraison/2026-09-07-interactions/seo-origin.log"
+    },
+    {
+      "script": "next:routes",
+      "exitCode": 0,
+      "log": "logs/livraison/2026-09-07-interactions/next-routes.log"
+    },
+    {
+      "script": "mobile:contract",
+      "exitCode": 0,
+      "log": "logs/livraison/2026-09-07-interactions/mobile-contract.log"
+    },
+    {
+      "script": "infra:env",
+      "exitCode": 0,
+      "log": "logs/livraison/2026-09-07-interactions/infra-env.log"
+    },
+    {
+      "script": "infra:deploy",
+      "exitCode": 0,
+      "log": "logs/livraison/2026-09-07-interactions/infra-deploy.log"
+    }
+  ],
+  "secondPassGates": [
+    {
+      "script": "lint",
+      "exitCode": 0,
+      "log": "logs/livraison/2026-09-07-interactions/final-lint.log"
+    },
+    {
+      "script": "lint:functions",
+      "exitCode": 0,
+      "log": "logs/livraison/2026-09-07-interactions/final-lint-functions.log"
+    },
+    {
+      "script": "security:audit",
+      "exitCode": 1,
+      "log": "logs/livraison/2026-09-07-interactions/final-security-audit.log"
+    },
+    {
+      "script": "test:billing-onboarding",
+      "exitCode": 0,
+      "log": "logs/livraison/2026-09-07-interactions/final-test-billing-onboarding.log"
+    },
+    {
+      "script": "test:commerce",
+      "exitCode": 1,
+      "log": "logs/livraison/2026-09-07-interactions/final-test-commerce.log"
+    },
+    {
+      "script": "test:catalog",
+      "exitCode": 1,
+      "log": "logs/livraison/2026-09-07-interactions/final-test-catalog.log"
+    },
+    {
+      "script": "test:realtime-emulator",
+      "exitCode": 0,
+      "log": "logs/livraison/2026-09-07-interactions/final-test-realtime-emulator.log"
+    },
+    {
+      "script": "test:checkout-reconstruction",
+      "exitCode": 0,
+      "log": "logs/livraison/2026-09-07-interactions/final-test-checkout-reconstruction.log"
+    }
+  ],
+  "emulatorRechecks": [
+    {
+      "script": "test:commerce:resilience:emulator",
+      "exitCode": 0,
+      "log": "logs/livraison/2026-09-07-interactions/recheck-test-commerce-resilience-emulator.log"
+    },
+    {
+      "script": "test:commerce:rules",
+      "exitCode": 1,
+      "log": "logs/livraison/2026-09-07-interactions/recheck-test-commerce-rules.log"
+    },
+    {
+      "script": "test:catalog:security",
+      "exitCode": 0,
+      "log": "logs/livraison/2026-09-07-interactions/recheck-test-catalog-security.log"
+    }
+  ],
+  "finalCommerce": {
+    "exitCode": 0,
+    "reports": [
+      {
+        "suite": [
+          "firebase-domain"
+        ],
+        "expected": 20,
+        "executed": 20,
+        "assertions": 114,
+        "statuses": {
+          "passed": 20
+        }
+      },
+      {
+        "suite": [
+          "resilience-emulator"
+        ],
+        "expected": 6,
+        "executed": 6,
+        "assertions": 28,
+        "statuses": {
+          "passed": 6
+        }
+      },
+      {
+        "suite": [
+          "rules-containment"
+        ],
+        "expected": 17,
+        "executed": 17,
+        "assertions": 17,
+        "statuses": {
+          "passed": 17
+        }
+      },
+      {
+        "suite": [
+          "rules-v2"
+        ],
+        "expected": 6,
+        "executed": 6,
+        "assertions": 6,
+        "statuses": {
+          "passed": 6
+        }
+      }
+    ]
+  },
+  "finalRules": {
+    "exitCode": 0,
+    "scenarios": 6
+  },
+  "finalLint": {
+    "exitCode": 0,
+    "errors": 0,
+    "warnings": 121
+  },
+  "finalFunctionsLint": {
+    "exitCode": 0,
+    "warnings": 0
+  },
+  "finalBuild": {
+    "exitCode": 0,
+    "fixture": false
+  },
+  "finalFunctionsDependencyAudit": {
+    "exitCode": 0,
+    "low": 1,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0
+  },
+  "blockingDependency": {
+    "name": "stream-json",
+    "via": "firebase-tools@15.26.0",
+    "installed": "1.9.1",
+    "severity": "moderate",
+    "advisory": "https://github.com/advisories/GHSA-528h-pc64-c93x",
+    "patchedVersion": "3.5.0",
+    "compatible": false,
+    "missingImports": [
+      "stream-json/filters/Pick",
+      "stream-json/filters/Filter",
+      "stream-json/streamers/StreamArray",
+      "stream-json/streamers/StreamObject"
+    ],
+    "overrideRetained": false
+  },
+  "cloudHttp": [
+    {
+      "route": "/",
+      "status": 200,
+      "cacheControl": "s-maxage=300",
+      "deploymentId": "sv-mtp4ho36-474b1fdfaa07"
+    },
+    {
+      "route": "/admin",
+      "status": 200,
+      "cacheControl": "private, no-store, max-age=0",
+      "deploymentId": "sv-mtp4ho36-474b1fdfaa07"
+    },
+    {
+      "route": "/api/catalog/version",
+      "status": 200,
+      "cacheControl": "public, max-age=0, s-maxage=0, must-revalidate",
+      "deploymentId": null
+    }
+  ],
+  "stripeMode": {
+    "project": "secondevienextjsssr",
+    "secretReference": "STRIPE_SECRET_KEY:4",
+    "mode": "test",
+    "observedAt": "2026-09-07T18:38:34.528Z"
+  },
+  "browser": {
+    "local": [
+      "gallery",
+      "menu-open-close",
+      "product-navigation",
+      "add-to-cart",
+      "cart-cleanup",
+      "wishlist-empty",
+      "category-in-stock-filter-4-to-1",
+      "search-armoire-4-results",
+      "login-dialog-open-close"
+    ],
+    "localCheckout": "blocked-by-auth/firebase-app-check-token-is-invalid",
+    "sandbox": "previous-version-public-only",
+    "realAuthentication": false,
+    "payments": 0,
+    "refunds": 0,
+    "emailsSent": 0,
+    "mailboxesRead": 0
+  },
+  "evidence": [
+    {
+      "file": "logs/livraison/2026-09-07-interactions/appcheck-audit.log",
+      "sha256": "d5838b175f1a98ff07ca65d87744c4622dd2440c59c75af998d16d0b942c47c3",
+      "bytes": 148
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/audit-tests-qualified.log",
+      "sha256": "49182e06282c53044b9c771ea55560609ac3f2af9235e49f1829748f492b658b",
+      "bytes": 132613
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/audit-tests.log",
+      "sha256": "97019b24612af11569e6d3bb0d4fc854cc8e5be7b47f8565c00c615049344cf3",
+      "bytes": 132570
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/build-qualified.log",
+      "sha256": "54a2be9444cd3df1a4eebbc80598ec189d91644a0f1f32c8d7eea60d53e72bd3",
+      "bytes": 2732
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/build.log",
+      "sha256": "d162b16636dd1adc5620650bfe3ce1db2aacdab8db3d53d3135631224eccbbee",
+      "bytes": 2731
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/bundle-qualified.log",
+      "sha256": "26f891073c7a2f11c20effc75e5e89d1da4430f240ebd299b1f4b77eb3b69841",
+      "bytes": 177
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/commerce-qualified.log",
+      "sha256": "e3d62c65dca94160bad8d5ab68852261eddf7048d4b82a690a9caa8e2d3da9b2",
+      "bytes": 68492
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/commerce.log",
+      "sha256": "93bb3d28aa2e028c9de4863ad995155bccc4faf3c9b01a3c8f649de02a4db883",
+      "bytes": 4668
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/corrections-qualified.log",
+      "sha256": "b7bfac139ebe1ff5b9d2fb2d038ffb7d2d7044e807b48a8466605a5607f43e68",
+      "bytes": 6204
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/dependency-final.log",
+      "sha256": "628decae9d5706087525b31511c63a0ff997cbda5b89e548914db61b1d8e9278",
+      "bytes": 949
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/dependency-update.log",
+      "sha256": "e92bf6a6c8c5a801c7c96c76886f81ca08ff6cb0fbb629342e7fe32e07868f01",
+      "bytes": 1835
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/final-commerce-rules.log",
+      "sha256": "12f35ffcbd6ea8c448eb719eafc267355d6dd6f0aaaba62fcddc58a8d9df92c0",
+      "bytes": 6893
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/final-lint-functions.log",
+      "sha256": "1a7ca4265b4f4dc925f2cbf5cf80db12c6201dbd46f9e6fb2899f982775eee40",
+      "bytes": 324
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/final-lint.log",
+      "sha256": "0c2c54f74c69c1928e621261baa5daf0eaf375970fb9623facfb247cb029b018",
+      "bytes": 42027
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/final-security-audit.log",
+      "sha256": "a4d454ab991d6212252063ec0ee18758471cbb2dfdb40c3eef6514c07e1f9ede",
+      "bytes": 28954
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/final-test-billing-onboarding.log",
+      "sha256": "3635235859bb9a71903f7775bb69655d9cec5cc253e546c23ee663592e76975f",
+      "bytes": 1464
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/final-test-catalog.log",
+      "sha256": "63f16631d403f8b4ac83a10921eee60ecbb164ce9dc7cc5ef1538d3be7eb9c6a",
+      "bytes": 25857
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/final-test-checkout-reconstruction.log",
+      "sha256": "3419b2068d1145aa73858986792075e4da22d22c811abda6699fb604749eac9f",
+      "bytes": 6439
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/final-test-commerce.log",
+      "sha256": "96de68e90cff7037dcc52c1cce2c79da6a3db119fa3b78c0cdd32ef64349dcee",
+      "bytes": 62060
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/final-test-realtime-emulator.log",
+      "sha256": "8ed761a94103af070ec25eacb80cf927767fd3e81dac77b8e210688deacaf0fa",
+      "bytes": 7244
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/functions-audit-qualified.log",
+      "sha256": "363d87f710334826c90161e1970c530b356b40583eeaa5044d78199848582726",
+      "bytes": 375
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/infra-deploy.log",
+      "sha256": "870a162edc47a0147d47ce3a0ec61c00200a613fcc4ecfc3e177e6a1e305181d",
+      "bytes": 312
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/infra-env.log",
+      "sha256": "a35fefd19a52001f81a09374a98cc25b53fbb7dae5a66b7234cfebadcfc0393d",
+      "bytes": 21124
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/lint-functions-qualified.log",
+      "sha256": "127bb7550e39cf10168b54edfac0425e4a86527c0519776176f8b8383bf8b654",
+      "bytes": 324
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/lint-functions.log",
+      "sha256": "a0d9ff931af298849359079dd25da7d3151e9263efdc521360b3f5497ae0232c",
+      "bytes": 324
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/lint-qualified.log",
+      "sha256": "e165692f916e5a6995527758384b8c323bfaaacd8a8f41a07d5a07c3f410322b",
+      "bytes": 42027
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/lint.log",
+      "sha256": "db3bebf6670aba869d3a0f806db98bb37747145ff0d9734ff0084ded23e35126",
+      "bytes": 42831
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/local-server.log",
+      "sha256": "f7a00cc7e84933d60ad95abd8cde2d1ba3eaa90e1d3d1e2133d39ee8a0ce68bb",
+      "bytes": 303
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/mobile-contract.log",
+      "sha256": "5fa4b065cc1df04f9441cdd58f5bb1f367c047a9a33b4d59888f20618100fbff",
+      "bytes": 1648
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/next-routes.log",
+      "sha256": "6a0b469cdde1f94e04f7fa583a44310be709ef213e962bdfec17b4f502f2cf99",
+      "bytes": 3035
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/origin-qualified.log",
+      "sha256": "87403101933475d20b2cf16f08d50184f335070938b7b9a897be2e6d639c1cc7",
+      "bytes": 217
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/recheck-test-catalog-security.log",
+      "sha256": "5c0fe691fca8ea30aa1ed8b258102b6e6c32636ca344ca74cae8496fc829982d",
+      "bytes": 16749
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/recheck-test-commerce-resilience-emulator.log",
+      "sha256": "0b8d45343073000dd7c0a1c8339404632474fac1410efb292e0a28847e2cd9da",
+      "bytes": 1320
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/recheck-test-commerce-rules.log",
+      "sha256": "c5947d29e1e6e28cefd5c2260aefc04870071a6a45fed2a401e2d84464269968",
+      "bytes": 2781
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/resilience-diagnostic.log",
+      "sha256": "5f8273b6e348926fe88e39efab91c8ce4cfcc7ad9fc972684a1f55456ef4acf4",
+      "bytes": 1689
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/routes-qualified.log",
+      "sha256": "544c9c6aa8ca890787c155c008b022c31e1f39736c67ae4818a5ac96a36039d9",
+      "bytes": 3035
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/security-audit-bundle.log",
+      "sha256": "8fec9c27200e0271e025efc269467f845767b5817381daffaaf99b57989b0d5b",
+      "bytes": 177
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/security-audit.log",
+      "sha256": "650b8a7d646a7f86818dcea20b26decc4e868672c30f6d70dc8ea29afc281c6a",
+      "bytes": 47081
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/seo-origin.log",
+      "sha256": "9d897fb6dc9d658b2ede92612c6d7cd9db63cdb1e2e6e08cb679609453549334",
+      "bytes": 217
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/seo-surface.log",
+      "sha256": "f83e00f68d714bcb1f3aba143ba173ca034a9937e7cae515bfddf9e8530145fd",
+      "bytes": 171
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/test-a11y.log",
+      "sha256": "c6bd6683b6f87371866933127094d4f81f2c6ccad1fb0786faf11332aa4f0ea1",
+      "bytes": 1653
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/test-admin-cache.log",
+      "sha256": "ddbb8a85dd02d3a924c4f3ff532c3fd8aa39910543e7a973004c5ad6d7c7f9b8",
+      "bytes": 3369
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/test-admin-dashboard.log",
+      "sha256": "520bb5f67926457a61be0a077352ed422d74636af602a9bf5777a98c10493e62",
+      "bytes": 6700
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/test-analytics.log",
+      "sha256": "fab5876c19837c9c7ffe02d3a2583336d9b3bd66d4b9de35be9915567a806f57",
+      "bytes": 2323
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/test-auth.log",
+      "sha256": "0f5b0e2ce6bd4f8b9cf1c7434fe9a373420fb5ce9c436a64ddfd48de515b93f4",
+      "bytes": 20308
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/test-billing-onboarding.log",
+      "sha256": "9fee530000cc77ab69d12dd21abe335c31e875507f3c608040bc944d4c297e52",
+      "bytes": 54305
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/test-deployment-cache.log",
+      "sha256": "d29147c15a3c5479a539aff61abba5a5a2efcf240128d06c9ff6c881231712be",
+      "bytes": 1032
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/test-functions-gen2.log",
+      "sha256": "f37f21281697bf025764b96323eece892666573e2018a0db4e816f24cda6998c",
+      "bytes": 36249
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/test-invoices.log",
+      "sha256": "9e0ce306fa9908f1419262298a79d0559b3b92c55534385ed97abd9a696a859a",
+      "bytes": 1308
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/test-meta.log",
+      "sha256": "f6516e6a80e723b7ba597995dc5a910ddc2b83784b10fb62c5d0c4d12b69dd2a",
+      "bytes": 2064
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/test-newsletter.log",
+      "sha256": "845a92fd00e956591aa4b91fdf3bd877209dc91ac2a32922d6a5f9ce5d1eaef9",
+      "bytes": 1256
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/test-observability.log",
+      "sha256": "9bb8a607f45bfcf3984bc3098bfbf479aadc7234ce3debdf6bb51eb082721817",
+      "bytes": 3735
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/test-quotes.log",
+      "sha256": "a34a15da8ae5d29f66b328963c7bed4d69f062a30f3ed9329fd0dad0d1e08b37",
+      "bytes": 1259
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/test-realtime-ops.log",
+      "sha256": "2e8b804059642985f6f51455204b3b243ee723a79c36db73ace59968a9ec3bad",
+      "bytes": 6699
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/test-release-contract.log",
+      "sha256": "80140ecd5b22bd6ddbb898f89e0ad9cf85a2ca838e2ee6c44a4a2e73f95520b9",
+      "bytes": 1383
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/test-retention.log",
+      "sha256": "28c7db0d9036127722b057634d894f2969ba1d983b2ca5bec0761e6ab27adf38",
+      "bytes": 1308
+    },
+    {
+      "file": "logs/livraison/2026-09-07-interactions/test-support-privacy.log",
+      "sha256": "549ba57e8faf2cfeded4bf8d641a2c72dd8ab6b36733dae1a10ef291df58decf",
+      "bytes": 615
+    }
+  ],
+  "cloudPrerequisites": {
+    "observedCompositeIndexes": 20,
+    "rulesRelease": {
+      "name": "projects/secondevienextjsssr/releases/cloud.firestore",
+      "rulesetName": "projects/secondevienextjsssr/rulesets/3e7270f7-825a-4467-917e-c348ed152795",
+      "createTime": "2026-05-13T14:23:11.240226Z",
+      "updateTime": "2026-09-04T00:55:42.385577Z"
+    },
+    "newIndexesPresent": false,
+    "indexes": [
+      {
+        "density": "SPARSE_ALL",
+        "fields": [
+          {
+            "fieldPath": "status",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "processingUntil",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "ASCENDING"
+          }
+        ],
+        "name": "projects/secondevienextjsssr/databases/(default)/collectionGroups/commerce_webhook_inbox/indexes/CICAgPjChIAK",
+        "queryScope": "COLLECTION",
+        "state": "READY"
+      },
+      {
+        "density": "SPARSE_ALL",
+        "fields": [
+          {
+            "fieldPath": "status",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "createdAt",
+            "order": "DESCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "DESCENDING"
+          }
+        ],
+        "name": "projects/secondevienextjsssr/databases/(default)/collectionGroups/furniture/indexes/CICAgOjXh4EK",
+        "queryScope": "COLLECTION",
+        "state": "READY"
+      },
+      {
+        "density": "SPARSE_ALL",
+        "fields": [
+          {
+            "fieldPath": "status",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "processingUntil",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "ASCENDING"
+          }
+        ],
+        "name": "projects/secondevienextjsssr/databases/(default)/collectionGroups/commerce_outbox/indexes/CICAgPj-pYIK",
+        "queryScope": "COLLECTION",
+        "state": "READY"
+      },
+      {
+        "density": "SPARSE_ALL",
+        "fields": [
+          {
+            "fieldPath": "adminArchived",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "createdAt",
+            "order": "DESCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "DESCENDING"
+          }
+        ],
+        "name": "projects/secondevienextjsssr/databases/(default)/collectionGroups/orders/indexes/CICAgOj3mIMK",
+        "queryScope": "COLLECTION",
+        "state": "READY"
+      },
+      {
+        "density": "SPARSE_ALL",
+        "fields": [
+          {
+            "fieldPath": "status",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "category",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "createdAt",
+            "order": "DESCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "DESCENDING"
+          }
+        ],
+        "name": "projects/secondevienextjsssr/databases/(default)/collectionGroups/furniture/indexes/CICAgJiUpoMK",
+        "queryScope": "COLLECTION",
+        "state": "READY"
+      },
+      {
+        "density": "SPARSE_ALL",
+        "fields": [
+          {
+            "fieldPath": "state",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "notBefore",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "ASCENDING"
+          }
+        ],
+        "name": "projects/secondevienextjsssr/databases/(default)/collectionGroups/sys_catalog_media_gc/indexes/CICAgOi3voUK",
+        "queryScope": "COLLECTION",
+        "state": "READY"
+      },
+      {
+        "density": "SPARSE_ALL",
+        "fields": [
+          {
+            "fieldPath": "checkout.channel",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "createdAt",
+            "order": "DESCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "DESCENDING"
+          }
+        ],
+        "name": "projects/secondevienextjsssr/databases/(default)/collectionGroups/orders/indexes/CICAgNiryokK",
+        "queryScope": "COLLECTION",
+        "state": "READY"
+      },
+      {
+        "density": "SPARSE_ALL",
+        "fields": [
+          {
+            "fieldPath": "userEmail",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "createdAt",
+            "order": "DESCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "DESCENDING"
+          }
+        ],
+        "name": "projects/secondevienextjsssr/databases/(default)/collectionGroups/orders/indexes/CICAgOi39IkK",
+        "queryScope": "COLLECTION",
+        "state": "READY"
+      },
+      {
+        "density": "SPARSE_ALL",
+        "fields": [
+          {
+            "fieldPath": "userId",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "createdAt",
+            "order": "DESCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "DESCENDING"
+          }
+        ],
+        "name": "projects/secondevienextjsssr/databases/(default)/collectionGroups/orders/indexes/CICAgJjFvYoK",
+        "queryScope": "COLLECTION",
+        "state": "READY"
+      },
+      {
+        "density": "SPARSE_ALL",
+        "fields": [
+          {
+            "fieldPath": "correlationId",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "occurredAt",
+            "order": "DESCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "DESCENDING"
+          }
+        ],
+        "name": "projects/secondevienextjsssr/databases/(default)/collectionGroups/business_events/indexes/CICAgNjp84oK",
+        "queryScope": "COLLECTION",
+        "state": "READY"
+      },
+      {
+        "density": "SPARSE_ALL",
+        "fields": [
+          {
+            "fieldPath": "checkout.channel",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "checkout.status",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "checkout.expiresAt",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "ASCENDING"
+          }
+        ],
+        "name": "projects/secondevienextjsssr/databases/(default)/collectionGroups/orders/indexes/CICAgJiUzYsK",
+        "queryScope": "COLLECTION",
+        "state": "READY"
+      },
+      {
+        "density": "SPARSE_ALL",
+        "fields": [
+          {
+            "fieldPath": "status",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "expiresAt",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "ASCENDING"
+          }
+        ],
+        "name": "projects/secondevienextjsssr/databases/(default)/collectionGroups/inventory_reservations/indexes/CICAgLiI64sK",
+        "queryScope": "COLLECTION",
+        "state": "READY"
+      },
+      {
+        "density": "SPARSE_ALL",
+        "fields": [
+          {
+            "fieldPath": "userId",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "updatedAt",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "ASCENDING"
+          }
+        ],
+        "name": "projects/secondevienextjsssr/databases/(default)/collectionGroups/orders/indexes/CICAgNiZ1o4K",
+        "queryScope": "COLLECTION",
+        "state": "READY"
+      },
+      {
+        "density": "SPARSE_ALL",
+        "fields": [
+          {
+            "fieldPath": "status",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "currentPrice",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "ASCENDING"
+          }
+        ],
+        "name": "projects/secondevienextjsssr/databases/(default)/collectionGroups/furniture/indexes/CICAgOi3kJAK",
+        "queryScope": "COLLECTION",
+        "state": "READY"
+      },
+      {
+        "density": "SPARSE_ALL",
+        "fields": [
+          {
+            "fieldPath": "status",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "nextAttemptAt",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "ASCENDING"
+          }
+        ],
+        "name": "projects/secondevienextjsssr/databases/(default)/collectionGroups/commerce_webhook_inbox/indexes/CICAgPigw5IK",
+        "queryScope": "COLLECTION",
+        "state": "READY"
+      },
+      {
+        "density": "SPARSE_ALL",
+        "fields": [
+          {
+            "fieldPath": "sessionActive",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "lastActivityAt",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "ASCENDING"
+          }
+        ],
+        "name": "projects/secondevienextjsssr/databases/(default)/collectionGroups/analytics_sessions/indexes/CICAgOi3pZQK",
+        "queryScope": "COLLECTION",
+        "state": "READY"
+      },
+      {
+        "density": "SPARSE_ALL",
+        "fields": [
+          {
+            "fieldPath": "aggregateId",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "occurredAt",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "ASCENDING"
+          }
+        ],
+        "name": "projects/secondevienextjsssr/databases/(default)/collectionGroups/business_events/indexes/CICAgJjUlJYK",
+        "queryScope": "COLLECTION",
+        "state": "READY"
+      },
+      {
+        "density": "SPARSE_ALL",
+        "fields": [
+          {
+            "fieldPath": "checkout.channel",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "orderNumber",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "createdAt",
+            "order": "DESCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "DESCENDING"
+          }
+        ],
+        "name": "projects/secondevienextjsssr/databases/(default)/collectionGroups/orders/indexes/CICAgJiljJcK",
+        "queryScope": "COLLECTION",
+        "state": "READY"
+      },
+      {
+        "density": "SPARSE_ALL",
+        "fields": [
+          {
+            "fieldPath": "status",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "nextAttemptAt",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "ASCENDING"
+          }
+        ],
+        "name": "projects/secondevienextjsssr/databases/(default)/collectionGroups/commerce_outbox/indexes/CICAgJiHlpgK",
+        "queryScope": "COLLECTION",
+        "state": "READY"
+      },
+      {
+        "density": "SPARSE_ALL",
+        "fields": [
+          {
+            "fieldPath": "contribution.dateKey",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "shardId",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "__name__",
+            "order": "ASCENDING"
+          }
+        ],
+        "name": "projects/secondevienextjsssr/databases/(default)/collectionGroups/analytics_session_facts/indexes/CICAgJjHoJwK",
+        "queryScope": "COLLECTION",
+        "state": "READY"
+      }
+    ]
+  },
+  "documentChecks": {
+    "localLinksChecked": 223,
+    "missingLinks": 0,
+    "historicalArtifactsVerified": 10,
+    "sourceFileHashesVerified": 230,
+    "gitDiffCheck": true,
+    "gitCachedDiffCheck": true
+  },
+  "qualificationCorrections": {
+    "tests": 30,
+    "passed": 30,
+    "failed": 0
+  }
+}

@@ -1,0 +1,3614 @@
+TAP version 13
+# Subtest: signed-out account route does not wait for the full orders workspace bundle
+ok 1 - signed-out account route does not wait for the full orders workspace bundle
+  ---
+  duration_ms: 0.852167
+  type: 'test'
+  ...
+# Subtest: account route owns loading state instead of a segment streaming fallback
+ok 2 - account route owns loading state instead of a segment streaming fallback
+  ---
+  duration_ms: 17.940083
+  type: 'test'
+  ...
+# Subtest: account wishlist preview resolves missing products through the public catalog
+ok 3 - account wishlist preview resolves missing products through the public catalog
+  ---
+  duration_ms: 1.301625
+  type: 'test'
+  ...
+# Subtest: wishlist uses the document id when a historical favorite has no originalId
+ok 4 - wishlist uses the document id when a historical favorite has no originalId
+  ---
+  duration_ms: 0.297292
+  type: 'test'
+  ...
+# Subtest: le chronometre distingue preparation et requete sans alterer la reponse
+ok 5 - le chronometre distingue preparation et requete sans alterer la reponse
+  ---
+  duration_ms: 1.891041
+  type: 'test'
+  ...
+# Subtest: une reponse ancienne conserve sa trace meme si un autre onglet est selectionne
+ok 6 - une reponse ancienne conserve sa trace meme si un autre onglet est selectionne
+  ---
+  duration_ms: 5.647291
+  type: 'test'
+  ...
+# Subtest: le diagnostic est borne, expurge et ses erreurs restent celles de la fonction
+ok 7 - le diagnostic est borne, expurge et ses erreurs restent celles de la fonction
+  ---
+  duration_ms: 11.74475
+  type: 'test'
+  ...
+# Subtest: les ressources conservent uniquement famille et duree, jamais URL ou token
+ok 8 - les ressources conservent uniquement famille et duree, jamais URL ou token
+  ---
+  duration_ms: 1.520666
+  type: 'test'
+  ...
+# Subtest: effacer le diagnostic interdit a une reponse tardive de le repeupler
+ok 9 - effacer le diagnostic interdit a une reponse tardive de le repeupler
+  ---
+  duration_ms: 4.002584
+  type: 'test'
+  ...
+# Subtest: la console expose seulement une copie bornee et peut tout effacer
+ok 10 - la console expose seulement une copie bornee et peut tout effacer
+  ---
+  duration_ms: 0.787375
+  type: 'test'
+  ...
+# Subtest: instrumentation sans reseau ni stockage, lecture HTTP explicite et UI sans fausse confiance
+ok 11 - instrumentation sans reseau ni stockage, lecture HTTP explicite et UI sans fausse confiance
+  ---
+  duration_ms: 1.774917
+  type: 'test'
+  ...
+# Subtest: le rapport ne masque pas OPTIONS derriere un POST rapide
+ok 12 - le rapport ne masque pas OPTIONS derriere un POST rapide
+  ---
+  duration_ms: 1.479334
+  type: 'test'
+  ...
+# Subtest: fenetre, limite, erreurs et inventaire incomplet restent explicites
+ok 13 - fenetre, limite, erreurs et inventaire incomplet restent explicites
+  ---
+  duration_ms: 13.398042
+  type: 'test'
+  ...
+# Subtest: aucun acces cloud implicite, aucune mutation, fenetre 24 h maximum
+ok 14 - aucun acces cloud implicite, aucune mutation, fenetre 24 h maximum
+  ---
+  duration_ms: 12.188583
+  type: 'test'
+  ...
+# Subtest: périodes sans TTL, isolées par propriétaire et purgées à la révocation
+ok 15 - périodes sans TTL, isolées par propriétaire et purgées à la révocation
+  ---
+  duration_ms: 1.59025
+  type: 'test'
+  ...
+# Subtest: admin data cache deduplicates concurrent reads and reuses known data
+ok 16 - admin data cache deduplicates concurrent reads and reuses known data
+  ---
+  duration_ms: 0.980042
+  type: 'test'
+  ...
+# Subtest: stale page remains visible through refresh and error, then authorization still purges it
+ok 17 - stale page remains visible through refresh and error, then authorization still purges it
+  ---
+  duration_ms: 10.1285
+  type: 'test'
+  ...
+# Subtest: returns partial refresh preserves cached rows, but an authorization failure purges all rows
+ok 18 - returns partial refresh preserves cached rows, but an authorization failure purges all rows
+  ---
+  duration_ms: 47.017583
+  type: 'test'
+  ...
+# Subtest: admin data cache is cleared when the admin session ends
+ok 19 - admin data cache is cleared when the admin session ends
+  ---
+  duration_ms: 0.997542
+  type: 'test'
+  ...
+# Subtest: an in-flight read cannot repopulate the cache after logout
+ok 20 - an in-flight read cannot repopulate the cache after logout
+  ---
+  duration_ms: 0.678042
+  type: 'test'
+  ...
+# Subtest: logout hors admin puis autre propriétaire et révocation même UID purgent les données
+ok 21 - logout hors admin puis autre propriétaire et révocation même UID purgent les données
+  ---
+  duration_ms: 2.058292
+  type: 'test'
+  ...
+# Subtest: un refus tardif du premier admin ne purge pas les données du suivant
+ok 22 - un refus tardif du premier admin ne purge pas les données du suivant
+  ---
+  duration_ms: 9.440542
+  type: 'test'
+  ...
+# Subtest: customer export reads one bounded Auth page without user metadata and enforces authorization on every call
+ok 23 - customer export reads one bounded Auth page without user metadata and enforces authorization on every call
+  ---
+  duration_ms: 3.90875
+  type: 'test'
+  ...
+# Subtest: missing user counter stays unavailable without enumerating all Auth accounts
+ok 24 - missing user counter stays unavailable without enumerating all Auth accounts
+  ---
+  duration_ms: 2.737542
+  type: 'test'
+  ...
+# Subtest: export follows empty pages, deduplicates users, and rejects cursor loops, overflow and a changed session
+ok 25 - export follows empty pages, deduplicates users, and rejects cursor loops, overflow and a changed session
+  ---
+  duration_ms: 4.936125
+  type: 'test'
+  ...
+# Subtest: hourly sales count captured EUR at payment time, never unpaid order totals
+ok 26 - hourly sales count captured EUR at payment time, never unpaid order totals
+  ---
+  duration_ms: 1.317916
+  type: 'test'
+  ...
+# Subtest: legacy migration cannot overwrite a concurrent revocation or stale allowlist entry
+ok 27 - legacy migration cannot overwrite a concurrent revocation or stale allowlist entry
+  ---
+  duration_ms: 3.321
+  type: 'test'
+  ...
+# Subtest: Incidents reste le dernier item du menu lateral Admin
+ok 28 - Incidents reste le dernier item du menu lateral Admin
+  ---
+  duration_ms: 3.170125
+  type: 'test'
+  ...
+# Subtest: Data affiche son cache immédiatement et espace les synchronisations automatiques
+ok 29 - Data affiche son cache immédiatement et espace les synchronisations automatiques
+  ---
+  duration_ms: 16.565792
+  type: 'test'
+  ...
+# Subtest: Ventes se precharge sur intention et les retours affichent un badge materialise
+ok 30 - Ventes se precharge sur intention et les retours affichent un badge materialise
+  ---
+  duration_ms: 0.914083
+  type: 'test'
+  ...
+# Subtest: le checkout distingue disponibilité et panier vide; le signal client utilise les dates ISO v2
+ok 31 - le checkout distingue disponibilité et panier vide; le signal client utilise les dates ISO v2
+  ---
+  duration_ms: 1.97075
+  type: 'test'
+  ...
+# Subtest: les invokers Eventarc sont privés et associés à leur identité réelle
+ok 32 - les invokers Eventarc sont privés et associés à leur identité réelle
+  ---
+  duration_ms: 0.623959
+  type: 'test'
+  ...
+# Subtest: Système reste monté pendant le passage Commande afin de conserver son listener
+ok 33 - Système reste monté pendant le passage Commande afin de conserver son listener
+  ---
+  duration_ms: 0.788084
+  type: 'test'
+  ...
+# Subtest: inventory follows cursors and shares one in-flight complete result
+ok 34 - inventory follows cursors and shares one in-flight complete result
+  ---
+  duration_ms: 6.14075
+  type: 'test'
+  ...
+# Subtest: a release change discards the old partial inventory and repeated cursors fail closed
+ok 35 - a release change discards the old partial inventory and repeated cursors fail closed
+  ---
+  duration_ms: 0.952583
+  type: 'test'
+  ...
+# Subtest: returns display cannot replace a zero or unknown refund with the full order amount
+ok 36 - returns display cannot replace a zero or unknown refund with the full order amount
+  ---
+  duration_ms: 59.697583
+  type: 'test'
+  ...
+# Subtest: return commands prevent concurrent submissions and remain disabled in read-only mode
+ok 37 - return commands prevent concurrent submissions and remain disabled in read-only mode
+  ---
+  duration_ms: 5.670917
+  type: 'test'
+  ...
+# Subtest: admin token refresh retries two transient network failures then succeeds
+ok 38 - admin token refresh retries two transient network failures then succeeds
+  ---
+  duration_ms: 3.714
+  type: 'test'
+  ...
+# Subtest: admin token refresh does not retry authorization failures
+ok 39 - admin token refresh does not retry authorization failures
+  ---
+  duration_ms: 3.920667
+  type: 'test'
+  ...
+# Subtest: admin token refresh remains bounded after three network attempts
+ok 40 - admin token refresh remains bounded after three network attempts
+  ---
+  duration_ms: 0.570833
+  type: 'test'
+  ...
+# Subtest: analytics events emitted before the deferred runtime are buffered once
+ok 41 - analytics events emitted before the deferred runtime are buffered once
+  ---
+  duration_ms: 101.809209
+  type: 'test'
+  ...
+# Subtest: live projection is allowlisted, bounded and contains no raw identity or token
+ok 42 - live projection is allowlisted, bounded and contains no raw identity or token
+  ---
+  duration_ms: 2.973458
+  type: 'test'
+  ...
+# Subtest: presence allows 60 second heartbeat and rejects old, closed and invalid sessions
+ok 43 - presence allows 60 second heartbeat and rejects old, closed and invalid sessions
+  ---
+  duration_ms: 0.298958
+  type: 'test'
+  ...
+# Subtest: live UI reads projected summaries and one detail, not raw sessions or an overview callable
+ok 44 - live UI reads projected summaries and one detail, not raw sessions or an overview callable
+  ---
+  duration_ms: 0.312666
+  type: 'test'
+  ...
+# Subtest: listener owner shares recent rows, replaces history, propagates removals and rejects late callbacks
+ok 45 - listener owner shares recent rows, replaces history, propagates removals and rejects late callbacks
+  ---
+  duration_ms: 4.446666
+  type: 'test'
+  ...
+# Subtest: sandbox inventory preserves admin tombstones and strips exported identities
+ok 46 - sandbox inventory preserves admin tombstones and strips exported identities
+  ---
+  duration_ms: 102.516833
+  type: 'test'
+  ...
+# Subtest: projector deploy enables only its flag without replacing runtime environment
+ok 47 - projector deploy enables only its flag without replacing runtime environment
+  ---
+  duration_ms: 3.382916
+  type: 'test'
+  ...
+# Subtest: active session counted immediately; heartbeat identical; closed metrics explicit
+ok 48 - active session counted immediately; heartbeat identical; closed metrics explicit
+  ---
+  duration_ms: 0.5605
+  type: 'test'
+  ...
+# Subtest: reversible sketch preserves duplicate visitors and restores after admin withdrawal
+ok 49 - reversible sketch preserves duplicate visitors and restores after admin withdrawal
+  ---
+  duration_ms: 21.120292
+  type: 'test'
+  ...
+# Subtest: replay is 4 reads / 0 writes, new contribution 11 reads / 8 writes, no scans
+ok 50 - replay is 4 reads / 0 writes, new contribution 11 reads / 8 writes, no scans
+  ---
+  duration_ms: 96.770667
+  type: 'test'
+  ...
+# Subtest: TTL preserves history, exclusion removes once, delayed event cannot resurrect
+ok 51 - TTL preserves history, exclusion removes once, delayed event cannot resurrect
+  ---
+  duration_ms: 34.443541
+  type: 'test'
+  ...
+# Subtest: identity correction changes uniques without changing session count
+ok 52 - identity correction changes uniques without changing session count
+  ---
+  duration_ms: 64.003625
+  type: 'test'
+  ...
+# Subtest: seed disjoint history, size caps, no identifiers in global documents
+ok 53 - seed disjoint history, size caps, no identifiers in global documents
+  ---
+  duration_ms: 18.234
+  type: 'test'
+  ...
+# Subtest: full public rings stay below the 256 KiB budget
+ok 54 - full public rings stay below the 256 KiB budget
+  ---
+  duration_ms: 96.840541
+  type: 'test'
+  ...
+# Subtest: immutable historic baseline survives withdrawal of a newer matching visitor
+ok 55 - immutable historic baseline survives withdrawal of a newer matching visitor
+  ---
+  duration_ms: 29.421875
+  type: 'test'
+  ...
+# Subtest: a delayed transaction cannot prune newer buckets using an older clock
+ok 56 - a delayed transaction cannot prune newer buckets using an older clock
+  ---
+  duration_ms: 119.904625
+  type: 'test'
+  ...
+# Subtest: window expiry uses local clock, DST repeated hours remain separate
+ok 57 - window expiry uses local clock, DST repeated hours remain separate
+  ---
+  duration_ms: 32.694083
+  type: 'test'
+  ...
+# Subtest: shared listener, cache->server, auth cleanup, missing and regressive data fail closed
+ok 58 - shared listener, cache->server, auth cleanup, missing and regressive data fail closed
+  ---
+  duration_ms: 1.801459
+  type: 'test'
+  ...
+# Subtest: corrupt, pending and incomplete projections are not zeros
+ok 59 - corrupt, pending and incomplete projections are not zeros
+  ---
+  duration_ms: 0.490083
+  type: 'test'
+  ...
+# Subtest: bootstrap prioritizes current source, excludes admins, preserves old facts and reports no cloud writes
+ok 60 - bootstrap prioritizes current source, excludes admins, preserves old facts and reports no cloud writes
+  ---
+  duration_ms: 495.680709
+  type: 'test'
+  ...
+# Subtest: les visiteurs uniques restent fusionnables sans conserver leur identifiant
+ok 61 - les visiteurs uniques restent fusionnables sans conserver leur identifiant
+  ---
+  duration_ms: 31.269958
+  type: 'test'
+  ...
+# Subtest: une session produit uniquement des compteurs bornes et un sujet pseudonymise
+ok 62 - une session produit uniquement des compteurs bornes et un sujet pseudonymise
+  ---
+  duration_ms: 1.38825
+  type: 'test'
+  ...
+# Subtest: les intentions devis sont des drapeaux de session et insights reste borne aux rollups
+ok 63 - les intentions devis sont des drapeaux de session et insights reste borne aux rollups
+  ---
+  duration_ms: 9.038625
+  type: 'test'
+  ...
+# Subtest: le rail admin lit des rollups et charge le detail seulement a la demande
+ok 64 - le rail admin lit des rollups et charge le detail seulement a la demande
+  ---
+  duration_ms: 3.516
+  type: 'test'
+  ...
+# Subtest: les heures analytics utilisent Europe Paris et un retrait reconstruit le HLL
+ok 65 - les heures analytics utilisent Europe Paris et un retrait reconstruit le HLL
+  ---
+  duration_ms: 1.003542
+  type: 'test'
+  ...
+# Subtest: la reparation historique est bornee, sans identifiant affiche et dry-run par defaut
+ok 66 - la reparation historique est bornee, sans identifiant affiche et dry-run par defaut
+  ---
+  duration_ms: 0.338584
+  type: 'test'
+  ...
+# Subtest: le transport Eventarc de l agregateur analytics est repare sans invoker public
+ok 67 - le transport Eventarc de l agregateur analytics est repare sans invoker public
+  ---
+  duration_ms: 0.645625
+  type: 'test'
+  ...
+# Subtest: le rejeu des faits analytics est borne, idempotent et sans donnee personnelle
+ok 68 - le rejeu des faits analytics est borne, idempotent et sans donnee personnelle
+  ---
+  duration_ms: 0.466417
+  type: 'test'
+  ...
+# Subtest: les commandes ont un compteur transactionnel et un affichage lisible
+ok 69 - les commandes ont un compteur transactionnel et un affichage lisible
+  ---
+  duration_ms: 1.40325
+  type: 'test'
+  ...
+# Erreur Remove Admin: Error: transient revoke failure
+#     at Object.revokeRefreshTokens (/Users/matthis/Desktop/mes projets mac/secondevienextjsSSR/tests/auth-admin-revocation.test.cjs:130:17)
+#     at removeAdminUserHandler (/Users/matthis/Desktop/mes projets mac/secondevienextjsSSR/functions/src/auth/adminManagement.js:434:32)
+#     at async waitForActual (node:assert:644:5)
+#     at async Function.rejects (node:assert:767:25)
+#     at async TestContext.<anonymous> (/Users/matthis/Desktop/mes projets mac/secondevienextjsSSR/tests/auth-admin-revocation.test.cjs:211:5)
+#     at async Test.run (node:internal/test_runner/test:1054:7)
+#     at async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+# Erreur Remove Admin: Error: fixture lookup failure
+#     at Object.getUserByEmail (/Users/matthis/Desktop/mes projets mac/secondevienextjsSSR/tests/auth-admin-revocation.test.cjs:116:25)
+#     at removeAdminUserHandler (/Users/matthis/Desktop/mes projets mac/secondevienextjsSSR/functions/src/auth/adminManagement.js:393:55)
+#     at async waitForActual (node:assert:644:5)
+#     at async Function.rejects (node:assert:767:25)
+#     at async TestContext.<anonymous> (/Users/matthis/Desktop/mes projets mac/secondevienextjsSSR/tests/auth-admin-revocation.test.cjs:234:5)
+#     at async Test.run (node:internal/test_runner/test:1054:7)
+#     at async Test.processPendingSubtests (node:internal/test_runner/test:744:7) {
+#   code: 'auth/internal-error'
+# }
+# Subtest: admin revocation converges and remains idempotent when repeated
+ok 70 - admin revocation converges and remains idempotent when repeated
+  ---
+  duration_ms: 299.537875
+  type: 'test'
+  ...
+# Subtest: failed token revocation is resumed without restoring registry access
+ok 71 - failed token revocation is resumed without restoring registry access
+  ---
+  duration_ms: 32.93475
+  type: 'test'
+  ...
+# Subtest: transient Auth lookup failure aborts a pending admin revocation
+ok 72 - transient Auth lookup failure aborts a pending admin revocation
+  ---
+  duration_ms: 9.098625
+  type: 'test'
+  ...
+# Subtest: owner registry cannot be revoked
+ok 73 - owner registry cannot be revoked
+  ---
+  duration_ms: 3.555833
+  type: 'test'
+  ...
+# Subtest: active legacy admin can self-migrate only when the UID registry is absent
+ok 74 - active legacy admin can self-migrate only when the UID registry is absent
+  ---
+  duration_ms: 1.8915
+  type: 'test'
+  ...
+# Subtest: self-migration never reactivates an inactive UID registry
+ok 75 - self-migration never reactivates an inactive UID registry
+  ---
+  duration_ms: 0.656
+  type: 'test'
+  ...
+# Subtest: self-migration loses to a revocation between its initial read and transaction
+ok 76 - self-migration loses to a revocation between its initial read and transaction
+  ---
+  duration_ms: 0.482042
+  type: 'test'
+  ...
+# Security authorization denied {
+#   reason: 'aal2-required',
+#   authenticated: true,
+#   uidHash: '62a5cbb75bc81c16'
+# }
+# Security authorization denied {
+#   reason: 'admin-claim-required',
+#   authenticated: true,
+#   uidHash: '62a5cbb75bc81c16'
+# }
+# Security authorization denied {
+#   reason: 'admin-claim-required',
+#   authenticated: true,
+#   uidHash: '62a5cbb75bc81c16'
+# }
+# Security authorization denied {
+#   reason: 'admin-access-inactive',
+#   authenticated: true,
+#   uidHash: '62a5cbb75bc81c16'
+# }
+# Subtest: OTP admin remains AAL1 and is denied strong admin access
+ok 77 - OTP admin remains AAL1 and is denied strong admin access
+  ---
+  duration_ms: 29.989
+  type: 'test'
+  ...
+# Subtest: verified passkey admin is accepted as AAL2 without a time window
+ok 78 - verified passkey admin is accepted as AAL2 without a time window
+  ---
+  duration_ms: 1.935583
+  type: 'test'
+  ...
+# Subtest: an older passkey session remains AAL2 while the Firebase session is valid
+ok 79 - an older passkey session remains AAL2 while the Firebase session is valid
+  ---
+  duration_ms: 0.526084
+  type: 'test'
+  ...
+# Subtest: Google admin is accepted as AAL2 by the documented operational policy
+ok 80 - Google admin is accepted as AAL2 by the documented operational policy
+  ---
+  duration_ms: 3.290375
+  type: 'test'
+  ...
+# Subtest: Google authorizes admin mutations without a passkey step-up
+ok 81 - Google authorizes admin mutations without a passkey step-up
+  ---
+  duration_ms: 1.462334
+  type: 'test'
+  ...
+# Subtest: strong authentication never replaces the admin role check
+ok 82 - strong authentication never replaces the admin role check
+  ---
+  duration_ms: 1.2225
+  type: 'test'
+  ...
+# Subtest: configured owner email alone never grants operational admin access
+ok 83 - configured owner email alone never grants operational admin access
+  ---
+  duration_ms: 1.107208
+  type: 'test'
+  ...
+# Subtest: configured owner email remains available only for verified AAL2 bootstrap
+ok 84 - configured owner email remains available only for verified AAL2 bootstrap
+  ---
+  duration_ms: 16.002542
+  type: 'test'
+  ...
+# Subtest: active registry is required even when a current AAL2 token still has admin claims
+ok 85 - active registry is required even when a current AAL2 token still has admin claims
+  ---
+  duration_ms: 1.744
+  type: 'test'
+  ...
+# Subtest: active registry and AAL2 token authorize an admin callable
+ok 86 - active registry and AAL2 token authorize an admin callable
+  ---
+  duration_ms: 0.901583
+  type: 'test'
+  ...
+# Subtest: token minting and Firebase rules carry the same AAL contract
+ok 87 - token minting and Firebase rules carry the same AAL contract
+  ---
+  duration_ms: 5.698
+  type: 'test'
+  ...
+# Subtest: admin authorization has no hidden recent-passkey gate
+ok 88 - admin authorization has no hidden recent-passkey gate
+  ---
+  duration_ms: 1.419625
+  type: 'test'
+  ...
+# Subtest: valid customer OTP is consumed once before minting its Firebase custom token
+ok 89 - valid customer OTP is consumed once before minting its Firebase custom token
+  ---
+  duration_ms: 22.482542
+  type: 'test'
+  ...
+# Customer OTP user lookup error: { code: 'auth/internal-error', message: 'transient lookup failure' }
+# Erreur Add Admin: Error: fixture transient lookup failure
+#     at Object.getUserByEmail (/Users/matthis/Desktop/mes projets mac/secondevienextjsSSR/tests/auth-backend-transitions.test.cjs:512:23)
+#     at addAdminUserHandler (/Users/matthis/Desktop/mes projets mac/secondevienextjsSSR/functions/src/auth/adminManagement.js:283:51)
+#     at async waitForActual (node:assert:644:5)
+#     at async Function.rejects (node:assert:767:25)
+#     at async run (/Users/matthis/Desktop/mes projets mac/secondevienextjsSSR/tests/auth-backend-transitions.test.cjs:543:7)
+#     at async withModuleMocks (/Users/matthis/Desktop/mes projets mac/secondevienextjsSSR/tests/auth-backend-transitions.test.cjs:38:12)
+#     at async TestContext.<anonymous> (/Users/matthis/Desktop/mes projets mac/secondevienextjsSSR/tests/auth-backend-transitions.test.cjs:530:3)
+#     at async Test.run (node:internal/test_runner/test:1054:7)
+#     at async Test.processPendingSubtests (node:internal/test_runner/test:744:7) {
+#   code: 'auth/internal-error'
+# }
+# Subtest: customer OTP resumes one failed token mint without storing a token
+ok 90 - customer OTP resumes one failed token mint without storing a token
+  ---
+  duration_ms: 15.735417
+  type: 'test'
+  ...
+# Subtest: customer OTP resumes after a transient user lookup failure
+ok 91 - customer OTP resumes after a transient user lookup failure
+  ---
+  duration_ms: 2.220958
+  type: 'test'
+  ...
+# Subtest: admin removal clears active claims, profile role and whitelist entry
+ok 92 - admin removal clears active claims, profile role and whitelist entry
+  ---
+  duration_ms: 244.738375
+  type: 'test'
+  ...
+# Subtest: transient Auth lookup failure never creates a pending admin invitation
+ok 93 - transient Auth lookup failure never creates a pending admin invitation
+  ---
+  duration_ms: 1.813375
+  type: 'test'
+  ...
+# Admin claim refused: account email is not verified.
+# Admin claim refused: account email is not verified.
+# Admin claim assignment started. { role: 'admin' }
+# Admin claim assignment completed. { role: 'admin' }
+# Admin claim assignment started. { role: 'admin' }
+# Admin claim assignment started. { role: 'admin' }
+# Subtest: unverified configured super-admin email receives no admin claims
+ok 94 - unverified configured super-admin email receives no admin claims
+  ---
+  duration_ms: 51.446042
+  type: 'test'
+  ...
+# Subtest: unverified pending admin email receives no admin claims
+ok 95 - unverified pending admin email receives no admin claims
+  ---
+  duration_ms: 1.156542
+  type: 'test'
+  ...
+# Subtest: verified pending admin gets an active UID registry before claims
+ok 96 - verified pending admin gets an active UID registry before claims
+  ---
+  duration_ms: 2.042792
+  type: 'test'
+  ...
+# Subtest: delayed Auth creation cannot restore a revoked admin or removed invitation
+ok 97 - delayed Auth creation cannot restore a revoked admin or removed invitation
+  ---
+  duration_ms: 1.497583
+  type: 'test'
+  ...
+# Subtest: custom-token sign-in retries bounded network failures with the same token
+ok 98 - custom-token sign-in retries bounded network failures with the same token
+  ---
+  duration_ms: 8.000625
+  type: 'test'
+  ...
+# Subtest: custom-token sign-in does not retry a non-network Firebase error
+ok 99 - custom-token sign-in does not retry a non-network Firebase error
+  ---
+  duration_ms: 0.663291
+  type: 'test'
+  ...
+# Subtest: custom-token sign-in stops after the configured network retry budget
+ok 100 - custom-token sign-in stops after the configured network retry budget
+  ---
+  duration_ms: 0.485083
+  type: 'test'
+  ...
+# Subtest: Gmail reste un adaptateur injectable et actif par defaut
+ok 101 - Gmail reste un adaptateur injectable et actif par defaut
+  ---
+  duration_ms: 4.593
+  type: 'test'
+  ...
+# Subtest: Resend envoie le contrat API avec une cle idempotente
+ok 102 - Resend envoie le contrat API avec une cle idempotente
+  ---
+  duration_ms: 1.017625
+  type: 'test'
+  ...
+# Subtest: Gmail et Resend transportent uniquement les pièces jointes PDF en mémoire
+ok 103 - Gmail et Resend transportent uniquement les pièces jointes PDF en mémoire
+  ---
+  duration_ms: 0.857875
+  type: 'test'
+  ...
+# Subtest: Resend retente une seule fois une erreur temporaire avec la meme idempotence
+ok 104 - Resend retente une seule fois une erreur temporaire avec la meme idempotence
+  ---
+  duration_ms: 0.728334
+  type: 'test'
+  ...
+# Subtest: Resend refuse un envoi sans cle idempotente
+ok 105 - Resend refuse un envoi sans cle idempotente
+  ---
+  duration_ms: 0.501917
+  type: 'test'
+  ...
+# Subtest: les parcours OTP et commandes utilisent le meme runtime sans transport direct
+ok 106 - les parcours OTP et commandes utilisent le meme runtime sans transport direct
+  ---
+  duration_ms: 0.896708
+  type: 'test'
+  ...
+# Subtest: le runtime conserve Gmail par configuration et prepare Resend sans fallback implicite
+ok 107 - le runtime conserve Gmail par configuration et prepare Resend sans fallback implicite
+  ---
+  duration_ms: 0.467334
+  type: 'test'
+  ...
+# Subtest: les cles idempotentes masquent les identifiants et restent stables
+ok 108 - les cles idempotentes masquent les identifiants et restent stables
+  ---
+  duration_ms: 2.073125
+  type: 'test'
+  ...
+# Subtest: les OTP connexion et checkout partagent le meme design premium sans melanger leur objet
+ok 109 - les OTP connexion et checkout partagent le meme design premium sans melanger leur objet
+  ---
+  duration_ms: 1.133125
+  type: 'test'
+  ...
+# Subtest: les performances Auth utilisent un log structure et une liste de champs bornee
+ok 110 - les performances Auth utilisent un log structure et une liste de champs bornee
+  ---
+  duration_ms: 1.255833
+  type: 'test'
+  ...
+# Subtest: le constructeur Gmail direct conserve une erreur de configuration explicite
+ok 111 - le constructeur Gmail direct conserve une erreur de configuration explicite
+  ---
+  duration_ms: 0.276667
+  type: 'test'
+  ...
+# Subtest: Google diagnostics distinguish offline, fetch and popup transport failures
+ok 112 - Google diagnostics distinguish offline, fetch and popup transport failures
+  ---
+  duration_ms: 1.199375
+  type: 'test'
+  ...
+# Subtest: Google diagnostics classify popup lifecycle errors explicitly
+ok 113 - Google diagnostics classify popup lifecycle errors explicitly
+  ---
+  duration_ms: 0.259
+  type: 'test'
+  ...
+# Subtest: network failures receive an actionable retry message without raw details
+ok 114 - network failures receive an actionable retry message without raw details
+  ---
+  duration_ms: 0.324334
+  type: 'test'
+  ...
+# Subtest: a failed Google redirect retains the Firebase observer for subsequent session changes
+ok 115 - a failed Google redirect retains the Firebase observer for subsequent session changes
+  ---
+  duration_ms: 3.102958
+  type: 'test'
+  ...
+# Subtest: H6 targets private callable Functions to europe-west1 only
+ok 116 - H6 targets private callable Functions to europe-west1 only
+  ---
+  duration_ms: 1.258916
+  type: 'test'
+  ...
+# Subtest: H6 keeps the browser and unload beacon on the configured private region
+ok 117 - H6 keeps the browser and unload beacon on the configured private region
+  ---
+  duration_ms: 0.9045
+  type: 'test'
+  ...
+# Subtest: H6 routes Auth and protected admin callables through regionalFunctions
+ok 118 - H6 routes Auth and protected admin callables through regionalFunctions
+  ---
+  duration_ms: 27.12625
+  type: 'test'
+  ...
+# Subtest: catalog configuration no longer exposes a legacy public Function region
+ok 119 - catalog configuration no longer exposes a legacy public Function region
+  ---
+  duration_ms: 1.135667
+  type: 'test'
+  ...
+# Subtest: AuthStore owns the only Firebase auth observer
+ok 120 - AuthStore owns the only Firebase auth observer
+  ---
+  duration_ms: 1.902292
+  type: 'test'
+  ...
+# Subtest: admin dashboard consumes resolved claims without forcing a token refresh on mount
+ok 121 - admin dashboard consumes resolved claims without forcing a token refresh on mount
+  ---
+  duration_ms: 13.986584
+  type: 'test'
+  ...
+# Subtest: only missing AAL2 requests an admin login without clearing Firebase session
+ok 122 - only missing AAL2 requests an admin login without clearing Firebase session
+  ---
+  duration_ms: 0.492
+  type: 'test'
+  ...
+# Subtest: the gallery login is the only visible entry to the back-office
+ok 123 - the gallery login is the only visible entry to the back-office
+  ---
+  duration_ms: 0.889
+  type: 'test'
+  ...
+# Subtest: a background admin token refresh does not unmount an active publication flow
+ok 124 - a background admin token refresh does not unmount an active publication flow
+  ---
+  duration_ms: 0.796875
+  type: 'test'
+  ...
+# Subtest: header, menu and cart consume the shared auth snapshot
+ok 125 - header, menu and cart consume the shared auth snapshot
+  ---
+  duration_ms: 0.870083
+  type: 'test'
+  ...
+# Subtest: Google popup is prepared before the user click and concurrent requests are blocked
+ok 126 - Google popup is prepared before the user click and concurrent requests are blocked
+  ---
+  duration_ms: 2.736042
+  type: 'test'
+  ...
+# Subtest: Google failures are diagnosed without persisting raw Firebase details
+ok 127 - Google failures are diagnosed without persisting raw Firebase details
+  ---
+  duration_ms: 0.317458
+  type: 'test'
+  ...
+# Subtest: redirect state tolerates restricted session storage and expires its fallback
+ok 128 - redirect state tolerates restricted session storage and expires its fallback
+  ---
+  duration_ms: 0.713583
+  type: 'test'
+  ...
+# Subtest: sign out is committed only after Firebase signOut resolves
+ok 129 - sign out is committed only after Firebase signOut resolves
+  ---
+  duration_ms: 1.114625
+  type: 'test'
+  ...
+# Subtest: passkey and OTP custom-token methods are attributed explicitly
+ok 130 - passkey and OTP custom-token methods are attributed explicitly
+  ---
+  duration_ms: 2.418958
+  type: 'test'
+  ...
+# Subtest: auth modal preserves essential keyboard and OTP accessibility contracts
+ok 131 - auth modal preserves essential keyboard and OTP accessibility contracts
+  ---
+  duration_ms: 0.754833
+  type: 'test'
+  ...
+# Subtest: OTP login does not reject administrator emails
+ok 132 - OTP login does not reject administrator emails
+  ---
+  duration_ms: 1.439459
+  type: 'test'
+  ...
+# Subtest: OTP login only assigns the client role to newly created users
+ok 133 - OTP login only assigns the client role to newly created users
+  ---
+  duration_ms: 0.40925
+  type: 'test'
+  ...
+# Subtest: OTP verification keeps App Check and uses a bounded resumable operation
+ok 134 - OTP verification keeps App Check and uses a bounded resumable operation
+  ---
+  duration_ms: 0.535542
+  type: 'test'
+  ...
+# Subtest: OTP hashing uses its dedicated secret rather than the SMTP password
+ok 135 - OTP hashing uses its dedicated secret rather than the SMTP password
+  ---
+  duration_ms: 0.223833
+  type: 'test'
+  ...
+# LOCAL_IMPORTS {"discovery":[{"importMs":2488.93975,"modules":1744,"rss":161677312},{"importMs":1418.099667,"modules":1744,"rss":163921920},{"importMs":754.556792,"modules":1744,"rss":162185216}],"targeted":[{"importMs":219.659459,"modules":487,"rss":80183296},{"importMs":197.742834,"modules":487,"rss":80084992},{"importMs":223.97054200000002,"modules":487,"rss":80789504}]}
+# Subtest: Mes commandes : une seule lecture du curseur autorisé, même page et continuation
+ok 136 - Mes commandes : une seule lecture du curseur autorisé, même page et continuation
+  ---
+  duration_ms: 2.319459
+  type: 'test'
+  ...
+# Subtest: Mes commandes : première page sans lecture de curseur
+ok 137 - Mes commandes : première page sans lecture de curseur
+  ---
+  duration_ms: 0.317125
+  type: 'test'
+  ...
+# Subtest: Mes commandes : curseur refusé avant la requête {"exists":false}
+ok 138 - Mes commandes : curseur refusé avant la requête {"exists":false}
+  ---
+  duration_ms: 0.779166
+  type: 'test'
+  ...
+# Subtest: Mes commandes : curseur refusé avant la requête {"owner":"another-customer"}
+ok 139 - Mes commandes : curseur refusé avant la requête {"owner":"another-customer"}
+  ---
+  duration_ms: 0.399375
+  type: 'test'
+  ...
+# Subtest: Mes commandes : entrée légère, metadata et réponse autorisée identiques à la découverte
+ok 140 - Mes commandes : entrée légère, metadata et réponse autorisée identiques à la découverte
+  ---
+  duration_ms: 5982.970667
+  type: 'test'
+  ...
+# Subtest: two additions during cart loading are delivered once and do not recapture replayed events
+ok 141 - two additions during cart loading are delivered once and do not recapture replayed events
+  ---
+  duration_ms: 5.438334
+  type: 'test'
+  ...
+# Subtest: product detail transfers its queued additions to the installed cart listener
+ok 142 - product detail transfers its queued additions to the installed cart listener
+  ---
+  duration_ms: 0.856958
+  type: 'test'
+  ...
+# Subtest: product detail waits for the durable cart result before confirming the item
+ok 143 - product detail waits for the durable cart result before confirming the item
+  ---
+  duration_ms: 1.405625
+  type: 'test'
+  ...
+# Subtest: lazy cart handoff does not process an add event twice once the panel is mounted
+ok 144 - lazy cart handoff does not process an add event twice once the panel is mounted
+  ---
+  duration_ms: 0.343417
+  type: 'test'
+  ...
+# Subtest: lazy cart handoff resolves the visible sidebar in a single async boundary
+ok 145 - lazy cart handoff resolves the visible sidebar in a single async boundary
+  ---
+  duration_ms: 0.239084
+  type: 'test'
+  ...
+# Subtest: paid checkout keeps the success confirmation visible after cart cleanup
+ok 146 - paid checkout keeps the success confirmation visible after cart cleanup
+  ---
+  duration_ms: 0.2965
+  type: 'test'
+  ...
+# Subtest: checkout payment and confirmation stay full-page and hide implementation vocabulary
+ok 147 - checkout payment and confirmation stay full-page and hide implementation vocabulary
+  ---
+  duration_ms: 1.154458
+  type: 'test'
+  ...
+# Subtest: catalogue evidence reads overlap within a fixed bound and preserve source order
+ok 148 - catalogue evidence reads overlap within a fixed bound and preserve source order
+  ---
+  duration_ms: 12.055
+  type: 'test'
+  ...
+# Subtest: publication admin attend la projection publique exacte sans attendre le HTML ISR
+ok 149 - publication admin attend la projection publique exacte sans attendre le HTML ISR
+  ---
+  duration_ms: 2.013583
+  type: 'test'
+  ...
+# Subtest: apercu publication ne presente jamais un slug seul comme URL produit valide
+ok 150 - apercu publication ne presente jamais un slug seul comme URL produit valide
+  ---
+  duration_ms: 5.09875
+  type: 'test'
+  ...
+# Subtest: progression admin annonce des etapes reelles sans faux pourcentage
+ok 151 - progression admin annonce des etapes reelles sans faux pourcentage
+  ---
+  duration_ms: 0.427625
+  type: 'test'
+  ...
+# Subtest: liste admin prechargee pendant la creation et confirmation placee en bas
+ok 152 - liste admin prechargee pendant la creation et confirmation placee en bas
+  ---
+  duration_ms: 0.3085
+  type: 'test'
+  ...
+# Subtest: lien post-publication revele le meuble exact dans la galerie
+ok 153 - lien post-publication revele le meuble exact dans la galerie
+  ---
+  duration_ms: 1.194167
+  type: 'test'
+  ...
+# Subtest: projection publique: allowlist, statut, prix et stock zero
+ok 154 - projection publique: allowlist, statut, prix et stock zero
+  ---
+  duration_ms: 2.884083
+  type: 'test'
+  ...
+# Subtest: manifeste et inventaire sont deterministes et integralement hashes
+ok 155 - manifeste et inventaire sont deterministes et integralement hashes
+  ---
+  duration_ms: 16.102
+  type: 'test'
+  ...
+# Subtest: prix, stock zero et suppression changent exactement la projection publiee
+ok 156 - prix, stock zero et suppression changent exactement la projection publiee
+  ---
+  duration_ms: 2.514625
+  type: 'test'
+  ...
+# Subtest: plan impact cible prix, stock, vente, image et ordre editorial sans invalider tout le catalogue
+ok 157 - plan impact cible prix, stock, vente, image et ordre editorial sans invalider tout le catalogue
+  ---
+  duration_ms: 8.874375
+  type: 'test'
+  ...
+# Subtest: plan impact conserve ancien et nouveau slug, categories parentes, creation, depublication et suppression
+ok 158 - plan impact conserve ancien et nouveau slug, categories parentes, creation, depublication et suppression
+  ---
+  duration_ms: 12.531791
+  type: 'test'
+  ...
+# Subtest: plan impact est deterministe, accepte un diff vide et bascule en full aux bornes
+ok 159 - plan impact est deterministe, accepte un diff vide et bascule en full aux bornes
+  ---
+  duration_ms: 25.680917
+  type: 'test'
+  ...
+# Subtest: routes Functions gardent la parite de slug et le snapshot hash le plan immutable
+ok 160 - routes Functions gardent la parite de slug et le snapshot hash le plan immutable
+  ---
+  duration_ms: 8.374708
+  type: 'test'
+  ...
+# Subtest: product deletion creates a new catalog revision even with the last write timestamp, and its replay stays idempotent
+ok 161 - product deletion creates a new catalog revision even with the last write timestamp, and its replay stays idempotent
+  ---
+  duration_ms: 8.193041
+  type: 'test'
+  ...
+# Subtest: publication media is assembled in stable slot order and rejects incomplete sessions
+ok 162 - publication media is assembled in stable slot order and rejects incomplete sessions
+  ---
+  duration_ms: 37.924166
+  type: 'test'
+  ...
+# Subtest: storage trigger accepts only canonical source paths
+ok 163 - storage trigger accepts only canonical source paths
+  ---
+  duration_ms: 0.414
+  type: 'test'
+  ...
+# Subtest: concurrent renderings of the same slot never overwrite immutable variant URLs
+ok 164 - concurrent renderings of the same slot never overwrite immutable variant URLs
+  ---
+  duration_ms: 299.056042
+  type: 'test'
+  ...
+# Subtest: late successful or failed workers preserve already-published slots
+ok 165 - late successful or failed workers preserve already-published slots
+  ---
+  duration_ms: 3.793083
+  type: 'test'
+  ...
+# Subtest: an older Storage generation cannot replace a more recent upload
+ok 166 - an older Storage generation cannot replace a more recent upload
+  ---
+  duration_ms: 0.970917
+  type: 'test'
+  ...
+# Subtest: le debounce catalogue privilegie la publication interactive sans perdre la borne de lot
+ok 167 - le debounce catalogue privilegie la publication interactive sans perdre la borne de lot
+  ---
+  duration_ms: 1.428083
+  type: 'test'
+  ...
+# Subtest: les reprises de revalidation ont une identite stable et un backoff borne
+ok 168 - les reprises de revalidation ont une identite stable et un backoff borne
+  ---
+  duration_ms: 11.057625
+  type: 'test'
+  ...
+# Subtest: publication CAS conserve current, previous et last-known-good valides
+ok 169 - publication CAS conserve current, previous et last-known-good valides
+  ---
+  duration_ms: 81.489458
+  type: 'test'
+  ...
+# Subtest: rollback conserve le high-water mark et force la revalidation de l identite cible
+ok 170 - rollback conserve le high-water mark et force la revalidation de l identite cible
+  ---
+  duration_ms: 0.476416
+  type: 'test'
+  ...
+# Subtest: seuls les modes active et paused ont un effet
+ok 171 - seuls les modes active et paused ont un effet
+  ---
+  duration_ms: 7.502
+  type: 'test'
+  ...
+# Subtest: un retry apres publication partielle repare previous et last-known-good
+ok 172 - un retry apres publication partielle repare previous et last-known-good
+  ---
+  duration_ms: 14.201375
+  type: 'test'
+  ...
+# Subtest: une release rejetee par rollback ne peut pas devenir last-known-good
+ok 173 - une release rejetee par rollback ne peut pas devenir last-known-good
+  ---
+  duration_ms: 34.971042
+  type: 'test'
+  ...
+# Subtest: le GC protege les pointeurs, les dix dernieres releases et la grace
+ok 174 - le GC protege les pointeurs, les dix dernieres releases et la grace
+  ---
+  duration_ms: 96.826875
+  type: 'test'
+  ...
+# Subtest: le GC media protege explicitement current, previous et last-known-good
+ok 175 - le GC media protege explicitement current, previous et last-known-good
+  ---
+  duration_ms: 2.744833
+  type: 'test'
+  ...
+# Subtest: le GC media refuse de supprimer si un pointeur est corrompu
+ok 176 - le GC media refuse de supprimer si un pointeur est corrompu
+  ---
+  duration_ms: 1.334167
+  type: 'test'
+  ...
+# Subtest: lecture pointeur epingle metadata et corps a une seule generation
+ok 177 - lecture pointeur epingle metadata et corps a une seule generation
+  ---
+  duration_ms: 2.164166
+  type: 'test'
+  ...
+# Subtest: lecture pointeur recommence si la generation epinglee disparait pendant le telechargement
+ok 178 - lecture pointeur recommence si la generation epinglee disparait pendant le telechargement
+  ---
+  duration_ms: 2.900625
+  type: 'test'
+  ...
+# Subtest: un CAS current reussi puis une panne callback reste identifiable et reparable sans rotation prematuree
+ok 179 - un CAS current reussi puis une panne callback reste identifiable et reparable sans rotation prematuree
+  ---
+  duration_ms: 2.517917
+  type: 'test'
+  ...
+# Subtest: le reconciler finalise pointer_committed_control_pending sans creer une autre release
+ok 180 - le reconciler finalise pointer_committed_control_pending sans creer une autre release
+  ---
+  duration_ms: 97.12225
+  type: 'test'
+  ...
+# Subtest: le reconciler attend le backoff puis ne cree qu une tache stable par tentative
+ok 181 - le reconciler attend le backoff puis ne cree qu une tache stable par tentative
+  ---
+  duration_ms: 8.942583
+  type: 'test'
+  ...
+# Subtest: un rollback vivant reste possede par son operation et un rollback expire est repris une seule fois
+ok 182 - un rollback vivant reste possede par son operation et un rollback expire est repris une seule fois
+  ---
+  duration_ms: 3.597875
+  type: 'test'
+  ...
+# Subtest: une reparation stale ne peut ni voler une nouvelle operation ni rabaisser desiredRevision
+ok 183 - une reparation stale ne peut ni voler une nouvelle operation ni rabaisser desiredRevision
+  ---
+  duration_ms: 1.628208
+  type: 'test'
+  ...
+# Subtest: deux reconciliations concurrentes convergent sans ecraser une identite plus recente
+ok 184 - deux reconciliations concurrentes convergent sans ecraser une identite plus recente
+  ---
+  duration_ms: 6.068333
+  type: 'test'
+  ...
+# Subtest: le lease proche du CAS est renouvele et un token perdu interdit la publication
+ok 185 - le lease proche du CAS est renouvele et un token perdu interdit la publication
+  ---
+  duration_ms: 0.471958
+  type: 'test'
+  ...
+# Subtest: stateVersion, lease et rollback forment une barriere monotone compatible avec les anciens documents
+ok 186 - stateVersion, lease et rollback forment une barriere monotone compatible avec les anciens documents
+  ---
+  duration_ms: 0.558875
+  type: 'test'
+  ...
+# Subtest: Firestore public ne lit pas les meubles et public/meta a disparu
+ok 187 - Firestore public ne lit pas les meubles et public/meta a disparu
+  ---
+  duration_ms: 2.243333
+  type: 'test'
+  ...
+# Subtest: tous les lecteurs lisent le pointeur mutable frais sans ouvrir un contournement public
+ok 188 - tous les lecteurs lisent le pointeur mutable frais sans ouvrir un contournement public
+  ---
+  duration_ms: 0.764167
+  type: 'test'
+  ...
+# Subtest: signature HMAC est stable et lie timestamp et corps
+ok 189 - signature HMAC est stable et lie timestamp et corps
+  ---
+  duration_ms: 0.849
+  type: 'test'
+  ...
+# Subtest: contrat de revalidation valide projet, audience, plan exact et signature non expiree
+ok 190 - contrat de revalidation valide projet, audience, plan exact et signature non expiree
+  ---
+  duration_ms: 9.918292
+  type: 'test'
+  ...
+# Subtest: dispatcher refuse redirection et JSON incoherent, et N ne peut pas marquer N+1 sain
+ok 191 - dispatcher refuse redirection et JSON incoherent, et N ne peut pas marquer N+1 sain
+  ---
+  duration_ms: 49.164667
+  type: 'test'
+  ...
+# Subtest: une version servie plus recente rend une ancienne preuve obsolete sans erreur
+ok 192 - une version servie plus recente rend une ancienne preuve obsolete sans erreur
+  ---
+  duration_ms: 0.30875
+  type: 'test'
+  ...
+# Subtest: une nouvelle publication pendant l invalidation arrete l ancienne tache avant toute preuve
+ok 193 - une nouvelle publication pendant l invalidation arrete l ancienne tache avant toute preuve
+  ---
+  duration_ms: 2.828667
+  type: 'test'
+  ...
+# Subtest: preuve HTML ancienne reste served failed et reparable
+ok 194 - preuve HTML ancienne reste served failed et reparable
+  ---
+  duration_ms: 2.016834
+  type: 'test'
+  ...
+# Subtest: archivage accepte la disparition 404 de l ancienne fiche et verifie les surfaces restantes
+ok 195 - archivage accepte la disparition 404 de l ancienne fiche et verifie les surfaces restantes
+  ---
+  duration_ms: 2.036667
+  type: 'test'
+  ...
+# Subtest: preuve HTML verifie la categorie canonique plutot que son alias redirige
+ok 196 - preuve HTML verifie la categorie canonique plutot que son alias redirige
+  ---
+  duration_ms: 17.967
+  type: 'test'
+  ...
+# Subtest: aucun moteur catalogue legacy ne subsiste dans le code executable
+ok 197 - aucun moteur catalogue legacy ne subsiste dans le code executable
+  ---
+  duration_ms: 8.379708
+  type: 'test'
+  ...
+# Subtest: images, categorie, warmup et navigation respectent le contrat unifie
+ok 198 - images, categorie, warmup et navigation respectent le contrat unifie
+  ---
+  duration_ms: 17.638292
+  type: 'test'
+  ...
+# Subtest: endpoint version retourne contractuellement 200 puis 304 sans donnees produit
+ok 199 - endpoint version retourne contractuellement 200 puis 304 sans donnees produit
+  ---
+  duration_ms: 1.044167
+  type: 'test'
+  ...
+# Subtest: ile de version ecoute un seul document uniquement dans les onglets visibles et sans polling
+ok 200 - ile de version ecoute un seul document uniquement dans les onglets visibles et sans polling
+  ---
+  duration_ms: 0.450333
+  type: 'test'
+  ...
+# Subtest: la fixture de build catalogue reste strictement bornee a la CI
+ok 201 - la fixture de build catalogue reste strictement bornee a la CI
+  ---
+  duration_ms: 0.340375
+  type: 'test'
+  ...
+# Subtest: zero maximum survives URL round trip and excludes paid furniture
+ok 202 - zero maximum survives URL round trip and excludes paid furniture
+  ---
+  duration_ms: 2.124083
+  type: 'test'
+  ...
+# Subtest: filter facets count published products once and retain special object keys safely
+ok 203 - filter facets count published products once and retain special object keys safely
+  ---
+  duration_ms: 0.772792
+  type: 'test'
+  ...
+# Subtest: order page merging preserves older loaded pages, removes duplicates and rejects stale versions
+ok 204 - order page merging preserves older loaded pages, removes duplicates and rejects stale versions
+  ---
+  duration_ms: 95.249084
+  type: 'test'
+  ...
+# Subtest: sales reference and CSV use C orderNumber without opaque fallback
+ok 205 - sales reference and CSV use C orderNumber without opaque fallback
+  ---
+  duration_ms: 1.748584
+  type: 'test'
+  ...
+# Subtest: sales segments keep refunded goods on site actionable and close departed goods
+ok 206 - sales segments keep refunded goods on site actionable and close departed goods
+  ---
+  duration_ms: 0.564542
+  type: 'test'
+  ...
+# Subtest: sales presentation distinguishes open refund failure and partial refund
+ok 207 - sales presentation distinguishes open refund failure and partial refund
+  ---
+  duration_ms: 0.330166
+  type: 'test'
+  ...
+# Subtest: sales action plan rejects stale fulfillment actions during blocked refunds
+ok 208 - sales action plan rejects stale fulfillment actions during blocked refunds
+  ---
+  duration_ms: 0.548916
+  type: 'test'
+  ...
+# Subtest: all sales keep newest creation first independently of business segment
+ok 209 - all sales keep newest creation first independently of business segment
+  ---
+  duration_ms: 2.367959
+  type: 'test'
+  ...
+# Subtest: sales summary exposes loaded scope and gross captured amount
+ok 210 - sales summary exposes loaded scope and gross captured amount
+  ---
+  duration_ms: 0.572
+  type: 'test'
+  ...
+# Subtest: payment link token is deterministic, opaque and invalidated by rotation
+ok 211 - payment link token is deterministic, opaque and invalidated by rotation
+  ---
+  duration_ms: 6.797875
+  type: 'test'
+  ...
+# Subtest: payment link URL contains no email or customer data
+ok 212 - payment link URL contains no email or customer data
+  ---
+  duration_ms: 0.822125
+  type: 'test'
+  ...
+# Subtest: payment link exposes C orderNumber and never promotes the opaque orderId
+ok 213 - payment link exposes C orderNumber and never promotes the opaque orderId
+  ---
+  duration_ms: 0.677334
+  type: 'test'
+  ...
+# Subtest: expiry stays bounded between thirty minutes and twenty-four hours
+ok 214 - expiry stays bounded between thirty minutes and twenty-four hours
+  ---
+  duration_ms: 2.169958
+  type: 'test'
+  ...
+# Subtest: status derivation is monotonic for active, expired, canceled and paid links
+ok 215 - status derivation is monotonic for active, expired, canceled and paid links
+  ---
+  duration_ms: 0.482875
+  type: 'test'
+  ...
+# Subtest: completed customer details expose a payment-ready status
+ok 216 - completed customer details expose a payment-ready status
+  ---
+  duration_ms: 0.169875
+  type: 'test'
+  ...
+# Subtest: completed checkout cannot erase another account or another order recovery
+ok 217 - completed checkout cannot erase another account or another order recovery
+  ---
+  duration_ms: 14.665125
+  type: 'test'
+  ...
+# Subtest: guest import removes only confirmed unchanged lines and preserves remote additions
+ok 218 - guest import removes only confirmed unchanged lines and preserves remote additions
+  ---
+  duration_ms: 2.252208
+  type: 'test'
+  ...
+# Subtest: legacy handler barrier refuses schemaVersion 2 explicitly
+ok 219 - legacy handler barrier refuses schemaVersion 2 explicitly
+  ---
+  duration_ms: 2.096042
+  type: 'test'
+  ...
+# Subtest: legacy mutation endpoints are removed after the Gen2 cutover
+ok 220 - legacy mutation endpoints are removed after the Gen2 cutover
+  ---
+  duration_ms: 0.611375
+  type: 'test'
+  ...
+# Subtest: legacy email and statistics triggers ignore v2 roots
+ok 221 - legacy email and statistics triggers ignore v2 roots
+  ---
+  duration_ms: 0.476792
+  type: 'test'
+  ...
+# Subtest: customer return request model keeps review, return and refund as separate states
+ok 222 - customer return request model keeps review, return and refund as separate states
+  ---
+  duration_ms: 3.652375
+  type: 'test'
+  ...
+# Subtest: customer request transport derives ownership and queues one admin notification
+ok 223 - customer request transport derives ownership and queues one admin notification
+  ---
+  duration_ms: 3.925791
+  type: 'test'
+  ...
+# Subtest: admin chooses direct refund at merchant or return workflow after shipment
+ok 224 - admin chooses direct refund at merchant or return workflow after shipment
+  ---
+  duration_ms: 2.547541
+  type: 'test'
+  ...
+# Subtest: refund amount follows requested lines and never exceeds the captured balance
+ok 225 - refund amount follows requested lines and never exceeds the captured balance
+  ---
+  duration_ms: 0.550666
+  type: 'test'
+  ...
+# Subtest: client and admin surfaces use the durable request workflow
+ok 226 - client and admin surfaces use the durable request workflow
+  ---
+  duration_ms: 1.205042
+  type: 'test'
+  ...
+# Subtest: invoice PDF saves edits to an existing draft first, and issued fields are disabled for keyboard users
+ok 227 - invoice PDF saves edits to an existing draft first, and issued fields are disabled for keyboard users
+  ---
+  duration_ms: 155.758333
+  type: 'test'
+  ...
+# Subtest: checkout locks submitted coordinates during preparation and after reservation, including handler calls
+ok 228 - checkout locks submitted coordinates during preparation and after reservation, including handler calls
+  ---
+  duration_ms: 53.410667
+  type: 'test'
+  ...
+# Subtest: Stripe return targets its order even when another tab replaced the recovery descriptor
+ok 229 - Stripe return targets its order even when another tab replaced the recovery descriptor
+  ---
+  duration_ms: 1.804708
+  type: 'test'
+  ...
+# Subtest: closing the document before its response prevents a leaked PDF object URL
+ok 230 - closing the document before its response prevents a leaked PDF object URL
+  ---
+  duration_ms: 7.220834
+  type: 'test'
+  ...
+# Subtest: refund display uses confirmed plus pending amounts and does not invent a refund for a payment incident
+ok 231 - refund display uses confirmed plus pending amounts and does not invent a refund for a payment incident
+  ---
+  duration_ms: 13.653292
+  type: 'test'
+  ...
+# Subtest: the decorative login video is absent on mobile and with reduced motion, including after resizing
+ok 232 - the decorative login video is absent on mobile and with reduced motion, including after resizing
+  ---
+  duration_ms: 2.832875
+  type: 'test'
+  ...
+# Subtest: a failed route navigation cannot leave the decorative curtain blocking the page indefinitely
+ok 233 - a failed route navigation cannot leave the decorative curtain blocking the page indefinitely
+  ---
+  duration_ms: 12.570541
+  type: 'test'
+  ...
+# Subtest: a private payment link keeps verification visible after its bounded poll ends
+ok 234 - a private payment link keeps verification visible after its bounded poll ends
+  ---
+  duration_ms: 5.935541
+  type: 'test'
+  ...
+# Subtest: delivery settings create a new immutable policy while preserving zones and Connect
+ok 235 - delivery settings create a new immutable policy while preserving zones and Connect
+  ---
+  duration_ms: 13.836333
+  type: 'test'
+  ...
+# Subtest: public delivery projection stays compatible with checkout legacy aliases
+ok 236 - public delivery projection stays compatible with checkout legacy aliases
+  ---
+  duration_ms: 0.98075
+  type: 'test'
+  ...
+# Subtest: policy is authoritative for active state and price while metadata supplies copy
+ok 237 - policy is authoritative for active state and price while metadata supplies copy
+  ---
+  duration_ms: 0.309041
+  type: 'test'
+  ...
+# Subtest: invalid delivery settings are rejected before any write
+ok 238 - invalid delivery settings are rejected before any write
+  ---
+  duration_ms: 2.069708
+  type: 'test'
+  ...
+# Subtest: save handler atomically rotates policy and public delivery projection
+ok 239 - save handler atomically rotates policy and public delivery projection
+  ---
+  duration_ms: 1.255708
+  type: 'test'
+  ...
+# Subtest: get handler reads control, policy and public copy from one consistent transaction
+ok 240 - get handler reads control, policy and public copy from one consistent transaction
+  ---
+  duration_ms: 0.600291
+  type: 'test'
+  ...
+# Subtest: save handler rejects a stale editor without creating a policy
+ok 241 - save handler rejects a stale editor without creating a policy
+  ---
+  duration_ms: 0.675417
+  type: 'test'
+  ...
+# Subtest: document delivery: le PDF serveur est déterministe et explicitement non fiscal
+ok 242 - document delivery: le PDF serveur est déterministe et explicitement non fiscal
+  ---
+  duration_ms: 177.949041
+  type: 'test'
+  ...
+# Subtest: document delivery: le reçu contient les cinquante lignes admissibles du checkout
+ok 243 - document delivery: le reçu contient les cinquante lignes admissibles du checkout
+  ---
+  duration_ms: 54.280625
+  type: 'test'
+  ...
+# Subtest: document delivery: le stockage immuable est réutilisé sans réécriture
+ok 244 - document delivery: le stockage immuable est réutilisé sans réécriture
+  ---
+  duration_ms: 11.848791
+  type: 'test'
+  ...
+# Subtest: document delivery: le bucket Gen2 est explicite ou dérivé du projet
+ok 245 - document delivery: le bucket Gen2 est explicite ou dérivé du projet
+  ---
+  duration_ms: 0.961667
+  type: 'test'
+  ...
+# Subtest: document delivery: la copie e-mail reutilise le resolver Storage Gen2
+ok 246 - document delivery: la copie e-mail reutilise le resolver Storage Gen2
+  ---
+  duration_ms: 0.527709
+  type: 'test'
+  ...
+# Subtest: document delivery: l’email est dédupliqué par fenêtre sans exposer le destinataire
+ok 247 - document delivery: l’email est dédupliqué par fenêtre sans exposer le destinataire
+  ---
+  duration_ms: 1.043417
+  type: 'test'
+  ...
+# Subtest: document delivery: l’interface garde ouvrir, enregistrer, partager et le bon langage d’état
+ok 248 - document delivery: l’interface garde ouvrir, enregistrer, partager et le bon langage d’état
+  ---
+  duration_ms: 0.978417
+  type: 'test'
+  ...
+# Subtest: chaque etat outbox eligible produit une tache deterministe
+ok 249 - chaque etat outbox eligible produit une tache deterministe
+  ---
+  duration_ms: 2.199583
+  type: 'test'
+  ...
+# Subtest: une reservation held est planifiee exactement a son echeance
+ok 250 - une reservation held est planifiee exactement a son echeance
+  ---
+  duration_ms: 0.500208
+  type: 'test'
+  ...
+# Subtest: les reveils toutes les deux minutes sont remplaces par evenements et watchdog horaire
+ok 251 - les reveils toutes les deux minutes sont remplaces par evenements et watchdog horaire
+  ---
+  duration_ms: 2.152084
+  type: 'test'
+  ...
+# Subtest: expiry rechecks the deadline transactionally before any Stripe call when an extension won
+ok 252 - expiry rechecks the deadline transactionally before any Stripe call when an extension won
+  ---
+  duration_ms: 3.497791
+  type: 'test'
+  ...
+# Subtest: extension refuses a cancellation already claimed in the payment attempt transaction
+ok 253 - extension refuses a cancellation already claimed in the payment attempt transaction
+  ---
+  duration_ms: 18.050458
+  type: 'test'
+  ...
+# Subtest: checkout rejects duplicate line identities while aggregating distinct lines of the same product
+ok 254 - checkout rejects duplicate line identities while aggregating distinct lines of the same product
+  ---
+  duration_ms: 3.123834
+  type: 'test'
+  ...
+# Subtest: checkout input is allowlisted, versioned and hashed without client prices
+ok 255 - checkout input is allowlisted, versioned and hashed without client prices
+  ---
+  duration_ms: 4.325125
+  type: 'test'
+  ...
+# Subtest: repeated SKU lines aggregate by canonical inventory key and retain allocations
+ok 256 - repeated SKU lines aggregate by canonical inventory key and retain allocations
+  ---
+  duration_ms: 0.717125
+  type: 'test'
+  ...
+# Subtest: inventory identity is versioned, normalized and variant-safe
+ok 257 - inventory identity is versioned, normalized and variant-safe
+  ---
+  duration_ms: 0.51725
+  type: 'test'
+  ...
+# Subtest: policy and delivery are fail-closed and pinned by immutable version
+ok 258 - policy and delivery are fail-closed and pinned by immutable version
+  ---
+  duration_ms: 4.473167
+  type: 'test'
+  ...
+# Subtest: Connect readiness is pinned and a later account switch cannot reroute history
+ok 259 - Connect readiness is pinned and a later account switch cannot reroute history
+  ---
+  duration_ms: 0.275291
+  type: 'test'
+  ...
+# Subtest: movement effect identity is deterministic per operation/order/inventory key
+ok 260 - movement effect identity is deterministic per operation/order/inventory key
+  ---
+  duration_ms: 0.3245
+  type: 'test'
+  ...
+# Subtest: allowedActions is server-derived and refuses weak admin or unpaid fulfillment
+ok 261 - allowedActions is server-derived and refuses weak admin or unpaid fulfillment
+  ---
+  duration_ms: 36.513333
+  type: 'test'
+  ...
+# Subtest: refund state suspends fulfillment until a partial refund is settled
+ok 262 - refund state suspends fulfillment until a partial refund is settled
+  ---
+  duration_ms: 0.7295
+  type: 'test'
+  ...
+# Subtest: fulfillment actions follow the delivery snapshot without incompatible shortcuts
+ok 263 - fulfillment actions follow the delivery snapshot without incompatible shortcuts
+  ---
+  duration_ms: 0.923917
+  type: 'test'
+  ...
+# Subtest: q=5 return supports partial receive, restock one and write-off one
+ok 264 - q=5 return supports partial receive, restock one and write-off one
+  ---
+  duration_ms: 2.168125
+  type: 'test'
+  ...
+# Subtest: return disposition never exceeds received quantity and pending can be canceled
+ok 265 - return disposition never exceeds received quantity and pending can be canceled
+  ---
+  duration_ms: 2.551625
+  type: 'test'
+  ...
+# Subtest: product commands separate creation, offer, inventory and publication
+ok 266 - product commands separate creation, offer, inventory and publication
+  ---
+  duration_ms: 2.258209
+  type: 'test'
+  ...
+# Subtest: new back-office publication creates one complete public product atomically
+ok 267 - new back-office publication creates one complete public product atomically
+  ---
+  duration_ms: 13.8225
+  type: 'test'
+  ...
+# Subtest: product command policy rejects weak admin, foreign collections and stock races
+ok 268 - product command policy rejects weak admin, foreign collections and stock races
+  ---
+  duration_ms: 0.538583
+  type: 'test'
+  ...
+# Subtest: published products require a readable title and a material
+ok 269 - published products require a readable title and a material
+  ---
+  duration_ms: 0.832584
+  type: 'test'
+  ...
+# Subtest: product deletion command soft-archives the source and preserves inventory history
+ok 270 - product deletion command soft-archives the source and preserves inventory history
+  ---
+  duration_ms: 0.77475
+  type: 'test'
+  ...
+# Subtest: product callable transport stays available to active strong admins outside commerce windows
+ok 271 - product callable transport stays available to active strong admins outside commerce windows
+  ---
+  duration_ms: 3.571459
+  type: 'test'
+  ...
+# Subtest: fulfillment callable transport derives its strong admin actor from Auth context
+ok 272 - fulfillment callable transport derives its strong admin actor from Auth context
+  ---
+  duration_ms: 10.29875
+  type: 'test'
+  ...
+# Subtest: fulfillment callable transport authorizes before repository access
+ok 273 - fulfillment callable transport authorizes before repository access
+  ---
+  duration_ms: 0.857166
+  type: 'test'
+  ...
+# Subtest: fulfillment callable transport rejects path injection and malformed tracking
+ok 274 - fulfillment callable transport rejects path injection and malformed tracking
+  ---
+  duration_ms: 0.467375
+  type: 'test'
+  ...
+# Subtest: shipment payload normalizes tracked and untracked deliveries
+ok 275 - shipment payload normalizes tracked and untracked deliveries
+  ---
+  duration_ms: 0.166875
+  type: 'test'
+  ...
+# Subtest: fulfillment and archive callables are exported behind App Check and server control
+ok 276 - fulfillment and archive callables are exported behind App Check and server control
+  ---
+  duration_ms: 0.348083
+  type: 'test'
+  ...
+# Subtest: client cancellation transport derives ownership from Auth and ignores forged actor payload
+ok 277 - client cancellation transport derives ownership from Auth and ignores forged actor payload
+  ---
+  duration_ms: 0.293125
+  type: 'test'
+  ...
+# Subtest: client cancellation transport rejects unauthenticated and malformed requests before runtime
+ok 278 - client cancellation transport rejects unauthenticated and malformed requests before runtime
+  ---
+  duration_ms: 0.3275
+  type: 'test'
+  ...
+# Subtest: client cancellation callable is exported behind App Check, Stripe secret and server control
+ok 279 - client cancellation callable is exported behind App Check, Stripe secret and server control
+  ---
+  duration_ms: 0.25525
+  type: 'test'
+  ...
+# Subtest: client cancellation runtime wires only the provider-first cancellation surface
+ok 280 - client cancellation runtime wires only the provider-first cancellation surface
+  ---
+  duration_ms: 1.005292
+  type: 'test'
+  ...
+# Subtest: admin refund transport derives its strong actor from Auth and forwards integer cents
+ok 281 - admin refund transport derives its strong actor from Auth and forwards integer cents
+  ---
+  duration_ms: 0.673875
+  type: 'test'
+  ...
+# Subtest: admin refund transport authorizes and validates before runtime access
+ok 282 - admin refund transport authorizes and validates before runtime access
+  ---
+  duration_ms: 0.595
+  type: 'test'
+  ...
+# Subtest: admin refund callable is exported behind strong auth and server control
+ok 283 - admin refund callable is exported behind strong auth and server control
+  ---
+  duration_ms: 0.340875
+  type: 'test'
+  ...
+# Subtest: admin refund runtime wires only the resumable refund surface
+ok 284 - admin refund runtime wires only the resumable refund surface
+  ---
+  duration_ms: 0.479333
+  type: 'test'
+  ...
+# Subtest: admin return opening derives its actor from Auth and preserves line quantities
+ok 285 - admin return opening derives its actor from Auth and preserves line quantities
+  ---
+  duration_ms: 0.365917
+  type: 'test'
+  ...
+# Subtest: admin return transitions use fixed event types and server Auth actor
+ok 286 - admin return transitions use fixed event types and server Auth actor
+  ---
+  duration_ms: 0.487458
+  type: 'test'
+  ...
+# Subtest: admin return transport authorizes and validates before runtime access
+ok 287 - admin return transport authorizes and validates before runtime access
+  ---
+  duration_ms: 0.424209
+  type: 'test'
+  ...
+# Subtest: admin return callables are exported behind strong auth and server control
+ok 288 - admin return callables are exported behind strong auth and server control
+  ---
+  duration_ms: 0.298708
+  type: 'test'
+  ...
+# Subtest: admin return runtime wires only the quantitative return surface
+ok 289 - admin return runtime wires only the quantitative return surface
+  ---
+  duration_ms: 0.288916
+  type: 'test'
+  ...
+# Subtest: client reader hides a stale refund confirmation after a provider reversal
+ok 290 - client reader hides a stale refund confirmation after a provider reversal
+  ---
+  duration_ms: 1.463833
+  type: 'test'
+  ...
+# Subtest: deployed v2 mutations fail closed until the server control enables them
+ok 291 - deployed v2 mutations fail closed until the server control enables them
+  ---
+  duration_ms: 3.293458
+  type: 'test'
+  ...
+# Subtest: Gate 8 admin mutations are restricted to the active fixture scope
+ok 292 - Gate 8 admin mutations are restricted to the active fixture scope
+  ---
+  duration_ms: 0.613084
+  type: 'test'
+  ...
+# Subtest: checkout v2 transport derives owner identity from Auth and ignores payload identity
+ok 293 - checkout v2 transport derives owner identity from Auth and ignores payload identity
+  ---
+  duration_ms: 0.487083
+  type: 'test'
+  ...
+# Subtest: checkout fixture transport accepts only the bounded public request fields
+ok 294 - checkout fixture transport accepts only the bounded public request fields
+  ---
+  duration_ms: 1.137875
+  type: 'test'
+  ...
+# Subtest: checkout resume derives owner from Auth and validates before runtime
+ok 295 - checkout resume derives owner from Auth and validates before runtime
+  ---
+  duration_ms: 0.523459
+  type: 'test'
+  ...
+# Subtest: checkout resume exposes an explicit terminal reason after reservation expiry
+ok 296 - checkout resume exposes an explicit terminal reason after reservation expiry
+  ---
+  duration_ms: 1.223042
+  type: 'test'
+  ...
+# Subtest: checkout resume exposes an explicit terminal reason after durable payment
+ok 297 - checkout resume exposes an explicit terminal reason after durable payment
+  ---
+  duration_ms: 1.555708
+  type: 'test'
+  ...
+# Subtest: checkout runtime exposes only create/resume checkout coordination
+ok 298 - checkout runtime exposes only create/resume checkout coordination
+  ---
+  duration_ms: 2.133042
+  type: 'test'
+  ...
+# Subtest: checkout and query Functions are exported with App Check and fail-closed checkout control
+ok 299 - checkout and query Functions are exported with App Check and fail-closed checkout control
+  ---
+  duration_ms: 1.244125
+  type: 'test'
+  ...
+# Subtest: admin order timeline keeps exact payment, fulfillment, cancellation and refund event times
+ok 300 - admin order timeline keeps exact payment, fulfillment, cancellation and refund event times
+  ---
+  duration_ms: 0.720166
+  type: 'test'
+  ...
+# Subtest: admin order reader exposes one bounded resumable Stripe refund reference
+ok 301 - admin order reader exposes one bounded resumable Stripe refund reference
+  ---
+  duration_ms: 3.39575
+  type: 'test'
+  ...
+# Subtest: admin order list excludes soft-archived orders from the active projection
+ok 302 - admin order list excludes soft-archived orders from the active projection
+  ---
+  duration_ms: 1.115458
+  type: 'test'
+  ...
+# Subtest: order query guards reject invalid pagination and authorize before Firestore
+ok 303 - order query guards reject invalid pagination and authorize before Firestore
+  ---
+  duration_ms: 1.121041
+  type: 'test'
+  ...
+# Subtest: return actions are server-derived from quantitative state
+ok 304 - return actions are server-derived from quantitative state
+  ---
+  duration_ms: 0.210625
+  type: 'test'
+  ...
+# Subtest: customer order documents expose only bounded non-fiscal metadata
+ok 305 - customer order documents expose only bounded non-fiscal metadata
+  ---
+  duration_ms: 0.193167
+  type: 'test'
+  ...
+# Subtest: recovery descriptor is identity-bound and cleanup matches line plus revision
+ok 306 - recovery descriptor is identity-bound and cleanup matches line plus revision
+  ---
+  duration_ms: 4.406125
+  type: 'test'
+  ...
+# Subtest: browser checkout contract maps UI delivery/address without forwarding price
+ok 307 - browser checkout contract maps UI delivery/address without forwarding price
+  ---
+  duration_ms: 1.579542
+  type: 'test'
+  ...
+# Subtest: Gate 4/5 consumers contain no direct commerce writer on v2 surfaces
+ok 308 - Gate 4/5 consumers contain no direct commerce writer on v2 surfaces
+  ---
+  duration_ms: 6.830542
+  type: 'test'
+  ...
+# Subtest: customer return request subcollections retain their descending collection index
+ok 309 - customer return request subcollections retain their descending collection index
+  ---
+  duration_ms: 0.414083
+  type: 'test'
+  ...
+# Subtest: Gate 6: la classification est deterministe, sans PII dans la ligne
+ok 310 - Gate 6: la classification est deterministe, sans PII dans la ligne
+  ---
+  duration_ms: 37.37425
+  type: 'test'
+  ...
+# Subtest: Gate 6: un terminal annule prouve reste legacy read-only
+ok 311 - Gate 6: un terminal annule prouve reste legacy read-only
+  ---
+  duration_ms: 0.247291
+  type: 'test'
+  ...
+# Subtest: Gate 6: une preuve Stripe incomplete ne produit jamais safe_to_adopt
+ok 312 - Gate 6: une preuve Stripe incomplete ne produit jamais safe_to_adopt
+  ---
+  duration_ms: 0.286334
+  type: 'test'
+  ...
+# Subtest: Gate 6: le plan adoption eventuel est idempotent et delta stock zero
+ok 313 - Gate 6: le plan adoption eventuel est idempotent et delta stock zero
+  ---
+  duration_ms: 1.151417
+  type: 'test'
+  ...
+# Subtest: Gate 6: les compteurs imposent total source egal classes
+ok 314 - Gate 6: les compteurs imposent total source egal classes
+  ---
+  duration_ms: 0.419208
+  type: 'test'
+  ...
+# Subtest: Gate 6: le registre fixture est borne et strictement lie aux fixtures
+ok 315 - Gate 6: le registre fixture est borne et strictement lie aux fixtures
+  ---
+  duration_ms: 7.583958
+  type: 'test'
+  ...
+# Subtest: Gate 6: un scope ne peut pas viser un inventoryKey client
+ok 316 - Gate 6: un scope ne peut pas viser un inventoryKey client
+  ---
+  duration_ms: 0.650542
+  type: 'test'
+  ...
+# Subtest: Gate 6: le classificateur refuse un mode ecriture sans confirmation
+ok 317 - Gate 6: le classificateur refuse un mode ecriture sans confirmation
+  ---
+  duration_ms: 961.233459
+  type: 'test'
+  ...
+# Subtest: Gate 6: les outils refusent toute cible autre que le sandbox exact
+ok 318 - Gate 6: les outils refusent toute cible autre que le sandbox exact
+  ---
+  duration_ms: 1113.568084
+  type: 'test'
+  ...
+# Subtest: Gate 6: la fenetre v2_all epingle la politique UI et restaure la precedente
+ok 319 - Gate 6: la fenetre v2_all epingle la politique UI et restaure la precedente
+  ---
+  duration_ms: 1.697708
+  type: 'test'
+  ...
+# Subtest: Gate 6: le preflight refund.failed reste non mutateur pour le commerce
+ok 320 - Gate 6: le preflight refund.failed reste non mutateur pour le commerce
+  ---
+  duration_ms: 0.857125
+  type: 'test'
+  ...
+# Subtest: Gate 6: le rapprochement final accepte les campagnes bornees a deux ou trois commandes
+ok 321 - Gate 6: le rapprochement final accepte les campagnes bornees a deux ou trois commandes
+  ---
+  duration_ms: 0.411167
+  type: 'test'
+  ...
+# Subtest: Gate 7A: captures et refunds succeeded construisent des montants absolus
+ok 322 - Gate 7A: captures et refunds succeeded construisent des montants absolus
+  ---
+  duration_ms: 103.106458
+  type: 'test'
+  ...
+# Subtest: Gate 7A: une reversal Stripe compense le refund sans effacer les faits
+ok 323 - Gate 7A: une reversal Stripe compense le refund sans effacer les faits
+  ---
+  duration_ms: 0.745791
+  type: 'test'
+  ...
+# Subtest: Gate 7A: le rollup journalier applique des deltas signes et dates
+ok 324 - Gate 7A: le rollup journalier applique des deltas signes et dates
+  ---
+  duration_ms: 2.337625
+  type: 'test'
+  ...
+# Subtest: Gate 7A: rebuild repete produit exactement le meme hash
+ok 325 - Gate 7A: rebuild repete produit exactement le meme hash
+  ---
+  duration_ms: 0.741417
+  type: 'test'
+  ...
+# Subtest: Gate 7A: paiement client et notification admin sont deux messages premium distincts
+ok 326 - Gate 7A: paiement client et notification admin sont deux messages premium distincts
+  ---
+  duration_ms: 19.403791
+  type: 'test'
+  ...
+# Subtest: Gate 7A: remboursement client et admin exposent Stripe sans restock implicite
+ok 327 - Gate 7A: remboursement client et admin exposent Stripe sans restock implicite
+  ---
+  duration_ms: 31.079083
+  type: 'test'
+  ...
+# Subtest: Gate 7A: chaque transition fulfillment et anomalie refund possede un rendu client
+ok 328 - Gate 7A: chaque transition fulfillment et anomalie refund possede un rendu client
+  ---
+  duration_ms: 9.862209
+  type: 'test'
+  ...
+# Subtest: Gate 7A: devises et dates effectives restent separees
+ok 329 - Gate 7A: devises et dates effectives restent separees
+  ---
+  duration_ms: 0.47025
+  type: 'test'
+  ...
+# Subtest: Gate 7A: un refund superieur au capture devient divergence
+ok 330 - Gate 7A: un refund superieur au capture devient divergence
+  ---
+  duration_ms: 0.886666
+  type: 'test'
+  ...
+# Subtest: Gate 7A: aucun recu de paiement avant encaissement durable
+ok 331 - Gate 7A: aucun recu de paiement avant encaissement durable
+  ---
+  duration_ms: 1.267208
+  type: 'test'
+  ...
+# Subtest: Gate 7A: recu sandbox et confirmation refund sont distincts et non fiscaux
+ok 332 - Gate 7A: recu sandbox et confirmation refund sont distincts et non fiscaux
+  ---
+  duration_ms: 5.497042
+  type: 'test'
+  ...
+# Subtest: Gate 7A: panne avant envoi reste retryable failed
+ok 333 - Gate 7A: panne avant envoi reste retryable failed
+  ---
+  duration_ms: 0.845958
+  type: 'test'
+  ...
+# Subtest: Gate 7A: configuration Gmail invalide part immediatement en dead-letter
+ok 334 - Gate 7A: configuration Gmail invalide part immediatement en dead-letter
+  ---
+  duration_ms: 0.232875
+  type: 'test'
+  ...
+# Subtest: Gate 7A: Gmail ambigu devient delivery_unknown sans retry automatique
+ok 335 - Gate 7A: Gmail ambigu devient delivery_unknown sans retry automatique
+  ---
+  duration_ms: 0.239708
+  type: 'test'
+  ...
+# Subtest: Gate 7A: accuse provider marque sent avec idempotency key outbox
+ok 336 - Gate 7A: accuse provider marque sent avec idempotency key outbox
+  ---
+  duration_ms: 0.197833
+  type: 'test'
+  ...
+# Subtest: Gate 7A: un succes refund devenu obsolete est supprime avant Gmail
+ok 337 - Gate 7A: un succes refund devenu obsolete est supprime avant Gmail
+  ---
+  duration_ms: 0.192458
+  type: 'test'
+  ...
+# Subtest: Gate 7A: la garde refund refuse une tentative renversee avant rendu e-mail
+ok 338 - Gate 7A: la garde refund refuse une tentative renversee avant rendu e-mail
+  ---
+  duration_ms: 0.136375
+  type: 'test'
+  ...
+# Subtest: Gate 7A: une outbox de fixture est neutralisee sans appel fournisseur
+ok 339 - Gate 7A: une outbox de fixture est neutralisee sans appel fournisseur
+  ---
+  duration_ms: 0.141292
+  type: 'test'
+  ...
+# Subtest: Gate 7A: seuils exploitation produisent un stop explicite
+ok 340 - Gate 7A: seuils exploitation produisent un stop explicite
+  ---
+  duration_ms: 1.63425
+  type: 'test'
+  ...
+# Subtest: Gate 7A: un incident financier primaire interdit le faux vert
+ok 341 - Gate 7A: un incident financier primaire interdit le faux vert
+  ---
+  duration_ms: 0.525291
+  type: 'test'
+  ...
+# Subtest: Gate 7A: incidents derives exclus, code inconnu et troncature fail-closed
+ok 342 - Gate 7A: incidents derives exclus, code inconnu et troncature fail-closed
+  ---
+  duration_ms: 0.231291
+  type: 'test'
+  ...
+# Subtest: Gate 7A: une sante absente ou stale est effectivement stop
+ok 343 - Gate 7A: une sante absente ou stale est effectivement stop
+  ---
+  duration_ms: 0.37
+  type: 'test'
+  ...
+# Subtest: Gate 7A: cleanup fixture dry-run ne supprime aucune preuve
+ok 344 - Gate 7A: cleanup fixture dry-run ne supprime aucune preuve
+  ---
+  duration_ms: 0.5125
+  type: 'test'
+  ...
+# Subtest: Gate 7A: manifeste et activation refusent toute cible non sandbox exacte
+ok 345 - Gate 7A: manifeste et activation refusent toute cible non sandbox exacte
+  ---
+  duration_ms: 1784.187667
+  type: 'test'
+  ...
+# Subtest: Gate 7A: le dashboard consomme les montants qualifies sans exposer les controles internes
+ok 346 - Gate 7A: le dashboard consomme les montants qualifies sans exposer les controles internes
+  ---
+  duration_ms: 2.290291
+  type: 'test'
+  ...
+# Subtest: checkout contact comes from verified Auth or server OTP, never an unverified token email
+ok 347 - checkout contact comes from verified Auth or server OTP, never an unverified token email
+  ---
+  duration_ms: 26.57075
+  type: 'test'
+  ...
+# Subtest: paid cart cleanup preserves additions and revisions committed after the initial listing
+ok 348 - paid cart cleanup preserves additions and revisions committed after the initial listing
+  ---
+  duration_ms: 12.252833
+  type: 'test'
+  ...
+# Subtest: an incomplete email acknowledgement is ambiguous and never queued for automatic redelivery
+ok 349 - an incomplete email acknowledgement is ambiguous and never queued for automatic redelivery
+  ---
+  duration_ms: 0.753583
+  type: 'test'
+  ...
+# Subtest: the real legacy entrypoint rejects every payment mode without loading a provider or writing
+ok 350 - the real legacy entrypoint rejects every payment mode without loading a provider or writing
+  ---
+  duration_ms: 3.042125
+  type: 'test'
+  ...
+# Subtest: factory creates a complete valid v2 order with integer cents
+ok 351 - factory creates a complete valid v2 order with integer cents
+  ---
+  duration_ms: 8.209417
+  type: 'test'
+  ...
+# Subtest: floating, incoherent and excessive money values are rejected
+ok 352 - floating, incoherent and excessive money values are rejected
+  ---
+  duration_ms: 0.927083
+  type: 'test'
+  ...
+# Subtest: inventory quantities are conserved and status is derived
+ok 353 - inventory quantities are conserved and status is derived
+  ---
+  duration_ms: 0.252166
+  type: 'test'
+  ...
+# Subtest: closed matrix rejects unlisted transitions and unpaid fulfillment
+ok 354 - closed matrix rejects unlisted transitions and unpaid fulfillment
+  ---
+  duration_ms: 1.784875
+  type: 'test'
+  ...
+# Subtest: retryable payment states keep the hold and succeeded is monotone
+ok 355 - retryable payment states keep the hold and succeeded is monotone
+  ---
+  duration_ms: 0.927166
+  type: 'test'
+  ...
+# Subtest: provider cancellation is required before inventory release
+ok 356 - provider cancellation is required before inventory release
+  ---
+  duration_ms: 0.277041
+  type: 'test'
+  ...
+# Subtest: terminal payment conflict becomes needs_review without speculative release
+ok 357 - terminal payment conflict becomes needs_review without speculative release
+  ---
+  duration_ms: 0.3585
+  type: 'test'
+  ...
+# Subtest: refund and fulfillment projections are deterministic
+ok 358 - refund and fulfillment projections are deterministic
+  ---
+  duration_ms: 0.333667
+  type: 'test'
+  ...
+# Subtest: an incoherent stored legacy projection is rejected
+ok 359 - an incoherent stored legacy projection is rejected
+  ---
+  duration_ms: 0.725792
+  type: 'test'
+  ...
+# Subtest: v2 read adapter never promotes a forged legacy status
+ok 360 - v2 read adapter never promotes a forged legacy status
+  ---
+  duration_ms: 0.806167
+  type: 'test'
+  ...
+# Subtest: control is fail-closed unless its complete contract is valid
+ok 361 - control is fail-closed unless its complete contract is valid
+  ---
+  duration_ms: 0.332125
+  type: 'test'
+  ...
+# Subtest: clock, IDs, Stripe and Firestore boundaries are injectable
+ok 362 - clock, IDs, Stripe and Firestore boundaries are injectable
+  ---
+  duration_ms: 0.184042
+  type: 'test'
+  ...
+# Subtest: v2 factory rejects line totals that cannot be represented safely
+ok 363 - v2 factory rejects line totals that cannot be represented safely
+  ---
+  duration_ms: 0.156334
+  type: 'test'
+  ...
+# Subtest: frontend controller and recovery descriptor are active by default
+ok 364 - frontend controller and recovery descriptor are active by default
+  ---
+  duration_ms: 58.522333
+  type: 'test'
+  ...
+# Subtest: the actual outbox sender adapter preserves ambiguous acknowledgements through the worker
+ok 365 - the actual outbox sender adapter preserves ambiguous acknowledgements through the worker
+  ---
+  duration_ms: 11.510875
+  type: 'test'
+  ...
+# Subtest: local delivery is disabled outside 13 or until a complete postcode; pickup and carrier stay available
+ok 366 - local delivery is disabled outside 13 or until a complete postcode; pickup and carrier stay available
+  ---
+  duration_ms: 5.745
+  type: 'test'
+  ...
+# Subtest: historical committed reservation proves sale, hold does not; incomplete evidence is unknown
+ok 367 - historical committed reservation proves sale, hold does not; incomplete evidence is unknown
+  ---
+  duration_ms: 1.377666
+  type: 'test'
+  ...
+# Subtest: elapsed deadline blocks the secret without declaring payment canceled; durable paid wins
+ok 368 - elapsed deadline blocks the secret without declaring payment canceled; durable paid wins
+  ---
+  duration_ms: 0.201958
+  type: 'test'
+  ...
+# Subtest: local deploy target explicitly selects CloudEvent transport without capacity changes
+ok 369 - local deploy target explicitly selects CloudEvent transport without capacity changes
+  ---
+  duration_ms: 19.332083
+  type: 'test'
+  ...
+# Subtest: reservation event handler rejects a missing CloudEvent change instead of acknowledging silently
+ok 370 - reservation event handler rejects a missing CloudEvent change instead of acknowledging silently
+  ---
+  duration_ms: 1060.060958
+  type: 'test'
+  ...
+# Subtest: submission gate blocks retries on expired and unknown results, but allows known refusal
+ok 371 - submission gate blocks retries on expired and unknown results, but allows known refusal
+  ---
+  duration_ms: 1.343709
+  type: 'test'
+  ...
+# Subtest: owner resume descriptor cannot cross UID; pending deadline copy never calls it sold
+ok 372 - owner resume descriptor cannot cross UID; pending deadline copy never calls it sold
+  ---
+  duration_ms: 90.696416
+  type: 'test'
+  ...
+# Subtest: promotion codes are normalized and hashed without trusting the browser
+ok 373 - promotion codes are normalized and hashed without trusting the browser
+  ---
+  duration_ms: 2.067333
+  type: 'test'
+  ...
+# Subtest: admin promotions are bounded by dates, scope and usage limits
+ok 374 - admin promotions are bounded by dates, scope and usage limits
+  ---
+  duration_ms: 5.336167
+  type: 'test'
+  ...
+# Subtest: newsletter codes are single-use and bound to the claimed email
+ok 375 - newsletter codes are single-use and bound to the claimed email
+  ---
+  duration_ms: 0.495916
+  type: 'test'
+  ...
+# Subtest: expired, premature, irrelevant and excessive promotions fail closed
+ok 376 - expired, premature, irrelevant and excessive promotions fail closed
+  ---
+  duration_ms: 0.2715
+  type: 'test'
+  ...
+# Subtest: admin creation is authorized, control-plane gated and audited server-side
+ok 377 - admin creation is authorized, control-plane gated and audited server-side
+  ---
+  duration_ms: 0.77175
+  type: 'test'
+  ...
+# Subtest: property: integer-cent algebra is closed over generated valid amounts
+ok 378 - property: integer-cent algebra is closed over generated valid amounts
+  ---
+  duration_ms: 7.028792
+  type: 'test'
+  ...
+# Subtest: property: non-terminal payment events never release stock or regress success
+ok 379 - property: non-terminal payment events never release stock or regress success
+  ---
+  duration_ms: 66.798792
+  type: 'test'
+  ...
+# Subtest: property: canonical hashes ignore object key order but preserve payload meaning
+ok 380 - property: canonical hashes ignore object key order but preserve payload meaning
+  ---
+  duration_ms: 58.549208
+  type: 'test'
+  ...
+# Subtest: provider creation window is immutable, strict and rejects missing or future timestamps
+ok 381 - provider creation window is immutable, strict and rejects missing or future timestamps
+  ---
+  duration_ms: 4.83975
+  type: 'test'
+  ...
+# Subtest: expired unresolved checkout cannot recreate a payment even to cancel it or release stock
+ok 382 - expired unresolved checkout cannot recreate a payment even to cancel it or release stock
+  ---
+  duration_ms: 3.284166
+  type: 'test'
+  ...
+# Subtest: old unidentified refund never sends another create; a known refund remains reconcilable
+ok 383 - old unidentified refund never sends another create; a known refund remains reconcilable
+  ---
+  duration_ms: 2.856958
+  type: 'test'
+  ...
+# Subtest: pre-correction NC-001..NC-007 evidence maps only to green regression proofs
+ok 384 - pre-correction NC-001..NC-007 evidence maps only to green regression proofs
+  ---
+  duration_ms: 2.590041
+  type: 'test'
+  ...
+# Subtest: return cannot resolve without a receipt; a partial receipt does not authorize refund of all requested items
+ok 385 - return cannot resolve without a receipt; a partial receipt does not authorize refund of all requested items
+  ---
+  duration_ms: 37.4225
+  type: 'test'
+  ...
+# Subtest: refund preparation rechecks a rejected request and changed custody before any money is reserved
+ok 386 - refund preparation rechecks a rejected request and changed custody before any money is reserved
+  ---
+  duration_ms: 5.135333
+  type: 'test'
+  ...
+# Subtest: customer request checks are wired through the actual refund and return runtimes
+ok 387 - customer request checks are wired through the actual refund and return runtimes
+  ---
+  duration_ms: 5.051
+  type: 'test'
+  ...
+# Subtest: refund preparation records customer intent in the same transaction, preventing a competing rejection
+ok 388 - refund preparation records customer intent in the same transaction, preventing a competing rejection
+  ---
+  duration_ms: 8.625083
+  type: 'test'
+  ...
+# Subtest: return creation rechecks the customer request before allocating returned quantities
+ok 389 - return creation rechecks the customer request before allocating returned quantities
+  ---
+  duration_ms: 1.348167
+  type: 'test'
+  ...
+# Subtest: refund retry uses the stored attempt amount when all captured money is already pending
+ok 390 - refund retry uses the stored attempt amount when all captured money is already pending
+  ---
+  duration_ms: 10.51425
+  type: 'test'
+  ...
+# Subtest: Stripe accepts then response is lost: retry reuses one PI and attaches it
+ok 391 - Stripe accepts then response is lost: retry reuses one PI and attaches it
+  ---
+  duration_ms: 4.766125
+  type: 'test'
+  ...
+# Subtest: crash after Stripe response resumes with the same key and one PI
+ok 392 - crash after Stripe response resumes with the same key and one PI
+  ---
+  duration_ms: 2.806208
+  type: 'test'
+  ...
+# Subtest: crash after attach returns the attached PI on retry without creation
+ok 393 - crash after attach returns the attached PI on retry without creation
+  ---
+  duration_ms: 1.016667
+  type: 'test'
+  ...
+# Subtest: provider-first cancel never releases before canceled and converges after crash
+ok 394 - provider-first cancel never releases before canceled and converges after crash
+  ---
+  duration_ms: 0.81225
+  type: 'test'
+  ...
+# Subtest: cancel during create_pending replays the create key, cancels one PI, then releases
+ok 395 - cancel during create_pending replays the create key, cancels one PI, then releases
+  ---
+  duration_ms: 0.390292
+  type: 'test'
+  ...
+# Subtest: lost Stripe cancel response keeps the hold until retry observes canceled
+ok 396 - lost Stripe cancel response keeps the hold until retry observes canceled
+  ---
+  duration_ms: 0.362917
+  type: 'test'
+  ...
+# Subtest: succeeded PI wins a cancellation race and commits instead of releasing
+ok 397 - succeeded PI wins a cancellation race and commits instead of releasing
+  ---
+  duration_ms: 0.647917
+  type: 'test'
+  ...
+# Subtest: client cancellation retry returns one audited provider-first result
+ok 398 - client cancellation retry returns one audited provider-first result
+  ---
+  duration_ms: 0.882625
+  type: 'test'
+  ...
+# Subtest: attempt matrix is closed and resumes unknown creation with the same key
+ok 399 - attempt matrix is closed and resumes unknown creation with the same key
+  ---
+  duration_ms: 4.327167
+  type: 'test'
+  ...
+# Subtest: PI validation rejects amount, currency, order, request hash and Connect mismatches
+ok 400 - PI validation rejects amount, currency, order, request hash and Connect mismatches
+  ---
+  duration_ms: 1.248541
+  type: 'test'
+  ...
+# Subtest: webhook inbox supports duplicate identity, lease takeover and fencing
+ok 401 - webhook inbox supports duplicate identity, lease takeover and fencing
+  ---
+  duration_ms: 0.989709
+  type: 'test'
+  ...
+# Subtest: webhook failure backoff ends in dead-letter and effects are deterministic
+ok 402 - webhook failure backoff ends in dead-letter and effects are deterministic
+  ---
+  duration_ms: 0.489208
+  type: 'test'
+  ...
+# Subtest: guest resume token is opaque, single-use, owner-bound and rotated
+ok 403 - guest resume token is opaque, single-use, owner-bound and rotated
+  ---
+  duration_ms: 0.324542
+  type: 'test'
+  ...
+# Subtest: reconciler covers all PI statuses without releasing a non-terminal hold
+ok 404 - reconciler covers all PI statuses without releasing a non-terminal hold
+  ---
+  duration_ms: 1.013667
+  type: 'test'
+  ...
+# Subtest: reconciler persists an incident for a succeeded orphan instead of skipping
+ok 405 - reconciler persists an incident for a succeeded orphan instead of skipping
+  ---
+  duration_ms: 0.086083
+  type: 'test'
+  ...
+# Subtest: reconciler freezes terminal conflicts and mismatches without compensation
+ok 406 - reconciler freezes terminal conflicts and mismatches without compensation
+  ---
+  duration_ms: 0.2575
+  type: 'test'
+  ...
+# Subtest: create crash after hold resumes the durable checkout without a second hold
+ok 407 - create crash after hold resumes the durable checkout without a second hold
+  ---
+  duration_ms: 11.438167
+  type: 'test'
+  ...
+# Subtest: checkout resume rejects an expired hold before reopening Stripe
+ok 408 - checkout resume rejects an expired hold before reopening Stripe
+  ---
+  duration_ms: 0.454292
+  type: 'test'
+  ...
+# Subtest: checkout resume terminal classification distinguishes cancellation from active retries
+ok 409 - checkout resume terminal classification distinguishes cancellation from active retries
+  ---
+  duration_ms: 0.145666
+  type: 'test'
+  ...
+# Subtest: checkout resume never reopens Stripe after durable payment
+ok 410 - checkout resume never reopens Stripe after durable payment
+  ---
+  duration_ms: 0.178375
+  type: 'test'
+  ...
+# Subtest: checkout resume returns the immutable order lines instead of the current cart
+ok 411 - checkout resume returns the immutable order lines instead of the current cart
+  ---
+  duration_ms: 0.771292
+  type: 'test'
+  ...
+# Subtest: webhook ingress rejects a wrong secret and separates two Connect accounts
+ok 412 - webhook ingress rejects a wrong secret and separates two Connect accounts
+  ---
+  duration_ms: 1.606875
+  type: 'test'
+  ...
+# Subtest: webhook ingress persists supported refund events and ignores unrelated Stripe events
+ok 413 - webhook ingress persists supported refund events and ignores unrelated Stripe events
+  ---
+  duration_ms: 0.622791
+  type: 'test'
+  ...
+# Subtest: worker crash after retrieve is retryable and commits no domain effect
+ok 414 - worker crash after retrieve is retryable and commits no domain effect
+  ---
+  duration_ms: 0.685458
+  type: 'test'
+  ...
+# Subtest: worker pins provider retrieval to the inbox Connect account
+ok 415 - worker pins provider retrieval to the inbox Connect account
+  ---
+  duration_ms: 0.7225
+  type: 'test'
+  ...
+# Subtest: worker routes refund.failed through the authoritative refund retriever and applier
+ok 416 - worker routes refund.failed through the authoritative refund retriever and applier
+  ---
+  duration_ms: 0.828
+  type: 'test'
+  ...
+# Subtest: bounded sweeper clears its cursor when the last allowed page completes the listing
+ok 417 - bounded sweeper clears its cursor when the last allowed page completes the listing
+  ---
+  duration_ms: 0.52975
+  type: 'test'
+  ...
+# Subtest: bounded sweeper finds an eligible item behind more than fifty irrelevant rows
+ok 418 - bounded sweeper finds an eligible item behind more than fifty irrelevant rows
+  ---
+  duration_ms: 0.491542
+  type: 'test'
+  ...
+# Subtest: reservation expiry worker cancels only due active unpaid checkouts
+ok 419 - reservation expiry worker cancels only due active unpaid checkouts
+  ---
+  duration_ms: 8.493792
+  type: 'test'
+  ...
+# Subtest: narrow reservation expiry runtime exposes only provider-first expiry surfaces
+ok 420 - narrow reservation expiry runtime exposes only provider-first expiry surfaces
+  ---
+  duration_ms: 8.485375
+  type: 'test'
+  ...
+# Subtest: reservation expiry scheduler delegates once to the bounded sweeper
+ok 421 - reservation expiry scheduler delegates once to the bounded sweeper
+  ---
+  duration_ms: 0.95275
+  type: 'test'
+  ...
+# Subtest: worker heartbeat refuse un run incomplet sans journaliser les identifiants metier
+ok 422 - worker heartbeat refuse un run incomplet sans journaliser les identifiants metier
+  ---
+  duration_ms: 23.274875
+  type: 'test'
+  ...
+# Subtest: worker heartbeat agrege completion, backlog et overlap sans PII
+ok 423 - worker heartbeat agrege completion, backlog et overlap sans PII
+  ---
+  duration_ms: 0.201459
+  type: 'test'
+  ...
+# Subtest: outbox worker forwards the deterministic outbox id as provider idempotency key
+ok 424 - outbox worker forwards the deterministic outbox id as provider idempotency key
+  ---
+  duration_ms: 3.228625
+  type: 'test'
+  ...
+# Subtest: v2 runtime wiring keeps workers injectable while public transports stay separately guarded
+ok 425 - v2 runtime wiring keeps workers injectable while public transports stay separately guarded
+  ---
+  duration_ms: 1.461792
+  type: 'test'
+  ...
+# Subtest: refund accepted then response lost resumes one provider refund and one cumulative effect
+ok 426 - refund accepted then response lost resumes one provider refund and one cumulative effect
+  ---
+  duration_ms: 5.707292
+  type: 'test'
+  ...
+# Subtest: stored pending refund can be resumed by another strong admin without creating a new request
+ok 427 - stored pending refund can be resumed by another strong admin without creating a new request
+  ---
+  duration_ms: 95.874209
+  type: 'test'
+  ...
+# Subtest: failed refund clears pending money without any inventory disposition
+ok 428 - failed refund clears pending money without any inventory disposition
+  ---
+  duration_ms: 0.947916
+  type: 'test'
+  ...
+# Subtest: provider failure reverses an initially succeeded refund without a new attempt
+ok 429 - provider failure reverses an initially succeeded refund without a new attempt
+  ---
+  duration_ms: 0.518417
+  type: 'test'
+  ...
+# Subtest: crash after refund response before persistence resumes the same refund
+ok 430 - crash after refund response before persistence resumes the same refund
+  ---
+  duration_ms: 0.784125
+  type: 'test'
+  ...
+# Subtest: two distinct partial request IDs use distinct Stripe keys and sum exactly
+ok 431 - two distinct partial request IDs use distinct Stripe keys and sum exactly
+  ---
+  duration_ms: 0.594333
+  type: 'test'
+  ...
+# Subtest: historical refund stays pinned to the order Connect account
+ok 432 - historical refund stays pinned to the order Connect account
+  ---
+  duration_ms: 0.58875
+  type: 'test'
+  ...
+# Subtest: same commandId and payload returns the stored result before stale-version validation
+ok 433 - same commandId and payload returns the stored result before stale-version validation
+  ---
+  duration_ms: 1.970542
+  type: 'test'
+  ...
+# Subtest: same commandId with a different payload is a conflict
+ok 434 - same commandId with a different payload is a conflict
+  ---
+  duration_ms: 0.702208
+  type: 'test'
+  ...
+# Subtest: idempotency lookup occurs before expectedVersion
+ok 435 - idempotency lookup occurs before expectedVersion
+  ---
+  duration_ms: 0.83375
+  type: 'test'
+  ...
+# Subtest: lost response after persist converges on retry without a second transition
+ok 436 - lost response after persist converges on retry without a second transition
+  ---
+  duration_ms: 0.5705
+  type: 'test'
+  ...
+# Subtest: every named failpoint is deterministic and fails closed
+ok 437 - every named failpoint is deterministic and fails closed
+  ---
+  duration_ms: 1.062
+  type: 'test'
+  ...
+# Subtest: expiration retains bank authentication and processing, then settles a delayed success
+ok 438 - expiration retains bank authentication and processing, then settles a delayed success
+  ---
+  duration_ms: 12.508083
+  type: 'test'
+  ...
+# Subtest: expired inert reservation uses provider cancellation before release
+ok 439 - expired inert reservation uses provider cancellation before release
+  ---
+  duration_ms: 1.804458
+  type: 'test'
+  ...
+# Subtest: R00 nominal local conserve une commande, un PI logique et un settlement
+ok 440 - R00 nominal local conserve une commande, un PI logique et un settlement
+  ---
+  duration_ms: 0.499333
+  type: 'test'
+  ...
+# Subtest: R01 offline avant callable ne cree aucun effet et conserve intention
+ok 441 - R01 offline avant callable ne cree aucun effet et conserve intention
+  ---
+  duration_ms: 0.303625
+  type: 'test'
+  ...
+# Subtest: R02 reponse callable perdue reprend le meme clientOrderId et orderId
+ok 442 - R02 reponse callable perdue reprend le meme clientOrderId et orderId
+  ---
+  duration_ms: 0.192
+  type: 'test'
+  ...
+# Subtest: R03 deux soumissions concurrentes retournent un seul resultat durable
+ok 443 - R03 deux soumissions concurrentes retournent un seul resultat durable
+  ---
+  duration_ms: 0.158125
+  type: 'test'
+  ...
+# Subtest: R05 timeout Stripe reutilise exactement la meme idempotency key
+ok 444 - R05 timeout Stripe reutilise exactement la meme idempotency key
+  ---
+  duration_ms: 0.890583
+  type: 'test'
+  ...
+# Subtest: R07 effet Stripe acquis puis persistance interrompue converge ou needs_review
+ok 445 - R07 effet Stripe acquis puis persistance interrompue converge ou needs_review
+  ---
+  duration_ms: 0.494209
+  type: 'test'
+  ...
+# Subtest: R09 toutes les permutations non terminales puis succeeded restent monotones
+ok 446 - R09 toutes les permutations non terminales puis succeeded restent monotones
+  ---
+  duration_ms: 4.930625
+  type: 'test'
+  ...
+# Subtest: R10 webhook retarde garde processing puis converge apres retry
+ok 447 - R10 webhook retarde garde processing puis converge apres retry
+  ---
+  duration_ms: 4.998208
+  type: 'test'
+  ...
+# Subtest: R13 expiration et succeeded concurrents produisent commit XOR release
+ok 448 - R13 expiration et succeeded concurrents produisent commit XOR release
+  ---
+  duration_ms: 9.133084
+  type: 'test'
+  ...
+# Subtest: R16 503 puis retry manuel garde la meme intention et un backoff borne
+ok 449 - R16 503 puis retry manuel garde la meme intention et un backoff borne
+  ---
+  duration_ms: 1.362541
+  type: 'test'
+  ...
+# Subtest: R00 timeline fusionne et ordonne toutes les familles checkout attendues
+ok 450 - R00 timeline fusionne et ordonne toutes les familles checkout attendues
+  ---
+  duration_ms: 38.888792
+  type: 'test'
+  ...
+# Subtest: R05 create_unknown puis attached partage la correlation de tentative
+ok 451 - R05 create_unknown puis attached partage la correlation de tentative
+  ---
+  duration_ms: 1.086542
+  type: 'test'
+  ...
+# Subtest: R08 webhook received puis processed est visible sans doublon de source
+ok 452 - R08 webhook received puis processed est visible sans doublon de source
+  ---
+  duration_ms: 0.812625
+  type: 'test'
+  ...
+# Subtest: R09 ordre arrivee webhook ne fait pas regresser le verdict de reprise
+ok 453 - R09 ordre arrivee webhook ne fait pas regresser le verdict de reprise
+  ---
+  duration_ms: 0.323459
+  type: 'test'
+  ...
+# Subtest: R11 retry worker expose attemptCount et resultat final
+ok 454 - R11 retry worker expose attemptCount et resultat final
+  ---
+  duration_ms: 0.582333
+  type: 'test'
+  ...
+# Subtest: R12 dead_letter et delivery_unknown bloquent le verdict de reprise
+ok 455 - R12 dead_letter et delivery_unknown bloquent le verdict de reprise
+  ---
+  duration_ms: 0.153625
+  type: 'test'
+  ...
+# Subtest: R17 101 evenements retourne les 100 plus recents et truncated true
+ok 456 - R17 101 evenements retourne les 100 plus recents et truncated true
+  ---
+  duration_ms: 1.54
+  type: 'test'
+  ...
+# Subtest: console ne retourne jamais e-mail adresse telephone IP token secret ou payload outbox
+ok 457 - console ne retourne jamais e-mail adresse telephone IP token secret ou payload outbox
+  ---
+  duration_ms: 0.416125
+  type: 'test'
+  ...
+# Subtest: recherche correlation reste bornee a dix commandes et cent evenements
+ok 458 - recherche correlation reste bornee a dix commandes et cent evenements
+  ---
+  duration_ms: 0.843416
+  type: 'test'
+  ...
+# Subtest: echec audit de consultation ne retourne aucune timeline
+ok 459 - echec audit de consultation ne retourne aucune timeline
+  ---
+  duration_ms: 2.117958
+  type: 'test'
+  ...
+# Subtest: recherche humaine courante, nue et legacy resout le meme orderNumber
+ok 460 - recherche humaine courante, nue et legacy resout le meme orderNumber
+  ---
+  duration_ms: 1.821458
+  type: 'test'
+  ...
+# Subtest: recherche technique par orderId reste disponible
+ok 461 - recherche technique par orderId reste disponible
+  ---
+  duration_ms: 0.232834
+  type: 'test'
+  ...
+# Subtest: webhook historique traite apparait dans la timeline
+ok 462 - webhook historique traite apparait dans la timeline
+  ---
+  duration_ms: 0.455416
+  type: 'test'
+  ...
+# Subtest: recherche invalide produit un audit hashe
+ok 463 - recherche invalide produit un audit hashe
+  ---
+  duration_ms: 0.366917
+  type: 'test'
+  ...
+# Subtest: leaving an interaction cancels timers, frames, observers and listeners
+ok 464 - leaving an interaction cancels timers, frames, observers and listeners
+  ---
+  duration_ms: 1.537917
+  type: 'test'
+  ...
+# Subtest: les 19 e-mails canoniques partagent le shell systeme epure
+ok 465 - les 19 e-mails canoniques partagent le shell systeme epure
+  ---
+  duration_ms: 45.549833
+  type: 'test'
+  ...
+# Subtest: les e-mails legacy et diagnostic utilisent aussi le shell commun
+ok 466 - les e-mails legacy et diagnostic utilisent aussi le shell commun
+  ---
+  duration_ms: 3.678
+  type: 'test'
+  ...
+# Subtest: les jours legacy et commerce sont normalises en centimes EUR sans double compte
+ok 467 - les jours legacy et commerce sont normalises en centimes EUR sans double compte
+  ---
+  duration_ms: 2.415042
+  type: 'test'
+  ...
+# Subtest: la contribution absolue absorbe rejeu, correction et tombstone
+ok 468 - la contribution absolue absorbe rejeu, correction et tombstone
+  ---
+  duration_ms: 0.624
+  type: 'test'
+  ...
+# Subtest: un événement hors EUR ne modifie jamais la contribution EUR, y compris à la suppression
+ok 469 - un événement hors EUR ne modifie jamais la contribution EUR, y compris à la suppression
+  ---
+  duration_ms: 6.719083
+  type: 'test'
+  ...
+# Subtest: le dashboard ne lit jamais 3650 jours et borne max aux annees materialisees
+ok 470 - le dashboard ne lit jamais 3650 jours et borne max aux annees materialisees
+  ---
+  duration_ms: 1.632541
+  type: 'test'
+  ...
+# Subtest: aggregates revisions, separates 4xx, weights latency by samples and preserves missing data
+ok 471 - aggregates revisions, separates 4xx, weights latency by samples and preserves missing data
+  ---
+  duration_ms: 1.615584
+  type: 'test'
+  ...
+# Subtest: shared cache and lease prevent repeated Monitoring reads; stale data stays explicit
+ok 472 - shared cache and lease prevent repeated Monitoring reads; stale data stays explicit
+  ---
+  duration_ms: 5.016667
+  type: 'test'
+  ...
+# Subtest: Google computes percentile after merging distributions, never mean of daily percentiles
+ok 473 - Google computes percentile after merging distributions, never mean of daily percentiles
+  ---
+  duration_ms: 1.911958
+  type: 'test'
+  ...
+# Subtest: pagination never silently presents a partial inventory
+ok 474 - pagination never silently presents a partial inventory
+  ---
+  duration_ms: 2.140833
+  type: 'test'
+  ...
+# Subtest: moving a ranked product writes one rank instead of the complete inventory
+ok 475 - moving a ranked product writes one rank instead of the complete inventory
+  ---
+  duration_ms: 1.831041
+  type: 'test'
+  ...
+# Subtest: legacy equal ranks normalize atomically and refuse oversized normalization
+ok 476 - legacy equal ranks normalize atomically and refuse oversized normalization
+  ---
+  duration_ms: 0.740833
+  type: 'test'
+  ...
+# Subtest: issued invoice reuses stored bytes across renderer upgrades and refuses a changed artifact digest
+ok 477 - issued invoice reuses stored bytes across renderer upgrades and refuses a changed artifact digest
+  ---
+  duration_ms: 13.917333
+  type: 'test'
+  ...
+# Subtest: invoice PDF renders all 30 lines and long multiline notes within page bounds
+ok 478 - invoice PDF renders all 30 lines and long multiline notes within page bounds
+  ---
+  duration_ms: 569.753
+  type: 'test'
+  ...
+# Subtest: invoice duplicate or uncertain delivery cannot overwrite the existing claim, even with a new request ID
+ok 479 - invoice duplicate or uncertain delivery cannot overwrite the existing claim, even with a new request ID
+  ---
+  duration_ms: 45.426334
+  type: 'test'
+  ...
+# Subtest: invoice send refuses recipient changes on the same request and invalid requests create no delivery
+ok 480 - invoice send refuses recipient changes on the same request and invalid requests create no delivery
+  ---
+  duration_ms: 3.874542
+  type: 'test'
+  ...
+# Subtest: invoice acknowledgement gaps freeze delivery; lost database response preserves an already committed success
+ok 481 - invoice acknowledgement gaps freeze delivery; lost database response preserves an already committed success
+  ---
+  duration_ms: 5.258542
+  type: 'test'
+  ...
+# Subtest: factures manuelles: normalisation, montants entiers et numéro séquentiel
+ok 482 - factures manuelles: normalisation, montants entiers et numéro séquentiel
+  ---
+  duration_ms: 4.217541
+  type: 'test'
+  ...
+# Subtest: factures manuelles: les coordonnées légales et client sont obligatoires
+ok 483 - factures manuelles: les coordonnées légales et client sont obligatoires
+  ---
+  duration_ms: 0.847875
+  type: 'test'
+  ...
+# Subtest: factures manuelles: les dates impossibles ne sont pas reportées au mois suivant
+ok 484 - factures manuelles: les dates impossibles ne sont pas reportées au mois suivant
+  ---
+  duration_ms: 3.05675
+  type: 'test'
+  ...
+# Subtest: factures manuelles: le PDF émis est déterministe et lisible
+ok 485 - factures manuelles: le PDF émis est déterministe et lisible
+  ---
+  duration_ms: 162.923834
+  type: 'test'
+  ...
+# Subtest: factures manuelles: UI lazy, callables et stockages privés restent alignés
+ok 486 - factures manuelles: UI lazy, callables et stockages privés restent alignés
+  ---
+  duration_ms: 1.772458
+  type: 'test'
+  ...
+# Subtest: OTP retry cannot reuse a verified token from another email or code
+ok 487 - OTP retry cannot reuse a verified token from another email or code
+  ---
+  duration_ms: 4.178083
+  type: 'test'
+  ...
+# Subtest: same OTP attempt reuses its token after network failure; closed dialog does not sign in
+ok 488 - same OTP attempt reuses its token after network failure; closed dialog does not sign in
+  ---
+  duration_ms: 2.792708
+  type: 'test'
+  ...
+# Subtest: session conversion checks the current token and does not claim an unprotected legacy session
+ok 489 - session conversion checks the current token and does not claim an unprotected legacy session
+  ---
+  duration_ms: 73.501208
+  type: 'test'
+  ...
+# Subtest: inactivity finalization preserves a session refreshed after the initial query
+ok 490 - inactivity finalization preserves a session refreshed after the initial query
+  ---
+  duration_ms: 1.631334
+  type: 'test'
+  ...
+# Subtest: materialized fact removal fails closed if its contribution changed before the transaction
+ok 491 - materialized fact removal fails closed if its contribution changed before the transaction
+  ---
+  duration_ms: 1.031709
+  type: 'test'
+  ...
+# Subtest: duplicate and reordered provider events cannot reopen a resolved incident
+ok 492 - duplicate and reordered provider events cannot reopen a resolved incident
+  ---
+  duration_ms: 18.503958
+  type: 'test'
+  ...
+# Subtest: foreign-currency captures never increment the EUR counter
+ok 493 - foreign-currency captures never increment the EUR counter
+  ---
+  duration_ms: 2.796292
+  type: 'test'
+  ...
+# Subtest: homepage saves reject stale fields while allowing unrelated concurrent edits
+ok 494 - homepage saves reject stale fields while allowing unrelated concurrent edits
+  ---
+  duration_ms: 1.553333
+  type: 'test'
+  ...
+# Subtest: image crop waits for persistence, blocks double submission and stays open on save failure
+ok 495 - image crop waits for persistence, blocks double submission and stays open on save failure
+  ---
+  duration_ms: 1.112792
+  type: 'test'
+  ...
+# Subtest: an obsolete crop result cannot be published for a new image
+ok 496 - an obsolete crop result cannot be published for a new image
+  ---
+  duration_ms: 0.796208
+  type: 'test'
+  ...
+# Subtest: late analytics completion cannot rearm a heartbeat after unmount
+ok 497 - late analytics completion cannot rearm a heartbeat after unmount
+  ---
+  duration_ms: 1.155
+  type: 'test'
+  ...
+# Subtest: OAuth completion checks current admin access and refuses an intervening disconnect or newer connection
+ok 498 - OAuth completion checks current admin access and refuses an intervening disconnect or newer connection
+  ---
+  duration_ms: 14.736208
+  type: 'test'
+  ...
+# Subtest: an old Meta asset selection cannot reconnect a disconnected account or replace a newer selection
+ok 499 - an old Meta asset selection cannot reconnect a disconnected account or replace a newer selection
+  ---
+  duration_ms: 4.650292
+  type: 'test'
+  ...
+# Subtest: expired newsletter send claims are frozen and never resent
+ok 500 - expired newsletter send claims are frozen and never resent
+  ---
+  duration_ms: 33.455416
+  type: 'test'
+  ...
+# Subtest: newsletter invalid acknowledgements and lost database responses preserve delivery uncertainty or durable success
+ok 501 - newsletter invalid acknowledgements and lost database responses preserve delivery uncertainty or durable success
+  ---
+  duration_ms: 7.009708
+  type: 'test'
+  ...
+# Subtest: newsletter: le tirage pondéré est borné et décidé par le domaine serveur
+ok 502 - newsletter: le tirage pondéré est borné et décidé par le domaine serveur
+  ---
+  duration_ms: 1.089667
+  type: 'test'
+  ...
+# Subtest: newsletter: identifiants et code ne révèlent pas l’adresse e-mail
+ok 503 - newsletter: identifiants et code ne révèlent pas l’adresse e-mail
+  ---
+  duration_ms: 1.624833
+  type: 'test'
+  ...
+# Subtest: newsletter: la projection client reste minimale
+ok 504 - newsletter: la projection client reste minimale
+  ---
+  duration_ms: 0.775333
+  type: 'test'
+  ...
+# Subtest: newsletter: le message livre le même code et mène vers les avantages client
+ok 505 - newsletter: le message livre le même code et mène vers les avantages client
+  ---
+  duration_ms: 24.981958
+  type: 'test'
+  ...
+# Subtest: newsletter: interface, Functions et Rules utilisent le parcours durable
+ok 506 - newsletter: interface, Functions et Rules utilisent le parcours durable
+  ---
+  duration_ms: 2.364
+  type: 'test'
+  ...
+# Subtest: les identifiants de correlation sont bornes et les sessions sont hachees
+ok 507 - les identifiants de correlation sont bornes et les sessions sont hachees
+  ---
+  duration_ms: 5.186125
+  type: 'test'
+  ...
+# Subtest: les metadonnees techniques ne sont jamais transmises au metier
+ok 508 - les metadonnees techniques ne sont jamais transmises au metier
+  ---
+  duration_ms: 0.876166
+  type: 'test'
+  ...
+# Subtest: les succes sont echantillonnes mais les taux extremes restent deterministes
+ok 509 - les succes sont echantillonnes mais les taux extremes restent deterministes
+  ---
+  duration_ms: 0.814792
+  type: 'test'
+  ...
+# Subtest: la console admin garde Cloud Logging cote serveur et sous projection expurgee
+ok 510 - la console admin garde Cloud Logging cote serveur et sous projection expurgee
+  ---
+  duration_ms: 2.851791
+  type: 'test'
+  ...
+# Subtest: Error Reporting recoit une pile expurgee seulement pour les erreurs inattendues
+ok 511 - Error Reporting recoit une pile expurgee seulement pour les erreurs inattendues
+  ---
+  duration_ms: 18.425417
+  type: 'test'
+  ...
+# Subtest: les logs Gen2 et les alertes ciblent aussi Cloud Run revision
+ok 512 - les logs Gen2 et les alertes ciblent aussi Cloud Run revision
+  ---
+  duration_ms: 0.822209
+  type: 'test'
+  ...
+# Subtest: le journal metier est minimal, append-only et idempotent
+ok 513 - le journal metier est minimal, append-only et idempotent
+  ---
+  duration_ms: 0.466834
+  type: 'test'
+  ...
+# Subtest: late OTP mail and login callbacks preserve a newer challenge and its attempts
+ok 514 - late OTP mail and login callbacks preserve a newer challenge and its attempts
+  ---
+  duration_ms: 1.156709
+  type: 'test'
+  ...
+# Subtest: OTP operation updates apply only to the matching durable generation
+ok 515 - OTP operation updates apply only to the matching durable generation
+  ---
+  duration_ms: 0.270209
+  type: 'test'
+  ...
+# Subtest: authentication capability accepts remote and roaming authenticators
+ok 516 - authentication capability accepts remote and roaming authenticators
+  ---
+  duration_ms: 0.995
+  type: 'test'
+  ...
+# Subtest: prepared authentication challenge expires client-side after four minutes
+ok 517 - prepared authentication challenge expires client-side after four minutes
+  ---
+  duration_ms: 0.248416
+  type: 'test'
+  ...
+# Subtest: email-first UX only exposes quick login for a locally activated account
+ok 518 - email-first UX only exposes quick login for a locally activated account
+  ---
+  duration_ms: 0.524209
+  type: 'test'
+  ...
+# Subtest: passkey registration no longer redirects to the gallery root
+ok 519 - passkey registration no longer redirects to the gallery root
+  ---
+  duration_ms: 1.66925
+  type: 'test'
+  ...
+# Subtest: an OTP admin cannot manufacture an AAL2 session by enrolling a new passkey
+ok 520 - an OTP admin cannot manufacture an AAL2 session by enrolling a new passkey
+  ---
+  duration_ms: 1.706
+  type: 'test'
+  ...
+# Subtest: ordinary customer enrollment remains available; revoked admin claims require the active registry guard
+ok 521 - ordinary customer enrollment remains available; revoked admin claims require the active registry guard
+  ---
+  duration_ms: 0.92
+  type: 'test'
+  ...
+# Subtest: all four passkey callables enforce App Check
+ok 522 - all four passkey callables enforce App Check
+  ---
+  duration_ms: 1.573417
+  type: 'test'
+  ...
+# Subtest: registration and authentication require local user verification
+ok 523 - registration and authentication require local user verification
+  ---
+  duration_ms: 0.647416
+  type: 'test'
+  ...
+# Subtest: origins are exact and no hosted.app wildcard remains
+ok 524 - origins are exact and no hosted.app wildcard remains
+  ---
+  duration_ms: 0.295791
+  type: 'test'
+  ...
+# Subtest: temporary documents use five-minute Firestore TTL timestamps
+ok 525 - temporary documents use five-minute Firestore TTL timestamps
+  ---
+  duration_ms: 0.165167
+  type: 'test'
+  ...
+# Subtest: challenge consumption and credential counters are transactional
+ok 526 - challenge consumption and credential counters are transactional
+  ---
+  duration_ms: 0.131666
+  type: 'test'
+  ...
+# Subtest: abuse limits and input bounds are explicit
+ok 527 - abuse limits and input bounds are explicit
+  ---
+  duration_ms: 0.122375
+  type: 'test'
+  ...
+# Subtest: unknown users receive fake options without raw email challenge storage
+ok 528 - unknown users receive fake options without raw email challenge storage
+  ---
+  duration_ms: 0.166292
+  type: 'test'
+  ...
+# Subtest: custom-token mint has one idempotent retry without storing the token
+ok 529 - custom-token mint has one idempotent retry without storing the token
+  ---
+  duration_ms: 0.186042
+  type: 'test'
+  ...
+# Subtest: a Firestore transaction retry cannot retain permission from an aborted passkey token claim
+ok 530 - a Firestore transaction retry cannot retain permission from an aborted passkey token claim
+  ---
+  duration_ms: 2.31
+  type: 'test'
+  ...
+# Subtest: authentication rejects a credential changed after cryptographic verification
+ok 531 - authentication rejects a credential changed after cryptographic verification
+  ---
+  duration_ms: 3.547625
+  type: 'test'
+  ...
+# Subtest: shared dialog focus helper wraps Tab and Shift+Tab
+ok 532 - shared dialog focus helper wraps Tab and Shift+Tab
+  ---
+  duration_ms: 1.57125
+  type: 'test'
+  ...
+# Subtest: dialog traversal excludes explicit negative tab stops and controls disabled through a fieldset
+ok 533 - dialog traversal excludes explicit negative tab stops and controls disabled through a fieldset
+  ---
+  duration_ms: 9.525667
+  type: 'test'
+  ...
+# Subtest: product detail hides the dormant drawer and exposes both zoom targets to the keyboard
+ok 534 - product detail hides the dormant drawer and exposes both zoom targets to the keyboard
+  ---
+  duration_ms: 35.439334
+  type: 'test'
+  ...
+# Subtest: product lightbox establishes, traps, closes and restores focus
+ok 535 - product lightbox establishes, traps, closes and restores focus
+  ---
+  duration_ms: 0.933333
+  type: 'test'
+  ...
+# Subtest: category filter drawer behaves as a modal dialog
+ok 536 - category filter drawer behaves as a modal dialog
+  ---
+  duration_ms: 1.46775
+  type: 'test'
+  ...
+# Subtest: global menu preserves native button keys and owns the focus cycle
+ok 537 - global menu preserves native button keys and owns the focus cycle
+  ---
+  duration_ms: 1.736833
+  type: 'test'
+  ...
+# Subtest: toasts announce their state and provide a native close button
+ok 538 - toasts announce their state and provide a native close button
+  ---
+  duration_ms: 5.61925
+  type: 'test'
+  ...
+# Subtest: search route can return a visible product beyond the first 120 catalog cards
+ok 539 - search route can return a visible product beyond the first 120 catalog cards
+  ---
+  duration_ms: 8.095917
+  type: 'test'
+  ...
+# Subtest: wishlist resolves fresh catalog data in saved order and keeps unavailable products identifiable
+ok 540 - wishlist resolves fresh catalog data in saved order and keeps unavailable products identifiable
+  ---
+  duration_ms: 0.375667
+  type: 'test'
+  ...
+# Subtest: failed publication stops queued work and waits for sibling writes before permitting retry
+ok 541 - failed publication stops queued work and waits for sibling writes before permitting retry
+  ---
+  duration_ms: 6.5975
+  type: 'test'
+  ...
+# Subtest: photo preparation remains bounded and returns original order
+ok 542 - photo preparation remains bounded and returns original order
+  ---
+  duration_ms: 2.775792
+  type: 'test'
+  ...
+# Subtest: retrying a submitted quote keeps durable missing-photo and email statuses
+ok 543 - retrying a submitted quote keeps durable missing-photo and email statuses
+  ---
+  duration_ms: 3.526541
+  type: 'test'
+  ...
+# Subtest: concurrent photo IDs retain exactly the winning bytes and only delete the unreferenced attempt
+ok 544 - concurrent photo IDs retain exactly the winning bytes and only delete the unreferenced attempt
+  ---
+  duration_ms: 3.421667
+  type: 'test'
+  ...
+# Subtest: a lost transaction response cannot delete a committed quote photo
+ok 545 - a lost transaction response cannot delete a committed quote photo
+  ---
+  duration_ms: 1.950792
+  type: 'test'
+  ...
+# Subtest: quote receipt with an expired send claim is frozen instead of delivered again
+ok 546 - quote receipt with an expired send claim is frozen instead of delivered again
+  ---
+  duration_ms: 8.841209
+  type: 'test'
+  ...
+# Subtest: quote receipt preserves provider ambiguity and durable success across database failures
+ok 547 - quote receipt preserves provider ambiguity and durable success across database failures
+  ---
+  duration_ms: 5.822125
+  type: 'test'
+  ...
+# Subtest: devis: le serveur normalise le client et calcule sa propre estimation
+ok 548 - devis: le serveur normalise le client et calcule sa propre estimation
+  ---
+  duration_ms: 4.980583
+  type: 'test'
+  ...
+# Subtest: devis: consentement, services, photos et notes sont strictement bornés
+ok 549 - devis: consentement, services, photos et notes sont strictement bornés
+  ---
+  duration_ms: 13.383875
+  type: 'test'
+  ...
+# Subtest: devis: identifiant et jeton de dépôt sont stables et séparés
+ok 550 - devis: identifiant et jeton de dépôt sont stables et séparés
+  ---
+  duration_ms: 23.0955
+  type: 'test'
+  ...
+# Subtest: devis: accusé de réception client sans notification vers une adresse métier
+ok 551 - devis: accusé de réception client sans notification vers une adresse métier
+  ---
+  duration_ms: 23.099083
+  type: 'test'
+  ...
+# Subtest: devis: UI lazy, callables et stockages privés restent alignés
+ok 552 - devis: UI lazy, callables et stockages privés restent alignés
+  ---
+  duration_ms: 3.075167
+  type: 'test'
+  ...
+# Subtest: rate limiting prefers the runtime IP over a forged forwarded header
+ok 553 - rate limiting prefers the runtime IP over a forged forwarded header
+  ---
+  duration_ms: 1.2135
+  type: 'test'
+  ...
+# Subtest: rate limiting canonicalizes IPv4-mapped and equivalent IPv6 forms
+ok 554 - rate limiting canonicalizes IPv4-mapped and equivalent IPv6 forms
+  ---
+  duration_ms: 5.995166
+  type: 'test'
+  ...
+# Subtest: rate limiting rejects malformed and oversized IP candidates
+ok 555 - rate limiting rejects malformed and oversized IP candidates
+  ---
+  duration_ms: 0.163625
+  type: 'test'
+  ...
+# Subtest: forwarded IP is only a bounded last resort
+ok 556 - forwarded IP is only a bounded last resort
+  ---
+  duration_ms: 0.235083
+  type: 'test'
+  ...
+# Subtest: real environment and credential files are not tracked
+ok 557 - real environment and credential files are not tracked
+  ---
+  duration_ms: 51.892667
+  type: 'test'
+  ...
+# Subtest: the Vite compatibility bridge is allowlist-only and blocks banking data
+ok 558 - the Vite compatibility bridge is allowlist-only and blocks banking data
+  ---
+  duration_ms: 1.132583
+  type: 'test'
+  ...
+# Subtest: App Hosting upload context excludes secrets explicitly
+ok 559 - App Hosting upload context excludes secrets explicitly
+  ---
+  duration_ms: 0.366834
+  type: 'test'
+  ...
+# Subtest: Storage is private by default and public roots are explicit
+ok 560 - Storage is private by default and public roots are explicit
+  ---
+  duration_ms: 0.381333
+  type: 'test'
+  ...
+# Subtest: Next admin routes require revoked-token checks, AAL2 and the active registry
+ok 561 - Next admin routes require revoked-token checks, AAL2 and the active registry
+  ---
+  duration_ms: 0.534291
+  type: 'test'
+  ...
+# Subtest: operational Functions authorization never falls back to an email
+ok 562 - operational Functions authorization never falls back to an email
+  ---
+  duration_ms: 0.515042
+  type: 'test'
+  ...
+# Subtest: admin invitation metadata cannot bypass owner-only Functions
+ok 563 - admin invitation metadata cannot bypass owner-only Functions
+  ---
+  duration_ms: 0.3425
+  type: 'test'
+  ...
+# Subtest: customer order history has no Firestore email fallback
+ok 564 - customer order history has no Firestore email fallback
+  ---
+  duration_ms: 0.986
+  type: 'test'
+  ...
+# Subtest: every callable transport under functions/src enforces App Check
+ok 565 - every callable transport under functions/src enforces App Check
+  ---
+  duration_ms: 19.438292
+  type: 'test'
+  ...
+# Subtest: every HTTP Function transport is inventoried with its non-App-Check boundary
+ok 566 - every HTTP Function transport is inventoried with its non-App-Check boundary
+  ---
+  duration_ms: 13.397916
+  type: 'test'
+  ...
+# Subtest: the complete Next API inventory is public-bounded or strongly authorized
+ok 567 - the complete Next API inventory is public-bounded or strongly authorized
+  ---
+  duration_ms: 1.657791
+  type: 'test'
+  ...
+# Subtest: analytics does not send visitor IPs to an external cleartext geo API
+ok 568 - analytics does not send visitor IPs to an external cleartext geo API
+  ---
+  duration_ms: 0.343958
+  type: 'test'
+  ...
+# Subtest: admin claim and transactional email logs do not expose account identifiers
+ok 569 - admin claim and transactional email logs do not expose account identifiers
+  ---
+  duration_ms: 0.45425
+  type: 'test'
+  ...
+# Subtest: retired E2E mutation endpoints are absent after G12-B:G3
+ok 570 - retired E2E mutation endpoints are absent after G12-B:G3
+  ---
+  duration_ms: 0.10875
+  type: 'test'
+  ...
+# Subtest: Functions declare Firebase Admin optional runtimes explicitly for Cloud Build
+ok 571 - Functions declare Firebase Admin optional runtimes explicitly for Cloud Build
+  ---
+  duration_ms: 0.152417
+  type: 'test'
+  ...
+# Subtest: browser hardening and self-XSS warning stay enabled
+ok 572 - browser hardening and self-XSS warning stay enabled
+  ---
+  duration_ms: 0.199375
+  type: 'test'
+  ...
+# Subtest: transactional email HTML escapes client and catalog strings
+ok 573 - transactional email HTML escapes client and catalog strings
+  ---
+  duration_ms: 38.1505
+  type: 'test'
+  ...
+# Subtest: every data-backed JSON-LD script neutralizes closing script tags
+ok 574 - every data-backed JSON-LD script neutralizes closing script tags
+  ---
+  duration_ms: 12.547667
+  type: 'test'
+  ...
+# Subtest: admin rich text and quote views do not inject stored markup
+ok 575 - admin rich text and quote views do not inject stored markup
+  ---
+  duration_ms: 2.357709
+  type: 'test'
+  ...
+# Subtest: PDF and OAuth callback outputs keep untrusted values out of executable markup
+ok 576 - PDF and OAuth callback outputs keep untrusted values out of executable markup
+  ---
+  duration_ms: 3.582667
+  type: 'test'
+  ...
+# Subtest: internal Functions errors never expose raw provider messages to clients
+ok 577 - internal Functions errors never expose raw provider messages to clients
+  ---
+  duration_ms: 20.566833
+  type: 'test'
+  ...
+# Subtest: support page context strips queries, fragments and payment-link secrets
+ok 578 - support page context strips queries, fragments and payment-link secrets
+  ---
+  duration_ms: 1.196625
+  type: 'test'
+  ...
+# Subtest: support launcher is absent from every payment-link route
+ok 579 - support launcher is absent from every payment-link route
+  ---
+  duration_ms: 28.949084
+  type: 'test'
+  ...
+# Subtest: les erreurs identiques sont dédupliquées sans perdre le nombre ni les dates
+ok 580 - les erreurs identiques sont dédupliquées sans perdre le nombre ni les dates
+  ---
+  duration_ms: 6.005875
+  type: 'test'
+  ...
+# Subtest: la projection retire les valeurs sensibles et conserve les corrélations sûres
+ok 581 - la projection retire les valeurs sensibles et conserve les corrélations sûres
+  ---
+  duration_ms: 0.375458
+  type: 'test'
+  ...
+# Subtest: les fenêtres et filtres Cloud Logging restent bornés
+ok 582 - les fenêtres et filtres Cloud Logging restent bornés
+  ---
+  duration_ms: 1.549916
+  type: 'test'
+  ...
+# Subtest: la consultation liste et détail est autorisée, auditée et fail-closed
+ok 583 - la consultation liste et détail est autorisée, auditée et fail-closed
+  ---
+  duration_ms: 1.3045
+  type: 'test'
+  ...
+# Subtest: le sink transforme uniquement les erreurs runtime utiles et ignore les request logs
+ok 584 - le sink transforme uniquement les erreurs runtime utiles et ignore les request logs
+  ---
+  duration_ms: 1.120875
+  type: 'test'
+  ...
+# Subtest: la projection temps réel est idempotente et ne stocke aucun payload brut
+ok 585 - la projection temps réel est idempotente et ne stocke aucun payload brut
+  ---
+  duration_ms: 2.562042
+  type: 'test'
+  ...
+# Subtest: le back-office écoute Firestore et ne rappelle plus la callable Cloud Logging
+ok 586 - le back-office écoute Firestore et ne rappelle plus la callable Cloud Logging
+  ---
+  duration_ms: 0.549584
+  type: 'test'
+  ...
+# Subtest: wishlist separates two accounts and guest; ambiguous legacy cache is never imported
+ok 587 - wishlist separates two accounts and guest; ambiguous legacy cache is never imported
+  ---
+  duration_ms: 15.792125
+  type: 'test'
+  ...
+# Subtest: wishlist imports guests once, shares subscriptions and ignores callbacks after unsubscribe
+ok 588 - wishlist imports guests once, shares subscriptions and ignores callbacks after unsubscribe
+  ---
+  duration_ms: 6.651542
+  type: 'test'
+  ...
+# Subtest: wishlist omits undefined prices and does not persist a rejected deletion
+ok 589 - wishlist omits undefined prices and does not persist a rejected deletion
+  ---
+  duration_ms: 3.043125
+  type: 'test'
+  ...
+# Subtest: a failed guest migration does not prevent reading the account wishlist
+ok 590 - a failed guest migration does not prevent reading the account wishlist
+  ---
+  duration_ms: 4.211125
+  type: 'test'
+  ...
+# Subtest: large wishlist clears bounded batches and preserves concurrently added favorites
+ok 591 - large wishlist clears bounded batches and preserves concurrently added favorites
+  ---
+  duration_ms: 15.366084
+  type: 'test'
+  ...
+1..591
+# tests 591
+# suites 0
+# pass 591
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7374.571792

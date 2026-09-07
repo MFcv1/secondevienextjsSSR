@@ -10,6 +10,9 @@ Ouvrir le chapitre du sujet traité, pas toute cette bibliothèque.
 
 ## Références durables
 
+Livraison des interactions : [dossier du 7 septembre](audits/2026-09-07-livraison-interactions/README.md),
+avec qualification, gate bloquante et fiche de recette. Aucun nouveau déploiement sandbox.
+
 | Sujet | Référence | À lire pour |
 | --- | --- | --- |
 | Next/SEO | [NEXTJS_SEO.md](architecture/NEXTJS_SEO.md) | Rendu, routes, cache, indexation |

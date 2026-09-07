@@ -1,0 +1,1531 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-09-07",
+  "status": "local_only_not_deployed",
+  "runtime": {
+    "node": "22.23.2",
+    "pnpm": "11.7.0",
+    "next": "16.3.0",
+    "react": "19.2.7"
+  },
+  "tests": {
+    "totals": {
+      "tests": 591,
+      "pass": 591,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "commandArgv": [
+      "/Users/matthis/.nvm/versions/node/v22.23.2/bin/node",
+      "--require",
+      "./tests/commerce/helpers/no-network.cjs",
+      "--test",
+      "tests/commerce/domain/gate2-policy-inventory.test.cjs",
+      "tests/commerce/domain/gate6-migration.test.cjs",
+      "tests/commerce/domain/compatibility.test.cjs",
+      "tests/commerce/domain/event-dispatch.test.cjs",
+      "tests/commerce/domain/gate5-consumers.test.cjs",
+      "tests/commerce/domain/legacy-entrypoint-audit.test.cjs",
+      "tests/commerce/domain/interaction-audit.test.cjs",
+      "tests/commerce/domain/gate7a-operations.test.cjs",
+      "tests/commerce/domain/delivery-policy-admin.test.cjs",
+      "tests/commerce/domain/regression-matrix.test.cjs",
+      "tests/commerce/domain/admin-orders-presentation.test.cjs",
+      "tests/commerce/domain/return-decision-audit.test.cjs",
+      "tests/commerce/domain/property.test.cjs",
+      "tests/commerce/domain/provider-create-window.test.cjs",
+      "tests/commerce/domain/document-delivery.test.cjs",
+      "tests/commerce/domain/payment-reconstruction.test.cjs",
+      "tests/commerce/domain/customer-return-requests.test.cjs",
+      "tests/commerce/domain/admin-payment-link.test.cjs",
+      "tests/commerce/domain/outbox-runtime-audit.test.cjs",
+      "tests/commerce/domain/order-state.test.cjs",
+      "tests/commerce/domain/gate4-commands-returns.test.cjs",
+      "tests/commerce/domain/promotion-code.test.cjs",
+      "tests/commerce/faults/gate3-saga.test.cjs",
+      "tests/commerce/faults/gate3-workers.test.cjs",
+      "tests/commerce/faults/idempotency.test.cjs",
+      "tests/commerce/faults/gate4-refund.test.cjs",
+      "tests/commerce/resilience/checkout-boundaries.test.cjs",
+      "tests/catalog/core.test.cjs",
+      "tests/catalog/product-publication.test.cjs",
+      "tests/catalog/security.test.cjs",
+      "tests/catalog/availability-concurrency.test.cjs",
+      "tests/catalog/resilience.test.cjs",
+      "tests/catalog/publication-concurrency-audit.test.cjs",
+      "tests/catalog/mutation-deletion-audit.test.cjs",
+      "tests/wishlist-interactions.test.mjs",
+      "tests/public-search-audit.test.mjs",
+      "tests/cart-event-handoff.test.mjs",
+      "tests/cart-persistence-contract.test.cjs",
+      "tests/passkey-registration-audit.test.cjs",
+      "tests/auth-claims.test.cjs",
+      "tests/auth-store-contract.test.cjs",
+      "tests/auth-custom-token-sign-in.test.mjs",
+      "tests/auth-google-diagnostics.test.mjs",
+      "tests/auth-unified-otp-contract.test.cjs",
+      "tests/auth-backend-transitions.test.cjs",
+      "tests/auth-admin-revocation.test.cjs",
+      "tests/auth-assurance.test.cjs",
+      "tests/auth-region-convergence.test.cjs",
+      "tests/auth-email-provider-adapter.test.cjs",
+      "tests/passkey-portability-contract.test.cjs",
+      "tests/passkey-server-hardening.test.cjs",
+      "tests/admin-token-retry.test.mjs",
+      "tests/admin-data-cache-contract.test.mjs",
+      "tests/admin-navigation-contract.test.mjs",
+      "tests/quote-requests.test.cjs",
+      "tests/quote-receipt-audit.test.cjs",
+      "tests/newsletter-rewards.test.cjs",
+      "tests/invoicing/manual-invoices.test.cjs",
+      "tests/invoicing/manual-invoice-delivery-audit.test.cjs",
+      "tests/security-hardening.test.mjs",
+      "tests/security-client-ip.test.cjs",
+      "tests/security-output-encoding.test.cjs",
+      "tests/public-keyboard-accessibility.test.mjs",
+      "tests/account-route-contract.test.mjs",
+      "tests/support-chat-privacy.test.mjs",
+      "tests/email-visual-system.test.cjs",
+      "tests/backend-closeout.test.cjs",
+      "tests/admin-migration-audit.test.cjs",
+      "tests/otp-state-audit.test.cjs",
+      "tests/passkey-transaction-audit.test.cjs",
+      "tests/quote-photo-audit.test.cjs",
+      "tests/newsletter-delivery-audit.test.cjs",
+      "tests/financial-history-projection.test.cjs",
+      "tests/meta-authorization-audit.test.cjs",
+      "tests/auth-redirect-audit.test.cjs",
+      "tests/commerce/domain/customer-ui-audit.test.cjs",
+      "tests/admin-export-audit.test.cjs",
+      "tests/admin-returns-audit.test.cjs",
+      "tests/invoicing/manual-invoice-artifact-audit.test.cjs",
+      "tests/commerce/domain/expiry-extension-audit.test.cjs",
+      "tests/publication-concurrency-audit.test.mjs",
+      "tests/commerce/domain/cart-recovery-races-audit.test.cjs",
+      "tests/admin-public-catalog-audit.test.mjs",
+      "tests/inventory-ordering-audit.test.mjs",
+      "tests/category-filter-audit.test.mjs",
+      "tests/login-retry-isolation-audit.test.mjs",
+      "tests/dom-lifetime-audit.test.mjs",
+      "tests/quote-client-audit.test.mjs",
+      "tests/system-incidents.test.cjs",
+      "tests/analytics-events-buffer.test.mjs",
+      "tests/analytics-realtime.test.mjs",
+      "tests/observability-contract.test.cjs",
+      "tests/function-metrics.test.mjs",
+      "tests/analytics-rollups-contract.test.cjs",
+      "tests/analytics-live-sessions.test.mjs",
+      "tests/admin-analytics-performance.test.mjs",
+      "tests/commerce/resilience/incident-console.test.cjs",
+      "tests/manual-audit-completion.test.cjs"
+    ],
+    "networkGuard": "tests/commerce/helpers/no-network.cjs",
+    "testFileCount": 98,
+    "files": [
+      {
+        "file": "tests/commerce/domain/gate2-policy-inventory.test.cjs",
+        "sha256": "9233b9eeae371934d376a5ffd4ef78207fa23242ea1e7cb00798ba7c71849e04"
+      },
+      {
+        "file": "tests/commerce/domain/gate6-migration.test.cjs",
+        "sha256": "c2689a88d6b5a836bd2a0564509526a7c40bf3b352ba5021a169fce0ed3f41d9"
+      },
+      {
+        "file": "tests/commerce/domain/compatibility.test.cjs",
+        "sha256": "b36bf707f91ea15740b0c338606db0c5bcfcee87658f978b6e3531189a0f4ce0"
+      },
+      {
+        "file": "tests/commerce/domain/event-dispatch.test.cjs",
+        "sha256": "de4659eb0e55188fd26c3f8828a1a140bc9253bafe74e74b280917a827edc9bb"
+      },
+      {
+        "file": "tests/commerce/domain/gate5-consumers.test.cjs",
+        "sha256": "3f9969c997daa3456abe3e927dd553ece49131cce3a25df1c9d2ce88ad9bfc61"
+      },
+      {
+        "file": "tests/commerce/domain/legacy-entrypoint-audit.test.cjs",
+        "sha256": "52658ba0d636e5f3ab24ee6a23d05dbf220d3fdcc0201b0cdb142556ca444b45"
+      },
+      {
+        "file": "tests/commerce/domain/interaction-audit.test.cjs",
+        "sha256": "dc5ddc215418e23a18697f9666c69a3c35c5e4b9df4887da9d77dfd024688955"
+      },
+      {
+        "file": "tests/commerce/domain/gate7a-operations.test.cjs",
+        "sha256": "43b52a413d30909ec45bcdd4c05bcdfce30e63bdf088ac6c6db814e91ccaa12a"
+      },
+      {
+        "file": "tests/commerce/domain/delivery-policy-admin.test.cjs",
+        "sha256": "4687ca8c0d169f024cbc8130769623795c311d6390142238c43d84d41c39224c"
+      },
+      {
+        "file": "tests/commerce/domain/regression-matrix.test.cjs",
+        "sha256": "e8c5d7c10a8b152ec3769c4647ac79222d501cfd4102a12d3c19636a9f9ad241"
+      },
+      {
+        "file": "tests/commerce/domain/admin-orders-presentation.test.cjs",
+        "sha256": "3f302f9372ca0d59b146870bf45184e634a1f620ab9b0c4cf92022d92410f108"
+      },
+      {
+        "file": "tests/commerce/domain/return-decision-audit.test.cjs",
+        "sha256": "a571e2091b55939dafacf355dd51bf6e178ab2f71a3d15d0b431ac7421c38960"
+      },
+      {
+        "file": "tests/commerce/domain/property.test.cjs",
+        "sha256": "2c353311c0feb4e3973ab3663736418bc6809370b5ebf6816965d016597b5361"
+      },
+      {
+        "file": "tests/commerce/domain/provider-create-window.test.cjs",
+        "sha256": "624619dc5a28ea5a7f3292a71d85a2dbb3d726e2a743b90fa0836148d775b35c"
+      },
+      {
+        "file": "tests/commerce/domain/document-delivery.test.cjs",
+        "sha256": "aa45da36449f31213985e20a863ab1d75df6d5d140966bc73629ae339ba65bbc"
+      },
+      {
+        "file": "tests/commerce/domain/payment-reconstruction.test.cjs",
+        "sha256": "f34780d436baa1fb9e46ed202fcad793da79352eba58ff1188dfa12da43ac375"
+      },
+      {
+        "file": "tests/commerce/domain/customer-return-requests.test.cjs",
+        "sha256": "04ca2ac038494d3bf0e684c704e30ae3a35c5694479e2d77bbfb6aa5ee20e840"
+      },
+      {
+        "file": "tests/commerce/domain/admin-payment-link.test.cjs",
+        "sha256": "4ca86bf6fd8c61fdec076de92c073f44218f2f71bfe54195ca2b268e1a07624b"
+      },
+      {
+        "file": "tests/commerce/domain/outbox-runtime-audit.test.cjs",
+        "sha256": "bbea056262d2a27a49e508083008a1dc0777d531c6cf0c785db2588f5f8d39e6"
+      },
+      {
+        "file": "tests/commerce/domain/order-state.test.cjs",
+        "sha256": "15a87b679c1ca8b4cfbb5a3d3bcf2da61ebe0326b7083cec3347fe659ddc2984"
+      },
+      {
+        "file": "tests/commerce/domain/gate4-commands-returns.test.cjs",
+        "sha256": "6e29f85169d556a13c7cd1e4ffefa859b4a8d0a3f9bc219281b9f27a8b97d9a6"
+      },
+      {
+        "file": "tests/commerce/domain/promotion-code.test.cjs",
+        "sha256": "8e2107e49a40df2f87e411ab2d0b493b48fbdbcf96183e207c5714f1134f8780"
+      },
+      {
+        "file": "tests/commerce/faults/gate3-saga.test.cjs",
+        "sha256": "b2323809555ecc423e44afbc17a3a1e0466fbf1167a337c1321e47be56905e5b"
+      },
+      {
+        "file": "tests/commerce/faults/gate3-workers.test.cjs",
+        "sha256": "9a0fd97e63533c3c306ce32a6ad05cbe1a5e194dfa94ef6b7a3b078be5438162"
+      },
+      {
+        "file": "tests/commerce/faults/idempotency.test.cjs",
+        "sha256": "1da2f17af0191d3b4917b1f75be14217a738e0226cfa50f8c823a6e89d1658c8"
+      },
+      {
+        "file": "tests/commerce/faults/gate4-refund.test.cjs",
+        "sha256": "1aa71412f460156fedf608dbb716f5a1ba207c996ec232097722016f77b7e953"
+      },
+      {
+        "file": "tests/commerce/resilience/checkout-boundaries.test.cjs",
+        "sha256": "78849afbb75fc7e5ab4b560ac3513833450d1fc81a6fc7370521c1605fbecee9"
+      },
+      {
+        "file": "tests/catalog/core.test.cjs",
+        "sha256": "12491886d74ba3c5e835d60bc6b90eab3cf2c4a3599be2257af471194fac518d"
+      },
+      {
+        "file": "tests/catalog/product-publication.test.cjs",
+        "sha256": "6502535628f2b35eff2ab6e82b468de30b6ae2a7c8249e66f47f25cf00b1d1de"
+      },
+      {
+        "file": "tests/catalog/security.test.cjs",
+        "sha256": "97cea30810f23e011d06b111e69ef74a62cee378c91b7434d28eb13a1e8e06f0"
+      },
+      {
+        "file": "tests/catalog/availability-concurrency.test.cjs",
+        "sha256": "441a2b73f20e31da7f9c1203eadd4806870ba5e82b5475f0680aeafcfe294413"
+      },
+      {
+        "file": "tests/catalog/resilience.test.cjs",
+        "sha256": "1d022941a7449f8ce6a4c11bb45078201f3e0796fa9b5cfd403a31b25c98f8ef"
+      },
+      {
+        "file": "tests/catalog/publication-concurrency-audit.test.cjs",
+        "sha256": "2ea5ca9ff17f94f2830ccd1055ca7f1459d7212b2301a13353120d0d4d9e31c9"
+      },
+      {
+        "file": "tests/catalog/mutation-deletion-audit.test.cjs",
+        "sha256": "f66866a3dc875c65beb2402baf2c239ee36cc0d22e2d5a52db40ea87a6461436"
+      },
+      {
+        "file": "tests/wishlist-interactions.test.mjs",
+        "sha256": "3df8a2bd6375b313b96a5abc4605714e28871425cf92a5271fb0e4f55ade1bbe"
+      },
+      {
+        "file": "tests/public-search-audit.test.mjs",
+        "sha256": "839735406272f690435f0b117ca132d066a39394790e2b9ef8741395634ad034"
+      },
+      {
+        "file": "tests/cart-event-handoff.test.mjs",
+        "sha256": "9fca7ea9f2c5cfe28530699e9928cfcf0c459b7d8e18b2f2a2bfa7b251a030d3"
+      },
+      {
+        "file": "tests/cart-persistence-contract.test.cjs",
+        "sha256": "dc36ba6379b30591734a792ff2b3fafdd29cad2e8d905805540e0fa7013bead0"
+      },
+      {
+        "file": "tests/passkey-registration-audit.test.cjs",
+        "sha256": "7190b92f6087c1be47f986b7751692d8409cc95fcd428c408381ba402966478d"
+      },
+      {
+        "file": "tests/auth-claims.test.cjs",
+        "sha256": "3d63010c6c3bd139d23575e754dad3d07fd1d1ff8e425771333117c85b14e3f9"
+      },
+      {
+        "file": "tests/auth-store-contract.test.cjs",
+        "sha256": "702cc6ee51761a7f005dc4d003580142fdbbb67b414cef60c22290b1ebe347ae"
+      },
+      {
+        "file": "tests/auth-custom-token-sign-in.test.mjs",
+        "sha256": "3a9a69c376bcd50dc7011c1a9211f3a9c1470b5b10b5b12e1aef67c008614c7a"
+      },
+      {
+        "file": "tests/auth-google-diagnostics.test.mjs",
+        "sha256": "5d9c4ce0a751bf2748d8b2a8aad54303d217392e4cd1f1a4e5ede34a2b26e0df"
+      },
+      {
+        "file": "tests/auth-unified-otp-contract.test.cjs",
+        "sha256": "717f276d3d2abd5bc4ce97e8c63aea38fa2a8c7cb1caeffd7ccb31cf64d9ef2e"
+      },
+      {
+        "file": "tests/auth-backend-transitions.test.cjs",
+        "sha256": "d3e255b36f73a645feddb1c6ca3078e4734e30ade9587e473e1ba45202324160"
+      },
+      {
+        "file": "tests/auth-admin-revocation.test.cjs",
+        "sha256": "b22b8f864fe8c173912f30d2d5f09db8dae29dc4125a46b93a16c646d871c62e"
+      },
+      {
+        "file": "tests/auth-assurance.test.cjs",
+        "sha256": "9c439d174679ed748b337c5a15c16be9486a2280798dd65dd4b24ee141383e74"
+      },
+      {
+        "file": "tests/auth-region-convergence.test.cjs",
+        "sha256": "851ed641de6dba488cf149104c5bcda19ac75275615b9813da948cee2c03be41"
+      },
+      {
+        "file": "tests/auth-email-provider-adapter.test.cjs",
+        "sha256": "f167e873d6d0705d4db83a8415d2da9bc17a6e9ddfedca00814095d75871d83b"
+      },
+      {
+        "file": "tests/passkey-portability-contract.test.cjs",
+        "sha256": "dd5233e76644d113aacc12ce9eeed88f4725841e0580e21e02e8dbeef3cc09ce"
+      },
+      {
+        "file": "tests/passkey-server-hardening.test.cjs",
+        "sha256": "cf6615f6c0662ca47175afe3e4c0b7ee90289bd2abbd7b6437327eb622efb5af"
+      },
+      {
+        "file": "tests/admin-token-retry.test.mjs",
+        "sha256": "aa4786a8f111cca5ceac6391b208e4c96cbc1f3c34e71df74246bc9afe651c87"
+      },
+      {
+        "file": "tests/admin-data-cache-contract.test.mjs",
+        "sha256": "fd55f7af89bba4b362a5c0b00a482fbfb4fea60e81b72f8d5f56baf98cf75ae2"
+      },
+      {
+        "file": "tests/admin-navigation-contract.test.mjs",
+        "sha256": "bd719e3338ff55151e8e0031d403d99e53c0315e67dbb51307024df723aaba1c"
+      },
+      {
+        "file": "tests/quote-requests.test.cjs",
+        "sha256": "a46af1e7c07eac673275944fb9636fa45f2eff6e1514aee622e9de3f47de2426"
+      },
+      {
+        "file": "tests/quote-receipt-audit.test.cjs",
+        "sha256": "82ce01c4f8372b97fd919a8de336c86b77a59e5e63be54e95196054f7de28d88"
+      },
+      {
+        "file": "tests/newsletter-rewards.test.cjs",
+        "sha256": "70be36d87128b45aeffe432dca03d044cd2f044748605f54382b45732e710fe4"
+      },
+      {
+        "file": "tests/invoicing/manual-invoices.test.cjs",
+        "sha256": "e30f7ef63a84023c3b664faee8abda9f66f01b3f1190b6857f91b6dc8c4d0558"
+      },
+      {
+        "file": "tests/invoicing/manual-invoice-delivery-audit.test.cjs",
+        "sha256": "f41f35562dbb5f8711da5b3024e4d2a6c14b7121c5e24a8bdae39ccebc4ce4cd"
+      },
+      {
+        "file": "tests/security-hardening.test.mjs",
+        "sha256": "de4500ae9af347a7008e08c1b8d4a64bb22d75a33c107c6bb694d8ab7235639d"
+      },
+      {
+        "file": "tests/security-client-ip.test.cjs",
+        "sha256": "0a5564cd3583fc3515fd35577d94a40e2f909ee011cb8750e77e5a882baff53f"
+      },
+      {
+        "file": "tests/security-output-encoding.test.cjs",
+        "sha256": "ff552858eb8780863ab3cb0dd0dcee85dc6b641e3a4d68e308bb97eac04d852f"
+      },
+      {
+        "file": "tests/public-keyboard-accessibility.test.mjs",
+        "sha256": "7090ce116f53b651ccacf2b136ce7a7234e09d92763d866ec40e1b1f9d3cf708"
+      },
+      {
+        "file": "tests/account-route-contract.test.mjs",
+        "sha256": "366c1c3ff40be2e60ecd1640da080f447b44db233deca8405d29a690c2ae46f0"
+      },
+      {
+        "file": "tests/support-chat-privacy.test.mjs",
+        "sha256": "6f12db9607d10bd4f179373642df5dfeee0a8fba0d43f39c2f7c71aca3e617ac"
+      },
+      {
+        "file": "tests/email-visual-system.test.cjs",
+        "sha256": "a38db0e54145afd871dcdd3c993dfaf306a8d94e59b4bc7fd8875db84163397c"
+      },
+      {
+        "file": "tests/backend-closeout.test.cjs",
+        "sha256": "4930dc21d0b5e6112d0dcb34057bfd305fda9d384bb2edc8f2de6a6d84540d8c"
+      },
+      {
+        "file": "tests/admin-migration-audit.test.cjs",
+        "sha256": "cc63cca093764e3dca33f0e4e1fe2bc7b4052d929cfedecbac35bafcb8441c05"
+      },
+      {
+        "file": "tests/otp-state-audit.test.cjs",
+        "sha256": "8705281062f1c6933253bd3ec453cd629b7b7a31e000754407f40e884b1c72a5"
+      },
+      {
+        "file": "tests/passkey-transaction-audit.test.cjs",
+        "sha256": "51ba13fbd609fdb62ab10876b1f214c77030dc32b2c5d149be2c452d66fce214"
+      },
+      {
+        "file": "tests/quote-photo-audit.test.cjs",
+        "sha256": "58514bf513834c2f22ca2be0d58279fa56af36338719ab2f7c022415ae212482"
+      },
+      {
+        "file": "tests/newsletter-delivery-audit.test.cjs",
+        "sha256": "3c44bf22647df7c894b7555ec9669fadcf4f50d0ef06c02f1d9abcf026b4d72f"
+      },
+      {
+        "file": "tests/financial-history-projection.test.cjs",
+        "sha256": "fe901e1505790ccc3e9f10fc7d5bc272e6acc17d0ce5e9fa7083e98e076025eb"
+      },
+      {
+        "file": "tests/meta-authorization-audit.test.cjs",
+        "sha256": "5c11f8179843fb49b7f601ca9f0c356767034a128c0e9dacb463af51f815b667"
+      },
+      {
+        "file": "tests/auth-redirect-audit.test.cjs",
+        "sha256": "ea5a6b80e7d5e2fa5f53038a114fbaac584a8bc3aef11bd2d1a9c4a467016a5f"
+      },
+      {
+        "file": "tests/commerce/domain/customer-ui-audit.test.cjs",
+        "sha256": "a9ead666bf35dfb5e6471fd7f7862147ccb211f03748b595ddd7b729c71c6f6e"
+      },
+      {
+        "file": "tests/admin-export-audit.test.cjs",
+        "sha256": "1c9a1b4101701fd25407058f43f76e4c56e3dfed5c9d3f2e83695343af99c341"
+      },
+      {
+        "file": "tests/admin-returns-audit.test.cjs",
+        "sha256": "327e461a8209059906f6665ba86b9e4b76ff1bbd23645341fabca82f43c35f39"
+      },
+      {
+        "file": "tests/invoicing/manual-invoice-artifact-audit.test.cjs",
+        "sha256": "5e8035a88648f0d0307eb357c458f7aa73c1565b37b4e45c83faff811c1930ac"
+      },
+      {
+        "file": "tests/commerce/domain/expiry-extension-audit.test.cjs",
+        "sha256": "e0a22501243f93f75b722fd315d2c0701d5207d6fa2b8f4afe6af7e0f40399fb"
+      },
+      {
+        "file": "tests/publication-concurrency-audit.test.mjs",
+        "sha256": "db4e77e77eac65ffb6889bbbe61b380ba3cb2cb0fe352a7b31285297e4368bb8"
+      },
+      {
+        "file": "tests/commerce/domain/cart-recovery-races-audit.test.cjs",
+        "sha256": "f0b4aa1ab30403ca274ce5c12b824dd0b179aad539e3c0b4a223c35c8a15f102"
+      },
+      {
+        "file": "tests/admin-public-catalog-audit.test.mjs",
+        "sha256": "34bd1f8c9a2d678dcfd34f06f871d64b6116522ee2044e43865e00a5c6722a9e"
+      },
+      {
+        "file": "tests/inventory-ordering-audit.test.mjs",
+        "sha256": "582f1a2ca86eb24a190a0135becd9b240ea7495665919296cb9966b037f1f3ed"
+      },
+      {
+        "file": "tests/category-filter-audit.test.mjs",
+        "sha256": "87e0f755b6d1d225aed1b02c9c7e698a64d1bd4a7aa79c44931e7c2e6de1ccdf"
+      },
+      {
+        "file": "tests/login-retry-isolation-audit.test.mjs",
+        "sha256": "7341ad83aa177b3176edec997f3b263d569c9a6c83c39607a990b1c17fecf239"
+      },
+      {
+        "file": "tests/dom-lifetime-audit.test.mjs",
+        "sha256": "6296b26d46f77f8b3d5e9191cded0bd75baffcdc00601a608e35af1f246b9e8c"
+      },
+      {
+        "file": "tests/quote-client-audit.test.mjs",
+        "sha256": "17900d410ab61ac512917dc468416f801c069ea7e1ef6558ed51efbb16fe16fc"
+      },
+      {
+        "file": "tests/system-incidents.test.cjs",
+        "sha256": "3aa0bc83267dbd4dcf5a20d1dc7751c87ec63d00216f543e37625772b3c3c3e7"
+      },
+      {
+        "file": "tests/analytics-events-buffer.test.mjs",
+        "sha256": "3fb4c97e9c5162e3013272a24caa5bb5a4d844ee22829a848189584b59b069a3"
+      },
+      {
+        "file": "tests/analytics-realtime.test.mjs",
+        "sha256": "6ac50fa8685dda282a6b2dfe05a2b8d0e7c1e865ec9810b4bf660c526a37f632"
+      },
+      {
+        "file": "tests/observability-contract.test.cjs",
+        "sha256": "b7fb93aec247e12cbb4ec1d989aff77d47aa1092995708646b8719ce7bfeb541"
+      },
+      {
+        "file": "tests/function-metrics.test.mjs",
+        "sha256": "54963f92be5f80a639fd6d4d01f6e3ae5d1ce74ef0c6d201baabbcdfde5ada4b"
+      },
+      {
+        "file": "tests/analytics-rollups-contract.test.cjs",
+        "sha256": "f85b1643beb6cb5d7a0802ed05cf47bb9063fc473a44dbfcf1a2e6c0d57aff50"
+      },
+      {
+        "file": "tests/analytics-live-sessions.test.mjs",
+        "sha256": "aad918308aa74056fb4536d2c6632c1ad53bb4044a4f9dbd7ca5e5742b8ccf2d"
+      },
+      {
+        "file": "tests/admin-analytics-performance.test.mjs",
+        "sha256": "1bc2aace5ec01e89d0f2f42a513242ad28728e2661480be68c38e1be6ff886fe"
+      },
+      {
+        "file": "tests/commerce/resilience/incident-console.test.cjs",
+        "sha256": "6782faf5a444f350d8eed9552948151ff511b48c01f0cee9f34d4a74cc6b7525"
+      },
+      {
+        "file": "tests/manual-audit-completion.test.cjs",
+        "sha256": "681cca1cab6906b46fe9b4c721c5e895a5b9ad920c33ce89a26c4cbbb5b7c525"
+      }
+    ],
+    "logSha256": "db867a92e63e34decd81e7e641ee2a9f20c2165e93ae214e4a89b123f238dc82"
+  },
+  "eslint": {
+    "files": 446,
+    "errors": 0,
+    "warnings": 121,
+    "arguments": [
+      "node_modules/eslint/bin/eslint.js",
+      "<448-entry inventory filtered to JS/JSX/MJS/CJS/TS/TSX: 446 files>",
+      "--no-ignore",
+      "-f",
+      "json"
+    ],
+    "alerts": [
+      {
+        "file": "app/RouteTransitionIsland.jsx",
+        "line": 254,
+        "column": 13,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "app/error.jsx",
+        "line": 15,
+        "column": 67,
+        "rule": "react/no-unescaped-entities",
+        "severity": 1,
+        "message": "`'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`."
+      },
+      {
+        "file": "app/not-found.jsx",
+        "line": 16,
+        "column": 70,
+        "rule": "react/no-unescaped-entities",
+        "severity": 1,
+        "message": "`'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`."
+      },
+      {
+        "file": "app/produit/[slugOrId]/page.jsx",
+        "line": 135,
+        "column": 11,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "app/wishlist/WishlistPageIsland.jsx",
+        "line": 89,
+        "column": 55,
+        "rule": "react-hooks/exhaustive-deps",
+        "severity": 1,
+        "message": "The ref value 'attemptedProductsRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'attemptedProductsRef.current' to a variable inside the effect, and use that variable in the cleanup function."
+      },
+      {
+        "file": "src/kit/admin/AdminAnalytics.jsx",
+        "line": 170,
+        "column": 9,
+        "rule": "jsx-a11y/no-static-element-interactions",
+        "severity": 1,
+        "message": "Avoid non-native interactive elements. If using native HTML is not possible, add an appropriate role and support for tabbing, mouse, keyboard, and touch inputs to an interactive content element."
+      },
+      {
+        "file": "src/kit/admin/AdminAnalytics.jsx",
+        "line": 539,
+        "column": 41,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/admin/AdminDashboard.jsx",
+        "line": 928,
+        "column": 70,
+        "rule": "react-hooks/exhaustive-deps",
+        "severity": 1,
+        "message": "The ref value 'historyRequestRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'historyRequestRef.current' to a variable inside the effect, and use that variable in the cleanup function."
+      },
+      {
+        "file": "src/kit/admin/AdminForm.jsx",
+        "line": 1398,
+        "column": 15,
+        "rule": "jsx-a11y/no-static-element-interactions",
+        "severity": 1,
+        "message": "Avoid non-native interactive elements. If using native HTML is not possible, add an appropriate role and support for tabbing, mouse, keyboard, and touch inputs to an interactive content element."
+      },
+      {
+        "file": "src/kit/admin/AdminForm.jsx",
+        "line": 1406,
+        "column": 19,
+        "rule": "jsx-a11y/no-static-element-interactions",
+        "severity": 1,
+        "message": "Avoid non-native interactive elements. If using native HTML is not possible, add an appropriate role and support for tabbing, mouse, keyboard, and touch inputs to an interactive content element."
+      },
+      {
+        "file": "src/kit/admin/AdminForm.jsx",
+        "line": 1407,
+        "column": 21,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/admin/AdminForm.jsx",
+        "line": 1450,
+        "column": 17,
+        "rule": "jsx-a11y/label-has-associated-control",
+        "severity": 1,
+        "message": "A form label must be associated with a control."
+      },
+      {
+        "file": "src/kit/admin/AdminForm.jsx",
+        "line": 1455,
+        "column": 19,
+        "rule": "jsx-a11y/label-has-associated-control",
+        "severity": 1,
+        "message": "A form label must be associated with a control."
+      },
+      {
+        "file": "src/kit/admin/AdminForm.jsx",
+        "line": 1461,
+        "column": 17,
+        "rule": "jsx-a11y/label-has-associated-control",
+        "severity": 1,
+        "message": "A form label must be associated with a control."
+      },
+      {
+        "file": "src/kit/admin/AdminForm.jsx",
+        "line": 1471,
+        "column": 45,
+        "rule": "jsx-a11y/no-autofocus",
+        "severity": 1,
+        "message": "The autoFocus prop should not be used, as it can reduce usability and accessibility for users."
+      },
+      {
+        "file": "src/kit/admin/AdminForm.jsx",
+        "line": 1474,
+        "column": 17,
+        "rule": "jsx-a11y/label-has-associated-control",
+        "severity": 1,
+        "message": "A form label must be associated with a control."
+      },
+      {
+        "file": "src/kit/admin/AdminForm.jsx",
+        "line": 1480,
+        "column": 17,
+        "rule": "jsx-a11y/label-has-associated-control",
+        "severity": 1,
+        "message": "A form label must be associated with a control."
+      },
+      {
+        "file": "src/kit/admin/AdminForm.jsx",
+        "line": 1485,
+        "column": 17,
+        "rule": "jsx-a11y/label-has-associated-control",
+        "severity": 1,
+        "message": "A form label must be associated with a control."
+      },
+      {
+        "file": "src/kit/admin/AdminForm.jsx",
+        "line": 1493,
+        "column": 17,
+        "rule": "jsx-a11y/label-has-associated-control",
+        "severity": 1,
+        "message": "A form label must be associated with a control."
+      },
+      {
+        "file": "src/kit/admin/AdminHomepage.jsx",
+        "line": 1004,
+        "column": 41,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/admin/AdminItemList.jsx",
+        "line": 312,
+        "column": 57,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/admin/AdminStudio.jsx",
+        "line": 65,
+        "column": 40,
+        "rule": "react/no-unescaped-entities",
+        "severity": 1,
+        "message": "`'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`."
+      },
+      {
+        "file": "src/kit/admin/AdminStudio.jsx",
+        "line": 96,
+        "column": 53,
+        "rule": "react/no-unescaped-entities",
+        "severity": 1,
+        "message": "`'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`."
+      },
+      {
+        "file": "src/kit/admin/AdminStudio.jsx",
+        "line": 96,
+        "column": 108,
+        "rule": "react/no-unescaped-entities",
+        "severity": 1,
+        "message": "`'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`."
+      },
+      {
+        "file": "src/kit/admin/GlobalInventoryView.jsx",
+        "line": 102,
+        "column": 17,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/admin/GlobalInventoryView.jsx",
+        "line": 354,
+        "column": 36,
+        "rule": "react/no-unescaped-entities",
+        "severity": 1,
+        "message": "`'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`."
+      },
+      {
+        "file": "src/kit/admin/GlobalInventoryView.jsx",
+        "line": 372,
+        "column": 25,
+        "rule": "jsx-a11y/label-has-associated-control",
+        "severity": 1,
+        "message": "A form label must be associated with a control."
+      },
+      {
+        "file": "src/kit/admin/GlobalInventoryView.jsx",
+        "line": 373,
+        "column": 37,
+        "rule": "react/no-unescaped-entities",
+        "severity": 1,
+        "message": "`\"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`."
+      },
+      {
+        "file": "src/kit/admin/GlobalInventoryView.jsx",
+        "line": 373,
+        "column": 49,
+        "rule": "react/no-unescaped-entities",
+        "severity": 1,
+        "message": "`\"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`."
+      },
+      {
+        "file": "src/kit/admin/components/AdminImageCard.jsx",
+        "line": 41,
+        "column": 9,
+        "rule": "jsx-a11y/no-noninteractive-element-interactions",
+        "severity": 1,
+        "message": "Non-interactive elements should not be assigned mouse or keyboard event listeners."
+      },
+      {
+        "file": "src/kit/admin/components/AdminImageCard.jsx",
+        "line": 69,
+        "column": 25,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/admin/components/ImageCropperModal.jsx",
+        "line": 68,
+        "column": 117,
+        "rule": "react/no-unescaped-entities",
+        "severity": 1,
+        "message": "`'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`."
+      },
+      {
+        "file": "src/kit/admin/components/TextEditorModal.jsx",
+        "line": 38,
+        "column": 13,
+        "rule": "jsx-a11y/click-events-have-key-events",
+        "severity": 1,
+        "message": "Visible, non-interactive elements with click handlers must have at least one keyboard listener."
+      },
+      {
+        "file": "src/kit/admin/components/TextEditorModal.jsx",
+        "line": 38,
+        "column": 13,
+        "rule": "jsx-a11y/no-static-element-interactions",
+        "severity": 1,
+        "message": "Avoid non-native interactive elements. If using native HTML is not possible, add an appropriate role and support for tabbing, mouse, keyboard, and touch inputs to an interactive content element."
+      },
+      {
+        "file": "src/kit/commerce/CartSidebar.jsx",
+        "line": 115,
+        "column": 13,
+        "rule": "jsx-a11y/click-events-have-key-events",
+        "severity": 1,
+        "message": "Visible, non-interactive elements with click handlers must have at least one keyboard listener."
+      },
+      {
+        "file": "src/kit/commerce/CartSidebar.jsx",
+        "line": 115,
+        "column": 13,
+        "rule": "jsx-a11y/no-static-element-interactions",
+        "severity": 1,
+        "message": "Avoid non-native interactive elements. If using native HTML is not possible, add an appropriate role and support for tabbing, mouse, keyboard, and touch inputs to an interactive content element."
+      },
+      {
+        "file": "src/kit/commerce/CartSidebar.jsx",
+        "line": 191,
+        "column": 33,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/commerce/LoginView.jsx",
+        "line": 104,
+        "column": 17,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/commerce/LoginView.jsx",
+        "line": 155,
+        "column": 31,
+        "rule": "react/no-unescaped-entities",
+        "severity": 1,
+        "message": "`'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`."
+      },
+      {
+        "file": "src/kit/commerce/MyOrdersView.jsx",
+        "line": 1603,
+        "column": 41,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/commerce/MyOrdersView.jsx",
+        "line": 1924,
+        "column": 57,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/commerce/MyOrdersView.jsx",
+        "line": 2219,
+        "column": 61,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/layout/GlobalMenuDesktop.jsx",
+        "line": 566,
+        "column": 45,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/layout/GlobalMenuDesktop.jsx",
+        "line": 629,
+        "column": 41,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/layout/GlobalMenuDesktop.jsx",
+        "line": 667,
+        "column": 45,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/marketplace/ArchitecturalHeaderServer.jsx",
+        "line": 31,
+        "column": 15,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/marketplace/CategoryRailServer.jsx",
+        "line": 24,
+        "column": 15,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/marketplace/CategoryRailServer.jsx",
+        "line": 51,
+        "column": 17,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/marketplace/CategoryRailServer.jsx",
+        "line": 63,
+        "column": 15,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/marketplace/FooterServer.jsx",
+        "line": 176,
+        "column": 11,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/marketplace/FooterServer.jsx",
+        "line": 215,
+        "column": 17,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/marketplace/FooterServer.jsx",
+        "line": 273,
+        "column": 15,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/marketplace/LazyCartPanelIsland.jsx",
+        "line": 132,
+        "column": 21,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/marketplace/LegacyLoginModalFullIsland.jsx",
+        "line": 735,
+        "column": 5,
+        "rule": "jsx-a11y/click-events-have-key-events",
+        "severity": 1,
+        "message": "Visible, non-interactive elements with click handlers must have at least one keyboard listener."
+      },
+      {
+        "file": "src/kit/marketplace/LegacyLoginModalFullIsland.jsx",
+        "line": 735,
+        "column": 5,
+        "rule": "jsx-a11y/no-noninteractive-element-interactions",
+        "severity": 1,
+        "message": "Non-interactive elements should not be assigned mouse or keyboard event listeners."
+      },
+      {
+        "file": "src/kit/marketplace/LegacyLoginModalFullIsland.jsx",
+        "line": 859,
+        "column": 21,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/marketplace/LegacyLoginModalFullIsland.jsx",
+        "line": 1040,
+        "column": 35,
+        "rule": "react/no-unescaped-entities",
+        "severity": 1,
+        "message": "`'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`."
+      },
+      {
+        "file": "src/kit/marketplace/LegacyLoginModalFullIsland.jsx",
+        "line": 1099,
+        "column": 43,
+        "rule": "react/no-unescaped-entities",
+        "severity": 1,
+        "message": "`'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`."
+      },
+      {
+        "file": "src/kit/marketplace/PremiumMegaMenuIsland.jsx",
+        "line": 131,
+        "column": 13,
+        "rule": "jsx-a11y/no-noninteractive-element-interactions",
+        "severity": 1,
+        "message": "Non-interactive elements should not be assigned mouse or keyboard event listeners."
+      },
+      {
+        "file": "src/kit/marketplace/PremiumMegaMenuIsland.jsx",
+        "line": 175,
+        "column": 13,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/marketplace/PremiumMegaMenuIsland.jsx",
+        "line": 303,
+        "column": 7,
+        "rule": "jsx-a11y/no-noninteractive-element-interactions",
+        "severity": 1,
+        "message": "Non-interactive elements should not be assigned mouse or keyboard event listeners."
+      },
+      {
+        "file": "src/kit/marketplace/PremiumMegaMenuIsland.jsx",
+        "line": 314,
+        "column": 15,
+        "rule": "jsx-a11y/no-noninteractive-element-interactions",
+        "severity": 1,
+        "message": "Non-interactive elements should not be assigned mouse or keyboard event listeners."
+      },
+      {
+        "file": "src/kit/marketplace/PremiumMegaMenuIsland.jsx",
+        "line": 333,
+        "column": 11,
+        "rule": "jsx-a11y/no-static-element-interactions",
+        "severity": 1,
+        "message": "Avoid non-native interactive elements. If using native HTML is not possible, add an appropriate role and support for tabbing, mouse, keyboard, and touch inputs to an interactive content element."
+      },
+      {
+        "file": "src/kit/marketplace/PremiumMegaMenuIsland.jsx",
+        "line": 341,
+        "column": 15,
+        "rule": "jsx-a11y/no-static-element-interactions",
+        "severity": 1,
+        "message": "Avoid non-native interactive elements. If using native HTML is not possible, add an appropriate role and support for tabbing, mouse, keyboard, and touch inputs to an interactive content element."
+      },
+      {
+        "file": "src/kit/marketplace/ProductDetailLightboxIsland.jsx",
+        "line": 337,
+        "column": 11,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/marketplace/ProductDetailShellIsland.jsx",
+        "line": 149,
+        "column": 19,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/marketplace/ProductDetailShellIsland.jsx",
+        "line": 205,
+        "column": 15,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/marketplace/ProductDetailShellIsland.jsx",
+        "line": 1060,
+        "column": 13,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/marketplace/ProductDetailShellIsland.jsx",
+        "line": 1113,
+        "column": 23,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/marketplace/ProductDetailShellIsland.jsx",
+        "line": 1141,
+        "column": 23,
+        "rule": "jsx-a11y/no-noninteractive-element-interactions",
+        "severity": 1,
+        "message": "Non-interactive elements should not be assigned mouse or keyboard event listeners."
+      },
+      {
+        "file": "src/kit/marketplace/ProductDetailShellIsland.jsx",
+        "line": 1141,
+        "column": 23,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/marketplace/ProductDetailShellIsland.jsx",
+        "line": 1340,
+        "column": 21,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/marketplace/ProductDetailShellIsland.jsx",
+        "line": 1352,
+        "column": 21,
+        "rule": "jsx-a11y/no-noninteractive-element-interactions",
+        "severity": 1,
+        "message": "Non-interactive elements should not be assigned mouse or keyboard event listeners."
+      },
+      {
+        "file": "src/kit/marketplace/ProductDetailShellIsland.jsx",
+        "line": 1352,
+        "column": 21,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/marketplace/ProductSectionsServer.jsx",
+        "line": 405,
+        "column": 11,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/marketplace/ProductSectionsServer.jsx",
+        "line": 420,
+        "column": 137,
+        "rule": "react/no-unescaped-entities",
+        "severity": 1,
+        "message": "`'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`."
+      },
+      {
+        "file": "src/kit/marketplace/ProductSectionsServer.jsx",
+        "line": 423,
+        "column": 17,
+        "rule": "react/no-unescaped-entities",
+        "severity": 1,
+        "message": "`'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`."
+      },
+      {
+        "file": "src/kit/marketplace/ProductSectionsServer.jsx",
+        "line": 603,
+        "column": 17,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/marketplace/ProductSectionsServer.jsx",
+        "line": 692,
+        "column": 15,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/marketplace/ProductSectionsServer.jsx",
+        "line": 855,
+        "column": 9,
+        "rule": "react/no-unescaped-entities",
+        "severity": 1,
+        "message": "`\"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`."
+      },
+      {
+        "file": "src/kit/marketplace/ProductSectionsServer.jsx",
+        "line": 855,
+        "column": 21,
+        "rule": "react/no-unescaped-entities",
+        "severity": 1,
+        "message": "`\"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`."
+      },
+      {
+        "file": "src/kit/marketplace/QuoteFormIsland.jsx",
+        "line": 678,
+        "column": 53,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/marketplace/QuoteFormIsland.jsx",
+        "line": 784,
+        "column": 49,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/marketplace/QuoteFormSsrShell.jsx",
+        "line": 161,
+        "column": 19,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/marketplace/QuoteFormSsrShell.jsx",
+        "line": 176,
+        "column": 13,
+        "rule": "jsx-a11y/label-has-associated-control",
+        "severity": 1,
+        "message": "A form label must have accessible text."
+      },
+      {
+        "file": "src/kit/marketplace/QuoteFormSsrShell.jsx",
+        "line": 195,
+        "column": 92,
+        "rule": "react/no-unescaped-entities",
+        "severity": 1,
+        "message": "`'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`."
+      },
+      {
+        "file": "src/kit/marketplace/QuoteFormSsrShell.jsx",
+        "line": 268,
+        "column": 19,
+        "rule": "jsx-a11y/label-has-associated-control",
+        "severity": 1,
+        "message": "A form label must have accessible text."
+      },
+      {
+        "file": "src/kit/marketplace/QuoteFormSsrShell.jsx",
+        "line": 367,
+        "column": 23,
+        "rule": "react/no-unescaped-entities",
+        "severity": 1,
+        "message": "`'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`."
+      },
+      {
+        "file": "src/kit/marketplace/QuoteFormSsrShell.jsx",
+        "line": 370,
+        "column": 38,
+        "rule": "react/no-unescaped-entities",
+        "severity": 1,
+        "message": "`'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`."
+      },
+      {
+        "file": "src/kit/marketplace/QuoteRequestServerView.jsx",
+        "line": 58,
+        "column": 17,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/marketplace/SearchResultsIsland.jsx",
+        "line": 19,
+        "column": 9,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/marketplace/SearchSuggestIsland.jsx",
+        "line": 202,
+        "column": 27,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/marketplace/SearchSuggestIsland.jsx",
+        "line": 484,
+        "column": 5,
+        "rule": "jsx-a11y/no-noninteractive-element-interactions",
+        "severity": 1,
+        "message": "Non-interactive elements should not be assigned mouse or keyboard event listeners."
+      },
+      {
+        "file": "src/kit/marketplace/SupportChatPanel.jsx",
+        "line": 103,
+        "column": 7,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/marketplace/SupportChatPanel.jsx",
+        "line": 224,
+        "column": 13,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/marketplace/SupportChatPanel.jsx",
+        "line": 253,
+        "column": 23,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/marketplace/WishlistView.jsx",
+        "line": 174,
+        "column": 45,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/shared/CustomerTestimonialsCarousel.jsx",
+        "line": 251,
+        "column": 17,
+        "rule": "react/no-unescaped-entities",
+        "severity": 1,
+        "message": "`\"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`."
+      },
+      {
+        "file": "src/kit/shared/CustomerTestimonialsCarousel.jsx",
+        "line": 251,
+        "column": 29,
+        "rule": "react/no-unescaped-entities",
+        "severity": 1,
+        "message": "`\"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`."
+      },
+      {
+        "file": "src/kit/vitrine/AboutBeforeAfterIsland.jsx",
+        "line": 113,
+        "column": 121,
+        "rule": "react/no-unescaped-entities",
+        "severity": 1,
+        "message": "`'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`."
+      },
+      {
+        "file": "src/kit/vitrine/AboutBeforeAfterIsland.jsx",
+        "line": 152,
+        "column": 13,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/vitrine/AboutBeforeAfterIsland.jsx",
+        "line": 159,
+        "column": 15,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/vitrine/AboutServerView.jsx",
+        "line": 86,
+        "column": 19,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/vitrine/AboutServerView.jsx",
+        "line": 95,
+        "column": 91,
+        "rule": "react/no-unescaped-entities",
+        "severity": 1,
+        "message": "`'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`."
+      },
+      {
+        "file": "src/kit/vitrine/AboutServerView.jsx",
+        "line": 107,
+        "column": 19,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/vitrine/AboutServerView.jsx",
+        "line": 135,
+        "column": 13,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/vitrine/AboutServerView.jsx",
+        "line": 156,
+        "column": 161,
+        "rule": "react/no-unescaped-entities",
+        "severity": 1,
+        "message": "`'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`."
+      },
+      {
+        "file": "src/kit/vitrine/AboutServerView.jsx",
+        "line": 198,
+        "column": 21,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/vitrine/AboutServerView.jsx",
+        "line": 284,
+        "column": 143,
+        "rule": "react/no-unescaped-entities",
+        "severity": 1,
+        "message": "`'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`."
+      },
+      {
+        "file": "src/kit/vitrine/AboutServerView.jsx",
+        "line": 305,
+        "column": 116,
+        "rule": "react/no-unescaped-entities",
+        "severity": 1,
+        "message": "`'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`."
+      },
+      {
+        "file": "src/kit/vitrine/AboutServerView.jsx",
+        "line": 330,
+        "column": 28,
+        "rule": "react/no-unescaped-entities",
+        "severity": 1,
+        "message": "`'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`."
+      },
+      {
+        "file": "src/kit/vitrine/AboutServerView.jsx",
+        "line": 330,
+        "column": 56,
+        "rule": "react/no-unescaped-entities",
+        "severity": 1,
+        "message": "`'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`."
+      },
+      {
+        "file": "src/kit/vitrine/AboutServerView.jsx",
+        "line": 341,
+        "column": 30,
+        "rule": "react/no-unescaped-entities",
+        "severity": 1,
+        "message": "`'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`."
+      },
+      {
+        "file": "src/kit/vitrine/AboutServerView.jsx",
+        "line": 341,
+        "column": 60,
+        "rule": "react/no-unescaped-entities",
+        "severity": 1,
+        "message": "`'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`."
+      },
+      {
+        "file": "src/kit/vitrine/AboutServerView.jsx",
+        "line": 363,
+        "column": 111,
+        "rule": "react/no-unescaped-entities",
+        "severity": 1,
+        "message": "`'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`."
+      },
+      {
+        "file": "src/kit/vitrine/AboutServerView.jsx",
+        "line": 366,
+        "column": 18,
+        "rule": "react/no-unescaped-entities",
+        "severity": 1,
+        "message": "`'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`."
+      },
+      {
+        "file": "src/kit/vitrine/AboutServerView.jsx",
+        "line": 386,
+        "column": 17,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      },
+      {
+        "file": "src/kit/vitrine/AboutServerView.jsx",
+        "line": 419,
+        "column": 87,
+        "rule": "react/no-unescaped-entities",
+        "severity": 1,
+        "message": "`'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`."
+      },
+      {
+        "file": "src/kit/vitrine/AboutServerView.jsx",
+        "line": 419,
+        "column": 103,
+        "rule": "react/no-unescaped-entities",
+        "severity": 1,
+        "message": "`'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`."
+      },
+      {
+        "file": "src/kit/vitrine/AboutServerView.jsx",
+        "line": 454,
+        "column": 90,
+        "rule": "react/no-unescaped-entities",
+        "severity": 1,
+        "message": "`'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`."
+      },
+      {
+        "file": "src/kit/vitrine/Sv4SiteNav.jsx",
+        "line": 10,
+        "column": 11,
+        "rule": "@next/next/no-img-element",
+        "severity": 1,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element"
+      }
+    ]
+  },
+  "checks": {
+    "gitDiffCheck": true,
+    "sourcePatchReverseCheck": true,
+    "inventoryCoverage": 448,
+    "links": "Validated against local paths before completion; external links were not fetched."
+  },
+  "notRun": [
+    "Next build",
+    "development server",
+    "browser",
+    "Playwright",
+    "E2E",
+    "Firebase emulators",
+    "deployed rules enforcement",
+    "hosted Stripe payment or refund",
+    "real email sending",
+    "mailbox access",
+    "Google Cloud logs or measurement",
+    "visual PDF QA",
+    "commit",
+    "push",
+    "deployment"
+  ],
+  "artifacts": {
+    "final-inventory.json": "b9d5c346b624b6c2034701a394a944cf84910102cea5c72c820048e10d54786d",
+    "final-sources.patch": "c7156bcaa2a234e40998f6864cb3c54fae5f78b9e320004a8d74d047fd2ba8ea"
+  }
+}

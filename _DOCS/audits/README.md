@@ -1,5 +1,8 @@
 # Audits d’architecture et de fiabilité
 
+**Préparation de livraison du 7 septembre : [qualification, blocage et recette utilisateur](2026-09-07-livraison-interactions/README.md).**
+Sources enregistrées ; aucune nouvelle livraison sandbox, gate dépendances CLI ouverte.
+
 Créé le 5 septembre 2026 à la demande du propriétaire du projet.
 
 Ce dossier contient les nouvelles campagnes d’audit. Les contrats applicables

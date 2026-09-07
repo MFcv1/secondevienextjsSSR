@@ -1,0 +1,3 @@
+# Immutable patch evidence: blank context lines contain a required space.
+# Keep original bytes/checksums; do not treat this artifact as source code.
+preuves/interactions-2026-09-07-relecture-sources.patch -diff
