@@ -81,6 +81,7 @@ export default function PublicationActionBar({
   connection,
   editData,
   uploading,
+  recorded = false,
   progress = 0,
   message,
   messageTone = 'neutral',
@@ -153,7 +154,7 @@ export default function PublicationActionBar({
 
           {isReview ? (
             <>
-              <GhostAction darkMode={darkMode} label="Retour" Icon={ArrowLeft} onClick={onBack} disabled={uploading} />
+              <GhostAction darkMode={darkMode} label="Retour" Icon={ArrowLeft} onClick={onBack} disabled={uploading || recorded} />
               <PrimaryAction
                 darkMode={darkMode}
                 tone="publish"

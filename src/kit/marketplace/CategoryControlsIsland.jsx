@@ -119,7 +119,7 @@ const syncFormState = (form, state) => {
     input.checked = state.availabilityFilter === input.value;
   });
   form.querySelectorAll('input[name="maxPrice"]').forEach((input) => {
-    input.value = String(state.priceRange[1] || state.roundedMaxPrice);
+    input.value = String(state.priceRange[1] ?? state.roundedMaxPrice);
   });
 };
 
@@ -198,7 +198,7 @@ export default function CategoryControlsIsland({
       node.textContent = String(filteredItems.length);
     });
     root.querySelectorAll('[data-category-max-price-label]').forEach((node) => {
-      node.textContent = `${(state.priceRange[1] || state.roundedMaxPrice).toFixed(0)} EUR`;
+      node.textContent = `${(state.priceRange[1] ?? state.roundedMaxPrice).toFixed(0)} EUR`;
     });
     root.querySelectorAll('[data-category-sort-label]').forEach((node) => {
       node.textContent = sortLabel;
@@ -272,8 +272,9 @@ export default function CategoryControlsIsland({
 
     const categoryLink = event.target.closest('a[href]');
     if (categoryLink) {
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || categoryLink.target === '_blank') return;
       const targetUrl = new URL(categoryLink.href, window.location.href);
-      if (targetUrl.pathname === window.location.pathname) {
+      if (targetUrl.origin === window.location.origin && targetUrl.pathname === window.location.pathname) {
         event.preventDefault();
         setSortOpen(root, false);
         applyState(getCategoryQueryState(targetUrl.searchParams, filterOptions), { push: true });
@@ -310,6 +311,7 @@ export default function CategoryControlsIsland({
     const form = event.target.closest('form[data-category-filter-form]');
     if (!form) return;
     event.preventDefault();
+    window.clearTimeout(form._categorySubmitTimer);
     applyState(stateFromForm(form, filterOptions), { push: true });
     if (rootRef.current) closeDrawer(rootRef.current);
   }, [applyState, closeDrawer, filterOptions]);
@@ -340,6 +342,7 @@ export default function CategoryControlsIsland({
     document.addEventListener('keydown', handleKeyDown);
 
     return () => {
+      root.querySelectorAll('form[data-category-filter-form]').forEach((form) => window.clearTimeout(form._categorySubmitTimer));
       root.removeEventListener('click', handleClick);
       root.removeEventListener('change', handleChange);
       root.removeEventListener('input', handleInput);

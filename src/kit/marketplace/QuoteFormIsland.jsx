@@ -284,6 +284,7 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
     const railRef = useRef(null);
     const quoteStartTrackedRef = useRef(false);
     const submissionIdentityRef = useRef(null);
+    const submittingRef = useRef(false);
 
     /*
      * useLayoutEffect et non useEffect : le shell doit disparaitre dans la
@@ -355,6 +356,7 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
     }, [trackQuoteStart]);
 
     const goToStep = useCallback((nextStep) => {
+        if (submittingRef.current) return;
         const target = Math.min(steps.length - 1, Math.max(0, nextStep));
         if (target === step) return;
         setStepMotionArmed(true);
@@ -402,6 +404,7 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
 
     const handleSubmit = async (event) => {
         event.preventDefault();
+        if (submittingRef.current) return;
         trackQuoteStart();
 
         if (step !== ESTIMATE_STEP_INDEX) {
@@ -418,6 +421,7 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
             return;
         }
 
+        submittingRef.current = true;
         setSubmissionState({ status: 'submitting', message: 'Enregistrement de votre demande…' });
         setErrors({});
         try {
@@ -477,6 +481,8 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
                     ? 'La transmission a pris trop de temps. Réessayez pour terminer la demande.'
                     : 'La demande n’a pas pu être enregistrée. Vérifiez votre connexion puis réessayez.';
             setSubmissionState({ status: 'error', message });
+        } finally {
+            submittingRef.current = false;
         }
     };
 
@@ -583,6 +589,7 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
                                 <button
                                     type="button"
                                     onClick={() => (index === ESTIMATE_STEP_INDEX ? showEstimate() : goToStep(index))}
+                                    disabled={submissionState.status === 'submitting'}
                                     aria-current={isCurrent ? 'step' : undefined}
                                     className={`flex w-full items-center gap-2.5 rounded-full py-1 pr-3 text-left ${QUOTE_EASE} ${t.focusRing}`}
                                 >
@@ -609,6 +616,7 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
             </div>
 
             <form onSubmit={handleSubmit} noValidate>
+                <fieldset disabled={submissionState.status === 'submitting'} className="min-w-0">
                 {/* gap-8 garantit un ecart minimum entre le contenu et la barre de navigation */}
                 <div
                     key={activeStep.id}
@@ -791,7 +799,7 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
                                 )}
 
                                 <p className={`mt-4 ${QUOTE_TYPE.micro} ${t.faint}`}>
-                                    Les photos restent sur votre appareil : pensez à les joindre à l'e-mail final.
+                                    Les photos seront transmises avec votre demande et resteront privées dans l’espace de suivi de l’atelier.
                                 </p>
                             </div>
                         )}
@@ -1163,6 +1171,7 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
                         </button>
                     </div>
                 </div>
+                </fieldset>
             </form>
         </div>
     );

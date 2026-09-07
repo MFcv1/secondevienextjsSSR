@@ -62,6 +62,20 @@ function strongAdmin(environment) {
 }
 
 const scenarios = {
+    'admin-invitations-are-backend-only': async (context) => withEnvironment(async (environment) => {
+        await seed(environment, [
+            ['sys_admin_access/admin-v2', { active: true }],
+            ['sys_metadata/admin_users', { users: [] }]
+        ]);
+        const admin = strongAdmin(environment).firestore();
+        await assertSucceeds(getDoc(doc(admin, 'sys_metadata/admin_users')));
+        await assertFails(setDoc(doc(admin, 'sys_metadata/admin_users'), {
+            users: [{ email: 'forged@example.test', role: 'owner' }]
+        }));
+        await assertSucceeds(setDoc(doc(admin, 'sys_metadata/contact_info'), { phone: 'test' }));
+        context.ok(true, 'strong admins can read invitations but cannot bypass owner-only callables');
+    }),
+
     'owner-v2-root-read-remains-allowed': async (context) => withEnvironment(async (environment) => {
         await seed(environment, [[
             'orders/order-v2-readable',

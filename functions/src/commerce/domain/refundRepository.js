@@ -10,6 +10,7 @@ const { assertActionAllowed } = require('./allowedActions');
 const { writeFinancialRollups } = require('./financialRollup');
 const { hashPayload } = require('./idempotency');
 const { reduceOrder, validateOrderV2 } = require('./orderState');
+const { assertCustomerReturnDecision, isReturnReceiptComplete, transitionCustomerReturnRequest } = require('./customerReturnRequest');
 const {
     createRefundAttempt,
     validateRefundAttempt
@@ -73,7 +74,9 @@ function createRefundRepository({
         refundRequestId,
         amountCents,
         actor,
-        reason
+        reason,
+        customerRequestId = null,
+        customerDecision = null
     }) {
         const orderRef = refs.order(orderId);
         const attemptRef = refs.refundAttempt(orderId, refundRequestId);
@@ -133,6 +136,28 @@ function createRefundRepository({
                 return { order, attempt: existing, reused: true };
             }
             assertActionAllowed(order, actor, 'request_refund');
+            let customerRequestRef = null;
+            let customerRequest = null;
+            if (customerRequestId) {
+                customerRequestRef = refs.customerReturnRequest(orderId, customerRequestId);
+                const customerRequestSnap = await transaction.get(customerRequestRef);
+                if (!snapshotExists(customerRequestSnap)) throw repositoryError('COMMERCE_CUSTOMER_RETURN_REQUEST_NOT_FOUND');
+                customerRequest = customerRequestSnap.data();
+                assertCustomerReturnDecision(customerRequest, customerDecision);
+                if (customerRequest.orderId !== orderId || customerRequest.userId !== order.userId
+                    || refundRequestId !== `customer-${customerRequestId}`) {
+                    throw repositoryError('COMMERCE_CUSTOMER_RETURN_REQUEST_ACCESS_DENIED');
+                }
+                if (customerDecision === 'refund_now') {
+                    if (order.fulfillmentSummary.custody !== 'merchant') throw repositoryError('COMMERCE_CUSTOMER_RETURN_REQUEST_CUSTODY_INVALID');
+                } else {
+                    if (!customerRequest.returnId) throw repositoryError('COMMERCE_CUSTOMER_RETURN_REQUEST_RETURN_NOT_RESOLVED');
+                    const receipt = await transaction.get(refs.returnCase(orderId, customerRequest.returnId));
+                    if (!snapshotExists(receipt) || !isReturnReceiptComplete(receipt.data(), customerRequest)) {
+                        throw repositoryError('COMMERCE_CUSTOMER_RETURN_REQUEST_RETURN_NOT_RESOLVED');
+                    }
+                }
+            }
             if (snapshotExists(auditSnap)) {
                 throw repositoryError('COMMERCE_AUDIT_APPEND_ONLY_CONFLICT');
             }
@@ -148,6 +173,16 @@ function createRefundRepository({
                 type: 'refund_requested',
                 amountCents
             }, { clock });
+            if (customerRequestRef) {
+                transaction.set(customerRequestRef, transitionCustomerReturnRequest(customerRequest, {
+                    type: 'refund_started',
+                    mode: customerDecision === 'refund_now' ? 'direct_refund' : 'return_then_refund',
+                    refundRequestId,
+                    outcome: 'pending',
+                    actorUid: actor.uid,
+                    reason
+                }, { clock }));
+            }
             transaction.set(orderRef, stripId(nextOrder));
             transaction.set(attemptRef, attempt);
             transaction.set(auditRef, {

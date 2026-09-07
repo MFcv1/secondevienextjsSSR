@@ -163,6 +163,13 @@ function normalizeShippingAddress(value) {
 function mapError(error, { publicRequest = false } = {}) {
     if (error instanceof functions.https.HttpsError) return error;
     const reason = String(error?.code || '');
+    if (reason === 'COMMERCE_PROVIDER_RECONCILIATION_REQUIRED') {
+        return new functions.https.HttpsError(
+            'failed-precondition',
+            'Un rapprochement du paiement par l atelier est requis avant de poursuivre.',
+            { reason }
+        );
+    }
     if (reason.includes('ACCESS_DENIED') || reason.includes('NOT_FOUND')) {
         return new functions.https.HttpsError('not-found', 'Lien de paiement introuvable.');
     }

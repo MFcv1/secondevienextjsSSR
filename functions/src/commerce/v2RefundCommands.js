@@ -59,6 +59,13 @@ function refundRuntime() {
 function mapDomainError(error) {
     if (error instanceof functions.https.HttpsError) return error;
     const code = String(error?.code || '');
+    if (code === 'COMMERCE_PROVIDER_RECONCILIATION_REQUIRED') {
+        return new functions.https.HttpsError(
+            'failed-precondition',
+            'Rapprochement Stripe requis avant toute nouvelle tentative de remboursement.',
+            { reason: code }
+        );
+    }
     if (code.endsWith('_NOT_FOUND')) {
         return new functions.https.HttpsError(
             'not-found',

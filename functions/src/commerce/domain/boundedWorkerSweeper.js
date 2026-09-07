@@ -66,7 +66,10 @@ function createBoundedWorkerSweeper({
                     });
                 }
             }
-            if (!page.nextCursor || page.items.length === 0) break;
+            if (!page.nextCursor || page.items.length === 0) {
+                cursor = null;
+                break;
+            }
             if (page.nextCursor === cursor) throw sweeperError('COMMERCE_SWEEPER_CURSOR_STALLED');
             cursor = page.nextCursor;
         }

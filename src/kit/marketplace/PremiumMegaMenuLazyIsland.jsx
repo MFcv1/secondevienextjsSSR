@@ -17,8 +17,11 @@ export default function PremiumMegaMenuLazyIsland({ darkMode = false } = {}) {
     if (typeof window === 'undefined') return undefined;
 
     const readClientTheme = () => {
-      const nextDark = window.localStorage.getItem(THEME_STORAGE_KEY) === 'true'
-        || document.documentElement.classList.contains('dark');
+      let nextDark = document.documentElement.classList.contains('dark');
+      try {
+        const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+        if (stored !== null) nextDark = stored === 'true';
+      } catch { /* Theme remains usable when storage is denied. */ }
       setEffectiveDarkMode(nextDark);
     };
 

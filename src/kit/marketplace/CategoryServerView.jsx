@@ -172,13 +172,14 @@ const FilterForm = ({
             min={0}
             max={state.roundedMaxPrice}
             step={1}
-            defaultValue={state.priceRange[1] || filterOptions.maxPrice}
+            defaultValue={state.priceRange[1] ?? filterOptions.maxPrice}
+            aria-label="Prix maximum en euros"
             className="w-full accent-stone-800"
             data-category-range
           />
           <div className="flex justify-between font-mono text-[11px]">
             <span className={darkMode ? 'text-stone-400' : 'text-stone-500'}>{state.priceRange[0].toFixed(0)} EUR</span>
-            <span data-category-max-price-label className={darkMode ? 'text-stone-400' : 'text-stone-500'}>{(state.priceRange[1] || filterOptions.maxPrice).toFixed(0)} EUR</span>
+            <span data-category-max-price-label className={darkMode ? 'text-stone-400' : 'text-stone-500'}>{(state.priceRange[1] ?? filterOptions.maxPrice).toFixed(0)} EUR</span>
           </div>
         </div>
       </FilterSection>
@@ -274,6 +275,7 @@ export default function CategoryServerView({
     category: item.category,
     status: item.status,
     sold: Boolean(item.sold),
+    priceOnRequest: Boolean(item.priceOnRequest),
     stock: item.stock,
     currentPrice: item.currentPrice,
     startingPrice: item.startingPrice,

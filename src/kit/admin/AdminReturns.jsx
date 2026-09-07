@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { collection, limit, onSnapshot, orderBy, query } from 'firebase/firestore';
 import {
     AlertTriangle,
@@ -34,6 +34,7 @@ import {
     loadAdminReturnsFirstPage,
 } from './adminCommerceData';
 import { adaptCommerceOrder } from '../commerce/orderAdapter';
+import { mergeAdminOrders } from './components/orders/orderPresentation';
 import orderReferenceHelpers from '../../../shared/orderReference.cjs';
 
 const { getOrderReference } = orderReferenceHelpers;
@@ -95,6 +96,12 @@ function formatShortDate(timestamp) {
 }
 
 function formatAmount(order) {
+    if (order.schemaVersion === 2) {
+        const confirmed = order.amounts?.refundedCents;
+        const pending = order.refundAggregate?.pendingCents;
+        if (!Number.isSafeInteger(confirmed) || !Number.isSafeInteger(pending)) return 'Montant indisponible';
+        return `${((confirmed + pending) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} EUR`;
+    }
     const refundAmount = Number(order.refundAmount);
     if (Number.isFinite(refundAmount) && refundAmount > 0) {
         return `${(refundAmount / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${String(order.refundCurrency || 'eur').toUpperCase()}`;
@@ -287,7 +294,7 @@ function StatusBadge({ order, darkMode }) {
 }
 
 const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
-    const cachedPage = getAdminCachedData(ADMIN_RETURNS_FIRST_PAGE_KEY);
+    const cachedPage = getAdminCachedData(ADMIN_RETURNS_FIRST_PAGE_KEY, { allowStale: true });
     const returnCommandsEnabled = mutationsEnabled && COMMERCE_V2_ADMIN_RETURN_COMMANDS_ENABLED;
     const [orders, setOrders] = useState(
         (cachedPage?.orders || []).map(normalizeAdminOrder)
@@ -308,12 +315,15 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
     const [refundAmount, setRefundAmount] = useState('');
     const [decisionDraft, setDecisionDraft] = useState(null);
     const [returnDraft, setReturnDraft] = useState(null);
+    const operationRef = useRef(false);
+    const generationRef = useRef(0);
     const loadRefundDetails = async (order) => {
         if (!order.refundDetailsDeferred) return;
         try {
             const result = await loadAdminCachedData(`admin-order-detail:${order.id}:${order.stateVersion}`, () => listOrdersAdminV2({ orderId: order.id }), { maxAgeMs: 30_000 });
-            setOrders((current) => current.map((row) => row.id === order.id ? normalizeAdminOrder(result.orders[0]) : row));
-        } catch { setNotice({ type: 'error', message: 'Détails indisponibles. Refermez puis rouvrez le dossier pour réessayer.' }); }
+            if (!result.orders?.length) throw new Error('ORDER_DETAIL_UNAVAILABLE');
+            setOrders((current) => mergeAdminOrders(current, result.orders.map(normalizeAdminOrder)));
+        } catch { setNotice({ type: 'error', text: 'Détails indisponibles. Refermez puis rouvrez le dossier pour réessayer.' }); }
     };
 
     const applyFirstPage = useCallback(({
@@ -363,25 +373,35 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
     }, []);
 
     const refreshFirstPage = useCallback(async () => {
+        const generation = ++generationRef.current;
         const page = await loadAdminReturnsFirstPage({ force: true });
+        if (generation !== generationRef.current) return page;
         applyFirstPage(page, { reportErrors: false });
-        if (page.ordersOutcome.status === 'rejected') {
-            throw page.ordersOutcome.reason;
-        }
+        const failed = [page.ordersOutcome, page.returnsOutcome, page.requestsOutcome].find(outcome => outcome.status === 'rejected');
+        if (failed) throw failed.reason;
         return page;
     }, [applyFirstPage]);
 
     useEffect(() => {
-        setLoading(!getAdminCachedData(ADMIN_RETURNS_FIRST_PAGE_KEY));
+        setLoading(!getAdminCachedData(ADMIN_RETURNS_FIRST_PAGE_KEY, { allowStale: true }));
         if (COMMERCE_V2_ADMIN_READERS_ENABLED) {
             let cancelled = false;
+            const generation = ++generationRef.current;
+            setRefreshing(true);
             loadAdminReturnsFirstPage().then((page) => {
-                if (cancelled) return;
+                if (cancelled || generation !== generationRef.current) return;
                 applyFirstPage(page);
                 setLoading(false);
+                setRefreshing(false);
+            }).catch(() => {
+                if (cancelled || generation !== generationRef.current) return;
+                setLoading(false);
+                setRefreshing(false);
+                setNotice({ type: 'error', text: 'Actualisation impossible. Les dernières données connues restent affichées.' });
             });
             return () => {
                 cancelled = true;
+                generationRef.current += 1;
             };
         }
         const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(200));
@@ -476,6 +496,7 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                 if (!needle) return true;
                 return [
                     order.id,
+                    getOrderReference(order),
                     order.shipping?.fullName,
                     getOrderEmail(order),
                     order.stripePaymentIntentId,
@@ -489,9 +510,11 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
         if (
             !COMMERCE_V2_ADMIN_READERS_ENABLED ||
             loadingMore ||
+            refreshing || operationRef.current ||
             (!ordersCursor && !returnsCursor && !requestsCursor)
         ) return;
         setLoadingMore(true);
+        const generation = generationRef.current;
         setNotice(null);
         try {
             const [ordersResult, returnsResult, requestsResult] = await Promise.all([
@@ -505,6 +528,7 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                     ? listCustomerReturnRequestsAdminV2({ pageSize: 50, cursor: requestsCursor })
                     : Promise.resolve({ requests: [], nextCursor: null })
             ]);
+            if (generation !== generationRef.current) return;
             setOrders((current) => {
                 const merged = new Map(current.map((order) => [order.id, order]));
                 for (const order of ordersResult.orders || []) {
@@ -532,6 +556,7 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
             });
             setRequestsCursor(requestsResult.nextCursor || null);
         } catch (error) {
+            if (generation !== generationRef.current) return;
             console.error('Admin v2 returns pagination failed:', error);
             setNotice({
                 type: 'error',
@@ -613,6 +638,8 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
     };
 
     const runAction = async (orderId, action, runner) => {
+        if (!returnCommandsEnabled || operationRef.current) return;
+        operationRef.current = true;
         setOperation(`${action}:${orderId}`);
         setNotice(null);
         try {
@@ -634,6 +661,7 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                 text: 'Cette action n a pas pu etre terminee. Rechargez les donnees avant de reessayer.'
             });
         } finally {
+            operationRef.current = false;
             setOperation(null);
         }
     };
@@ -667,6 +695,7 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
     };
 
     const handleManualRefresh = async () => {
+        if (operationRef.current || loadingMore || refreshing) return;
         setRefreshing(true);
         setNotice(null);
         try {
@@ -996,11 +1025,11 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                     <button
                         type="button"
                         onClick={handleManualRefresh}
-                        disabled={refreshing}
+                        disabled={refreshing || loadingMore || Boolean(operation)}
                         className={`inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold transition active:translate-y-px disabled:cursor-wait disabled:opacity-60 ${secondaryButton}`}
                     >
                         <RotateCcw size={15} className={refreshing ? 'animate-spin' : ''} />
-                        Actualiser
+                        {refreshing ? 'Actualisation · Dernières données connues' : 'Actualiser'}
                     </button>
                 </div>
             </header>
@@ -1039,7 +1068,7 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
 
             <div className="flex items-center justify-between gap-4">
                 <p className={`text-xs tabular-nums ${mutedText}`}>
-                    {loading && !cachedPage ? 'Chargement…' : `${visibleCount} dossier${visibleCount > 1 ? 's' : ''}`}
+                    {loading && !cachedPage ? 'Chargement…' : `${visibleCount} dossier${visibleCount > 1 ? 's' : ''} dans les données chargées. Recherche et compteurs portent sur ce périmètre.`}
                 </p>
                 {!returnCommandsEnabled ? <span className={`text-xs font-semibold ${mutedText}`}>Lecture seule</span> : null}
             </div>
@@ -1067,7 +1096,7 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                             const status = customerRequestStatus(request);
                             const classes = toneClasses[status.tone] || toneClasses.stone;
                             const order = request.order || {};
-                            const activeOperation = operation?.endsWith(`:${request.orderId}`);
+                            const activeOperation = Boolean(operation);
                             return (
                                 <article key={request.requestId} className={`grid gap-4 px-5 py-5 transition md:grid-cols-[minmax(0,1.3fr)_minmax(190px,0.65fr)] lg:grid-cols-[minmax(0,1.4fr)_minmax(210px,0.65fr)_minmax(190px,0.55fr)] lg:items-center ${darkMode ? 'hover:bg-white/[0.02]' : 'hover:bg-stone-50/70'}`}>
                                     <div className="min-w-0">
@@ -1128,7 +1157,7 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                             const canResumeRefund = order.status === 'refund_pending'
                                 && order.latestRefundAttempt?.resumable === true;
                             const canOpenReturn = allowedActions.has('open_return');
-                            const activeOperation = operation?.endsWith(`:${order.id}`) ? operation.split(':')[0] : null;
+                            const activeOperation = operation?.endsWith(`:${order.id}`) ? operation.split(':')[0] : operation ? 'other' : null;
                             return (
                                 <article key={order.id} className={`grid gap-4 px-5 py-5 transition md:grid-cols-[minmax(0,1.35fr)_minmax(170px,0.65fr)_120px] lg:grid-cols-[minmax(0,1.4fr)_minmax(180px,0.6fr)_120px_minmax(170px,0.55fr)] lg:items-center ${darkMode ? 'hover:bg-white/[0.02]' : 'hover:bg-stone-50/70'}`}>
                                     <div className="min-w-0">
@@ -1158,6 +1187,7 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
 
                                     <div>
                                         <p className="text-sm font-black">{formatAmount(order)}</p>
+                                        {order.schemaVersion === 2 ? <p className={`text-[11px] ${mutedText}`}>Remboursé ou en cours</p> : null}
                                         <p className={`mt-1 text-[11px] ${mutedText}`}>sur {Number(order.total || 0).toLocaleString('fr-FR')} EUR</p>
                                     </div>
 
@@ -1255,10 +1285,10 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                 </section>
             ) : null}
 
-            {!loading && visibleCount === 0 ? (
+            {!loading && visibleCount === 0 && notice?.type !== 'error' ? (
                 <div className={`rounded-2xl border px-6 py-14 text-center ${panelClass}`}>
                     <p className="text-lg font-black">Aucun dossier ici</p>
-                    <p className={`mt-1 text-sm ${mutedText}`}>{search ? 'Essayez une autre recherche.' : 'Cette vue est à jour.'}</p>
+                    <p className={`mt-1 text-sm ${mutedText}`}>{search ? 'Essayez une autre recherche.' : 'Aucun résultat parmi les dossiers chargés.'}</p>
                 </div>
             ) : null}
 
@@ -1267,7 +1297,7 @@ const AdminReturns = ({ darkMode = false, mutationsEnabled = false }) => {
                     <button
                         type="button"
                         onClick={loadMoreV2}
-                        disabled={loadingMore}
+                        disabled={loadingMore || refreshing || Boolean(operation)}
                         className={`rounded-lg border px-5 py-2.5 text-sm font-bold transition active:translate-y-px disabled:opacity-50 ${secondaryButton}`}
                     >
                         {loadingMore ? 'Chargement…' : 'Charger la suite'}

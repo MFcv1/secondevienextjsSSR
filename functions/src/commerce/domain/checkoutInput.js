@@ -47,6 +47,7 @@ function validateCheckoutInput(input) {
     }
 
     let totalQuantity = 0;
+    const cartLineIds = new Set();
     const items = input.items.map((line, index) => {
         if (!line || typeof line !== 'object' || Array.isArray(line)) {
             throw inputError('COMMERCE_CHECKOUT_LINE_INVALID', `items[${index}]`);
@@ -60,6 +61,10 @@ function validateCheckoutInput(input) {
             variantId: line.variantId === null ? null : identifier(line.variantId, `items[${index}].variantId`),
             quantity: line.quantity
         };
+        if (cartLineIds.has(normalized.cartLineId)) {
+            throw inputError('COMMERCE_CHECKOUT_LINE_INVALID', `items[${index}].cartLineId`);
+        }
+        cartLineIds.add(normalized.cartLineId);
         if (!Number.isSafeInteger(normalized.cartRevision) || normalized.cartRevision < 0) {
             throw inputError('COMMERCE_CHECKOUT_REVISION_INVALID', `items[${index}].cartRevision`);
         }

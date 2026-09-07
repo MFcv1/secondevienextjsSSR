@@ -3,7 +3,8 @@ import { Pencil, Loader2, SlidersHorizontal, Maximize2, Minimize2, Grid, GripVer
 import { getMillis } from '../../utils/time';
 import { getProductCardImage, PRODUCT_CARD_IMAGE_SIZES } from '../../utils/imageUtils';
 import { db, appId } from '../config/firebase';
-import { doc, writeBatch } from 'firebase/firestore';
+import { doc, runTransaction } from 'firebase/firestore';
+import { planInventoryReorder } from './inventoryOrdering';
 
 import {
     DndContext,
@@ -87,12 +88,13 @@ const InventoryTile = React.memo(({
             }}
             className="relative touch-none"
         >
-            <div
+            <button
+                type="button"
                 {...attributes}
                 {...listeners}
-                onClick={() => !isDragging && onEdit(item)}
+                onClick={() => !isDragging && !isReorderMode && onEdit(item)}
                 title={item.name}
-                className={`group relative text-left transition-all duration-200 aspect-square rounded-xl md:rounded-2xl overflow-hidden ring-1 shadow-sm active:scale-95
+                className={`group relative block w-full text-left transition-all duration-200 aspect-square rounded-xl md:rounded-2xl overflow-hidden ring-1 shadow-sm active:scale-95
                 ${isReorderMode ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'}
                 ${isDragging ? 'shadow-2xl opacity-80 scale-[1.05] ring-amber-500 ring-2' : statusRing}
                 ${darkMode ? 'bg-stone-900 ring-stone-700/50' : 'bg-stone-100 ring-stone-200'}`}
@@ -132,7 +134,7 @@ const InventoryTile = React.memo(({
                         <Pencil size={size > 80 ? 20 : 14} className="text-white drop-shadow-md" />
                     </div>
                 )}
-            </div>
+            </button>
         </div>
     );
 });
@@ -268,6 +270,10 @@ const GlobalInventoryView = ({ items, onEdit, darkMode }) => {
     const [localNouveautes, setLocalNouveautes] = useState([]);
     const [localPetitsPrix, setLocalPetitsPrix] = useState([]);
     const [saveStatus, setSaveStatus] = useState('');
+    const [saveError, setSaveError] = useState('');
+    const savingRef = useRef(false);
+    const statusTimerRef = useRef(null);
+    useEffect(() => () => clearTimeout(statusTimerRef.current), []);
 
     const derivedLists = useMemo(() => buildInventoryLists(items, petitsPrixMax), [items, petitsPrixMax]);
 
@@ -296,6 +302,7 @@ const GlobalInventoryView = ({ items, onEdit, darkMode }) => {
     );
 
     const handleDragEnd = useCallback(async (event, listId) => {
+        if (savingRef.current) return;
         const { active, over } = event;
         if (!over || active.id === over.id) return;
 
@@ -308,27 +315,38 @@ const GlobalInventoryView = ({ items, onEdit, darkMode }) => {
         if (oldIndex < 0 || newIndex < 0) return;
 
         const newDataset = arrayMove(dataset, oldIndex, newIndex);
-
-        if (isNouveautes) setLocalNouveautes(newDataset);
-        else setLocalPetitsPrix(newDataset);
-
+        savingRef.current = true;
+        clearTimeout(statusTimerRef.current);
+        setSaveError('');
         try {
+            const changes = planInventoryReorder(newDataset, active.id, fieldName);
             setSaveStatus('saving');
-            const batch = writeBatch(db);
-            newDataset.forEach((item, index) => {
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'furniture', item.id);
-                batch.update(docRef, { [fieldName]: index });
+            await runTransaction(db, async transaction => {
+                const refs = changes.map(({ item }) => doc(db, 'artifacts', appId, 'public', 'data', 'furniture', item.id));
+                const snapshots = await Promise.all(refs.map(ref => transaction.get(ref)));
+                snapshots.forEach((snapshot, index) => {
+                    if (!snapshot.exists() || snapshot.data()[fieldName] !== changes[index].item[fieldName]) {
+                        throw new Error('L’ordre a changé depuis son chargement. Actualisez l’inventaire avant de réessayer.');
+                    }
+                });
+                changes.forEach(({ value }, index) => transaction.update(refs[index], { [fieldName]: value }));
             });
-            await batch.commit();
+            const ranks = new Map(changes.map(({ item, value }) => [item.id, value]));
+            const saved = newDataset.map(item => ranks.has(item.id) ? { ...item, [fieldName]: ranks.get(item.id) } : item);
+            if (isNouveautes) setLocalNouveautes(saved);
+            else setLocalPetitsPrix(saved);
             setSaveStatus('saved');
-            setTimeout(() => setSaveStatus(''), 2000);
+            statusTimerRef.current = setTimeout(() => setSaveStatus(''), 2000);
         } catch (err) {
             console.error("Erreur lors de la sauvegarde de l'ordre :", err);
+            setSaveError(err?.message || 'L’ordre n’a pas pu être enregistré.');
             setSaveStatus('');
+        } finally {
+            savingRef.current = false;
         }
     }, [localNouveautes, localPetitsPrix]);
 
-    if (!items || items.length === 0) {
+    if (!items) {
         return (
             <div className="flex flex-col items-center justify-center py-20 gap-3">
                 <Loader2 className="animate-spin text-stone-400" size={28} />
@@ -343,6 +361,8 @@ const GlobalInventoryView = ({ items, onEdit, darkMode }) => {
 
     return (
         <div className="animate-in slide-in-from-top-2">
+            {saveError && <p role="alert" className="mb-4 text-sm text-red-600">{saveError}</p>}
+            {items.length === 0 && <p role="status" className="mb-4 text-sm">Aucune pièce publiée dans l’inventaire.</p>}
             <div className={`p-4 md:p-5 rounded-[2rem] mb-6 md:mb-8 ring-1 flex justify-between items-center flex-wrap gap-4 ${darkMode ? 'bg-stone-800/40 ring-stone-700/50' : 'bg-stone-50 ring-stone-200/60 shadow-sm'}`}>
                 <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-colors ${darkMode ? 'bg-stone-700 text-stone-300' : 'bg-white shadow-sm text-stone-600 ring-1 ring-stone-100'}`}>
@@ -356,6 +376,7 @@ const GlobalInventoryView = ({ items, onEdit, darkMode }) => {
                             <input
                                 type="number"
                                 value={petitsPrixMax}
+                                disabled={saveStatus === 'saving'}
                                 onChange={(e) => setPetitsPrixMax(Number(e.target.value) || 0)}
                                 className={`w-20 px-2.5 py-1 text-sm font-bold rounded-lg outline-none border transition-colors ${darkMode ? 'bg-stone-900 border-stone-700 text-white focus:border-stone-500' : 'bg-white border-stone-200 text-stone-900 focus:border-stone-400 shadow-sm'}`}
                             />
@@ -367,6 +388,7 @@ const GlobalInventoryView = ({ items, onEdit, darkMode }) => {
                 <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-stone-900/5 dark:bg-black/20 backdrop-blur-sm self-stretch md:self-auto">
                     <button
                         onClick={() => setIsReorderMode((value) => !value)}
+                        disabled={saveStatus === 'saving'}
                         className={`px-3 py-2 md:py-1.5 rounded-[12px] flex items-center justify-center gap-2 transition-all duration-300 flex-1 md:flex-initial ${isReorderMode ? (darkMode ? 'bg-amber-400 text-stone-950 shadow-md' : 'bg-stone-900 text-white shadow-md') : (darkMode ? 'text-stone-500 hover:text-stone-300 hover:bg-stone-800' : 'text-stone-500 hover:text-stone-700 hover:bg-stone-200/50')}`}
                         title={isReorderMode ? 'Quitter la réorganisation' : 'Réorganiser'}
                     >

@@ -4,13 +4,14 @@ import { ChevronUp } from 'lucide-react';
 
 export default function FooterBackToTopButtonIsland({ darkMode = false } = {}) {
   const handleClick = () => {
+    const behavior = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ? 'auto' : 'smooth';
     const galleryScroller = document.getElementById('marketplaceGalleryScroll');
     if (galleryScroller && galleryScroller.scrollHeight > galleryScroller.clientHeight) {
-      galleryScroller.scrollTo({ top: 0, behavior: 'smooth' });
+      galleryScroller.scrollTo({ top: 0, behavior });
       return;
     }
 
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior });
   };
 
   return (

@@ -136,7 +136,7 @@ test('passkey and OTP custom-token methods are attributed explicitly', () => {
   assert.match(resilientSignIn, /CUSTOM_TOKEN_NETWORK_RETRY_DELAYS_MS = \[400, 1200\]/);
   assert.match(resilientSignIn, /error\?\.code !== 'auth\/network-request-failed'/);
   assert.match(context, /signInWithCustomTokenResilient\(\{ authModule, auth, token \}\)/);
-  assert.match(modal, /otpCustomTokenRef\.current = customToken/);
+  assert.match(modal, /otpCustomTokenRef\.current = \{ email, code, token: customToken \}/);
   assert.match(modal, /Reessayez sans demander un nouveau code/);
   assert.match(modal, /isSignInFailure \? 'auth\.email\.signInWithCustomToken' : 'auth\.email\.verifyCustomerLoginOtp'/);
 });
@@ -153,6 +153,6 @@ test('auth modal preserves essential keyboard and OTP accessibility contracts', 
   assert.match(modal, /aria-label="Adresse email du compte"/);
   assert.match(modal, /role={otpStatus === 'error' \? 'alert' : 'status'}/);
   assert.match(modal, /aria-busy={isOtpBusy}/);
-  assert.match(modal, /if \(otpSendInFlightRef\.current\) return/);
-  assert.match(modal, /if \(otpVerifyInFlightRef\.current\) return/);
+  assert.match(modal, /if \(otpSendInFlightRef\.current \|\| loginOperationRef\.current\) return/);
+  assert.match(modal, /if \(!activeRef\.current \|\| otpVerifyInFlightRef\.current \|\| loginOperationRef\.current \|\| otpSendInFlightRef\.current\) return/);
 });

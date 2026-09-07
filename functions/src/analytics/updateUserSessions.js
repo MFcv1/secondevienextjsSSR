@@ -37,21 +37,19 @@ const updateUserSessionsHandler = async (data = {}, context) => {
 
     // Le registre UID est l'autorité finale. Les anciennes vérifications du profil
     // étaient toujours écrasées ici et consommaient une lecture sans changer le résultat.
-    const accessSnap = await db.collection('sys_admin_access').doc(userId).get();
-    const isAdmin = accessSnap.exists && accessSnap.data().active === true;
+    const accessRef = db.collection('sys_admin_access').doc(userId);
 
     try {
         const sessionRef = db.collection('analytics_sessions').doc(sessionId);
-        const sessionSnapshot = await sessionRef.get();
-        if (!sessionSnapshot.exists || !isValidSyncToken(sessionSnapshot.data(), syncToken)) {
-            return { success: true, skipped: true };
-        }
-
-        if (isAdmin) {
-            const exclusionRef = db.collection('analytics_session_exclusions').doc(sessionId);
-            await db.runTransaction(async (transaction) => {
-                const current = await transaction.get(sessionRef);
-                if (!current.exists || !isValidSyncToken(current.data(), syncToken)) return;
+        return await db.runTransaction(async (transaction) => {
+            const current = await transaction.get(sessionRef);
+            if (!current.exists || !isValidSyncToken(current.data(), syncToken, { allowLegacy: false })) {
+                return { success: true, skipped: true };
+            }
+            const accessSnap = await transaction.get(accessRef);
+            const isAdmin = accessSnap.exists && accessSnap.data().active === true;
+            if (isAdmin) {
+                const exclusionRef = db.collection('analytics_session_exclusions').doc(sessionId);
                 transaction.set(exclusionRef, {
                     schemaVersion: 1,
                     reason: 'admin_identity_resolved',
@@ -59,18 +57,17 @@ const updateUserSessionsHandler = async (data = {}, context) => {
                     expireAt: admin.firestore.Timestamp.fromMillis(Date.now() + (7 * 24 * 60 * 60 * 1000))
                 });
                 transaction.delete(sessionRef);
-            });
-            return { success: true, deletedCount: 1, isAdmin: true };
-        } else {
-            await sessionRef.update({
+                return { success: true, deletedCount: 1, isAdmin: true };
+            }
+            transaction.update(sessionRef, {
                 userId,
                 type: 'client',
                 sessionConverted: true,
                 convertedAt: admin.firestore.FieldValue.serverTimestamp(),
-                originalType: sessionSnapshot.data()?.type || 'anonymous'
+                originalType: current.data()?.type || 'anonymous'
             });
             return { success: true, updatedCount: 1, isAdmin: false };
-        }
+        });
     } catch (error) {
         structuredLog('error', 'analytics_session_owner_update_failed', {
             errorClass: String(error?.code || error?.name || 'unknown').slice(0, 120)

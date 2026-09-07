@@ -38,19 +38,33 @@ exports.grantAdminOnAuth = functions.runWith({ secrets: [SUPER_ADMIN_EMAIL_SECRE
         console.log('Admin claim assignment started.', { role });
 
         // Le registre serveur coupe les droits Rules avant l'expiration d'un ID token.
-        await db.collection('sys_admin_access').doc(user.uid).set({
-            uid: user.uid,
-            active: true,
-            role,
-            emailHash: crypto.createHash('sha256').update(normalizedUserEmail).digest('hex'),
-            activatedByUid: pendingData?.addedByUid || 'system',
-            activatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            revokedAt: admin.firestore.FieldValue.delete(),
-            revokedByUid: admin.firestore.FieldValue.delete(),
-            revocationState: admin.firestore.FieldValue.delete(),
-            version: 1
-        }, { merge: true });
+        const accessRef = db.collection('sys_admin_access').doc(user.uid);
+        const activated = await db.runTransaction(async (transaction) => {
+            const [accessSnap, freshWhitelistSnap] = await Promise.all([
+                transaction.get(accessRef),
+                transaction.get(adminDocRef)
+            ]);
+            if (accessSnap.exists && accessSnap.data().active !== true) return false;
+            const freshInvitation = freshWhitelistSnap.exists && Object.values(freshWhitelistSnap.data().users || {})
+                .some((entry) => (entry.email || '').trim().toLowerCase() === normalizedUserEmail
+                    && ['pending', 'pending_email_verification', 'active'].includes(entry.status));
+            if (!isConfiguredSuperAdmin && !freshInvitation) return false;
+            transaction.set(accessRef, {
+                uid: user.uid,
+                active: true,
+                role,
+                emailHash: crypto.createHash('sha256').update(normalizedUserEmail).digest('hex'),
+                activatedByUid: pendingData?.addedByUid || 'system',
+                activatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                revokedAt: admin.firestore.FieldValue.delete(),
+                revokedByUid: admin.firestore.FieldValue.delete(),
+                revocationState: admin.firestore.FieldValue.delete(),
+                version: 1
+            }, { merge: true });
+            return true;
+        });
+        if (!activated) return;
 
         // 1. Grant Custom Claims
         await admin.auth().setCustomUserClaims(user.uid, {

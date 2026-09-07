@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { readFile } from 'node:fs/promises';
 
 import {
   clearAdminDataCache,
@@ -21,6 +22,7 @@ test('périodes sans TTL, isolées par propriétaire et purgées à la révocati
   setAdminPreference('data:period', '7j');
   await loadAdminCachedData('expired', async () => 3, { maxAgeMs: 0 });
   assert.equal(getAdminCachedData('expired'), null);
+  assert.equal(getAdminCachedData('expired', { allowStale: true }), 3);
   assert.equal(getAdminPreference('stats:quote-period', '30d'), '3m');
   assert.equal(getAdminPreference('data:period', '1j'), '7j');
   setAdminCacheAuthorization('another-admin');
@@ -48,6 +50,45 @@ test('admin data cache deduplicates concurrent reads and reuses known data', asy
   assert.deepEqual(first, second);
   assert.deepEqual(third, first);
   assert.deepEqual(getAdminCachedData('orders'), first);
+});
+
+test('stale page remains visible through refresh and error, then authorization still purges it', async () => {
+  await loadAdminCachedData('stale', async () => ['known'], { maxAgeMs: 0 });
+  let fail;
+  const refresh = loadAdminCachedData('stale', () => new Promise((_, reject) => { fail = reject; }), { force: true });
+  await Promise.resolve();
+  assert.deepEqual(getAdminCachedData('stale', { allowStale: true }), ['known']);
+  fail(new Error('offline'));
+  await assert.rejects(refresh);
+  assert.deepEqual(getAdminCachedData('stale', { allowStale: true }), ['known']);
+  setAdminCacheAuthorization(null);
+  assert.equal(getAdminCachedData('stale'), null);
+});
+
+test('returns partial refresh preserves cached rows, but an authorization failure purges all rows', async () => {
+  const source = await readFile(new URL('../src/kit/admin/adminCommerceData.js', import.meta.url), 'utf8');
+  const cacheUrl = new URL('../src/kit/admin/adminDataCache.js', import.meta.url).href;
+  let returnsFailure = new Error('offline');
+  globalThis.__returnsReadMock = {
+    listOrdersAdminV2: async () => ({ orders: ['fresh-order'] }),
+    listReturnsAdminV2: async () => { throw returnsFailure; },
+    listCustomerReturnRequestsAdminV2: async () => ({ requests: ['fresh-request'] }),
+  };
+  try {
+    const isolated = source.replace(/import\s*\{[\s\S]*?\}\s*from '\.\.\/commerce\/commerceV2Client';/, 'const { listOrdersAdminV2, listReturnsAdminV2, listCustomerReturnRequestsAdminV2 } = globalThis.__returnsReadMock;')
+      .replace("'./adminDataCache'", JSON.stringify(cacheUrl));
+    const { loadAdminReturnsFirstPage, ADMIN_RETURNS_FIRST_PAGE_KEY } = await import(`data:text/javascript;base64,${Buffer.from(isolated).toString('base64')}`);
+    await loadAdminCachedData(ADMIN_RETURNS_FIRST_PAGE_KEY, async () => ({ returns: ['known-return'] }));
+    const partial = await loadAdminReturnsFirstPage({ force: true });
+    assert.deepEqual(partial.returns, ['known-return']);
+    assert.deepEqual(partial.orders, ['fresh-order']);
+    assert.equal(partial.returnsOutcome.status, 'rejected');
+    returnsFailure = Object.assign(new Error('denied'), { code: 'permission-denied' });
+    await assert.rejects(loadAdminReturnsFirstPage({ force: true }), { code: 'permission-denied' });
+    assert.equal(getAdminCachedData(ADMIN_RETURNS_FIRST_PAGE_KEY, { allowStale: true }), null);
+  } finally {
+    delete globalThis.__returnsReadMock;
+  }
 });
 
 test('admin data cache is cleared when the admin session ends', async () => {

@@ -6,7 +6,8 @@ import { buildSearchResponse } from '../../../src/kit/marketplace/searchModel';
 export const dynamic = 'force-dynamic';
 
 const getCatalog = async () => {
-  const result = await queryMaterializedCatalog({ scope: 'cards', limit: 120 });
+  // Search the whole immutable snapshot before limiting ranked results.
+  const result = await queryMaterializedCatalog({ scope: 'cards' });
   return {
     catalogVersion: result.snapshot.catalogVersion,
     aggregateSha256: result.snapshot.aggregateSha256,

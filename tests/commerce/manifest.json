@@ -81,6 +81,7 @@
       "module": "./rules/v2-boundaries.cjs",
       "timeoutMs": 10000,
       "scenarios": [
+        "admin-invitations-are-backend-only",
         "owner-v2-root-read-remains-allowed",
         "order-v2-subcollections-are-backend-only",
         "owner-can-read-immutable-commerce-documents-only",

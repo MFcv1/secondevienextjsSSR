@@ -188,6 +188,7 @@ function OrdersPageContent({ initialItems = [] }) {
 
   return (
     <MyOrdersView
+      key={effectiveUser.uid}
       user={effectiveUser}
       onBack={() => { router.push('/'); }}
       darkMode={darkMode}

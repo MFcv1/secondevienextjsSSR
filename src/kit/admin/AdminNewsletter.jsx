@@ -31,6 +31,7 @@ const AdminNewsletter = ({ darkMode }) => {
     const [pageCursors, setPageCursors] = useState([null]);
     const [lastVisible, setLastVisible] = useState(null);
     const [activeCount, setActiveCount] = useState(null);
+    const [readError, setReadError] = useState(false);
 
     useEffect(() => onSnapshot(
         doc(db, 'admin_newsletter_summary', 'current'),
@@ -43,6 +44,7 @@ const AdminNewsletter = ({ darkMode }) => {
 
     useEffect(() => {
         setLoading(true);
+        setReadError(false);
         const constraints = [
             collection(db, 'newsletter_subscribers'),
             orderBy('createdAt', 'desc'),
@@ -65,6 +67,7 @@ const AdminNewsletter = ({ darkMode }) => {
             setSubscribers([]);
             setLastVisible(null);
             setLoading(false);
+            setReadError(true);
         });
 
         return () => unsub();
@@ -154,9 +157,10 @@ const AdminNewsletter = ({ darkMode }) => {
             {filteredSubscribers.length === 0 ? (
                 <EmptyState
                     darkMode={darkMode}
-                    description={searchTerm ? 'Essayez une autre recherche.' : 'Les inscriptions apparaîtront ici.'}
+                    description={readError ? 'La liste n’a pas pu être lue. Rechargez la page pour réessayer.' : searchTerm ? 'Essayez une autre recherche.' : 'Les inscriptions apparaîtront ici.'}
                     icon={<Mail size={26} />}
-                    title="Aucun abonné"
+                    title={readError ? 'Liste indisponible' : 'Aucun abonné sur cette page'}
+                    action={pageIndex > 0 ? <button type="button" onClick={showPreviousPage}>Revenir à la page précédente</button> : null}
                 />
             ) : (
                 <section className={`overflow-hidden rounded-2xl border ${surfaces.panel}`}>

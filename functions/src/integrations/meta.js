@@ -172,6 +172,34 @@ function connectionDocument(candidate, encryptedPageToken, context) {
     };
 }
 
+async function persistOAuthConnection({ stateRef, stateData, connectionId, connection, selection = null }) {
+    const connectionRef = db().collection(CONNECTION_COLLECTION).doc(connectionId);
+    await db().runTransaction(async (transaction) => {
+        const [stateSnapshot, accessSnapshot, connectionSnapshot] = await Promise.all([
+            transaction.get(stateRef),
+            transaction.get(db().doc(`sys_admin_access/${stateData.uid}`)),
+            transaction.get(connectionRef)
+        ]);
+        const state = stateSnapshot.data();
+        const current = connectionSnapshot.data() || {};
+        const startedAt = state?.createdAt?.toMillis?.() || 0;
+        if (!state || state.uid !== stateData.uid || state.status !== 'processing'
+            || (state.expiresAt?.toMillis?.() || 0) <= Date.now()
+            || !accessSnapshot.exists || accessSnapshot.data()?.active !== true) {
+            throw new Error('META_OAUTH_AUTHORIZATION_EXPIRED');
+        }
+        if (!startedAt || (current.disconnectedAt?.toMillis?.() || 0) >= startedAt
+            || (current.oauthStartedAt?.toMillis?.() || 0) > startedAt) {
+            throw new Error('META_OAUTH_CONNECTION_CHANGED');
+        }
+        if (selection) transaction.create(selection.ref, selection.value);
+        transaction.set(connectionRef, { ...connection, oauthStartedAt: state.createdAt }, { merge: true });
+        transaction.update(stateRef, {
+            status: selection ? 'selection_required' : 'completed', completedAt: serverTimestamp()
+        });
+    });
+}
+
 function callbackHtml({ origin, status, message, nonce, source = 'seconde-vie-meta-oauth', title = 'Connexion Meta' }) {
     const safePayload = JSON.stringify({ source, status, message }).replace(/</g, '\\u003c');
     const safeOrigin = JSON.stringify(origin).replace(/</g, '\\u003c');
@@ -354,13 +382,14 @@ async function metaOAuthCallbackHandler(req, res) {
         });
         if (candidates.length === 0) throw new Error('META_NO_MANAGEABLE_PAGE');
         const encryptionKey = secretValue(META_TOKEN_ENCRYPTION_KEY, 'META_TOKEN_ENCRYPTION_KEY');
-        const connectionRef = db().collection(CONNECTION_COLLECTION).doc(META_CONNECTION_ID);
         if (candidates.length === 1) {
             const candidate = candidates[0];
-            await connectionRef.set(connectionDocument(candidate, encryptToken(candidate.pageToken, encryptionKey), {
-                auth: { uid: stateData.uid, token: { email: stateData.email } }
-            }), { merge: true });
-            await stateRef.update({ status: 'completed', completedAt: serverTimestamp() });
+            await persistOAuthConnection({
+                stateRef, stateData, connectionId: META_CONNECTION_ID,
+                connection: connectionDocument(candidate, encryptToken(candidate.pageToken, encryptionKey), {
+                    auth: { uid: stateData.uid, token: { email: stateData.email } }
+                })
+            });
             await auditMeta('meta_oauth_connected', { auth: { uid: stateData.uid, token: { email: stateData.email } } }, {
                 pageName: candidate.pageName,
                 instagramAvailable: Boolean(candidate.instagramUserId)
@@ -370,20 +399,23 @@ async function metaOAuthCallbackHandler(req, res) {
         }
         const sessionId = crypto.randomBytes(16).toString('hex');
         const projectedCandidates = candidates.map(candidateProjection);
-        await db().collection(ASSET_CHOICE_COLLECTION).doc(sessionId).set({
-            uid: stateData.uid,
-            candidates: candidates.map((candidate) => ({
-                ...candidateProjection(candidate),
-                pageId: candidate.pageId,
-                instagramUserId: candidate.instagramUserId,
-                scopes: candidate.scopes,
-                tokenExpiresAt: candidate.tokenExpiresAt,
-                pageToken: encryptToken(candidate.pageToken, encryptionKey)
-            })),
-            createdAt: serverTimestamp(),
-            expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + META_ASSET_CHOICE_TTL_MS)
-        });
-        await connectionRef.set({
+        const selection = {
+            ref: db().collection(ASSET_CHOICE_COLLECTION).doc(sessionId),
+            value: {
+                uid: stateData.uid,
+                candidates: candidates.map((candidate) => ({
+                    ...candidateProjection(candidate),
+                    pageId: candidate.pageId,
+                    instagramUserId: candidate.instagramUserId,
+                    scopes: candidate.scopes,
+                    tokenExpiresAt: candidate.tokenExpiresAt,
+                    pageToken: encryptToken(candidate.pageToken, encryptionKey)
+                })),
+                createdAt: serverTimestamp(),
+                expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + META_ASSET_CHOICE_TTL_MS)
+            }
+        };
+        await persistOAuthConnection({ stateRef, stateData, connectionId: META_CONNECTION_ID, selection, connection: {
             status: 'selection_required',
             selectionSessionId: sessionId,
             candidates: projectedCandidates,
@@ -394,8 +426,7 @@ async function metaOAuthCallbackHandler(req, res) {
             pageToken: admin.firestore.FieldValue.delete(),
             connectedByUid: stateData.uid,
             updatedAt: serverTimestamp()
-        }, { merge: true });
-        await stateRef.update({ status: 'selection_required', completedAt: serverTimestamp() });
+        } });
         sendCallback(res, origin, 'selection_required', 'Choisis la Page à utiliser.');
     } catch (error) {
         console.error('Meta OAuth callback failed', { code: safeErrorCode(error), graphTraceId: error?.graphTraceId || null });
@@ -528,7 +559,7 @@ async function instagramOAuthCallbackHandler(req, res) {
         const tokenInfo = await exchangeInstagramOAuthCode(String(req.query.code));
         const profile = await fetchInstagramProfile(tokenInfo.token, tokenInfo.instagramUserId);
         const encryptionKey = secretValue(META_TOKEN_ENCRYPTION_KEY, 'META_TOKEN_ENCRYPTION_KEY');
-        await db().collection(CONNECTION_COLLECTION).doc(INSTAGRAM_CONNECTION_ID).set({
+        await persistOAuthConnection({ stateRef, stateData, connectionId: INSTAGRAM_CONNECTION_ID, connection: {
             status: 'connected',
             provider: 'instagram_login',
             instagramUserId: profile.instagramUserId,
@@ -542,8 +573,7 @@ async function instagramOAuthCallbackHandler(req, res) {
             lastVerifiedAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
             reauthorizationRequired: false
-        }, { merge: true });
-        await stateRef.update({ status: 'completed', completedAt: serverTimestamp() });
+        } });
         await auditMeta('instagram_oauth_connected', { auth: { uid: stateData.uid, token: { email: stateData.email } } }, {
             instagramUsername: profile.instagramUsername
         });
@@ -627,16 +657,26 @@ async function selectMetaAssetHandler(data, context) {
     const sessionId = normalizeFirestoreId(data?.sessionId, 'Session Meta');
     const candidateId = normalizeFirestoreId(data?.candidateId, 'Page Meta');
     const choiceRef = db().collection(ASSET_CHOICE_COLLECTION).doc(sessionId);
-    const choiceSnap = await choiceRef.get();
-    const choice = choiceSnap.exists ? choiceSnap.data() : null;
-    if (!choice || choice.uid !== context.auth.uid || (choice.expiresAt?.toMillis?.() || 0) <= Date.now()) {
-        throw new functions.https.HttpsError('failed-precondition', 'Cette sélection Meta a expiré.');
-    }
-    const candidate = choice.candidates?.find((item) => item.id === candidateId);
-    if (!candidate) throw new functions.https.HttpsError('invalid-argument', 'Page Meta invalide.');
     const connectionRef = db().collection(CONNECTION_COLLECTION).doc(META_CONNECTION_ID);
-    await connectionRef.set(connectionDocument(candidate, candidate.pageToken, context), { merge: true });
-    await choiceRef.delete();
+    const candidate = await db().runTransaction(async (transaction) => {
+        const [choiceSnap, connectionSnap, accessSnap] = await Promise.all([
+            transaction.get(choiceRef),
+            transaction.get(connectionRef),
+            transaction.get(db().doc(`sys_admin_access/${context.auth.uid}`))
+        ]);
+        const choice = choiceSnap.data();
+        const connection = connectionSnap.data();
+        if (!choice || choice.uid !== context.auth.uid || (choice.expiresAt?.toMillis?.() || 0) <= Date.now()
+            || connection?.status !== 'selection_required' || connection.selectionSessionId !== sessionId
+            || !accessSnap.exists || accessSnap.data()?.active !== true) {
+            throw new functions.https.HttpsError('failed-precondition', 'Cette sélection Meta a expiré.');
+        }
+        const selected = choice.candidates?.find((item) => item.id === candidateId);
+        if (!selected) throw new functions.https.HttpsError('invalid-argument', 'Page Meta invalide.');
+        transaction.set(connectionRef, connectionDocument(selected, selected.pageToken, context), { merge: true });
+        transaction.delete(choiceRef);
+        return selected;
+    });
     await auditMeta('meta_asset_selected', context, {
         pageName: candidate.pageName,
         instagramAvailable: Boolean(candidate.instagramUserId)

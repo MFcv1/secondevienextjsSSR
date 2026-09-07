@@ -168,6 +168,7 @@ function createAdminPaymentLinkCoordinator({
         typeof refs?.order !== 'function' ||
         typeof refs?.policy !== 'function' ||
         typeof refs?.reservation !== 'function' ||
+        typeof refs?.attempt !== 'function' ||
         typeof checkoutRepository?.prepareCheckout !== 'function' ||
         typeof checkoutRepository?.loadCheckout !== 'function' ||
         typeof sagaService?.ensurePaymentIntent !== 'function' ||
@@ -465,6 +466,10 @@ function createAdminPaymentLinkCoordinator({
             actorUid,
             type: 'extended',
             mutate: async ({ transaction, order, paymentLink }) => {
+                const attempt = await transaction.get(refs.attempt(orderId, order.payment.currentAttemptId));
+                if (!snapshotExists(attempt) || ['cancel_requested', 'canceled', 'needs_review'].includes(attempt.data().status)) {
+                    throw coordinatorError('COMMERCE_ADMIN_PAYMENT_LINK_CANCELLATION_IN_PROGRESS');
+                }
                 const nowMillis = clock.nowMillis();
                 const currentExpiryMillis = Date.parse(order.checkout.expiresAt);
                 const extensionBaseMillis = Math.max(nowMillis, currentExpiryMillis);
@@ -616,7 +621,8 @@ function createAdminPaymentLinkCoordinator({
         if (checkout.order.checkout.status === 'closed') {
             return { outcome: checkout.order.checkout.closeReason, orderId };
         }
-        const result = await sagaService.cancelProviderFirst(checkout);
+        const result = await sagaService.cancelProviderFirst({ ...checkout, expectedExpiry: checkout.order.checkout.expiresAt });
+        if (result.outcome === 'not_due') return result;
         const updated = await annotateCancellation(
             orderId,
             'system:payment-link-expiry',

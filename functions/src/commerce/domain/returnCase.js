@@ -210,7 +210,7 @@ function reduceReturnCase(returnCase, event, { clock }) {
             next.lines = updateLines(next, event.lines, 'writtenOffQty');
             break;
         case 'resolve':
-            if (next.lines.some(
+            if (!next.lines.some((line) => line.receivedQty > 0) || next.lines.some(
                 (line) => line.restockedQty + line.writtenOffQty !== line.receivedQty
             )) {
                 throw returnError('COMMERCE_RETURN_RESOLUTION_INCOMPLETE');

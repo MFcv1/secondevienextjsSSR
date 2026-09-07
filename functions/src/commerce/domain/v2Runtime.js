@@ -435,6 +435,9 @@ function createRefs(db, appId) {
         returnCase: (orderId, returnId) => document(
             `orders/${orderId}/returns/${returnId}`
         ),
+        customerReturnRequest: (orderId, requestId) => document(
+            `orders/${orderId}/customer_return_requests/${requestId}`
+        ),
         auditEvent: (orderId, eventId) => document(
             `orders/${orderId}/events/${eventId}`
         ),

@@ -9,6 +9,7 @@ const {
 const { regionalFunctions } = require('../../helpers/runtime');
 const { computeAllowedActions } = require('./domain/allowedActions');
 const {
+    isReturnReceiptComplete,
     validateCustomerReturnRequest
 } = require('./domain/customerReturnRequest');
 const { validateOrderV2 } = require('./domain/orderState');
@@ -341,7 +342,7 @@ async function serializeCustomerReturnRequestAdmin(snapshot, db, reads = new Map
         canAuthorizeReturn: request.status === 'pending_review'
             && ['carrier', 'customer'].includes(order.fulfillmentSummary.custody),
         canRefundAfterReturn: request.status === 'return_authorized'
-            && returnCase?.status === 'resolved'
+            && isReturnReceiptComplete(returnCase, request)
             && remainingCents > 0,
         canReject: request.status === 'pending_review'
     };
@@ -500,12 +501,13 @@ function serializeReturn(snapshot) {
 async function paginatedQuery({
     query,
     cursorId,
+    cursorSnapshot,
     cursorCollection,
     pageSize
 }) {
     let bounded = query;
     if (cursorId) {
-        const cursor = await cursorCollection.doc(cursorId).get();
+        const cursor = cursorSnapshot || await cursorCollection.doc(cursorId).get();
         if (!cursor.exists) {
             throw new functions.https.HttpsError(
                 'invalid-argument',
@@ -567,9 +569,10 @@ function createListMyOrdersHandler({
             : null;
         const db = dbFactory();
         const orders = db.collection('orders');
+        let cursorSnapshot;
         if (cursorId) {
-            const cursor = await orders.doc(cursorId).get();
-            if (!cursor.exists || cursor.data()?.userId !== ownerUid) {
+            cursorSnapshot = await orders.doc(cursorId).get();
+            if (!cursorSnapshot.exists || cursorSnapshot.data()?.userId !== ownerUid) {
                 throw new functions.https.HttpsError(
                     'permission-denied',
                     'Curseur de commande refuse.'
@@ -581,6 +584,7 @@ function createListMyOrdersHandler({
                 .where('userId', '==', ownerUid)
                 .orderBy('createdAt', 'desc'),
             cursorId,
+            cursorSnapshot,
             cursorCollection: orders,
             pageSize
         });

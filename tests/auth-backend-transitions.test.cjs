@@ -60,6 +60,7 @@ test('valid customer OTP is consumed once before minting its Firebase custom tok
     path: 'fixture-otp-ref',
     update: async (value) => calls.operationUpdates.push(value)
   };
+  const state = { otpHash, expiresAtMillis: Date.now() + 60_000, attempts: 0 };
   const db = {
     doc: () => otpRef,
     runTransaction: async (handler) => handler({
@@ -67,14 +68,17 @@ test('valid customer OTP is consumed once before minting its Firebase custom tok
         assert.equal(ref, otpRef);
         return {
           exists: true,
-          data: () => ({
-            otpHash,
-            expiresAtMillis: Date.now() + 60_000,
-            attempts: 0
-          })
+          data: () => ({ ...state })
         };
       },
-      update: (...args) => calls.transactionUpdates.push(args)
+      update: (...args) => {
+        if (calls.transactionUpdates.length) calls.operationUpdates.push(args[1]);
+        calls.transactionUpdates.push(args);
+        for (const [key, value] of Object.entries(args[1])) {
+          if (value === 'FIELD_DELETE') delete state[key];
+          else state[key] = value;
+        }
+      }
     }),
     collection: (name) => {
       assert.equal(name, 'users');
@@ -128,7 +132,7 @@ test('valid customer OTP is consumed once before minting its Firebase custom tok
     }
   });
 
-  assert.equal(calls.transactionUpdates.length, 1);
+  assert.equal(calls.transactionUpdates.length, 3);
   assert.equal(calls.transactionUpdates[0][0], otpRef);
   assert.equal(calls.transactionUpdates[0][1].status, 'issuing');
   assert.equal(calls.transactionUpdates[0][1].operationStage, 'user');

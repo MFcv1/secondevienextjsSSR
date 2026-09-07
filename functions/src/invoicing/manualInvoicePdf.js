@@ -41,7 +41,7 @@ function safeFilename(number) {
 function drawWrapped(pdf, lines, x, y, maxWidth, lineHeight = 4.7) {
     let cursor = y;
     for (const value of lines.filter(Boolean)) {
-        const wrapped = pdf.splitTextToSize(String(value), maxWidth).slice(0, 4);
+        const wrapped = pdf.splitTextToSize(String(value), maxWidth);
         pdf.text(wrapped, x, cursor);
         cursor += wrapped.length * lineHeight;
     }
@@ -73,9 +73,14 @@ function renderManualInvoicePdf(invoice, { draft = invoice.status !== 'issued' }
         pdf.setTextColor(255, 255, 255);
         pdf.setFont('helvetica', 'bold');
         pdf.setFontSize(18);
-        pdf.text(invoice.seller.businessName, 15, 19);
-        pdf.setTextColor(226, 138, 58);
-        pdf.text('.', 15 + pdf.getTextWidth(invoice.seller.businessName), 19);
+        if (pdf.getTextWidth(invoice.seller.businessName) > 105) {
+            pdf.setFontSize(11);
+            pdf.text(pdf.splitTextToSize(invoice.seller.businessName, 105), 15, 12);
+        } else {
+            pdf.text(invoice.seller.businessName, 15, 19);
+            pdf.setTextColor(226, 138, 58);
+            pdf.text('.', 15 + pdf.getTextWidth(invoice.seller.businessName), 19);
+        }
         pdf.setTextColor(255, 255, 255);
         pdf.setFontSize(9);
         pdf.text(draft ? 'BROUILLON DE FACTURE' : 'FACTURE', 195, 13, { align: 'right' });
@@ -94,10 +99,10 @@ function renderManualInvoicePdf(invoice, { draft = invoice.status !== 'issued' }
     pdf.text('ÉMETTEUR', 15, sellerY);
     pdf.setTextColor(28, 25, 23);
     pdf.setFontSize(10);
-    pdf.text(invoice.seller.legalName, 15, sellerY + 7);
+    sellerY = drawWrapped(pdf, [invoice.seller.legalName], 15, sellerY + 7, 78);
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(8.5);
-    sellerY = drawWrapped(pdf, addressLines(invoice.seller), 15, sellerY + 13, 78);
+    sellerY = drawWrapped(pdf, addressLines(invoice.seller), 15, sellerY + 1, 78);
     sellerY = drawWrapped(pdf, [invoice.seller.email, invoice.seller.phone], 15, sellerY + 1, 78);
     sellerY = drawWrapped(pdf, [
         `SIREN ${invoice.seller.siren}`,
@@ -112,11 +117,11 @@ function renderManualInvoicePdf(invoice, { draft = invoice.status !== 'issued' }
     pdf.text('FACTURÉ À', 112, customerY);
     pdf.setTextColor(28, 25, 23);
     pdf.setFontSize(10);
-    pdf.text(customerName(invoice.customer), 112, customerY + 7);
+    customerY = drawWrapped(pdf, [customerName(invoice.customer)], 112, customerY + 7, 83);
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(8.5);
-    customerY = drawWrapped(pdf, addressLines(invoice.customer), 112, customerY + 13, 83);
-    drawWrapped(pdf, [invoice.customer.email, invoice.customer.phone], 112, customerY + 1, 83);
+    customerY = drawWrapped(pdf, addressLines(invoice.customer), 112, customerY + 1, 83);
+    customerY = drawWrapped(pdf, [invoice.customer.email, invoice.customer.phone], 112, customerY + 1, 83);
 
     const metaY = Math.max(95, sellerY + 8, customerY + 14);
     pdf.setFillColor(247, 244, 238);
@@ -151,40 +156,45 @@ function renderManualInvoicePdf(invoice, { draft = invoice.status !== 'issued' }
         pdf.text('TOTAL', 191, y + 6.5, { align: 'right' });
         y += 10;
     };
+    if (y > 235) { pdf.addPage(); drawHeader(); y = 45; }
     drawTableHeader();
 
     for (const line of invoice.lines) {
-        const nameLines = pdf.splitTextToSize(line.name, 101).slice(0, 2);
-        const descriptionLines = line.description
-            ? pdf.splitTextToSize(line.description, 101).slice(0, 3)
-            : [];
-        const rowHeight = Math.max(15, 7 + nameLines.length * 4.5 + descriptionLines.length * 3.8);
-        if (y + rowHeight > 252) {
-            pdf.addPage();
-            drawHeader();
-            y = 45;
-            drawTableHeader();
-        }
-        pdf.setDrawColor(222, 215, 204);
-        pdf.line(15, y + rowHeight, 195, y + rowHeight);
-        pdf.setTextColor(28, 25, 23);
         pdf.setFont('helvetica', 'bold');
         pdf.setFontSize(8.5);
-        pdf.text(nameLines, 20, y + 6.5);
-        if (descriptionLines.length) {
-            pdf.setFont('helvetica', 'normal');
-            pdf.setFontSize(7.5);
-            pdf.setTextColor(120, 113, 108);
-            pdf.text(descriptionLines, 20, y + 7 + nameLines.length * 4.5);
-        }
-        pdf.setTextColor(28, 25, 23);
+        const nameLines = pdf.splitTextToSize(line.name, 101);
         pdf.setFont('helvetica', 'normal');
-        pdf.setFontSize(8.5);
-        pdf.text(String(line.quantity), 140, y + 7, { align: 'right' });
-        pdf.text(formatMoney(line.unitPriceCents), 166, y + 7, { align: 'right' });
-        pdf.setFont('helvetica', 'bold');
-        pdf.text(formatMoney(line.totalCents), 191, y + 7, { align: 'right' });
-        y += rowHeight;
+        pdf.setFontSize(7.5);
+        const descriptionLines = line.description
+            ? pdf.splitTextToSize(line.description, 101)
+            : [];
+        const texts = [...nameLines.map(text => ({ text, name: true })), ...descriptionLines.map(text => ({ text, name: false }))];
+        let firstSegment = true;
+        while (texts.length) {
+            if (y + 15 > 252) { pdf.addPage(); drawHeader(); y = 45; drawTableHeader(); }
+            const count = Math.max(1, Math.floor((252 - y - 7) / 4.5));
+            const segment = texts.splice(0, count);
+            const rowHeight = Math.max(15, 7 + segment.length * 4.5);
+            segment.forEach((entry, index) => {
+                pdf.setFont('helvetica', entry.name ? 'bold' : 'normal');
+                pdf.setFontSize(entry.name ? 8.5 : 7.5);
+                pdf.setTextColor(...(entry.name ? [28, 25, 23] : [120, 113, 108]));
+                pdf.text(entry.text, 20, y + 6.5 + index * 4.5);
+            });
+            if (firstSegment) {
+                pdf.setTextColor(28, 25, 23);
+                pdf.setFont('helvetica', 'normal');
+                pdf.setFontSize(8.5);
+                pdf.text(String(line.quantity), 140, y + 7, { align: 'right' });
+                pdf.text(formatMoney(line.unitPriceCents), 166, y + 7, { align: 'right' });
+                pdf.setFont('helvetica', 'bold');
+                pdf.text(formatMoney(line.totalCents), 191, y + 7, { align: 'right' });
+                firstSegment = false;
+            }
+            y += rowHeight;
+            pdf.setDrawColor(222, 215, 204);
+            pdf.line(15, y, 195, y);
+        }
     }
 
     if (y > 229) {
@@ -214,18 +224,26 @@ function renderManualInvoicePdf(invoice, { draft = invoice.status !== 'issued' }
     pdf.text(formatMoney(invoice.totalCents), 195, y, { align: 'right' });
 
     y += 17;
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(8.5);
-    pdf.text('Règlement', 15, y);
-    pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(8);
+    const drawFlowText = (text, { bold = false } = {}) => {
+        pdf.setFont('helvetica', bold ? 'bold' : 'normal');
+        pdf.setFontSize(8);
+        const lines = pdf.splitTextToSize(text, 180);
+        for (const value of lines) {
+            if (y > 263) { pdf.addPage(); drawHeader(); y = 49; }
+            pdf.setTextColor(28, 25, 23);
+            pdf.setFont('helvetica', bold ? 'bold' : 'normal');
+            pdf.setFontSize(8);
+            pdf.text(value, 15, y);
+            y += 4.7;
+        }
+    };
+    drawFlowText('Règlement', { bold: true });
     const payment = [invoice.paymentTerms, invoice.paymentMethod].filter(Boolean).join(' · ');
-    pdf.text(pdf.splitTextToSize(payment, 105).slice(0, 3), 15, y + 6);
+    drawFlowText(payment);
     if (invoice.notes) {
-        pdf.setFont('helvetica', 'bold');
-        pdf.text('Notes', 15, y + 20);
-        pdf.setFont('helvetica', 'normal');
-        pdf.text(pdf.splitTextToSize(invoice.notes, 105).slice(0, 5), 15, y + 26);
+        y += 5;
+        drawFlowText('Notes', { bold: true });
+        drawFlowText(invoice.notes);
     }
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(7.5);
@@ -235,7 +253,8 @@ function renderManualInvoicePdf(invoice, { draft = invoice.status !== 'issued' }
         : invoice.seller.vatMode === 'margin'
             ? 'Régime particulier — Biens d’occasion.'
             : invoice.seller.vatNumber ? `TVA intracommunautaire : ${invoice.seller.vatNumber}` : '';
-    pdf.text(legalMention, 195, y + 18, { align: 'right', maxWidth: 67 });
+    y += 5;
+    if (legalMention) drawFlowText(legalMention);
 
     const pageCount = pdf.getNumberOfPages();
     for (let page = 1; page <= pageCount; page += 1) {
@@ -245,7 +264,7 @@ function renderManualInvoicePdf(invoice, { draft = invoice.status !== 'issued' }
         pdf.setTextColor(120, 113, 108);
         pdf.setFontSize(7);
         pdf.setFont('helvetica', 'normal');
-        pdf.text(`${invoice.seller.businessName} · ${invoice.seller.email}`, 15, 283);
+        pdf.text(pdf.splitTextToSize(`${invoice.seller.businessName} · ${invoice.seller.email}`, 120), 15, 283);
         pdf.text(`${number} · ${page}/${pageCount}`, 195, 283, { align: 'right' });
         if (draft) {
             pdf.setTextColor(180, 83, 9);

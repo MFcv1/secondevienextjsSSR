@@ -59,6 +59,7 @@ const PanelSkeleton = ({ darkMode }) => {
 const SuggestionPanel = ({
   data,
   loading = false,
+  error = false,
   query,
   activeId,
   setActiveId,
@@ -101,7 +102,7 @@ const SuggestionPanel = ({
         className={`search-suggest-scroll overflow-y-auto overscroll-contain rounded-[16px] ${coreTone} ${mobile ? 'h-full' : 'max-h-[min(33.5rem,calc(100vh-165px))]'}`}
         data-global-menu-scrollable={mobile ? 'true' : undefined}
       >
-        {showSkeleton ? (
+        {error ? <p role="status" className="px-5 py-5 text-sm">Suggestions indisponibles. Appuyez sur Entrée pour relancer la recherche.</p> : showSkeleton ? (
           <PanelSkeleton darkMode={darkMode} />
         ) : (
           <>
@@ -111,7 +112,7 @@ const SuggestionPanel = ({
                   Recherches
                 </p>
                 {querySuggestions.map((item, index) => {
-                  const id = `search-query-${index}`;
+                  const id = `${panelId}-search-query-${index}`;
                   const isActive = activeId === id;
                   return (
                     <button
@@ -144,7 +145,7 @@ const SuggestionPanel = ({
                   Categories
                 </p>
                 {categorySuggestions.map((item, index) => {
-                  const id = `search-category-${index}`;
+                  const id = `${panelId}-search-category-${index}`;
                   const isActive = activeId === id;
                   return (
                     <button
@@ -182,7 +183,7 @@ const SuggestionPanel = ({
                   Pieces
                 </p>
                 {productSuggestions.map((item, index) => {
-                  const id = `search-product-${index}`;
+                  const id = `${panelId}-search-product-${index}`;
                   const isActive = activeId === id;
                   return (
                     <button
@@ -288,6 +289,7 @@ export default function SearchSuggestIsland({
   const [query, setQuery] = React.useState(DEFAULT_QUERY);
   const [data, setData] = React.useState(null);
   const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState(false);
   const [open, setOpen] = React.useState(false);
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [activeId, setActiveId] = React.useState('');
@@ -305,16 +307,22 @@ export default function SearchSuggestIsland({
     });
 
     setLoading(true);
+    setError(false);
     fetch(`/api/search?${params.toString()}`, { cache: 'no-store', signal: controller.signal })
-      .then((response) => (response.ok ? response.json() : null))
+      .then((response) => { if (!response.ok) throw new Error('search_failed'); return response.json(); })
       .then((payload) => {
+        if (controller.signal.aborted) return;
         if (payload) {
           setData(payload);
         }
         setLoading(false);
       })
       .catch((error) => {
-        if (error?.name !== 'AbortError') setLoading(false);
+        if (!controller.signal.aborted && error?.name !== 'AbortError') {
+          setLoading(false);
+          setData(null);
+          setError(true);
+        }
       });
 
     return () => controller.abort();
@@ -349,22 +357,23 @@ export default function SearchSuggestIsland({
     if (activeId) {
       const element = document.getElementById(activeId);
       if (element) {
-        element.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        element.scrollIntoView({ block: 'nearest', behavior: 'auto' });
       }
     }
   }, [activeId]);
 
   const flatItems = React.useMemo(() => {
     const items = [];
-    (data?.querySuggestions || []).forEach((item, index) => items.push({ id: `search-query-${index}`, href: item.href }));
-    (data?.categorySuggestions || []).forEach((item, index) => items.push({ id: `search-category-${index}`, href: item.scopedHref || item.href }));
-    (data?.productSuggestions || []).forEach((item, index) => items.push({ id: `search-product-${index}`, href: item.url }));
+    (data?.querySuggestions || []).forEach((item, index) => items.push({ id: `${panelId}-search-query-${index}`, href: item.href }));
+    (data?.categorySuggestions || []).forEach((item, index) => items.push({ id: `${panelId}-search-category-${index}`, href: item.scopedHref || item.href }));
+    (data?.productSuggestions || []).forEach((item, index) => items.push({ id: `${panelId}-search-product-${index}`, href: item.url }));
     return items;
-  }, [data]);
+  }, [data, panelId]);
 
   const chooseHref = React.useCallback((href) => {
     setOpen(false);
     setMobileOpen(false);
+    window.dispatchEvent(new CustomEvent('sv:close-navigation-overlays'));
     if (href) router.push(href);
   }, [router]);
 
@@ -379,10 +388,13 @@ export default function SearchSuggestIsland({
     }
 
     if (event.key === 'Escape') {
+      if (open || mobileOpen) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
       setOpen(false);
       setMobileOpen(false);
       setActiveId('');
-      event.currentTarget.blur();
       return;
     }
 
@@ -411,6 +423,8 @@ export default function SearchSuggestIsland({
   const sharedInputProps = {
     type: 'search',
     name: 'q',
+    maxLength: 80,
+    'aria-label': 'Rechercher dans le catalogue',
     placeholder: 'Rechercher un produit...',
     value: query,
     autoComplete: 'off',
@@ -421,6 +435,8 @@ export default function SearchSuggestIsland({
     'aria-activedescendant': activeId || undefined,
     onChange: (event) => {
       setQuery(event.target.value);
+      setData(null);
+      setError(false);
       setActiveId('');
     },
     onKeyDown: handleKeyDown,
@@ -450,6 +466,7 @@ export default function SearchSuggestIsland({
           <SuggestionPanel
             data={data}
             loading={loading}
+            error={error}
             query={query}
             activeId={activeId}
             setActiveId={setActiveId}
@@ -498,6 +515,7 @@ export default function SearchSuggestIsland({
         <SuggestionPanel
           data={data}
           loading={loading}
+          error={error}
           query={query}
           activeId={activeId}
           setActiveId={setActiveId}

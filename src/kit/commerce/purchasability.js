@@ -17,19 +17,19 @@ export const isPurchasable = (item) => (
 );
 
 /**
- * Vrai quand la piece n'est plus disponible a la vente : soit le champ `sold`
- * est renseigne, soit le stock est retombe a zero. C'est l'etat affiche
- * (badge + libelle de prix), distinct de `isPurchasable` qui gouverne le panier.
+ * Une vente exige une preuve explicite ou la projection des réservations V2.
+ * Le stock nul seul peut être un hold ou une indisponibilité indéterminée.
  */
 export const isSoldOut = (item) => (
   Boolean(item?.sold)
-  || ((!item?.status || item.status === 'published') && getProductStockAmount(item) <= 0)
+  || item?.availability === 'sold'
 );
 
 export const getPurchaseUnavailableLabel = (item) => {
   if (item?.status && item.status !== 'published') return 'Indisponible';
-  if (item?.sold) return 'Vendu';
-  if (getProductStockAmount(item) <= 0) return 'Deja reserve';
+  if (isSoldOut(item)) return 'Vendu';
+  if (item?.availability === 'reserved') return 'Réservé';
+  if (getProductStockAmount(item) <= 0) return 'Indisponible';
   if (item?.priceOnRequest || getProductPriceAmount(item) <= 0) return 'Demander un devis';
   return 'Indisponible';
 };

@@ -804,5 +804,6 @@ function AdminContent() {
 }
 
 export default function AdminAppIsland(props) {
-  return <AdminContent {...props} />;
+  const { user } = useAuth();
+  return <AdminContent key={user?.uid || 'guest'} {...props} />;
 }

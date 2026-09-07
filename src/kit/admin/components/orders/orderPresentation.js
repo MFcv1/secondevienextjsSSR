@@ -50,6 +50,17 @@ export const normalizeAdminOrder = (order) => {
 
 export const normalizeAdminOrders = (orders = []) => orders.map(normalizeAdminOrder);
 
+export const mergeAdminOrders = (current, incoming) => {
+    const rows = new Map(current.map(order => [order.id, order]));
+    for (const order of incoming) {
+        if (!order?.id) continue;
+        const previous = rows.get(order.id);
+        if (previous && Number(previous.stateVersion || 0) > Number(order.stateVersion || 0)) continue;
+        rows.set(order.id, order);
+    }
+    return [...rows.values()];
+};
+
 // ── Formats ──────────────────────────────────────────────────────────────────
 
 const priceFormatter = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' });
@@ -60,6 +71,7 @@ const fullFormatter = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium', ti
 const dayFormatter = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
 
 export const formatPrice = (value) => {
+    if (value == null || value === '') return 'Prix indisponible';
     const amount = Number(value);
     return Number.isFinite(amount) ? priceFormatter.format(amount) : 'Prix indisponible';
 };
@@ -124,6 +136,7 @@ const FULFILLMENT_LABEL = {
 };
 
 const EXCEPTIONS = {
+    expired: { label: 'Réservation expirée', tone: 'neutral' },
     needs_review: { label: 'À vérifier', tone: 'danger' },
     payment_failed: { label: 'Paiement échoué', tone: 'danger' },
     refund_failed: { label: 'Remboursement à vérifier', tone: 'danger' },
@@ -232,7 +245,7 @@ export const getOrderSegment = (order) => {
     if (status === 'refunded') {
         return isRefundedWithGoodsOnSite(order) ? 'todo' : 'done';
     }
-    if (['cancelled', 'canceled', 'cancelled_by_client'].includes(status)) return 'done';
+    if (['expired', 'cancelled', 'canceled', 'cancelled_by_client'].includes(status)) return 'done';
     if (['picked_up', 'delivered', 'canceled'].includes(fulfillment)) return 'done';
     if (isOrderPaid(order) && ['unfulfilled', 'preparing'].includes(fulfillment)) return 'todo';
     return 'waiting';
@@ -304,11 +317,10 @@ export const filterOrders = (orders = [], { segment = 'all', search = '' } = {})
     ));
     if (segment !== 'all') return filtered;
 
-    const priority = { todo: 0, waiting: 1, done: 2 };
     return filtered
         .map((order, index) => ({ index, order }))
         .sort((left, right) => (
-            priority[getOrderSegment(left.order)] - priority[getOrderSegment(right.order)]
+            getMillis(right.order.createdAt) - getMillis(left.order.createdAt)
             || left.index - right.index
         ))
         .map(({ order }) => order);

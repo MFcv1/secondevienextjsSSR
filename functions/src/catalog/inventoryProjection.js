@@ -11,7 +11,7 @@ function buildInventoryOverview(sourceDocuments = [], options = {}) {
         const price = Number(data.currentPrice || data.startingPrice || 0);
         const stock = data.stock !== undefined ? Number(data.stock) : 1;
         const published = data.status === 'published';
-        const sold = published && (data.sold === true || stock <= 0);
+        const sold = published && (data.sold === true || data.availability === 'sold');
         if (published) publishedItems += 1;
         if (sold) soldItems += 1;
         if (published && !sold && stock > 0) {

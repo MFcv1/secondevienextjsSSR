@@ -13,12 +13,12 @@ function hashEventId(eventId) {
     return crypto.createHash('sha256').update(String(eventId || '')).digest('hex');
 }
 
-function mutationKeyFor({ appId, productId, mutationVersion }) {
+function mutationKeyFor({ appId, productId, mutationVersion, deleted = false }) {
     if (!appId || !productId || !mutationVersion) {
         throw new Error('CATALOG_MUTATION_VERSION_REQUIRED');
     }
     return crypto.createHash('sha256')
-        .update(`${appId}\n${productId}\n${mutationVersion}`)
+        .update(`${appId}\n${productId}\n${mutationVersion}${deleted ? '\ndelete' : ''}`)
         .digest('hex');
 }
 
@@ -35,7 +35,9 @@ async function recordCatalogMutation(dependencies, input) {
     if (!classification.publicImpact && !classification.inventoryImpact) return { result: 'ignored_no_impact', classification };
 
     const eventHash = hashEventId(eventId);
-    const mutationHash = mutationKeyFor({ appId, productId, mutationVersion });
+    // A deletion carries the last document updateTime, also used by its last
+    // write. Keep write identities compatible while giving deletion its own key.
+    const mutationHash = mutationKeyFor({ appId, productId, mutationVersion, deleted: after === null });
     const ledgerRef = db.doc(`sys_catalog_publication_events/${mutationHash}`);
     const controlRef = db.doc(CONTROL_DOCUMENT);
     const transactionResult = await db.runTransaction(async (transaction) => {

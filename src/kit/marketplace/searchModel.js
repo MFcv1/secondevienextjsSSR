@@ -51,12 +51,12 @@ const cleanCategoryLabel = (label) => String(label || '')
   .replace(/\s*&\s*/g, ' et ')
   .trim();
 
-const getCategoryLabelMap = () => Object.fromEntries(
+const categoryLabelMap = Object.fromEntries(
   getCategoryEntries().map((category) => [category.id, cleanCategoryLabel(category.label || category.id)])
 );
 
 const getProductCategoryLabel = (product) => {
-  const labels = getCategoryLabelMap();
+  const labels = categoryLabelMap;
   const category = String(product?.category || '');
   const group = KIT_CONFIG.productCategories?.find((entry) => entry.id === category)?.group;
   return [labels[category], labels[group]].filter(Boolean).join(' ');
@@ -97,24 +97,28 @@ export const getProductSearchText = (product) => [
   getProductCategoryLabel(product),
 ].filter(Boolean).join(' ');
 
-const getProductScore = (product, query) => {
-  const normalizedQuery = normalizeSearchText(query);
+const getProductScore = (product, normalizedQuery) => {
   const title = normalizeSearchText(product?.name || product?.title);
   const material = normalizeSearchText(product?.material);
   const style = normalizeSearchText(product?.style);
   const category = normalizeSearchText(getProductCategoryLabel(product));
   const description = normalizeSearchText(product?.description);
   const haystack = normalizeSearchText(getProductSearchText(product));
-  const terms = normalizedQuery.split(' ').filter(Boolean);
-  const isSmallPriceQuery = normalizedQuery.includes('petit prix') || normalizedQuery.includes('prix bas');
-  const isAvailabilityQuery = normalizedQuery.includes('disponible') || normalizedQuery.includes('stock');
+  const pricePattern = /\b(?:petits? prix|prix bas)\b/g;
+  const availabilityPattern = /\b(?:disponibles?|stock)\b/g;
+  const isSmallPriceQuery = /\b(?:petits? prix|prix bas)\b/.test(normalizedQuery);
+  const isAvailabilityQuery = /\b(?:disponibles?|stock)\b/.test(normalizedQuery);
+  const terms = normalizedQuery.replace(pricePattern, ' ').replace(availabilityPattern, ' ').split(' ').filter(Boolean);
+  const price = getProductPriceAmount(product);
+  if (isSmallPriceQuery && !(price > 0 && price <= 250)) return 0;
+  if (isAvailabilityQuery && !isPurchasable(product)) return 0;
 
   let score = 0;
   if (!normalizedQuery) {
     score += getCreatedTime(product) / 100000000000;
   } else {
     const matchedTerms = terms.filter((term) => haystack.includes(term));
-    if (terms.length && matchedTerms.length !== terms.length && !isSmallPriceQuery && !isAvailabilityQuery) return 0;
+    if (terms.length && matchedTerms.length !== terms.length) return 0;
 
     if (title === normalizedQuery) score += 180;
     if (title.startsWith(normalizedQuery)) score += 130;
@@ -132,9 +136,8 @@ const getProductScore = (product, query) => {
     });
   }
 
-  const price = getProductPriceAmount(product);
   if (isSmallPriceQuery) {
-    score += price > 0 && price <= 350 ? 100 : 0;
+    score += 100;
   }
   if (isAvailabilityQuery) {
     score += isPurchasable(product) ? 80 : 0;
@@ -232,11 +235,16 @@ export const buildQuerySearchSuggestions = (query = '', limit = 5) => {
   }));
 };
 
-export const searchProducts = (products = [], query = '', limit = 24) => (
-  products
-    .map((product) => ({ product, score: getProductScore(product, query) }))
+const rankProducts = (products, query) => {
+  const normalizedQuery = normalizeSearchText(query);
+  return products
+    .map((product) => ({ product, score: getProductScore(product, normalizedQuery) }))
     .filter(({ score }) => score > 0)
-    .sort((a, b) => b.score - a.score || getCreatedTime(b.product) - getCreatedTime(a.product))
+    .sort((a, b) => b.score - a.score || getCreatedTime(b.product) - getCreatedTime(a.product));
+};
+
+export const searchProducts = (products = [], query = '', limit = 24) => (
+  rankProducts(products, query)
     .slice(0, limit)
     .map(({ product }) => serializeSearchProduct(product))
 );
@@ -244,13 +252,15 @@ export const searchProducts = (products = [], query = '', limit = 24) => (
 export const buildSearchResponse = (products = [], query = '', options = {}) => {
   const limit = Math.max(1, Math.min(Number(options.limit) || 24, 60));
   const productLimit = options.mode === 'suggest' ? Math.min(limit, 5) : limit;
-  const productResults = searchProducts(products, query, productLimit);
+  const ranked = rankProducts(products, query);
+  const productResults = ranked.slice(0, productLimit).map(({ product }) => serializeSearchProduct(product));
   const categorySuggestions = buildCategorySearchSuggestions(products, query, options.mode === 'suggest' ? 4 : 8);
   const querySuggestions = buildQuerySearchSuggestions(query, options.mode === 'suggest' ? 5 : 8);
 
   return {
     query: String(query || '').trim(),
-    total: searchProducts(products, query, 60).length,
+    total: ranked.length,
+    hasMore: ranked.length > productResults.length,
     products: productResults,
     productSuggestions: productResults.slice(0, 4),
     categorySuggestions,

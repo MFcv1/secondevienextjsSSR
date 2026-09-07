@@ -4,6 +4,7 @@ const {
     transitionRefundAttempt,
     validateProviderRefund
 } = require('./refundSaga');
+const { assertProviderCreateWindow } = require('./providerCreateWindow');
 
 function serviceError(code, cause = null) {
     const error = new Error(code);
@@ -31,12 +32,16 @@ function createRefundSagaService({ stripe, repository, clock, failpoints = null 
         if (attempt.status === 'failed') {
             return { outcome: 'failed', refundId: attempt.refundId, reused: true };
         }
+        if (!attempt.refundId) assertProviderCreateWindow(attempt, clock);
         let current = transitionRefundAttempt(attempt, { type: 'create_started' }, { clock });
         await repository.saveAttempt(current);
         let refund = current.refundId
             ? await stripe.retrieveRefund(current.refundId, current.connectedAccountId)
             : null;
         if (!refund) {
+            if (current.refundId) {
+                throw serviceError('COMMERCE_PROVIDER_RECONCILIATION_REQUIRED');
+            }
             try {
                 refund = await stripe.createRefund({
                     payment_intent: current.paymentIntentId,

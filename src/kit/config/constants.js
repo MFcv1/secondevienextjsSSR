@@ -139,8 +139,7 @@ export const KIT_CONFIG = {
 
   // ── FEATURE FLAGS ─────────────────────────────────────────
   features: {
-    // La surface newsletter / jeu promo reste visible pendant la demo.
-    // Sa persistance et son envoi seront branches dans une passe dediee.
+    // Le jeu et ses envois sont gérés par les fonctions newsletter Rewards.
     newsletter:      true,
     // Les temoignages restent masques tant que leur provenance et leur droit
     // de publication n'ont pas ete confirmes explicitement.

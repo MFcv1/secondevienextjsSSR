@@ -82,7 +82,7 @@ function reconcilePaymentIntent({ order, paymentIntent, clock }) {
     if (paymentIntent.status === 'canceled') {
         const nextOrder = reduceOrder(order, {
             type: 'payment_canceled',
-            closeReason: 'canceled'
+            closeReason: Date.parse(order.checkout.expiresAt) <= Date.parse(clock.now()) ? 'expired' : 'canceled'
         }, { clock });
         if (nextOrder.payment.status !== 'canceled') {
             return {

@@ -41,6 +41,11 @@ function resolveCheckoutResumeTerminalCode(order, attempt, nowMillis) {
             ? 'COMMERCE_CHECKOUT_TERMINAL_EXPIRED'
             : 'COMMERCE_CHECKOUT_TERMINAL_CANCELED';
     }
+    // Refuse a new submission even when the expiry task has not run yet.
+    // This does not release inventory or declare a provider payment canceled.
+    if (Number.isSafeInteger(expiresAtMillis) && expiresAtMillis <= nowMillis) {
+        return 'COMMERCE_CHECKOUT_DEADLINE_REACHED';
+    }
     return null;
 }
 
@@ -59,6 +64,8 @@ function createCheckoutCoordinator({ checkoutRepository, sagaService, clock }) {
 
     async function createCheckout(request) {
         const prepared = await checkoutRepository.prepareCheckout(request);
+        const terminalCode = resolveCheckoutResumeTerminalCode(prepared.order, prepared.attempt, clock.nowMillis());
+        if (terminalCode) throw coordinatorError(terminalCode);
         if (!prepared.reused) sagaService.hitAfterHold();
         return sagaService.ensurePaymentIntent({
             order: prepared.order,
@@ -77,6 +84,10 @@ function createCheckoutCoordinator({ checkoutRepository, sagaService, clock }) {
         const payment = await sagaService.ensurePaymentIntent(checkout);
         return {
             ...payment,
+            expiresAt: checkout.order.checkout.expiresAt,
+            shippingAddress: checkout.order.shippingSnapshot,
+            customerEmail: checkout.order.customerSnapshot?.email || '',
+            deliveryModeId: checkout.order.deliverySnapshot?.id,
             items: summarizeCheckoutResumeItems(checkout.order)
         };
     }

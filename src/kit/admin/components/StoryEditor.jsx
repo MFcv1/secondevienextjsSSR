@@ -487,9 +487,16 @@ export default function StoryEditor({ value, onChange, darkMode = false }) {
             }
           }}
           onDoubleClick={() => requestAnimationFrame(() => openHighlightPalette(true))}
+          onDragOver={(event) => event.preventDefault()}
+          onDrop={(event) => {
+            // Native HTML drops bypass the plain-text paste boundary.
+            event.preventDefault();
+            setEditorHint('Collez le texte avec le clavier pour conserver un contenu sûr.');
+          }}
           onPaste={(event) => {
             event.preventDefault();
-            const plainText = event.clipboardData.getData('text/plain');
+            const remaining = Math.max(0, 10000 - (editorRef.current?.textContent?.length || 0) + (getEditorRange()?.selection.toString().length || 0));
+            const plainText = event.clipboardData.getData('text/plain').slice(0, remaining);
             historyRef.current.lastInputAt = 0;
             document.execCommand('insertText', false, plainText);
             syncFromEditor({ boundary: true });

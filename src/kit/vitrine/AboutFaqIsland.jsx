@@ -15,7 +15,7 @@ export default function AboutFaqIsland({ items }) {
             <button
               type="button"
               onClick={() => setOpenId(isOpen ? null : faq.id)}
-              className="flex w-full items-center justify-between py-6 text-left outline-none md:py-10 lg:py-12"
+              className="flex w-full items-center justify-between py-6 text-left focus-visible:outline focus-visible:outline-2 md:py-10 lg:py-12"
               aria-expanded={isOpen}
             >
               <span className="flex items-center gap-6 pr-4 md:gap-10">
@@ -28,9 +28,9 @@ export default function AboutFaqIsland({ items }) {
                 <Plus size={20} strokeWidth={1.5} className={`transition-transform duration-300 ${isOpen ? 'rotate-45' : ''}`} />
               </span>
             </button>
-            <div className={`overflow-hidden transition-[max-height,opacity] duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isOpen ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0'}`}>
-              <div className="pb-8 pl-[52px] pr-12 md:pb-10 md:pl-[72px]">
-                <p className="text-sm font-light leading-relaxed text-[#5A5550] md:text-base">{faq.answer}</p>
+            <div aria-hidden={!isOpen} className={`grid transition-[grid-template-rows,opacity] duration-500 motion-reduce:transition-none ease-[cubic-bezier(0.23,1,0.32,1)] ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+              <div className="min-h-0 overflow-hidden">
+                <p className="pb-8 pl-[52px] pr-12 md:pb-10 md:pl-[72px] text-sm font-light leading-relaxed text-[#5A5550] md:text-base">{faq.answer}</p>
               </div>
             </div>
           </div>

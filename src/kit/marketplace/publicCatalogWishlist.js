@@ -40,10 +40,11 @@ export const mergeCatalogProducts = (currentItems, products) => {
   return Array.from(byId.values());
 };
 
-export const resolveWishlistCatalogItems = (wishlistItems, catalogItems) => (
-  wishlistItems.map((wishlistItem) => {
+export const resolveWishlistCatalogItems = (wishlistItems, catalogItems) => {
+  const catalogById = new Map(catalogItems.map((item) => [getWishlistProductId(item), item]));
+  return wishlistItems.map((wishlistItem) => {
     const wishlistId = getWishlistProductId(wishlistItem);
-    const live = catalogItems.find((item) => getWishlistProductId(item) === wishlistId);
+    const live = catalogById.get(wishlistId);
     if (live) return live;
     return {
       ...wishlistItem,
@@ -53,5 +54,5 @@ export const resolveWishlistCatalogItems = (wishlistItems, catalogItems) => (
         ? wishlistItem.images
         : [wishlistItem.image].filter(Boolean),
     };
-  })
-);
+  });
+};

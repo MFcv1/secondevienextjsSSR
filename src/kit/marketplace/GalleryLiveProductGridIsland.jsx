@@ -127,6 +127,8 @@ export default function GalleryLiveProductGridIsland({
 
   useEffect(() => {
     if (!focusedProductId || focusRevealedRef.current) return undefined;
+    let timer;
+    let focusedCard;
     const frame = window.requestAnimationFrame(() => {
       const grid = document.getElementById(`${sectionId}-grid`);
       const card = [...(grid?.querySelectorAll('[data-gallery-product-card][data-product-id]') || [])]
@@ -135,14 +137,22 @@ export default function GalleryLiveProductGridIsland({
       const gridItem = card.closest('[data-product-grid-item]');
       if (gridItem) gridItem.hidden = false;
       focusRevealedRef.current = true;
+      focusedCard = card;
+      const url = new URL(window.location.href);
+      url.searchParams.delete('focusProduct');
+      window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
       card.setAttribute('data-publication-focus', 'true');
       card.scrollIntoView({
         behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
         block: 'center',
       });
-      window.setTimeout(() => card.removeAttribute('data-publication-focus'), 5000);
+      timer = window.setTimeout(() => card.removeAttribute('data-publication-focus'), 5000);
     });
-    return () => window.cancelAnimationFrame(frame);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(timer);
+      focusedCard?.removeAttribute('data-publication-focus');
+    };
   }, [focusedProductId, items, sectionId]);
 
   useEffect(() => {

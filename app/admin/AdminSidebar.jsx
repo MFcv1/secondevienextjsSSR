@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { ChevronLeft, X } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+import { focusWithoutScroll, getDialogFocusableElements, trapDialogTabKey } from '../../src/kit/ui/dialogFocus';
 
 export default function AdminSidebar({
   activeTabId,
@@ -15,6 +17,36 @@ export default function AdminSidebar({
   onSelect,
   tabs,
 }) {
+  const panelRef = useRef(null);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const mobile = window.matchMedia('(max-width: 1023px)');
+    let release = () => {};
+    const sync = () => {
+      release();
+      release = () => {};
+      if (!mobile.matches) return;
+      const previous = document.activeElement;
+      const overflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      focusWithoutScroll(getDialogFocusableElements(panelRef.current)[0]);
+      const onKeyDown = (event) => {
+        if (event.key === 'Escape') { event.preventDefault(); closeRef.current(); }
+        else trapDialogTabKey(event, panelRef.current);
+      };
+      document.addEventListener('keydown', onKeyDown);
+      release = () => {
+        document.body.style.overflow = overflow;
+        document.removeEventListener('keydown', onKeyDown);
+        focusWithoutScroll(previous);
+      };
+    };
+    sync();
+    mobile.addEventListener('change', sync);
+    return () => { mobile.removeEventListener('change', sync); release(); };
+  }, [isOpen]);
   return (
     <>
       {isOpen && (
@@ -27,8 +59,9 @@ export default function AdminSidebar({
       )}
 
       <aside
+        ref={panelRef}
         aria-label="Navigation de l'administration"
-        className={`fixed inset-y-0 left-0 z-50 flex w-[17.5rem] flex-col border-r transition-transform duration-300 lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'} ${darkMode ? 'border-white/10 bg-[#111111]' : 'border-stone-200 bg-[#F7F5F1]'}`}
+        className={`fixed inset-y-0 left-0 z-50 flex w-[17.5rem] flex-col border-r transition-transform duration-300 lg:visible lg:translate-x-0 ${isOpen ? 'visible translate-x-0' : 'invisible -translate-x-full'} ${darkMode ? 'border-white/10 bg-[#111111]' : 'border-stone-200 bg-[#F7F5F1]'}`}
       >
         <div className={`flex h-20 items-center justify-between border-b px-6 ${darkMode ? 'border-white/10' : 'border-stone-200'}`}>
           <div>

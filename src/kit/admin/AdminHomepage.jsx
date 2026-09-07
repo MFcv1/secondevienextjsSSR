@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { deleteField, doc, getDoc, setDoc } from 'firebase/firestore';
-import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { deleteField, doc, getDoc, runTransaction } from 'firebase/firestore';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import {
     ChevronRight,
     Database,
@@ -106,13 +106,13 @@ const GOVERNANCE_ITEMS = [
     },
     {
         title: 'Images produits',
-        body: 'Les nouvelles publications creent un WebP optimise unique et un nettoyage Storage existe cote Functions.',
+        body: 'Les publications conservent les variantes adaptées aux cartes, au détail et au zoom.',
         icon: Gauge,
         state: 'Actif',
     },
     {
         title: 'Images statiques',
-        body: 'La Personnalisation publie un WebP optimise unique et nettoie les anciens fichiers Storage.',
+        body: 'La Personnalisation enregistre un WebP optimisé. Les anciens médias sont conservés pour les pages en cache.',
         icon: ImageIcon,
         state: 'Actif',
     },
@@ -357,73 +357,21 @@ const getTextCompletion = (schema = [], value = {}) => {
     return filled / schema.length;
 };
 
-const getStoragePathFromUrl = (url) => {
-    if (!url || typeof url !== 'string' || !url.includes('/o/')) return '';
-    try {
-        const parsed = new URL(url);
-        const encodedPath = parsed.pathname.split('/o/')[1];
-        return encodedPath ? decodeURIComponent(encodedPath) : '';
-    } catch {
-        return '';
-    }
-};
-
-const deleteStorageUrl = async (url) => {
-    const path = getStoragePathFromUrl(url);
-    if (!path) return;
-    try {
-        const storage = await getStorageInstance();
-        await deleteObject(ref(storage, path));
-    } catch (error) {
-        console.warn('Static media cleanup skipped:', error.message);
-    }
-};
-
-const collectVariantUrls = (variants) => {
-    if (!variants || typeof variants !== 'object') return [];
-    return Object.values(variants).filter((url) => typeof url === 'string' && url);
-};
-
-const deleteStaticMediaUrls = async (urls = []) => {
-    const uniqueUrls = Array.from(new Set(urls.filter(Boolean)));
-    await Promise.all(uniqueUrls.map((url) => deleteStorageUrl(url)));
-};
-
-const getHeroEntryStorageUrls = (entry) => {
-    const resolved = resolveGalleryHeroImage(entry);
-    return [
-        resolved?.src,
-        ...collectVariantUrls(resolved?.variants || entry?.variants),
-    ].filter(Boolean);
-};
-
 const uploadStaticWebpImage = async (file, item, uploadKey) => {
     const folder = item.storageFolder || 'personalization';
-    const baseName = `${getSafeStorageName(uploadKey)}_${Date.now()}`;
+    const baseName = `${getSafeStorageName(uploadKey)}_${crypto.randomUUID()}`;
     const sourceFile = new File([file], `${baseName}.webp`, {
         type: 'image/webp',
         lastModified: Date.now(),
     });
     const storage = await getStorageInstance();
     const storageRef = ref(storage, `${folder}/${sourceFile.name}`);
-    const uploadedUrls = [];
-
-    try {
-        await uploadBytes(storageRef, sourceFile, {
-            cacheControl: 'public, max-age=31536000, immutable',
-            contentType: 'image/webp',
-        });
-        const url = await getDownloadURL(storageRef);
-        uploadedUrls.push(url);
-        return {
-            fullUrl: url,
-            totalBytes: sourceFile.size,
-            uploadedUrls,
-        };
-    } catch (error) {
-        await deleteStaticMediaUrls(uploadedUrls);
-        throw error;
-    }
+    await uploadBytes(storageRef, sourceFile, {
+        cacheControl: 'public, max-age=31536000, immutable',
+        contentType: 'image/webp',
+    });
+    const url = await getDownloadURL(storageRef);
+    return { fullUrl: url, totalBytes: sourceFile.size };
 };
 
 const getStoredHeroBase = (storedHeroImages) => (
@@ -473,6 +421,7 @@ const AdminHomepage = ({ darkMode = false }) => {
     const [activePage, setActivePage] = useState('overview');
     const [documents, setDocuments] = useState({ [DOC_IDS.about]: {}, [DOC_IDS.gallery]: {} });
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState(false);
     const [uploading, setUploading] = useState(null);
     const [msg, setMsg] = useState('');
     const [lastOptimization, setLastOptimization] = useState(null);
@@ -498,6 +447,7 @@ const AdminHomepage = ({ darkMode = false }) => {
             } catch (error) {
                 console.error('Error fetching personalization config:', error);
                 setMsg(`Erreur chargement: ${error.message}`);
+                setLoadError(true);
             } finally {
                 setLoading(false);
             }
@@ -546,6 +496,22 @@ const AdminHomepage = ({ darkMode = false }) => {
         }));
     };
 
+    const saveFields = (docId, patch) => runTransaction(db, async (transaction) => {
+        const reference = doc(db, 'sys_metadata', docId);
+        const snapshot = await transaction.get(reference);
+        const current = snapshot.exists() ? snapshot.data() : {};
+        for (const key of Object.keys(patch)) {
+            if (JSON.stringify(current[key]) !== JSON.stringify(documents[docId]?.[key])) {
+                throw new Error('Ce contenu a changé dans une autre session. Rechargez avant de réessayer.');
+            }
+        }
+        transaction.set(reference, patch, { merge: true });
+    });
+
+    const reportAction = (action) => (...args) => Promise.resolve().then(() => action(...args)).catch(error => {
+        setMsg(`Erreur : ${error.message}`);
+    });
+
     const handleFileChange = (file, item, section) => {
         if (!file || item.isTextOnly) return;
 
@@ -588,15 +554,11 @@ const AdminHomepage = ({ darkMode = false }) => {
         setUploading(uploadKey);
         setMsg('Optimisation WebP...');
 
-        let uploadedUrls = [];
-
         try {
             const fileName = `${getSafeStorageName(uploadKey)}_${Date.now()}.webp`;
             const fileToUpload = new File([croppedBlob], fileName, { type: 'image/webp' });
             setMsg('Envoi WebP optimise...');
             const uploadResult = await uploadStaticWebpImage(fileToUpload, item, uploadKey);
-            uploadedUrls = uploadResult.uploadedUrls || [uploadResult.fullUrl].filter(Boolean);
-            const docRef = doc(db, 'sys_metadata', item.docId);
 
             setMsg('Sauvegarde Firestore...');
             if (mode === 'heroArray') {
@@ -605,26 +567,16 @@ const AdminHomepage = ({ darkMode = false }) => {
                     src: uploadResult.fullUrl,
                     objectPosition: 'center center',
                 };
-                const previousUrls = Number.isInteger(item.key)
-                    ? getHeroEntryStorageUrls(nextHeroImages[item.key])
-                    : [];
                 if (Number.isInteger(item.key)) nextHeroImages[item.key] = payload;
                 else nextHeroImages.push(payload);
-                await setDoc(docRef, { hero_images: nextHeroImages }, { merge: true });
-                await deleteStaticMediaUrls(previousUrls.filter((url) => !uploadedUrls.includes(url)));
+                await saveFields(item.docId, { hero_images: nextHeroImages });
                 setDocState(item.docId, { hero_images: nextHeroImages });
             } else {
-                const previousUrl = documents[item.docId]?.[item.key];
                 const variantsKey = getItemVariantsKey(item);
-                const previousVariants = documents[item.docId]?.[variantsKey];
-                await setDoc(docRef, {
+                await saveFields(item.docId, {
                     [item.key]: uploadResult.fullUrl,
                     [variantsKey]: deleteField(),
-                }, { merge: true });
-                await deleteStaticMediaUrls([
-                    previousUrl,
-                    ...collectVariantUrls(previousVariants),
-                ].filter((url) => !uploadedUrls.includes(url)));
+                });
                 setDocState(item.docId, {
                     [item.key]: uploadResult.fullUrl,
                 });
@@ -636,27 +588,23 @@ const AdminHomepage = ({ darkMode = false }) => {
                 original: originalSize,
                 compressed: uploadResult.totalBytes,
             });
-            setMsg('Mise à jour publiée.');
+            setMsg('Contenu enregistré. Les surfaces connectées se mettent à jour après renouvellement du cache.');
+            setCropperConfig({ isOpen: false, image: null, aspect: 1, originalSize: 0, item: null, mode: 'single' });
             window.setTimeout(() => setMsg(''), 3500);
         } catch (error) {
-            await deleteStaticMediaUrls(uploadedUrls);
             console.error('Critical upload error:', error);
             setMsg(`Erreur: ${error.message}`);
+            throw error;
         } finally {
             setUploading(null);
-            setCropperConfig({ isOpen: false, image: null, aspect: 1, originalSize: 0, item: null, mode: 'single' });
         }
     };
 
     const handleReset = async (item, section) => {
         if (!window.confirm('Revenir au fallback code pour cet element ?')) return;
 
-        const docRef = doc(db, 'sys_metadata', section.docId);
-        const previousUrl = documents[section.docId]?.[item.key];
         const variantsKey = getItemVariantsKey(item);
-        const previousVariants = documents[section.docId]?.[variantsKey];
-        await setDoc(docRef, { [item.key]: deleteField(), [variantsKey]: deleteField() }, { merge: true });
-        await deleteStaticMediaUrls([previousUrl, ...collectVariantUrls(previousVariants)]);
+        await saveFields(section.docId, { [item.key]: deleteField(), [variantsKey]: deleteField() });
 
         setDocuments((prev) => {
             const nextDoc = { ...(prev[section.docId] || {}) };
@@ -669,10 +617,8 @@ const AdminHomepage = ({ darkMode = false }) => {
     const handleRemoveHeroImage = async (index) => {
         if (!window.confirm('Retirer cette image du hero galerie ?')) return;
         const baseHeroImages = getStoredHeroBase(storedHeroImages);
-        const removedUrls = getHeroEntryStorageUrls(baseHeroImages[index]);
         const nextHeroImages = baseHeroImages.filter((_, currentIndex) => currentIndex !== index);
-        await setDoc(doc(db, 'sys_metadata', DOC_IDS.gallery), { hero_images: nextHeroImages }, { merge: true });
-        await deleteStaticMediaUrls(removedUrls);
+        await saveFields(DOC_IDS.gallery, { hero_images: nextHeroImages });
         setDocState(DOC_IDS.gallery, { hero_images: nextHeroImages });
     };
 
@@ -682,16 +628,14 @@ const AdminHomepage = ({ darkMode = false }) => {
         const nextHeroImages = getStoredHeroBase(storedHeroImages);
         const [moved] = nextHeroImages.splice(fromIndex, 1);
         nextHeroImages.splice(toIndex, 0, moved);
-        await setDoc(doc(db, 'sys_metadata', DOC_IDS.gallery), { hero_images: nextHeroImages }, { merge: true });
+        await saveFields(DOC_IDS.gallery, { hero_images: nextHeroImages });
         setDocState(DOC_IDS.gallery, { hero_images: nextHeroImages });
     };
 
     const handleResetHeroImages = async () => {
         if (!window.confirm('Supprimer les anciennes slides custom et revenir aux 8 images du dossier imagehero ?')) return;
 
-        const previousHeroImages = [...storedHeroImages];
-        await setDoc(doc(db, 'sys_metadata', DOC_IDS.gallery), { hero_images: deleteField() }, { merge: true });
-        await deleteStaticMediaUrls(previousHeroImages.flatMap(getHeroEntryStorageUrls));
+        await saveFields(DOC_IDS.gallery, { hero_images: deleteField() });
         removeDocFieldFromState(DOC_IDS.gallery, 'hero_images', setDocuments);
         setMsg('Hero galerie remis sur les 8 images imagehero.');
         window.setTimeout(() => setMsg(''), 3500);
@@ -712,7 +656,7 @@ const AdminHomepage = ({ darkMode = false }) => {
             window.URL.revokeObjectURL(blobUrl);
         } catch (error) {
             console.warn('Download failed, opening image:', error);
-            window.open(url, '_blank');
+            window.open(url, '_blank', 'noopener,noreferrer');
         }
     };
 
@@ -728,7 +672,7 @@ const AdminHomepage = ({ darkMode = false }) => {
         try {
             setMsg('Sauvegarde du contenu...');
             const textKey = getItemTextKey({ key });
-            await setDoc(doc(db, 'sys_metadata', editingTextItem.docId), { [textKey]: formData }, { merge: true });
+            await saveFields(editingTextItem.docId, { [textKey]: formData });
             setDocState(editingTextItem.docId, { [textKey]: formData });
             setIsTextModalOpen(false);
             setEditingTextItem(null);
@@ -737,8 +681,11 @@ const AdminHomepage = ({ darkMode = false }) => {
         } catch (error) {
             console.error('Text save error:', error);
             setMsg(`Erreur texte: ${error.message}`);
+            throw error;
         }
     };
+
+    if (loadError) return <p role="alert">{msg} Rechargez la page avant de modifier la personnalisation.</p>;
 
     if (loading) {
         return (
@@ -884,9 +831,9 @@ const AdminHomepage = ({ darkMode = false }) => {
                             isUsingDefaultHeroImages={isUsingDefaultHeroImages}
                             presetCount={GALLERY_HERO_PRESETS.length}
                             onFileSelect={handleHeroFileChange}
-                            onRemove={handleRemoveHeroImage}
-                            onMove={handleMoveHeroImage}
-                            onReset={handleResetHeroImages}
+                            onRemove={reportAction(handleRemoveHeroImage)}
+                            onMove={reportAction(handleMoveHeroImage)}
+                            onReset={reportAction(handleResetHeroImages)}
                             uploading={uploading}
                         />
                     )}
@@ -956,10 +903,11 @@ const AdminHomepage = ({ darkMode = false }) => {
                                                     item={item}
                                                     currentImage={currentImage}
                                                     isUpdating={isUpdating}
+                                                    readOnly={(section.pageId === 'gallery' && item.key !== 'announcement_banner') || item.key === 'about_hero'}
                                                     darkMode={darkMode}
                                                     onFileSelect={(file) => handleFileChange(file, item, section)}
                                                     onDownload={() => currentImage && handleDownload(currentImage, `${item.key}.webp`)}
-                                                    onReset={() => handleReset(item, section)}
+                                                    onReset={reportAction(() => handleReset(item, section))}
                                                     hasCustomImage={hasCustomImage}
                                                     hasTextSchema={hasTextSchema}
                                                     onEditText={() => handleEditText(item, section)}
@@ -1004,7 +952,7 @@ const MiniStat = ({ label, value, darkMode }) => (
 );
 
 const HeroCarouselManager = ({ darkMode, heroImages, isUsingDefaultHeroImages, presetCount, onFileSelect, onRemove, onMove, onReset, uploading }) => (
-    <section className={`rounded-[2rem] border p-1.5 ${darkMode ? 'border-white/10 bg-white/[0.035]' : 'border-stone-200 bg-stone-100/70'}`}>
+    <fieldset disabled className={`rounded-[2rem] border p-1.5 ${darkMode ? 'border-white/10 bg-white/[0.035]' : 'border-stone-200 bg-stone-100/70'}`}>
         <div className={`rounded-[calc(2rem-0.375rem)] p-5 md:p-6 ${darkMode ? 'bg-[#111]' : 'bg-white'}`}>
             <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
@@ -1015,7 +963,7 @@ const HeroCarouselManager = ({ darkMode, heroImages, isUsingDefaultHeroImages, p
                         <h4 className="text-xl font-black tracking-[-0.02em]">Hero carousel galerie</h4>
                     </div>
                     <p className={`mt-2 text-sm ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>
-                        Slides 16:9 de la home commerciale. La base active utilise les {presetCount} WebP du dossier imagehero.
+                        Aperçu des données conservées. Le hero public utilise les {presetCount} images définies dans le code ; cet éditeur est en lecture seule.
                     </p>
                     <div className={`mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] ${isUsingDefaultHeroImages ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
                         {isUsingDefaultHeroImages ? 'Source locale imagehero' : 'Liste custom Firestore'}
@@ -1090,7 +1038,7 @@ const HeroCarouselManager = ({ darkMode, heroImages, isUsingDefaultHeroImages, p
                 </div>
             )}
         </div>
-    </section>
+    </fieldset>
 );
 
 const LockedSurfacePanel = ({ page, darkMode }) => (

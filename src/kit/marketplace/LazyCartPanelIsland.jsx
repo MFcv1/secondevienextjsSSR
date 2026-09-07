@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChevronRight, ShoppingBag, X } from 'lucide-react';
+import { createCartEventHandoff } from './cartEventHandoff';
 
 const GUEST_CART_STORAGE_KEY = 'secondevie:guest-cart:v1';
 const GUEST_CART_CHANGED_EVENT = 'sv:guest-cart-changed';
@@ -177,8 +178,16 @@ export default function LazyCartPanelIsland({ className = '', darkMode = false }
   const [instantShellClosing, setInstantShellClosing] = useState(false);
   const eventCounterRef = useRef(0);
   const shellTimerRef = useRef(null);
+  const handoffRef = useRef(null);
+  if (!handoffRef.current) {
+    handoffRef.current = createCartEventHandoff(({ type, detail }) => {
+      window.dispatchEvent(new CustomEvent(type, { detail }));
+    });
+  }
+  const handleCartReady = useCallback(() => handoffRef.current.ready(), []);
 
   const ensureCartPanel = useCallback((eventType = 'sv:open-cart', detail = {}) => {
+    if (!handoffRef.current.capture({ type: eventType, detail })) return;
     const id = `${Date.now()}-${eventCounterRef.current += 1}`;
     if (shellTimerRef.current) {
       window.clearTimeout(shellTimerRef.current);
@@ -258,7 +267,7 @@ export default function LazyCartPanelIsland({ className = '', darkMode = false }
   return (
     <>
       {CartPanel ? (
-        <CartPanel className={className} darkMode={darkMode} initialEvent={initialEvent} />
+        <CartPanel className={className} darkMode={darkMode} onReady={handleCartReady} />
       ) : (
         <button
           type="button"

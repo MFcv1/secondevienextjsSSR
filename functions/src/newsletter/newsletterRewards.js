@@ -156,6 +156,7 @@ async function claimNewsletterRewardHandler(data, context) {
         const subscriberRef = db.collection(SUBSCRIBERS_COLLECTION).doc(subscriberDocumentId(email));
         const emailHash = sha256(email);
         const now = admin.firestore.Timestamp.now();
+        const claimId = crypto.randomUUID();
         let reward = null;
         let shouldSend = false;
 
@@ -181,12 +182,17 @@ async function claimNewsletterRewardHandler(data, context) {
                 const delivery = reward.emailDelivery || {};
                 const leaseIsFresh = delivery.status === 'sending'
                     && (delivery.startedAt?.toMillis?.() || 0) > now.toMillis() - EMAIL_LEASE_MS;
-                shouldSend = delivery.status !== 'sent' && !leaseIsFresh;
+                shouldSend = !['sent', 'sending', 'delivery_unknown'].includes(delivery.status);
+                if (delivery.status === 'sending' && !leaseIsFresh) {
+                    reward = { ...reward, emailDelivery: { ...delivery, status: 'delivery_unknown' } };
+                    transaction.update(rewardRef, { emailDelivery: reward.emailDelivery, updatedAt: now });
+                }
                 if (shouldSend) {
                     reward = {
                         ...reward,
                         emailDelivery: {
                             status: 'sending',
+                            claimId,
                             startedAt: now,
                             attemptCount: Number(delivery.attemptCount || 0) + 1
                         }
@@ -211,7 +217,7 @@ async function claimNewsletterRewardHandler(data, context) {
                     createdAt: now,
                     updatedAt: now,
                     expiresAt: admin.firestore.Timestamp.fromMillis(now.toMillis() + REWARD_TTL_MS),
-                    emailDelivery: { status: 'sending', startedAt: now, attemptCount: 1 }
+                    emailDelivery: { status: 'sending', claimId, startedAt: now, attemptCount: 1 }
                 };
                 transaction.create(rewardRef, reward);
                 transaction.update(playRef, { status: 'claimed', claimedAt: now, rewardId: rewardRef.id });
@@ -235,6 +241,17 @@ async function claimNewsletterRewardHandler(data, context) {
         await ensurePromotionMaterialized(db, reward.code, now.toDate().toISOString());
 
         if (shouldSend) {
+            let accepted = false;
+            const finishDelivery = async (delivery) => db.runTransaction(async (transaction) => {
+                const snapshot = await transaction.get(rewardRef);
+                const current = snapshot.data()?.emailDelivery;
+                if (current?.claimId !== claimId || current.status !== 'sending') return current;
+                transaction.update(rewardRef, {
+                    emailDelivery: { ...current, ...delivery },
+                    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                });
+                return { ...current, ...delivery };
+            });
             try {
                 const runtime = createTransactionalEmailRuntime({
                     provider: TRANSACTIONAL_EMAIL_PROVIDER.value(),
@@ -247,30 +264,26 @@ async function claimNewsletterRewardHandler(data, context) {
                     newsletterRewardEmail(reward, runtime.fromAddress, getSiteUrl()),
                     { idempotencyKey: `newsletter-reward/${rewardRef.id}` }
                 );
-                await rewardRef.set({
-                    emailDelivery: {
+                accepted = true;
+                if (!result?.id) throw new Error('NEWSLETTER_PROVIDER_RESPONSE_INVALID');
+                reward.emailDelivery = await finishDelivery({
                         status: 'sent',
                         provider: result.provider,
-                        providerMessageId: result.id || null,
+                        providerMessageId: result.id,
                         completedAt: admin.firestore.FieldValue.serverTimestamp()
-                    },
-                    updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                }, { merge: true });
-                reward.emailDelivery = { status: 'sent' };
+                });
             } catch (error) {
                 console.error('Newsletter reward email failed', {
                     rewardId: rewardRef.id,
                     code: String(error?.code || error?.message || 'unknown').slice(0, 120)
                 });
-                await rewardRef.set({
-                    emailDelivery: {
-                        status: 'failed',
+                const ambiguous = accepted || error?.deliveryUnknown === true
+                    || ['ECONNRESET', 'ESOCKET', 'ETIMEDOUT', 'GMAIL_SEND_FAILED'].includes(error?.code);
+                reward.emailDelivery = await finishDelivery({
+                        status: ambiguous ? 'delivery_unknown' : 'failed',
                         errorCode: String(error?.code || 'SEND_FAILED').slice(0, 120),
                         completedAt: admin.firestore.FieldValue.serverTimestamp()
-                    },
-                    updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                }, { merge: true });
-                reward.emailDelivery = { status: 'failed' };
+                });
             }
         }
 

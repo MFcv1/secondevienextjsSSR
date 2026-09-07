@@ -64,6 +64,7 @@ async function enqueueOutboxWrite(event) {
 }
 
 async function enqueueReservationWrite(event) {
+    if (!event?.data?.before || !event?.data?.after) throw new Error('COMMERCE_RESERVATION_EVENT_INVALID');
     const before = event.data?.before?.exists ? reservationSchedule(event.data.before.data()) : null;
     const after = event.data?.after?.exists ? reservationSchedule(event.data.after.data()) : null;
     if (!after || sameSchedule(before, after)) return null;

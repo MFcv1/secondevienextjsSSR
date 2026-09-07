@@ -1,0 +1,4 @@
+export const checkoutDialogPanel = 'm-auto w-[calc(100%-2rem)] max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-[28px] border border-white/80 bg-[#faf9f6] p-6 sm:p-8 text-stone-900 shadow-[0_24px_80px_rgba(0,0,0,0.18)] backdrop:bg-stone-950/30 backdrop:backdrop-blur-sm';
+export const checkoutDialogButton = 'inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold transition-colors motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
+export const checkoutDialogPrimary = `${checkoutDialogButton} bg-stone-900 text-white shadow-sm hover:bg-stone-800`;
+export const checkoutDialogSecondary = `${checkoutDialogButton} bg-stone-200/60 text-stone-800 hover:bg-stone-200`;

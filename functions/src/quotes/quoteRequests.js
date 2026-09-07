@@ -271,7 +271,6 @@ function normalizePhotoInput(data) {
 }
 
 async function uploadQuoteRequestPhotoHandler(data) {
-    let storageFile = null;
     try {
         const photo = normalizePhotoInput(data);
         const ref = db.collection(QUOTES_COLLECTION).doc(photo.quoteId);
@@ -294,8 +293,10 @@ async function uploadQuoteRequestPhotoHandler(data) {
             throw new functions.https.HttpsError('invalid-argument', 'Photo illisible ou trop volumineuse.');
         }
 
-        const storagePath = `${QUOTE_STORAGE_ROOT}/${photo.quoteId}/${photo.photoId}.webp`;
-        storageFile = admin.storage().bucket().file(storagePath);
+        // Each attempt owns its object. A concurrent request with the same
+        // photoId must neither overwrite nor delete the winning upload.
+        const storagePath = `${QUOTE_STORAGE_ROOT}/${photo.quoteId}/${photo.photoId}_${crypto.randomUUID()}.webp`;
+        const storageFile = admin.storage().bucket().file(storagePath);
         await storageFile.save(rendered.data, {
             resumable: false,
             validation: 'crc32c',
@@ -306,16 +307,14 @@ async function uploadQuoteRequestPhotoHandler(data) {
             }
         });
 
-        let nextCount = 0;
-        await db.runTransaction(async (transaction) => {
+        const result = await db.runTransaction(async (transaction) => {
             const currentSnapshot = await transaction.get(ref);
             if (!currentSnapshot.exists) throw new functions.https.HttpsError('not-found', 'Demande introuvable.');
             const current = currentSnapshot.data();
             assertSubmissionAccess(current, photo.uploadToken);
             const photos = Array.isArray(current.photos) ? current.photos : [];
             if (photos.some((entry) => entry.photoId === photo.photoId)) {
-                nextCount = Number(current.photoCount || photos.length);
-                return;
+                return { photoCount: Number(current.photoCount || photos.length), duplicate: true };
             }
             if (photos.length >= MAX_PHOTOS) {
                 throw new functions.https.HttpsError('failed-precondition', 'Le nombre maximal de photos est atteint.');
@@ -331,16 +330,20 @@ async function uploadQuoteRequestPhotoHandler(data) {
                 size: rendered.data.length,
                 uploadedAt
             }];
-            nextCount = nextPhotos.length;
             transaction.update(ref, {
                 photos: nextPhotos,
-                photoCount: nextCount,
+                photoCount: nextPhotos.length,
                 updatedAt: uploadedAt
             });
+            return { photoCount: nextPhotos.length, duplicate: false };
         });
-        return { photoId: photo.photoId, photoCount: nextCount };
+        if (result.duplicate) {
+            await storageFile.delete({ ignoreNotFound: true }).catch(() => {});
+        }
+        return { photoId: photo.photoId, photoCount: result.photoCount };
     } catch (error) {
-        if (storageFile) await storageFile.delete({ ignoreNotFound: true }).catch(() => {});
+        // A failed response does not prove the transaction failed to commit.
+        // Keep the object until its lack of references can be established.
         throw callableError(error, 'La photo n’a pas pu être ajoutée.');
     }
 }
@@ -503,9 +506,15 @@ async function sendQuoteReceiptEmail(change, context) {
         const snapshot = await transaction.get(ref);
         if (!snapshot.exists || snapshot.data()?.intakeStatus !== 'submitted') return false;
         const delivery = snapshot.data()?.confirmationEmail || {};
-        if (delivery.status === 'sent') return false;
+        if (['sent', 'delivery_unknown'].includes(delivery.status)) return false;
         const leaseStartedAt = delivery.startedAt?.toMillis?.() || 0;
         if (delivery.status === 'sending' && leaseStartedAt > startedAt.toMillis() - EMAIL_CLAIM_LEASE_MS) {
+            return false;
+        }
+        if (delivery.status === 'sending') {
+            transaction.set(ref, {
+                confirmationEmail: { ...delivery, status: 'delivery_unknown' }
+            }, { merge: true });
             return false;
         }
         transaction.set(ref, {
@@ -519,6 +528,7 @@ async function sendQuoteReceiptEmail(change, context) {
         return true;
     });
     if (!claimed) return null;
+    let accepted = false;
     try {
         const runtime = createTransactionalEmailRuntime({
             provider: TRANSACTIONAL_EMAIL_PROVIDER.value(),
@@ -531,6 +541,8 @@ async function sendQuoteReceiptEmail(change, context) {
             quoteReceiptEmail(quote, runtime.fromAddress),
             { idempotencyKey: `quote-received/${change.after.id}` }
         );
+        accepted = true;
+        if (!result?.id) throw new Error('QUOTE_EMAIL_PROVIDER_RESPONSE_INVALID');
         await db.runTransaction(async (transaction) => {
             const snapshot = await transaction.get(ref);
             if (snapshot.data()?.confirmationEmail?.eventId !== eventId) return;
@@ -552,10 +564,13 @@ async function sendQuoteReceiptEmail(change, context) {
         });
         await db.runTransaction(async (transaction) => {
             const snapshot = await transaction.get(ref);
-            if (snapshot.data()?.confirmationEmail?.eventId !== eventId) return;
+            const delivery = snapshot.data()?.confirmationEmail;
+            if (delivery?.eventId !== eventId || delivery.status !== 'sending') return;
             transaction.set(ref, {
                 confirmationEmail: {
-                    status: 'failed',
+                    status: accepted || ['ECONNRESET', 'ESOCKET', 'ETIMEDOUT', 'GMAIL_SEND_FAILED'].includes(error?.code)
+                        ? 'delivery_unknown'
+                        : 'failed',
                     eventId,
                     errorCode: String(error?.code || 'SEND_FAILED').slice(0, 120),
                     completedAt: admin.firestore.FieldValue.serverTimestamp()

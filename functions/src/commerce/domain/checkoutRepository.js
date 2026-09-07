@@ -284,7 +284,7 @@ function createCheckoutRepository({ db, refs, ids, clock }) {
             }
             const expiresAt = authorizedFixtureContext?.expiresAt
                 || checkoutExpiresAt
-                || resolveCheckoutExpiry(policy, clock.now());
+                || resolveCheckoutExpiry({ ...policy, holdDurationSeconds: 900 }, clock.now());
             const orderNumberCounterRef = refs.orderNumberCounter();
             const orderNumberCounterSnapshot = await transaction.get(orderNumberCounterRef);
             const orderNumber = orderNumberCounterSnapshot.exists
@@ -520,7 +520,7 @@ function createCheckoutRepository({ db, refs, ids, clock }) {
         return loadCheckout({ orderId, ownerUid });
     }
 
-    async function saveAttempt(nextAttempt) {
+    async function saveAttempt(nextAttempt, { expectedExpiry = null } = {}) {
         validatePaymentAttempt(nextAttempt);
         const attemptRef = refs.attempt(nextAttempt.orderId, nextAttempt.attemptId);
         const orderRef = refs.order(nextAttempt.orderId);
@@ -533,6 +533,12 @@ function createCheckoutRepository({ db, refs, ids, clock }) {
             if (!snapshotExists(orderSnap)) throw checkoutError('COMMERCE_ORDER_NOT_FOUND');
             const existing = attemptSnap.data();
             validatePaymentAttempt(existing);
+            if (expectedExpiry !== null) {
+                const expiry = orderSnap.data().checkout?.expiresAt;
+                if (expiry !== expectedExpiry || !Number.isFinite(Date.parse(expiry)) || Date.parse(expiry) > Date.parse(clock.now())) {
+                    throw checkoutError('COMMERCE_EXPIRY_NOT_DUE');
+                }
+            }
             if (
                 existing.stripeIdempotencyKey !== nextAttempt.stripeIdempotencyKey ||
                 existing.requestHash !== nextAttempt.requestHash ||

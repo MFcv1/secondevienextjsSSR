@@ -13,6 +13,34 @@ const { fixedClock, makeOrder } = require('../fixtures/order-v2.cjs');
 const now = '2026-08-24T12:00:00.000Z';
 const clock = { now: () => now, nowMillis: () => Date.parse(now) };
 
+test('expiration retains bank authentication and processing, then settles a delayed success', async () => {
+    const { createReservationExpiryWorker } = require('../../../functions/src/commerce/domain/reservationExpiryWorker');
+    for (const status of ['requires_action', 'processing', 'requires_capture']) {
+        const fixture = sagaFixture({ status });
+        await fixture.service.ensurePaymentIntent({ order: fixture.order, attempt: fixture.repository.attempt });
+        const checkoutRepository = { loadCheckout: async () => ({ order: fixture.order, attempt: fixture.repository.attempt }) };
+        const worker = createReservationExpiryWorker({ checkoutRepository, sagaService: fixture.service, clock });
+        await assert.rejects(worker.process({ orderId: fixture.order.id }), { code: 'COMMERCE_PAYMENT_INTENT_CANCEL_UNKNOWN' });
+        assert.deepEqual(fixture.effects, { commit: 0, release: 0 });
+        for (const intent of fixture.stripe.intents.values()) intent.status = 'succeeded';
+        assert.equal((await worker.process({ orderId: fixture.order.id })).outcome, 'paid');
+        assert.deepEqual(fixture.effects, { commit: 1, release: 0 });
+    }
+});
+
+test('expired inert reservation uses provider cancellation before release', async () => {
+    const { createReservationExpiryWorker } = require('../../../functions/src/commerce/domain/reservationExpiryWorker');
+    const fixture = sagaFixture();
+    await fixture.service.ensurePaymentIntent({ order: fixture.order, attempt: fixture.repository.attempt });
+    const worker = createReservationExpiryWorker({
+        checkoutRepository: { loadCheckout: async () => ({ order: fixture.order, attempt: fixture.repository.attempt }) },
+        sagaService: fixture.service, clock,
+    });
+    assert.equal((await worker.process({ orderId: fixture.order.id })).outcome, 'canceled');
+    assert.deepEqual(fixture.effects, { commit: 0, release: 1 });
+    assert.equal([...fixture.stripe.intents.values()][0].status, 'canceled');
+});
+
 function sagaFixture({ loseFirstResponse = false, failpoints = null, status = 'requires_payment_method' } = {}) {
     const order = {
         ...makeOrder(),

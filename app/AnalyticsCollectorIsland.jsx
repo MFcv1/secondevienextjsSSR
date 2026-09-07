@@ -19,6 +19,7 @@ const loadAnalyticsRuntime = () => {
 };
 
 const resolveTrackedPage = (pathname) => {
+  try {
   if (!pathname || pathname.startsWith('/admin') || pathname.startsWith('/api')) return null;
   if (pathname === '/' || pathname === '/galerie') return { view: 'gallery' };
   if (pathname.startsWith('/categorie/')) return { view: 'category', itemId: decodeURIComponent(pathname.slice('/categorie/'.length)) };
@@ -30,6 +31,10 @@ const resolveTrackedPage = (pathname) => {
   if (pathname === '/checkout') return { view: 'checkout' };
   if (pathname === '/mes-commandes') return { view: 'my-orders' };
   return null;
+  } catch {
+    // A malformed encoded URL must not break the shared page shell.
+    return null;
+  }
 };
 
 export default function AnalyticsCollectorIsland() {

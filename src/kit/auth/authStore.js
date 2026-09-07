@@ -186,14 +186,15 @@ export const initializeAuthStore = ({ forceInitialize = false } = {}) => {
   runtime.initializePromise = (async () => {
     const auth = await getFirebaseAuth();
     const { getRedirectResult, onIdTokenChanged } = await loadAuthModule();
-    if (hasAuthRedirectPending()) {
-      try {
+    try {
+      if (hasAuthRedirectPending()) {
         await getRedirectResult(auth);
-      } finally {
-        clearAuthRedirectPending();
       }
+    } finally {
+      clearAuthRedirectPending();
+      // A failed redirect must not disable session changes or token refreshes.
+      runtime.unsubscribe = onIdTokenChanged(auth, (user) => syncAuthStoreUser(user || null));
     }
-    runtime.unsubscribe = onIdTokenChanged(auth, (user) => syncAuthStoreUser(user || null));
     return runtime.snapshot;
   })().catch((error) => {
     publish({ status: 'error', authReady: true, error });

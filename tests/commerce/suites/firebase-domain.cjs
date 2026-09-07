@@ -729,8 +729,8 @@ const scenarios = {
         ))).data();
         context.equal(
             first.order.checkout.expiresAt,
-            '2026-07-26T12:30:00.000Z',
-            'ordinary checkout pins the policy hold duration'
+            '2026-07-26T12:15:00.000Z',
+            'new ordinary checkout pins the fifteen-minute duration'
         );
         context.equal(
             reservation.expiresAt,

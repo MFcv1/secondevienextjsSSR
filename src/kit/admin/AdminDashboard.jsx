@@ -6,21 +6,23 @@ import {
 } from 'lucide-react';
 import {
     collection, getDocs, limit,
-    orderBy, query, where, Timestamp
+    orderBy, query, where
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { getCallableFunction } from '../config/firebaseLazy';
-import { loadAdminCachedData } from './adminDataCache';
+import { getAdminCacheGeneration, loadAdminCachedData } from './adminDataCache';
 import { useAdminPreference } from './useAdminPreference';
 import { getProductImageItems } from '../../utils/imageUtils';
 import { getProductUrl } from '../../utils/slug';
 import { getMillis } from '../../utils/time';
 import { downloadCsv } from './exportCsv';
+import { collectAdminUsers } from './adminUserExport';
 import { getOrderJourney } from './components/orders/orderPresentation';
 import { dashboardKpis, dashboardOrders, dashboardInsights } from './dashboardReads';
 import orderReferenceModule from '../../../shared/orderReference.cjs';
 import {
     CRITICAL_DOCUMENT_IDS,
+    getConfirmedCapture,
     validateCriticalSnapshot,
     validateInsights
 } from './adminDashboardProjection';
@@ -920,7 +922,11 @@ const AdminDashboard = ({
     const [intradayOrdersLoading, setIntradayOrdersLoading] = useState(false);
     const intradayRequestRef = useRef(false);
     const historyRequestRef = useRef(0);
-    useEffect(() => () => { historyRequestRef.current++; }, []);
+    const mountedRef = useRef(true);
+    useEffect(() => {
+        mountedRef.current = true;
+        return () => { mountedRef.current = false; historyRequestRef.current++; };
+    }, []);
     const [dailySales, setDailySales] = useState([]);
     const [financialHistoryLoading, setFinancialHistoryLoading] = useState(false);
     const [financialHistoryError, setFinancialHistoryError] = useState(false);
@@ -949,6 +955,7 @@ const AdminDashboard = ({
 
     // Operation states
     const [exportingUsers, setExportingUsers] = useState(false);
+    const [intradayOrdersError, setIntradayOrdersError] = useState(false);
 
     const selectTimeFilter = async (filterId) => {
         const request = ++historyRequestRef.current;
@@ -1004,22 +1011,28 @@ const AdminDashboard = ({
             }
             return;
         }
+        setFinancialHistoryLoading(false);
+        setFinancialHistoryError(false);
         if (intradayOrders !== null || intradayRequestRef.current) return;
 
         intradayRequestRef.current = true;
+        setIntradayOrdersError(false);
         setIntradayOrdersLoading(true);
-        const cutoff = Timestamp.fromMillis(Date.now() - (24 * 60 * 60 * 1000));
+        const cutoff = new Date(Date.now() - (24 * 60 * 60 * 1000)).toISOString();
         try {
             const snapshot = await getDocs(query(
                 collection(db, 'orders'),
-                where('createdAt', '>=', cutoff),
-                orderBy('createdAt', 'asc'),
-                limit(300)
+                where('payment.succeededAt', '>=', cutoff),
+                orderBy('payment.succeededAt', 'asc'),
+                limit(301)
             ));
+            if (!mountedRef.current) return;
+            if (snapshot.size > 300) throw new Error('INTRADAY_ORDER_LIMIT');
             setIntradayOrders(snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() })));
         } catch (error) {
-            console.error('Failed to fetch intraday sales', error);
-            setIntradayOrders([]);
+            if (!mountedRef.current) return;
+            console.error('Failed to fetch intraday sales', error?.code || error?.message);
+            setIntradayOrdersError(true);
         } finally {
             intradayRequestRef.current = false;
             setIntradayOrdersLoading(false);
@@ -1056,13 +1069,13 @@ const AdminDashboard = ({
                 };
             });
 
-            intradayOrders
-                .filter((order) => order.status !== 'cancelled' && order.status !== 'cancelled_by_client')
-                .forEach((order) => {
-                    const timestamp = getMillis(order.createdAt);
+            intradayOrders.forEach((order) => {
+                    const capture = getConfirmedCapture(order);
+                    if (!capture) return;
+                    const { timestamp, amount } = capture;
                     if (!timestamp || timestamp < start || timestamp > end) return;
                     const pointIndex = Math.min(pointCount - 1, Math.floor((timestamp - start) / step));
-                    points[pointIndex].value += Number(order.total || 0);
+                    points[pointIndex].value += amount;
                 });
 
             return points;
@@ -1245,11 +1258,12 @@ const AdminDashboard = ({
     }, [criticalAccessFailed, projection.loading, onLoadCatalog, user?.uid, insightsRetry]);
     // ─── ACTIONS ───
     const handleExportUsers = async () => {
+        if (exportingUsers) return;
         setExportingUsers(true);
+        const generation = getAdminCacheGeneration();
         try {
             const getUserStatsFn = await getCallableFunction('getUserStats');
-            const result = await getUserStatsFn({ includeUsers: true });
-            const users = result.data.users;
+            const users = await collectAdminUsers(getUserStatsFn, () => mountedRef.current && generation === getAdminCacheGeneration());
 
             const data = users.map(u => ({
                 'ID': u.uid, 'Email': u.email, 'Nom': u.displayName,
@@ -1260,8 +1274,8 @@ const AdminDashboard = ({
             downloadCsv(data, 'Clients');
 
             alert(`✅ Export réussi : ${users.length} clients exportés.`);
-        } catch (error) { console.error(error); alert("Erreur export utilisateurs: " + error.message); } 
-        finally { setExportingUsers(false); }
+        } catch (error) { if (mountedRef.current) alert("Erreur export utilisateurs: " + error.message); }
+        finally { if (mountedRef.current) setExportingUsers(false); }
     };
 
     if (projection.loading) return <DashboardSkeleton darkMode={darkMode} />;
@@ -1318,7 +1332,10 @@ const AdminDashboard = ({
             ? 'Meilleur mois'
             : timeFilter === 'max'
                 ? 'Meilleure année'
-                : 'Meilleur jour';
+                    : 'Meilleur jour';
+    const intraday = ['1hour', '1day'].includes(timeFilter);
+    const chartUnavailable = intraday ? intradayOrdersError : financialHistoryError;
+    const chartLoading = intraday ? intradayOrdersLoading : financialHistoryLoading;
     return (
         <motion.div
             initial={reducedMotion ? false : 'hidden'}
@@ -1402,7 +1419,7 @@ const AdminDashboard = ({
                                 <p className={`mt-1 text-[11px] ${textMuted}`}>
                                     {salesPanelView === 'summary'
                                         ? 'Montants cumulés après remboursements'
-                                        : `${chartGranularityLabel} · ${getFilterLabel()}`}
+                                        : `${chartGranularityLabel} · ${getFilterLabel()}${intraday ? ' · Paiements des commandes, avant remboursements et hors factures manuelles' : ''}`}
                                 </p>
                             </div>
                             <div className="flex w-full flex-col gap-1.5 xl:w-auto xl:items-end">
@@ -1485,18 +1502,18 @@ const AdminDashboard = ({
                                 <div className="flex gap-5">
                                     <div>
                                         <p className={`text-[8px] font-bold uppercase tracking-[0.13em] ${textMuted}`}>Total période</p>
-                                        <p className={`mt-1 text-sm font-semibold tabular-nums ${textBase}`}>{Math.round(revenueSummary.periodTotal).toLocaleString('fr-FR')} €</p>
+                                        <p className={`mt-1 text-sm font-semibold tabular-nums ${textBase}`}>{chartUnavailable || chartLoading ? '—' : `${Math.round(revenueSummary.periodTotal).toLocaleString('fr-FR')} €`}</p>
                                     </div>
                                     <div>
                                         <p className={`text-[8px] font-bold uppercase tracking-[0.13em] ${textMuted}`}>{bestPointLabel}</p>
                                         <p className={`mt-1 text-sm font-semibold tabular-nums ${textBase}`}>{revenueSummary.bestPoint?.label || '—'}</p>
                                     </div>
                                 </div>
-                                {(intradayOrdersLoading && ['1hour', '1day'].includes(timeFilter)) || financialHistoryLoading ? (
+                                {chartLoading ? (
                                     <div className={`flex h-[240px] items-center justify-center rounded-2xl px-6 text-center text-sm ${darkMode ? 'bg-white/[0.03] text-white/38' : 'bg-stone-900/[0.03] text-stone-400'}`}>
                                         Chargement des ventes récentes…
                                     </div>
-                                ) : financialHistoryError ? (
+                                ) : chartUnavailable ? (
                                     <div className={`flex h-[240px] items-center justify-center rounded-2xl px-6 text-center text-sm ${darkMode ? 'bg-white/[0.03] text-white/38' : 'bg-stone-900/[0.03] text-stone-400'}`}>
                                         Données indisponibles.
                                     </div>
@@ -1621,7 +1638,7 @@ const AdminDashboard = ({
                             </thead>
                             <tbody>
                                 {recentOrdersStatus !== 'ready' ? (
-                                    <tr><td colSpan={4} className="p-6 text-center text-sm">{recentOrdersStatus === 'loading' ? 'Chargement des commandes…' : <button onClick={() => dashboardOrders.retry()}>Lecture impossible · Réessayer</button>}</td></tr>
+                                    <tr><td colSpan={5} className="p-6 text-center text-sm">{recentOrdersStatus === 'loading' ? 'Chargement des commandes…' : <button onClick={() => dashboardOrders.retry()}>Lecture impossible · Réessayer</button>}</td></tr>
                                 ) : recentOrders.length === 0 ? (
                                     <tr>
                                         <td colSpan="5" className={`rounded-2xl py-12 text-center text-xs ${textMuted}`}>Aucune transaction récente.</td>

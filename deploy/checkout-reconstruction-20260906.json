@@ -1,0 +1,53 @@
+{
+  "status": "sandbox-deployed-2026-09-06",
+  "project": "secondevienextjsssr",
+  "environment": "sandbox",
+  "appHostingBackend": "secondevie-next-sandbox",
+  "functionsRegion": "europe-west1",
+  "functions": [
+    "createCheckoutV2Gen2",
+    "resumeCheckoutV2Gen2",
+    "requestOrderCancellationGen2",
+    "onCommerceReservationWrittenGen2",
+    "dispatchCommerceReservationExpiryTaskGen2",
+    "commerceReservationExpiryDispatcherGen2",
+    "stripeWebhookV2Gen2",
+    "stripeConnectWebhookV2Gen2",
+    "cancelAdminPaymentLinkGen2",
+    "expireAdminPaymentLinksGen2",
+    "onCatalogSourceWrite",
+    "dispatchCatalogBuild",
+    "listMyOrdersV2Gen2"
+  ],
+  "runtimeEnvironmentPatch": {
+    "onCommerceReservationWrittenGen2": { "FUNCTION_SIGNATURE_TYPE": "cloudevent" }
+  },
+  "standardCheckoutPolicy": {
+    "holdDurationSeconds": 900,
+    "scope": "new standard reservations only; existing deadlines and explicit admin-link deadlines remain pinned",
+    "implementation": "checkoutRepository.prepareCheckout uses 900 seconds after the idempotent replay branch",
+    "cloudPolicyMutation": "none executed; any alignment of the active immutable policy requires a separate approved version change"
+  },
+  "capacityChanges": [],
+  "dataMigrations": [],
+  "indexes": [],
+  "delivery": {
+    "authorization": "User requested deploying all updates to test the sandbox on 2026-09-06",
+    "hostingBuild": "build-2026-09-05-003",
+    "hostingTrafficPercent": 100,
+    "deploymentId": "sv-mtp14jn2-5a4f788bc171",
+    "catalogRevision": 338,
+    "catalogState": "published, revalidated, served observed",
+    "functionCount": 13,
+    "mainSourceSha256": "09a64e0615b07618b671bb63d0b0a325d903c5555267425be86d007f01a45538",
+    "readerSourceSha256": "be4ccbcd2745638100cf737b20d68b7af8a83d3e72b99e8410a9e66300681f4b",
+    "readerRevision": "listmyordersv2gen2-00004-xeb",
+    "packaging": "Isolated committed worktree snapshot, no main-branch commit or push. Existing webhook entry-point aliases retained; reader runtime remains isolated. Bundle and source archives retained locally.",
+    "transport": "Source-only Cloud Functions API through the existing deployment validator; only reservation event environment also patched, preserving other variables",
+    "evidenceDirectory": "logs/recette/checkout_delivery_20260906",
+    "hostingRollbackBuild": "build-2026-09-05-002",
+    "financialSmokeTests": "not executed"
+  },
+  "rollbackPrerequisite": "capture actual revisions, source digests, environment, queues and current catalog pointers before delivery; do not reuse dated revisions",
+  "rollback": "restore captured application/function code revisions, keep CloudEvent transport correct, retain persisted deadlines, payments and movements; never restore stock by hand"
+}

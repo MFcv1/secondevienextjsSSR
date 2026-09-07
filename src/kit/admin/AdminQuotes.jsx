@@ -133,7 +133,7 @@ function InfoRow({ icon: Icon, label, value, href, darkMode }) {
 export const preloadAdminQuotesData = ({ force = false } = {}) => loadQuoteRequestsAdmin({ force });
 
 export default function AdminQuotes({ darkMode = false }) {
-  const cached = getAdminCachedData(ADMIN_QUOTES_CACHE_KEY);
+  const cached = getAdminCachedData(ADMIN_QUOTES_CACHE_KEY, { allowStale: true });
   const [quotes, setQuotes] = useState(cached?.quotes || []);
   const [hasMore, setHasMore] = useState(Boolean(cached?.hasMore));
   const [supportsReference, setSupportsReference] = useState(typeof cached?.hasMore === 'boolean');
@@ -154,10 +154,11 @@ export default function AdminQuotes({ darkMode = false }) {
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const listSequenceRef = useRef(0);
+  const initialLoadRef = useRef(false);
 
   const load = useCallback(async ({ force = false, cursor = null, reference = null } = {}) => {
     const sequence = ++listSequenceRef.current;
-    if (!quotes.length) setStatus('loading');
+    setStatus(quotes.length ? 'refreshing' : 'loading');
     setError('');
     try {
       const workspace = await loadQuoteRequestsAdmin({ force, cursor, reference });
@@ -168,7 +169,7 @@ export default function AdminQuotes({ darkMode = false }) {
       setSupportsReference(typeof workspace.hasMore === 'boolean');
       setNextCursor(workspace.nextCursor || null);
       setSelectedId((current) => (
-        (workspace.quotes || []).some((quote) => quote.quoteId === current)
+        (cursor && current) || (workspace.quotes || []).some((quote) => quote.quoteId === current)
           ? current
           : workspace.quotes?.[0]?.quoteId || ''
       ));
@@ -180,8 +181,12 @@ export default function AdminQuotes({ darkMode = false }) {
     }
   }, [quotes.length]);
 
+  useEffect(() => () => { listSequenceRef.current += 1; }, []);
+
   useEffect(() => {
-    if (!cached) void load();
+    if (initialLoadRef.current) return;
+    initialLoadRef.current = true;
+    void load();
   }, [cached, load]);
 
   useEffect(() => {
@@ -267,6 +272,9 @@ export default function AdminQuotes({ darkMode = false }) {
         internalNotes: draft.internalNotes,
       });
       const updated = result.quote;
+      setQuotes((current) => current.map((quote) => (
+        quote.quoteId === updated.quoteId ? { ...quote, ...updated, photos: undefined } : quote
+      )));
       if (selectionRef.current !== updated.quoteId) return;
       setDetail(updated);
       if (draftRef.current === draft) {
@@ -274,11 +282,9 @@ export default function AdminQuotes({ darkMode = false }) {
         draftRef.current = nextDraft;
         setDraft(nextDraft);
       }
-      setQuotes((current) => current.map((quote) => (
-        quote.quoteId === updated.quoteId ? { ...quote, ...updated, photos: undefined } : quote
-      )));
       setSaveMessage('Modifications enregistrées.');
     } catch (saveError) {
+      if (selectionRef.current !== detail.quoteId) return;
       const conflict = String(saveError?.details?.reason || saveError?.code || '').includes('conflict')
         || String(saveError?.code || '').includes('aborted');
       setSaveMessage(conflict
@@ -306,20 +312,21 @@ export default function AdminQuotes({ darkMode = false }) {
           </div>
           <button
             type="button"
-            onClick={() => void load({ force: true })}
+            onClick={() => { setDetailRefreshKey(value => value + 1); void load({ force: true }); }}
+            disabled={saving || status === 'loading' || status === 'refreshing'}
             className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-4 text-xs font-bold transition ${darkMode ? 'border-white/10 hover:bg-white/[0.05]' : 'border-stone-200 hover:bg-stone-50'}`}
           >
             <RefreshCw className={status === 'loading' ? 'animate-spin' : ''} size={15} />
-            Actualiser
+            {status === 'refreshing' ? 'Actualisation · Dernières données connues' : 'Actualiser'}
           </button>
         </div>
       </section>
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Metric darkMode={darkMode} icon={Clock3} label="Nouvelles" value={metrics.newCount} hint="à ouvrir en priorité" />
-        <Metric darkMode={darkMode} icon={MessageSquareText} label="En cours" value={metrics.activeCount} hint="demandes actives" />
-        <Metric darkMode={darkMode} icon={CheckCircle2} label="Prêtes" value={metrics.readyCount} hint="propositions préparées" />
-        <Metric darkMode={darkMode} icon={Euro} label="Potentiel indicatif" value={euro(metrics.potential)} hint="haut des estimations actives" />
+        <Metric darkMode={darkMode} icon={Clock3} label="Nouvelles" value={status === 'loading' || status === 'error' ? '—' : metrics.newCount} hint="parmi les demandes chargées" />
+        <Metric darkMode={darkMode} icon={MessageSquareText} label="En cours" value={status === 'loading' || status === 'error' ? '—' : metrics.activeCount} hint="parmi les demandes chargées" />
+        <Metric darkMode={darkMode} icon={CheckCircle2} label="Prêtes" value={status === 'loading' || status === 'error' ? '—' : metrics.readyCount} hint="parmi les demandes chargées" />
+        <Metric darkMode={darkMode} icon={Euro} label="Potentiel indicatif" value={status === 'loading' || status === 'error' ? '—' : euro(metrics.potential)} hint="estimations des demandes chargées" />
       </section>
 
       {error ? <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-300/20 dark:bg-red-300/10 dark:text-red-200">{error}</p> : null}
@@ -347,7 +354,7 @@ export default function AdminQuotes({ darkMode = false }) {
               {STATUS_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </select>
             <p className={`text-[11px] ${muted}`}>{filteredQuotes.length} affichée{filteredQuotes.length > 1 ? 's' : ''}{hasMore ? ' · Liste partielle' : ''}</p>
-            {nextCursor && <button type="button" onClick={() => load({ cursor: nextCursor })}>Charger la suite</button>}
+            {nextCursor && <button type="button" disabled={status === 'loading' || status === 'refreshing'} onClick={() => load({ cursor: nextCursor })}>Charger la suite</button>}
             {supportsReference && query.trim() && <button type="button" onClick={() => load({ reference: query.trim(), force: true })}>Rechercher cette référence exacte dans tous les dossiers</button>}
           </div>
 
@@ -387,7 +394,7 @@ export default function AdminQuotes({ darkMode = false }) {
                 <div>
                   <FileText className={`mx-auto ${muted}`} size={26} strokeWidth={1.4} />
                   <p className="mt-3 text-sm font-bold">Aucune demande dans ce filtre</p>
-                  <p className={`mt-1 text-xs ${muted}`}>Les nouvelles demandes apparaîtront ici automatiquement.</p>
+                  <p className={`mt-1 text-xs ${muted}`}>Actualisez la liste pour consulter les nouvelles demandes.</p>
                 </div>
               </div>
             )}
@@ -465,7 +472,7 @@ export default function AdminQuotes({ darkMode = false }) {
                   </section>
                 </div>
 
-                <aside className="space-y-5">
+                <fieldset disabled={saving} className="min-w-0 space-y-5">
                   <section>
                     <h3 className="text-[11px] font-black uppercase tracking-[0.14em]">Contact</h3>
                     <div className="mt-2">
@@ -481,6 +488,7 @@ export default function AdminQuotes({ darkMode = false }) {
                     <p className="mt-2 text-sm font-bold">
                       {detail.confirmationEmail?.status === 'sent' ? 'E-mail envoyé'
                         : detail.confirmationEmail?.status === 'failed' ? 'Échec de l’e-mail'
+                          : detail.confirmationEmail?.status === 'delivery_unknown' ? 'Résultat de l’envoi à vérifier'
                           : detail.confirmationEmail?.status === 'sending' ? 'Envoi en cours'
                             : 'En attente d’envoi'}
                     </p>
@@ -508,7 +516,7 @@ export default function AdminQuotes({ darkMode = false }) {
                     {saving ? <RefreshCw className="animate-spin" size={15} /> : <Save size={15} />}
                     {saving ? 'Enregistrement…' : 'Enregistrer le suivi'}
                   </button>
-                </aside>
+                </fieldset>
               </div>
             </div>
           ) : (

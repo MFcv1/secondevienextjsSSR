@@ -11,7 +11,7 @@ const formatPrice = (product) => {
   if (shouldRequestQuote(product)) return 'Sur demande';
   const amount = getProductPriceAmount(product);
   if (amount <= 0) return '';
-  return `${Math.round(amount).toLocaleString('fr-FR')} €`;
+  return `${amount.toLocaleString('fr-FR', { maximumFractionDigits: 2 })} €`;
 };
 
 const getDimensions = (product) => {
@@ -133,6 +133,7 @@ export default function ProductDetailServerView({
       data-catalog-version={catalogVersion}
     >
     <ProductDetailShellIsland
+      key={`${product?.id || ''}:${catalogVersion}`}
       product={product}
       images={images}
       facts={facts}

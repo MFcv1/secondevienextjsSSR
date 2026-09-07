@@ -18,6 +18,10 @@ import {
     resumeCheckoutV2,
 } from './commerceV2Client';
 import { buildCheckoutV2Input } from './checkoutContract';
+import { deliveryUnavailableReason } from './deliveryEligibility';
+import { getCheckoutRequestIdentity, clearCheckoutRequestIdentity } from './checkoutRequestIdentity';
+import { createCommerceCommandId, requestOrderCancellation } from './commerceCommandClient';
+import { useCancellationConfirmation } from './CancellationConfirmation';
 import {
     createCheckoutControllerState,
     reduceCheckoutController,
@@ -37,7 +41,6 @@ import {
 const DELIVERY_SETTINGS_CACHE_KEY = 'secondevie:delivery-settings:v1';
 const PAYMENT_SETTINGS_CACHE_KEY = 'paymentSettings';
 const CheckoutStripeModal = lazy(() => import('./CheckoutStripeModal'));
-const RELIABLE_EMAIL_PROVIDER_IDS = new Set(['google.com']);
 const isLegalDocumentUrl = (value) => /^(?:https?:\/\/|\/)/i.test(String(value || '').trim());
 const TERMS_URL = KIT_CONFIG.legalLinks.terms;
 const PRIVACY_URL = KIT_CONFIG.legalLinks.privacy;
@@ -72,12 +75,7 @@ const hasReliableEmailProvider = (user, checkoutEmail) => {
         return false;
     }
 
-    if (user.emailVerified) return true;
-
-    return (user.providerData || []).some((provider) => (
-        RELIABLE_EMAIL_PROVIDER_IDS.has(provider?.providerId)
-        && (!provider?.email || normalizeCheckoutEmail(provider.email) === normalizedCheckoutEmail)
-    ));
+    return user.emailVerified === true;
 };
 
 const PremiumActionBtn = ({ children, isLoading, disabled, onClick, darkMode }) => {
@@ -124,11 +122,14 @@ const CheckoutView = ({
     onPlaceOrder,
     fixtureContext = null,
     recoveryExpected = false,
-    onRecoveryTerminal = null
+    onRecoveryTerminal = null,
+    onCheckoutReserved = null
 }) => {
     const toast = useToast();
+    const { confirmCancellation, confirmation } = useCancellationConfirmation();
     // --- STATE ---
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState(() => {
+        const defaults = {
         fullName: user?.displayName || '',
         email: user?.email || '',
         phone: user?.phoneNumber || '',
@@ -137,7 +138,15 @@ const CheckoutView = ({
         zip: '',
         country: 'France',
         deliveryMode: 'retrait'
+        };
+        try {
+            const saved = JSON.parse(window.sessionStorage.getItem(`secondevie:checkout-form:${user?.uid || 'guest'}`) || 'null');
+            return saved ? { ...defaults, ...saved } : defaults;
+        } catch { return defaults; }
     });
+    useEffect(() => {
+        try { window.sessionStorage.setItem(`secondevie:checkout-form:${user?.uid || 'guest'}`, JSON.stringify(formData)); } catch { /* Optional local draft. */ }
+    }, [formData, user?.uid]);
     
     const [rgpdAccepted, setRgpdAccepted] = useState(false);
     
@@ -208,6 +217,15 @@ const CheckoutView = ({
     const checkoutControllerRef = useRef(createCheckoutControllerState());
     
     const [clientSecret, setClientSecret] = useState(null);
+    const [reservationExpiresAt, setReservationExpiresAt] = useState(null);
+    const [providerStatus, setProviderStatus] = useState(null);
+    const actionInFlightRef = useRef(false);
+    const cancellationIdRef = useRef(null);
+    const mountedRef = useRef(true);
+    useEffect(() => {
+        mountedRef.current = true;
+        return () => { mountedRef.current = false; };
+    }, []);
     const [createdOrderId, setCreatedOrderId] = useState(null);
     const [createdOrderNumber, setCreatedOrderNumber] = useState(null);
     const [createdOrderOtpToken, setCreatedOrderOtpToken] = useState('');
@@ -243,7 +261,7 @@ const CheckoutView = ({
         && Boolean(guestOtp.token)
     );
     const hasVerifiedCheckoutEmail = hasVerifiedGuestCheckoutOtp;
-    const isCheckoutLocked = ['fetching_stripe', 'ready_to_pay', 'payment_paused', 'processing_deferred', 'order_success'].includes(checkoutState);
+    const isCheckoutLocked = Boolean(createdOrderId) || ['fetching_stripe', 'ready_to_pay', 'payment_paused', 'processing_deferred', 'order_success'].includes(checkoutState);
     const currentCartItems = useMemo(() => cartItems.map((item) => {
         const id = String(item.originalId || item.id || '');
         return Object.prototype.hasOwnProperty.call(priceOverrides, id)
@@ -259,7 +277,12 @@ const CheckoutView = ({
     const promotionCartSignatureRef = useRef(null);
     const checkoutItems = isCheckoutLocked && lockedOrderDraft?.items?.length ? lockedOrderDraft.items : currentCartItems;
     const checkoutSubtotal = isCheckoutLocked && lockedOrderDraft ? lockedOrderDraft.subtotal : currentSubtotal;
-    const selectedDelivery = formData.deliveryMode ? deliverySettings[formData.deliveryMode] : null;
+    const selectedDelivery = formData.deliveryMode && !deliveryUnavailableReason(formData.deliveryMode, formData.zip) ? deliverySettings[formData.deliveryMode] : null;
+    useEffect(() => {
+        if (!createdOrderId && !isCheckoutLocked && deliveryUnavailableReason(formData.deliveryMode, formData.zip)) {
+            setFormData(previous => ({ ...previous, deliveryMode: '' }));
+        }
+    }, [createdOrderId, isCheckoutLocked, formData.deliveryMode, formData.zip]);
     const shippingCost = selectedDelivery ? selectedDelivery.price : 0;
     const displayedShippingCost = authoritativeShippingCost ?? shippingCost;
     const displayedDiscount = authoritativeDiscount ?? ((promotionPreview?.discountCents || 0) / 100);
@@ -271,9 +294,10 @@ const CheckoutView = ({
         }
         return checkoutClientOrderIdRef.current;
     };
-    const resetCheckoutClientOrderId = () => {
+    const resetCheckoutClientOrderId = useCallback(() => {
+        clearCheckoutRequestIdentity(user?.uid, checkoutClientOrderIdRef.current);
         checkoutClientOrderIdRef.current = null;
-    };
+    }, [user?.uid]);
     const advanceCheckoutController = (event) => {
         checkoutControllerRef.current = reduceCheckoutController(
             checkoutControllerRef.current,
@@ -283,7 +307,8 @@ const CheckoutView = ({
         return checkoutControllerRef.current;
     };
     const resetTerminalCheckoutRecovery = useCallback((reason, descriptor = null) => {
-        clearCheckoutRecoveryDescriptor({ enabled: COMMERCE_V2_RECOVERY_ENABLED });
+        clearCheckoutRequestIdentity(descriptor?.ownerUid, descriptor?.clientOrderId);
+        clearCheckoutRecoveryDescriptor({ enabled: COMMERCE_V2_RECOVERY_ENABLED, ownerUid: descriptor?.ownerUid, orderId: descriptor?.orderId });
         checkoutControllerRef.current = createCheckoutControllerState();
         checkoutClientOrderIdRef.current = null;
         setClientSecret(null);
@@ -299,13 +324,14 @@ const CheckoutView = ({
         setCheckoutState('editing');
         onRecoveryTerminal?.(
             reason,
-            getCheckoutRecoveryTerminalCartLines(reason, descriptor)
+            getCheckoutRecoveryTerminalCartLines(reason, descriptor),
+            descriptor?.orderId
         );
     }, [onRecoveryTerminal]);
 
     const hasPendingV2Payment = Boolean(
         COMMERCE_V2_CONSUMERS_ENABLED
-        && checkoutControllerRef.current.status === 'awaiting_method'
+        && !['succeeded', 'canceled'].includes(checkoutControllerRef.current.status)
         && createdOrderId
     );
 
@@ -314,10 +340,11 @@ const CheckoutView = ({
         setCheckoutState('fetching_stripe');
         setPaymentResumeNotice('');
         try {
-            const resumed = clientSecret
-                ? null
-                : await resumeCheckoutV2(createdOrderId);
+            const resumed = await resumeCheckoutV2(createdOrderId);
+            if (!mountedRef.current) return true;
             if (resumed) {
+                setReservationExpiresAt(resumed.expiresAt);
+                setProviderStatus(resumed.providerStatus);
                 setClientSecret(resumed.clientSecret);
                 setRecoveredOrderTotal(Number.isSafeInteger(resumed.totalCents)
                     ? resumed.totalCents / 100
@@ -340,6 +367,7 @@ const CheckoutView = ({
             }
             setCheckoutState('ready_to_pay');
         } catch (error) {
+            if (!mountedRef.current) return true;
             const terminalReason = getCheckoutRecoveryTerminalReason(error);
             if (terminalReason) {
                 resetTerminalCheckoutRecovery(terminalReason, {
@@ -350,13 +378,16 @@ const CheckoutView = ({
             console.error('Checkout payment resume failed:', error);
             setCheckoutState('payment_paused');
             setPaymentResumeNotice(
-                'Votre commande reste réservée. Le paiement ne peut pas être rouvert pour le moment. Réessayez dans quelques instants.'
+                error?.details?.reason === 'COMMERCE_CHECKOUT_DEADLINE_REACHED'
+                    ? 'Le délai de réservation est terminé. Consultez le dossier : un paiement engagé peut encore être en cours de vérification.'
+                    : 'L’état du paiement doit être vérifié avant de reprendre. Réessayez ou consultez le dossier.'
             );
         }
         return true;
     };
 
     const applyPromotionCode = async () => {
+        if (isCheckoutLocked || promotionStatus === 'loading') return;
         const normalized = promotionCode.trim().toUpperCase();
         if (!normalized) return;
         setPromotionStatus('loading');
@@ -383,7 +414,7 @@ const CheckoutView = ({
             setAuthoritativeDiscount(null);
             resetCheckoutClientOrderId();
         }
-    }, [isCheckoutLocked, promotionCartSignature, promotionPreview]);
+    }, [isCheckoutLocked, promotionCartSignature, promotionPreview, resetCheckoutClientOrderId]);
 
     const clearPromotionCode = () => {
         if (isCheckoutLocked) return;
@@ -428,6 +459,15 @@ const CheckoutView = ({
 
                 const resumed = await resumeCheckoutV2(descriptor.orderId);
                 if (cancelled) return;
+                setReservationExpiresAt(resumed.expiresAt);
+                setProviderStatus(resumed.providerStatus);
+                if (resumed.shippingAddress) setFormData({
+                    ...resumed.shippingAddress,
+                    address: resumed.shippingAddress.line1 || '',
+                    zip: resumed.shippingAddress.postalCode || '',
+                    email: resumed.customerEmail || '',
+                    deliveryMode: ({ 'delivery-pickup': 'retrait', 'delivery-local': 'idf', 'delivery-carrier': 'transporteur' })[resumed.deliveryModeId] || resumed.deliveryModeId,
+                });
                 const recoveredItems = getCheckoutRecoveryOrderItems(resumed);
                 const recoveredSubtotal = recoveredItems.reduce(
                     (sum, item) => sum + (item.price * item.quantity),
@@ -466,7 +506,9 @@ const CheckoutView = ({
                 if (checkoutControllerRef.current.status === 'awaiting_method') {
                     setCheckoutState('payment_paused');
                     setPaymentResumeNotice(
-                        'Votre commande reste réservée. Utilisez « Reprendre le paiement » pour réessayer.'
+                        error?.details?.reason === 'COMMERCE_CHECKOUT_DEADLINE_REACHED'
+                            ? 'Le délai de réservation est terminé. Consultez le dossier pour vérifier le paiement.'
+                            : 'L’état du paiement doit être vérifié. Utilisez « Reprendre le paiement » ou consultez le dossier.'
                     );
                 }
             }
@@ -475,16 +517,38 @@ const CheckoutView = ({
         void restorePayment();
         return () => {
             cancelled = true;
+            checkoutRecoveryAttemptedRef.current = false;
         };
-    }, [currentCartItems, currentSubtotal, resetTerminalCheckoutRecovery]);
+    }, [resetTerminalCheckoutRecovery]);
 
     // Quitter l'ecran Stripe ne compense jamais une operation ambigue et ne
     // detruit plus les informations permettant de reprendre le meme PaymentIntent.
     const handleClosePaymentModal = () => {
         setPaymentResumeNotice(
-            'Votre commande reste réservée. Reprenez le paiement quand vous êtes prêt.'
+            'Retrouvez les informations de votre commande. La reprise vérifiera l’état du paiement et le délai restant.'
         );
         setCheckoutState('payment_paused');
+    };
+    const leaveCheckout = async () => {
+        if (actionInFlightRef.current) return;
+        if (!createdOrderId) { onBack(); return; }
+        actionInFlightRef.current = true;
+        if (!await confirmCancellation()) { actionInFlightRef.current = false; return; }
+        if (!mountedRef.current) return;
+        cancellationIdRef.current ||= createCommerceCommandId('cancel');
+        try {
+            const result = await requestOrderCancellation(createdOrderId, 'Annulation explicite depuis le checkout', cancellationIdRef.current);
+            if (!mountedRef.current) return;
+            if (result.outcome === 'canceled') {
+                clearCheckoutRecoveryDescriptor({ ownerUid: user?.uid, orderId: createdOrderId });
+                resetCheckoutClientOrderId();
+                onBack();
+            } else if (result.outcome === 'paid') {
+                await onPlaceOrder({ id: createdOrderId, orderNumber: createdOrderNumber, paymentMethod: 'stripe_elements', purchasedCartLines: lockedOrderDraft?.purchasedCartLines || [] });
+            } else setPaymentResumeNotice('Le paiement est en cours de vérification. Consultez le dossier.');
+        } catch {
+            if (mountedRef.current) setPaymentResumeNotice('L’annulation reste à vérifier. Consultez le dossier avant de réessayer.');
+        } finally { actionInFlightRef.current = false; }
     };
     
     // --- ADDRESS AUTOCOMPLETE ---
@@ -494,6 +558,7 @@ const CheckoutView = ({
     const addressInputRef = useRef(null); // input adresse uniquement (pour position dropdown)
     const dropdownRef = useRef(null);     // portal dropdown (pour handleClickOutside)
     const searchTimeout = useRef(null);
+    const addressRequestRef = useRef(null);
     const [dropdownPos, setDropdownPos] = useState({ mobile: false, top: 0, left: 0, width: 0 });
 
     const updateDropdownPosition = () => {
@@ -527,6 +592,8 @@ const CheckoutView = ({
         document.addEventListener('pointerdown', handleClickOutside);
         return () => {
             document.removeEventListener('pointerdown', handleClickOutside);
+            window.clearTimeout(searchTimeout.current);
+            addressRequestRef.current?.abort();
         };
     }, []);
 
@@ -550,23 +617,30 @@ const CheckoutView = ({
     }, [showSuggestions]);
 
     const fetchAddresses = async (query) => {
+        addressRequestRef.current?.abort();
+        const request = new AbortController();
+        addressRequestRef.current = request;
         if (!query || query.length < 3) {
             setSuggestions([]);
             setShowSuggestions(false);
             return;
         }
         try {
-            const res = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&limit=5`);
+            const res = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&limit=5`, { signal: request.signal });
+            if (!res.ok) throw new Error('ADDRESS_SEARCH_UNAVAILABLE');
             const data = await res.json();
+            if (request.signal.aborted) return;
             setSuggestions(data.features || []);
             updateDropdownPosition();
             setShowSuggestions(true);
         } catch (e) {
+            if (request.signal.aborted) return;
             console.error("API Adresse error:", e);
         }
     };
 
     const handleAddressRelatedChange = (e) => {
+        if (isCheckoutLocked) return;
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
         if (checkoutState === 'ready_to_pay') setCheckoutState('editing');
@@ -576,12 +650,16 @@ const CheckoutView = ({
         const query = [newForm.address, newForm.zip, newForm.city].filter(Boolean).join(' ');
 
         if (searchTimeout.current) clearTimeout(searchTimeout.current);
+        addressRequestRef.current?.abort();
         searchTimeout.current = setTimeout(() => {
             fetchAddresses(query);
         }, 400);
     };
 
     const handleSelectSuggestion = (suggestion) => {
+        if (isCheckoutLocked) return;
+        window.clearTimeout(searchTimeout.current);
+        addressRequestRef.current?.abort();
         const zipValue = suggestion.properties.postcode || '';
         const cityValue = suggestion.properties.city || '';
         const addressValue = suggestion.properties.name || '';
@@ -636,6 +714,7 @@ const CheckoutView = ({
 
     // --- ON CHANGE FORM ---
     const handleChange = (e) => {
+        if (isCheckoutLocked) return;
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
         if (name === 'email') {
@@ -666,7 +745,7 @@ const CheckoutView = ({
                regexEmail.test(formData.email.trim()) && 
                formData.phone.trim() &&
                formData.address.trim() && formData.city.trim() && formData.zip.trim() &&
-               rgpdAccepted && formData.deliveryMode;
+               rgpdAccepted && formData.deliveryMode && !deliveryUnavailableReason(formData.deliveryMode, formData.zip);
     }, [formData, rgpdAccepted]);
 
     const isOtpEmailReady = useMemo(() => {
@@ -769,6 +848,15 @@ const CheckoutView = ({
 
     // --- SUBMIT ACTION : FETCH STRIPE OU CONFIRM DEFERRED ---
     const handleActionClick = async () => {
+        if (actionInFlightRef.current) return;
+        actionInFlightRef.current = true;
+        try {
+            await performCheckoutAction();
+        } finally {
+            actionInFlightRef.current = false;
+        }
+    };
+    const performCheckoutAction = async () => {
         if (await openExistingPayment()) return;
         if (!isFormValid) return;
         if (cartItems.length === 0) {
@@ -810,6 +898,13 @@ const CheckoutView = ({
                     throw new Error('COMMERCE_V2_OFFLINE_PAYMENT_DISABLED');
                 }
                 const identity = await ensureCheckoutAnonymousIdentity();
+                if (!mountedRef.current) return;
+                checkoutClientOrderIdRef.current ||= await getCheckoutRequestIdentity(identity.uid, {
+                    items: itemsWithCol.map((item) => ({ id: item.originalId || item.productId || item.id, cartLineId: item.cartLineId, cartRevision: item.cartRevision, quantity: item.quantity })),
+                    shipping: formData,
+                    promotion: promotionPreview?.code || null,
+                });
+                if (!mountedRef.current) return;
                 const clientOrderId = getCheckoutClientOrderId();
                 advanceCheckoutController({
                     type: 'START',
@@ -825,8 +920,13 @@ const CheckoutView = ({
                     promotionCode: promotionPreview?.code || null
                 });
                 const result = await createCheckoutV2(input, {
-                    fixture: fixtureContext
+                    fixture: fixtureContext,
+                    customerEmail: normalizedCheckoutEmail,
+                    checkoutOtpToken: guestOtp.token || ''
                 });
+                if (!mountedRef.current) return;
+                setReservationExpiresAt(result.expiresAt);
+                setProviderStatus(result.providerStatus);
                 advanceCheckoutController({
                     type: 'CREATED',
                     clientOrderId,
@@ -845,6 +945,7 @@ const CheckoutView = ({
                     }),
                     { enabled: COMMERCE_V2_RECOVERY_ENABLED }
                 );
+                onCheckoutReserved?.();
                 setClientSecret(result.clientSecret);
                 setRecoveredOrderTotal(Number.isSafeInteger(result.totalCents)
                     ? result.totalCents / 100
@@ -917,6 +1018,7 @@ const CheckoutView = ({
                 throw new Error("Erreur de création de commande.");
             }
         } catch (error) {
+            if (!mountedRef.current) return;
             if (
                 COMMERCE_V2_CONSUMERS_ENABLED &&
                 checkoutControllerRef.current.status === 'creating'
@@ -931,6 +1033,11 @@ const CheckoutView = ({
                 paymentMethod,
                 code: error?.code || null
             });
+            if (COMMERCE_V2_CONSUMERS_ENABLED && !['invalid-argument', 'functions/invalid-argument', 'failed-precondition', 'functions/failed-precondition', 'permission-denied', 'functions/permission-denied'].includes(error?.code)) {
+                setCheckoutState('payment_paused');
+                setPaymentResumeNotice('Le résultat doit être vérifié. Réessayez sur ce même dossier, sans modifier les informations.');
+                return;
+            }
             console.error("Order error:", error);
             setCheckoutState('editing');
             setLockedOrderDraft(null);
@@ -947,6 +1054,12 @@ const CheckoutView = ({
                 return;
             }
             let msg = "Nous n’avons pas pu préparer votre commande. Vérifiez vos informations puis réessayez.";
+            if (error?.details?.reason === 'COMMERCE_DELIVERY_OUT_OF_ZONE') {
+                msg = 'Ce mode de livraison ne dessert pas votre adresse. Choisissez le transporteur ou le retrait à l’atelier.';
+            }
+            if (error?.details?.reason === 'COMMERCE_CHECKOUT_PRODUCT_UNAVAILABLE') {
+                msg = 'Une pièce est réservée ou indisponible. Aucun panier partiel n’a été réservé. Vérifiez la disponibilité dans la galerie.';
+            }
             if (error.message?.includes('vendu')) {
                 msg = "Désolé, cet article vient d'être vendu à l'instant.";
             } else if (error.message?.includes('stock')) {
@@ -1050,6 +1163,7 @@ const CheckoutView = ({
 
     return (
         <>
+        {confirmation}
         <div
             className={`min-h-[100dvh] px-4 pt-8 md:px-6 md:pt-10 animate-in fade-in transition-colors duration-700 bg-transparent`}
             style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 6rem)' }}
@@ -1057,9 +1171,10 @@ const CheckoutView = ({
             <div className="max-w-[1240px] mx-auto w-full">
                 {/* HEADER RETOUR */}
                 <div className="mb-8 md:mb-12">
-                    <button onClick={onBack} aria-label="Continuer mes achats" className={`flex items-center gap-2 font-bold text-[10px] md:text-xs uppercase tracking-widest transition-colors mb-6 ${darkMode ? 'text-stone-500 hover:text-white' : 'text-stone-400 hover:text-stone-900'}`}>
-                        <ArrowLeft size={14} /> Continuer mes achats
+                    <button onClick={leaveCheckout} className={`flex items-center gap-2 font-bold text-[10px] md:text-xs uppercase tracking-widest transition-colors mb-6 ${darkMode ? 'text-stone-500 hover:text-white' : 'text-stone-400 hover:text-stone-900'}`}>
+                        <ArrowLeft size={14} /> {createdOrderId ? 'Annuler et retourner à la galerie' : 'Continuer mes achats'}
                     </button>
+                    {createdOrderId ? <p className="mb-4 text-sm"><a href="/mes-commandes">Consulter le dossier</a>{reservationExpiresAt ? ` · Réservation jusqu’à ${new Date(reservationExpiresAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}` : ''}</p> : null}
                     <h2 className={`text-3xl md:text-5xl font-black tracking-tighter ${darkMode ? 'text-white' : 'text-stone-900'}`}>
                         Finaliser la commande
                     </h2>
@@ -1068,7 +1183,8 @@ const CheckoutView = ({
                 <div className="grid lg:grid-cols-[1fr_460px] gap-8 lg:gap-16 items-start">
                     
                     {/* COLONNE GAUCHE : FORMULAIRES & PAIEMENT */}
-                    <div className="space-y-6 w-full">
+                    <fieldset disabled={isCheckoutLocked} className="min-w-0 space-y-6 w-full">
+                        {isCheckoutLocked ? <p className="text-sm leading-6 text-stone-500">{createdOrderId ? 'Ces informations correspondent à votre réservation. Pour les modifier, annulez d’abord cette réservation depuis le bouton en haut de page.' : 'Vos informations sont conservées pendant la préparation ou la vérification de votre réservation.'}</p> : null}
                         
                         {/* GROUPE 1 : INFOS & ADRESSE COMBINÉS */}
                         <div className={cardClasses}>
@@ -1224,24 +1340,26 @@ const CheckoutView = ({
                                 <Truck size={14} /> Mode de Livraison
                             </h3>
                             <div className="space-y-3">
-                                {Object.values(deliverySettings).filter(m => m.active).map(mode => (
-                                    <label htmlFor={`checkout-delivery-${mode.id}`} key={mode.id} className={`flex items-start gap-4 p-4 rounded-xl cursor-pointer border transition-all ${formData.deliveryMode === mode.id ? (darkMode ? 'border-white bg-white/5' : 'border-stone-900 bg-stone-50') : (darkMode ? 'border-stone-800 hover:bg-stone-800' : 'border-stone-200 hover:bg-stone-50')}`}>
+                                {Object.values(deliverySettings).filter(m => m.active).map(mode => {
+                                    const unavailableReason = deliveryUnavailableReason(mode.id, formData.zip);
+                                    return (
+                                    <label htmlFor={`checkout-delivery-${mode.id}`} key={mode.id} className={`flex items-start gap-4 p-4 rounded-xl border transition-colors focus-within:ring-2 focus-within:ring-stone-400 focus-within:ring-offset-2 ${unavailableReason ? (darkMode ? 'cursor-not-allowed border-stone-800 bg-stone-900 opacity-60' : 'cursor-not-allowed border-stone-200 bg-stone-100 opacity-60') : `cursor-pointer ${formData.deliveryMode === mode.id ? (darkMode ? 'border-white bg-white/5' : 'border-stone-900 bg-stone-50') : (darkMode ? 'border-stone-800 hover:bg-stone-800' : 'border-stone-200 hover:bg-stone-50')}`}`}>
                                         <span className="sr-only">{mode.label}</span>
                                         <div className="pt-1 flex items-center">
                                             <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${formData.deliveryMode === mode.id ? 'border-current' : 'border-stone-300'}`}>
                                                 {formData.deliveryMode === mode.id && <div className="w-2 h-2 rounded-full bg-current" />}
                                             </div>
-                                            <input id={`checkout-delivery-${mode.id}`} type="radio" className="sr-only" name="deliveryMode" value={mode.id} checked={formData.deliveryMode === mode.id} onChange={handleChange} />
+                                            <input id={`checkout-delivery-${mode.id}`} type="radio" className="sr-only" name="deliveryMode" value={mode.id} disabled={Boolean(unavailableReason)} aria-describedby={`checkout-delivery-help-${mode.id}`} checked={!unavailableReason && formData.deliveryMode === mode.id} onChange={handleChange} />
                                         </div>
                                         <div className="flex-1">
                                             <div className="flex justify-between">
                                                 <span className={`font-bold ${darkMode ? 'text-white' : 'text-stone-900'}`}>{mode.label}</span>
                                                 <span className={`font-black ${darkMode ? 'text-white' : 'text-stone-900'}`}>{mode.price === 0 ? 'Gratuit' : `${mode.price} €`}</span>
                                             </div>
-                                            <div className="text-xs text-stone-500 font-medium mt-0.5">{mode.sub}</div>
+                                            <div id={`checkout-delivery-help-${mode.id}`} className="text-xs text-stone-500 font-medium mt-0.5">{unavailableReason || mode.sub}</div>
                                         </div>
                                     </label>
-                                ))}
+                                ); })}
                             </div>
 
                             <div className="mt-6 pt-6 border-t border-stone-200 dark:border-stone-800">
@@ -1277,6 +1395,7 @@ const CheckoutView = ({
                                     type="button"
                                     aria-pressed={paymentMethod === 'stripe_elements'}
                                     onClick={() => {
+                                        if (isCheckoutLocked) return;
                                         setPaymentMethod('stripe_elements');
                                         setCheckoutState('editing'); // Reset si on change d'avis
                                     }}
@@ -1334,6 +1453,7 @@ const CheckoutView = ({
                                     type="button"
                                     aria-pressed={paymentMethod === 'deferred'}
                                     onClick={() => {
+                                        if (isCheckoutLocked) return;
                                         setPaymentMethod('deferred');
                                         setCheckoutState('editing');
                                     }}
@@ -1383,7 +1503,7 @@ const CheckoutView = ({
                             {/* BOUTON D'ACTION DÉPLACÉ DANS LA COLONNE DE DROITE */}
                         </div>
 
-                    </div>
+                    </fieldset>
 
                     {/* COLONNE DROITE : RÉSUMÉ STICKY */}
                     <div className="relative w-full">
@@ -1534,6 +1654,13 @@ const CheckoutView = ({
                     formData={formData}
                     stripeElementsOptions={stripeElementsOptions}
                     purchasedCartLines={lockedOrderDraft?.purchasedCartLines || []}
+                    expiresAt={reservationExpiresAt}
+                    initialVerification={providerStatus && !['requires_payment_method', 'requires_confirmation', 'requires_action'].includes(providerStatus)}
+                    onSubmissionState={(state) => {
+                        if (!COMMERCE_V2_CONSUMERS_ENABLED) return;
+                        if (state === 'submitting' && checkoutControllerRef.current.status === 'awaiting_method') advanceCheckoutController({ type: 'SUBMIT' });
+                        if (state === 'idle' && checkoutControllerRef.current.status === 'processing') advanceCheckoutController({ type: 'RETRY_METHOD' });
+                    }}
                     onClose={handleClosePaymentModal}
                     onPlaceOrder={onPlaceOrder}
                     onPaymentConfirmed={(confirmedOrder) => {
@@ -1552,7 +1679,7 @@ const CheckoutView = ({
         )}
 
         {/* PORTAL — dropdown suggestions rendu à la racine du body */}
-        {showSuggestions && suggestions.length > 0 && createPortal(
+        {!isCheckoutLocked && showSuggestions && suggestions.length > 0 && createPortal(
             dropdownPos.mobile ? (
                 /* ── MOBILE : bottom sheet ancré au-dessus du clavier ── */
                 <div

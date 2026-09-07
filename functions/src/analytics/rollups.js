@@ -482,12 +482,16 @@ async function removeMaterializedSessionFact(sessionId, db = admin.firestore()) 
     await db.runTransaction(async (transaction) => {
         const currentFact = await transaction.get(factRef);
         if (!currentFact.exists) return;
+        if (JSON.stringify(currentFact.data()) !== JSON.stringify(fact)) {
+            throw new Error('ANALYTICS_FACT_CHANGED_RETRY_REQUIRED');
+        }
         const documents = [];
         let pageQuery = factsQuery;
         while (true) {
             const page = await transaction.get(pageQuery);
             documents.push(...page.docs);
             if (page.size < FACT_REBUILD_PAGE_SIZE) break;
+            if (documents.length >= 20000) throw new Error('ANALYTICS_FACT_REBUILD_LIMIT');
             pageQuery = factsQuery.startAfter(page.docs.at(-1));
         }
         const rebuilt = rebuildShardFromFacts(date, shardId, documents, sessionId);
@@ -768,16 +772,22 @@ async function finalizeInactiveSessions(db = admin.firestore()) {
         .limit(100)
         .get();
     if (snapshot.empty) return 0;
-    const batch = db.batch();
-    for (const document of snapshot.docs) {
-        batch.update(document.ref, {
-            sessionActive: false,
-            finalizedBy: 'inactivity_scheduler',
-            finalizedAt: admin.firestore.FieldValue.serverTimestamp()
-        });
-    }
-    await batch.commit();
-    return snapshot.size;
+    return db.runTransaction(async (transaction) => {
+        const current = await transaction.getAll(...snapshot.docs.map(document => document.ref));
+        let finalized = 0;
+        for (const document of current) {
+            const data = document.data();
+            if (!document.exists || data?.sessionActive !== true
+                || !toMillis(data.lastActivityAt) || toMillis(data.lastActivityAt) > cutoff.toMillis()) continue;
+            transaction.update(document.ref, {
+                sessionActive: false,
+                finalizedBy: 'inactivity_scheduler',
+                finalizedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+            finalized += 1;
+        }
+        return finalized;
+    });
 }
 
 function archiveProjection(document) {

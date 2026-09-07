@@ -15,6 +15,8 @@ const {
     deterministicEffectId
 } = require('./domain/commerceEffects');
 const {
+    assertCustomerReturnDecision,
+    isReturnReceiptComplete,
     createCustomerReturnRequest,
     transitionCustomerReturnRequest,
     validateCustomerReturnRequest
@@ -167,6 +169,13 @@ function calculateRequestedRefundAmount(order, requestedLines) {
 function mapError(error) {
     if (error instanceof functions.https.HttpsError) return error;
     const code = String(error?.code || '');
+    if (code === 'COMMERCE_PROVIDER_RECONCILIATION_REQUIRED') {
+        return new functions.https.HttpsError(
+            'failed-precondition',
+            'Un rapprochement du paiement par l atelier est requis avant de poursuivre.',
+            { reason: code }
+        );
+    }
     if (code.includes('NOT_FOUND')) {
         return new functions.https.HttpsError('not-found', 'Commande ou demande introuvable.');
     }
@@ -337,18 +346,21 @@ async function persistDecision(db, ref, currentRequest, event, decisionClock) {
         }
         const latest = snapshot.data();
         validateCustomerReturnRequest(latest);
+        if (event.type === 'refund_started' && latest.refundRequestId === event.refundRequestId
+            && (latest.status === 'completed' || (
+                latest.status === 'refund_failed' && event.outcome !== 'succeeded'
+            ))) return latest;
         if (latest.stateVersion !== currentRequest.stateVersion) {
             if (
                 event.type === 'authorize_return' &&
                 latest.returnId === event.returnId
             ) return latest;
-            if (
-                event.type === 'refund_started' &&
-                latest.refundRequestId === event.refundRequestId
-            ) return latest;
-            const error = new Error('COMMERCE_CUSTOMER_RETURN_REQUEST_STALE');
-            error.code = 'COMMERCE_CUSTOMER_RETURN_REQUEST_TRANSITION_DENIED';
-            throw error;
+            if (event.type !== 'refund_started' || latest.refundRequestId !== event.refundRequestId) {
+                const error = new Error('COMMERCE_CUSTOMER_RETURN_REQUEST_STALE');
+                error.code = 'COMMERCE_CUSTOMER_RETURN_REQUEST_TRANSITION_DENIED';
+                throw error;
+            }
+            // The refund transaction already recorded this same intent.
         }
         const next = transitionCustomerReturnRequest(latest, event, {
             clock: decisionClock
@@ -391,6 +403,7 @@ function createAdminCustomerReturnDecisionHandler({
                 requestId
             );
             const actor = { uid: context.auth.uid, role: 'admin', aal2: true };
+            assertCustomerReturnDecision(request, decision);
 
             if (decision === 'reject') {
                 const next = await persistDecision(runtime.db, refs.request, request, {
@@ -409,6 +422,7 @@ function createAdminCustomerReturnDecisionHandler({
                     orderId,
                     returnRequestId: requestId,
                     requestedLines: request.lines,
+                    customerRequestId: requestId,
                     actor,
                     reason
                 });
@@ -421,9 +435,11 @@ function createAdminCustomerReturnDecisionHandler({
                 return { request: next, returnCase: result.returnCase, outcome: 'return_authorized' };
             }
 
+            const refundRequestId = `customer-${requestId}`;
+            const existingRefund = await runtime.db.doc(`orders/${orderId}/refunds/${refundRequestId}`).get();
             let mode = 'direct_refund';
             if (decision === 'refund_now') {
-                if (order.fulfillmentSummary.custody !== 'merchant') {
+                if (!existingRefund.exists && order.fulfillmentSummary.custody !== 'merchant') {
                     const error = new Error('COMMERCE_CUSTOMER_RETURN_REQUEST_CUSTODY_INVALID');
                     error.code = 'COMMERCE_CUSTOMER_RETURN_REQUEST_CUSTODY_INVALID';
                     throw error;
@@ -438,24 +454,27 @@ function createAdminCustomerReturnDecisionHandler({
                 const returnSnapshot = await runtime.db.doc(
                     `orders/${orderId}/returns/${request.returnId}`
                 ).get();
-                if (!returnSnapshot.exists || returnSnapshot.data()?.status !== 'resolved') {
+                if (!existingRefund.exists && (!returnSnapshot.exists || !isReturnReceiptComplete(returnSnapshot.data(), request))) {
                     const error = new Error('COMMERCE_CUSTOMER_RETURN_REQUEST_RETURN_NOT_RESOLVED');
                     error.code = 'COMMERCE_CUSTOMER_RETURN_REQUEST_RETURN_NOT_RESOLVED';
                     throw error;
                 }
             }
 
-            const amountCents = calculateRequestedRefundAmount(order, request.lines);
+            const amountCents = existingRefund.exists
+                ? existingRefund.data().amountCents
+                : calculateRequestedRefundAmount(order, request.lines);
             if (!Number.isSafeInteger(amountCents) || amountCents <= 0) {
                 const error = new Error('COMMERCE_CUSTOMER_RETURN_REQUEST_NOT_REFUNDABLE');
                 error.code = 'COMMERCE_CUSTOMER_RETURN_REQUEST_NOT_REFUNDABLE';
                 throw error;
             }
-            const refundRequestId = `customer-${requestId}`;
             const result = await runtime.refunds.requestRefund({
                 orderId,
                 refundRequestId,
                 amountCents,
+                customerRequestId: requestId,
+                customerDecision: decision,
                 actor,
                 reason
             });

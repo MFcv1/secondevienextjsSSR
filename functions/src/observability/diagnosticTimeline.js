@@ -185,7 +185,7 @@ async function buildOrderDiagnostic(db, orderId) {
         incidents,
         businessEvents
     ] = await Promise.all([
-        orderRef.collection('events').orderBy('createdAt', 'asc').limit(MAX_EVENTS).get(),
+        orderRef.collection('events').orderBy('createdAt', 'desc').limit(MAX_EVENTS).get(),
         orderRef.collection('payment_attempts').limit(20).get(),
         orderRef.collection('refunds').limit(20).get(),
         orderRef.collection('returns').limit(20).get(),
@@ -194,7 +194,7 @@ async function buildOrderDiagnostic(db, orderId) {
         db.collection('inventory_movements').where('orderId', '==', orderId).limit(50).get(),
         db.collection('commerce_outbox').where('aggregateId', '==', orderId).limit(50).get(),
         db.collection('commerce_incidents').where('orderId', '==', orderId).limit(50).get(),
-        db.collection('business_events').where('aggregateId', '==', orderId).orderBy('occurredAt', 'asc').limit(MAX_EVENTS).get()
+        db.collection('business_events').where('aggregateId', '==', orderId).orderBy('occurredAt', 'desc').limit(MAX_EVENTS).get()
     ]);
     const historicalWebhooks = await loadHistoricalWebhookDocs(db, order, facts);
     const events = [];
@@ -334,6 +334,16 @@ async function buildOrderDiagnostic(db, orderId) {
         }));
     }
     events.sort((left, right) => String(left.at || '').localeCompare(String(right.at || '')));
+    const sourceCapped = orderEvents.size === MAX_EVENTS || businessEvents.size === MAX_EVENTS
+        || [attempts, refunds, returns, documents].some(snapshot => snapshot.size >= 20)
+        || [facts, movements, outbox, incidents].some(snapshot => snapshot.size >= 50)
+        || historicalWebhooks.length >= 20;
+    const recovery = recoveryAssessment(order, incidents.docs, outbox.docs);
+    if (sourceCapped && recovery.status === 'safe') {
+        recovery.status = 'review';
+        recovery.label = 'Diagnostic partiel';
+        recovery.reasons = ['Une source atteint sa limite de lecture. Ce résumé ne suffit pas à confirmer une reprise.'];
+    }
     return {
         order: {
             id: orderId,
@@ -347,9 +357,9 @@ async function buildOrderDiagnostic(db, orderId) {
             createdAt: iso(order.createdAt),
             updatedAt: iso(order.updatedAt)
         },
-        recovery: recoveryAssessment(order, incidents.docs, outbox.docs),
+        recovery,
         timeline: events.slice(-MAX_EVENTS),
-        truncated: events.length > MAX_EVENTS || orderEvents.size === MAX_EVENTS || businessEvents.size === MAX_EVENTS
+        truncated: events.length > MAX_EVENTS || sourceCapped
     };
 }
 

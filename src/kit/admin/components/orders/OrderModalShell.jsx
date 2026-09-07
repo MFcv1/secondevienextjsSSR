@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-
-const FOCUSABLE = 'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], summary, [tabindex]:not([tabindex="-1"])';
+import { getDialogFocusableElements, trapDialogTabKey } from '../../../ui/dialogFocus';
 
 /**
  * Coque commune des surfaces modales des ventes : voile, piege de focus,
@@ -28,7 +27,7 @@ export default function OrderModalShell({
         document.body.style.overflow = 'hidden';
         const timer = window.setTimeout(() => {
             const target = panelRef.current?.querySelector('[data-autofocus="true"]')
-                || panelRef.current?.querySelector(FOCUSABLE)
+                || getDialogFocusableElements(panelRef.current)[0]
                 || panelRef.current;
             target?.focus?.();
         }, 0);
@@ -42,24 +41,14 @@ export default function OrderModalShell({
 
     const handleKeyDown = (event) => {
         if (event.key === 'Escape') {
+            event.stopPropagation();
             if (!locked) {
-                event.stopPropagation();
                 onClose?.();
             }
             return;
         }
-        if (event.key !== 'Tab') return;
-        const focusable = [...(panelRef.current?.querySelectorAll(FOCUSABLE) || [])];
-        if (focusable.length === 0) return;
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-        if (event.shiftKey && document.activeElement === first) {
-            event.preventDefault();
-            last.focus();
-        } else if (!event.shiftKey && document.activeElement === last) {
-            event.preventDefault();
-            first.focus();
-        }
+        if (event.key === 'Tab') event.stopPropagation();
+        trapDialogTabKey(event, panelRef.current);
     };
 
     const isSheet = variant === 'sheet';
@@ -78,6 +67,7 @@ export default function OrderModalShell({
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby={labelledBy}
+                aria-label={labelledBy ? undefined : 'Détail de la commande'}
                 aria-describedby={describedBy}
                 tabIndex={-1}
                 className={`sales-sheet flex w-full flex-col overflow-hidden border outline-none ${

@@ -26,6 +26,7 @@ async function loadRemovalHarness({
   failFirstRevoke = false,
   registryExists = true,
   registryActive = true,
+  revokeOnMigration = false,
   inputUid = 'uid-target',
   lookupErrorCode = null
 } = {}) {
@@ -80,6 +81,19 @@ async function loadRemovalHarness({
     update: async (patch) => apply(state.profile, patch)
   };
   const db = {
+    runTransaction: async callback => {
+      if (revokeOnMigration) {
+        state.registryExists = true;
+        state.registry.active = false;
+      }
+      const writes = [];
+      const result = await callback({
+        get: ref => ref.get(),
+        set: (ref, patch) => writes.push(() => ref.set(patch))
+      });
+      for (const write of writes) await write();
+      return result;
+    },
     doc: (docPath) => {
       if (docPath === 'sys_metadata/admin_users') return metadataRef;
       throw new Error(`Unexpected doc ${docPath}`);
@@ -263,6 +277,17 @@ test('self-migration never reactivates an inactive UID registry', async () => {
       && error.details?.reason === 'admin-access-inactive'
     ));
     assert.equal(harness.state.registry.active, false);
+  } finally {
+    harness.close();
+  }
+});
+
+test('self-migration loses to a revocation between its initial read and transaction', async () => {
+  const harness = await loadRemovalHarness({ registryExists: false, revokeOnMigration: true });
+  try {
+    await assert.rejects(harness.ensure(), { code: 'permission-denied' });
+    assert.equal(harness.state.registry.active, false);
+    assert.equal(harness.state.audits.length, 0);
   } finally {
     harness.close();
   }

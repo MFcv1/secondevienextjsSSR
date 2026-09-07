@@ -88,7 +88,9 @@ test('onboarding operator lives only in the dedicated account tab', () => {
   const operatorSource = fs.readFileSync(path.join(root, 'src/kit/admin/BillingOnboardingOperator.jsx'), 'utf8');
 
   assert.match(constantsSource, /\{ id: 'account',\s+label: 'Mon compte'/);
-  assert.match(adminIslandSource, /tabs: \['account', 'users'\]/);
+  const administrationTabs = adminIslandSource.match(/label: 'Administration', tabs: \[([^\]]+)\]/)?.[1];
+  assert.match(administrationTabs || '', /'account'/);
+  assert.match(administrationTabs || '', /'users'/);
   assert.match(adminIslandSource, /adminCollection === 'account'/);
   assert.doesNotMatch(adminIslandSource, /BillingOnboardingOperator/);
   assert.match(accountSource, /import\('\.\/BillingOnboardingOperator'\)/);

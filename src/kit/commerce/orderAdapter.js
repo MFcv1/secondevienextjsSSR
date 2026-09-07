@@ -20,7 +20,7 @@ function projectV2Status(order) {
         order.inventorySummary?.heldQty === 0 &&
         order.inventorySummary?.releasedQty === order.inventorySummary?.reservedQty
     ) {
-        return 'canceled';
+        return order.checkout.closeReason === 'expired' ? 'expired' : 'canceled';
     }
     return LEGACY_PENDING;
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect } from 'react';
 import { ArrowRight } from 'lucide-react';
+import { createDomLifetime } from '../ui/domLifetime';
 
 const wrapIndex = (index, count) => (index + count) % count;
 const EXPANDED_PRODUCT_GRIDS_KEY = 'secondevie:gallery-expanded-product-grids:v1';
@@ -282,6 +283,7 @@ const getInteractionItems = (node) => {
 };
 
 const setupMobileCarouselSwipe = (surface, {
+  lifetime,
   isEnabled,
   onPrevious,
   onNext,
@@ -304,10 +306,10 @@ const setupMobileCarouselSwipe = (surface, {
   };
 
   const resetSurfacePosition = () => {
-    window.clearTimeout(resetTimer);
+    lifetime.clearTimer(resetTimer);
     surface.style.transition = 'transform 220ms cubic-bezier(0.22, 1, 0.36, 1)';
     surface.style.transform = '';
-    resetTimer = window.setTimeout(() => {
+    resetTimer = lifetime.later(() => {
       surface.style.transition = '';
     }, 240);
   };
@@ -321,7 +323,7 @@ const setupMobileCarouselSwipe = (surface, {
       return;
     }
 
-    window.clearTimeout(resetTimer);
+    lifetime.clearTimer(resetTimer);
     surface.style.transition = 'none';
     gesture = {
       pointerId: event.pointerId,
@@ -332,7 +334,7 @@ const setupMobileCarouselSwipe = (surface, {
     };
     surface.setPointerCapture?.(event.pointerId);
     onGestureStart?.();
-  });
+  }, { signal: lifetime.signal });
 
   surface.addEventListener('pointermove', (event) => {
     if (!gesture || gesture.pointerId !== event.pointerId) return;
@@ -358,7 +360,7 @@ const setupMobileCarouselSwipe = (surface, {
     event.preventDefault();
     const visualOffset = Math.max(-72, Math.min(72, deltaX * 0.42));
     surface.style.transform = `translate3d(${visualOffset}px, 0, 0)`;
-  });
+  }, { signal: lifetime.signal });
 
   const finishGesture = (event, cancelled = false) => {
     if (!gesture || gesture.pointerId !== event.pointerId) return;
@@ -386,8 +388,8 @@ const setupMobileCarouselSwipe = (surface, {
     onGestureEnd?.({ swiped });
   };
 
-  surface.addEventListener('pointerup', (event) => finishGesture(event));
-  surface.addEventListener('pointercancel', (event) => finishGesture(event, true));
+  surface.addEventListener('pointerup', (event) => finishGesture(event), { signal: lifetime.signal });
+  surface.addEventListener('pointercancel', (event) => finishGesture(event, true), { signal: lifetime.signal });
 };
 
 const setupBeforeAfter = () => {
@@ -815,12 +817,25 @@ const setupBeforeAfter = () => {
 };
 
 const setupInstagram = () => {
+  const cleanups = [];
   document.querySelectorAll('[data-instagram-carousel]').forEach((root) => {
     if (root.dataset.carouselReady === 'true') return;
     root.dataset.carouselReady = 'true';
 
     const items = getInteractionItems(root);
     if (!items.length) return;
+    const lifetime = createDomLifetime();
+    const eventOptions = { signal: lifetime.signal };
+    cleanups.push(() => {
+      lifetime.dispose();
+      delete root.dataset.carouselReady;
+      root.querySelectorAll('[data-swipe-ready]').forEach(surface => {
+        delete surface.dataset.swipeReady;
+        surface.style.transform = '';
+        surface.style.transition = '';
+      });
+    });
+    const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
     const autoplayDelayMs = 4200;
     const resumeDelayMs = 6500;
     let activeIndex = 1 % items.length;
@@ -887,12 +902,14 @@ const setupInstagram = () => {
     };
 
     const stopAutoplay = () => {
-      window.clearTimeout(autoplayTimer);
-      window.clearTimeout(preloadTimer);
-      window.clearTimeout(resumeTimer);
+      lifetime.clearTimer(autoplayTimer);
+      lifetime.clearTimer(preloadTimer);
+      lifetime.clearTimer(resumeTimer);
       autoplayTimer = undefined;
       preloadTimer = undefined;
       resumeTimer = undefined;
+      // The reset timer was cancelled too; allow autoplay when the section returns.
+      manuallyPaused = false;
       setProgressDots(root, '[data-insta-dot]', activeIndex);
     };
 
@@ -915,8 +932,8 @@ const setupInstagram = () => {
             card.dataset.instaTransitioning = 'false';
             card.dataset.instaPrepared = 'false';
           };
-          card.addEventListener('transitionend', releaseLayer, { once: true });
-          window.setTimeout(releaseLayer, 650);
+          card.addEventListener('transitionend', releaseLayer, { once: true, ...eventOptions });
+          lifetime.later(releaseLayer, 650);
         }
         applyPosition(card, card.dataset.instaLayout === 'desktop' ? desktopPositions : mobilePositions);
       });
@@ -927,17 +944,17 @@ const setupInstagram = () => {
     };
 
     function scheduleAutoplay({ transitioning = false } = {}) {
-      window.clearTimeout(autoplayTimer);
-      if (!sectionVisible || manuallyPaused) return;
+      lifetime.clearTimer(autoplayTimer);
+      if (lifetime.disposed || document.hidden || motionPreference.matches || !sectionVisible || manuallyPaused) return;
       if (isInputActive()) {
         scheduleAutoplayWhenCalm();
         return;
       }
       render({ animateProgress: true, transitioning });
-      preloadTimer = window.setTimeout(() => {
+      preloadTimer = lifetime.later(() => {
         ensureVisibleWindow(wrapIndex(activeIndex + 1, items.length));
       }, Math.max(800, autoplayDelayMs - 1200));
-      autoplayTimer = window.setTimeout(() => {
+      autoplayTimer = lifetime.later(() => {
         if (isInputActive()) {
           scheduleAutoplayWhenCalm();
           return;
@@ -948,9 +965,9 @@ const setupInstagram = () => {
     }
 
     function scheduleAutoplayWhenCalm() {
-      window.clearTimeout(resumeTimer);
-      if (!sectionVisible || manuallyPaused) return;
-      resumeTimer = window.setTimeout(() => {
+      lifetime.clearTimer(resumeTimer);
+      if (lifetime.disposed || document.hidden || motionPreference.matches || !sectionVisible || manuallyPaused) return;
+      resumeTimer = lifetime.later(() => {
         resumeTimer = undefined;
         if (isInputActive()) {
           scheduleAutoplayWhenCalm();
@@ -966,11 +983,11 @@ const setupInstagram = () => {
       activeIndex = resolvedIndex;
       if (manual) {
         manuallyPaused = true;
-        window.clearTimeout(autoplayTimer);
-        window.clearTimeout(preloadTimer);
-        window.clearTimeout(resumeTimer);
+        lifetime.clearTimer(autoplayTimer);
+        lifetime.clearTimer(preloadTimer);
+        lifetime.clearTimer(resumeTimer);
         render({ animateProgress: false, transitioning: true });
-        resumeTimer = window.setTimeout(() => {
+        resumeTimer = lifetime.later(() => {
           manuallyPaused = false;
           scheduleAutoplayWhenCalm();
         }, resumeDelayMs);
@@ -982,26 +999,27 @@ const setupInstagram = () => {
     root.querySelectorAll('[data-insta-prev]').forEach((button) => {
       button.addEventListener('click', () => {
         goTo(activeIndex - 1);
-      });
+      }, eventOptions);
     });
     root.querySelectorAll('[data-insta-next]').forEach((button) => {
       button.addEventListener('click', () => {
         goTo(activeIndex + 1);
-      });
+      }, eventOptions);
     });
     root.querySelectorAll('[data-insta-dot]').forEach((dot, index) => {
       dot.addEventListener('click', () => {
         goTo(index);
-      });
+      }, eventOptions);
     });
     setupMobileCarouselSwipe(root.querySelector('[data-insta-swipe-surface]'), {
+      lifetime,
       isEnabled: () => !desktopLayout.matches,
       onPrevious: () => goTo(activeIndex - 1),
       onNext: () => goTo(activeIndex + 1),
       onGestureStart: () => {
         swipeActive = true;
-        window.clearTimeout(autoplayTimer);
-        window.clearTimeout(preloadTimer);
+        lifetime.clearTimer(autoplayTimer);
+        lifetime.clearTimer(preloadTimer);
       },
       onGestureEnd: ({ swiped }) => {
         swipeActive = false;
@@ -1022,23 +1040,42 @@ const setupInstagram = () => {
         },
         { rootMargin: '-18% 0px -18% 0px', threshold: 0.28 },
       );
-      observer.observe(root);
+      lifetime.observe(observer, root);
     } else {
       sectionVisible = true;
       scheduleAutoplay();
     }
 
+    const updateAutoplay = () => {
+      stopAutoplay();
+      if (!document.hidden && !motionPreference.matches) scheduleAutoplayWhenCalm();
+    };
+    document.addEventListener('visibilitychange', updateAutoplay, eventOptions);
+    motionPreference.addEventListener('change', updateAutoplay, eventOptions);
     render({ animateProgress: false });
   });
+  return () => cleanups.forEach(cleanup => cleanup());
 };
 
 const setupTestimonials = () => {
+  const cleanups = [];
   document.querySelectorAll('[data-testimonials-carousel]').forEach((root) => {
     if (root.dataset.carouselReady === 'true') return;
     root.dataset.carouselReady = 'true';
 
     const items = getInteractionItems(root);
     if (!items.length) return;
+    const lifetime = createDomLifetime();
+    const eventOptions = { signal: lifetime.signal };
+    cleanups.push(() => {
+      lifetime.dispose();
+      delete root.dataset.carouselReady;
+      root.querySelectorAll('[data-swipe-ready]').forEach(surface => {
+        delete surface.dataset.swipeReady;
+        surface.style.transform = '';
+        surface.style.transition = '';
+      });
+    });
     let activeIndex = 1 % items.length;
 
     const prepareRenderingLayers = () => {
@@ -1058,9 +1095,9 @@ const setupTestimonials = () => {
           card.dataset.testimonialPrepared = 'true';
         });
         cursor += 2;
-        if (cursor < cards.length) window.requestAnimationFrame(prepareBatch);
+        if (cursor < cards.length) lifetime.frame(prepareBatch);
       };
-      window.requestAnimationFrame(prepareBatch);
+      lifetime.frame(prepareBatch);
     };
 
     if ('IntersectionObserver' in window) {
@@ -1078,22 +1115,22 @@ const setupTestimonials = () => {
           if (!visibleEntries.some((entry) => entry.isIntersecting)) return;
           releaseObserver.disconnect();
           root.dataset.testimonialsStarsActive = 'true';
-          window.setTimeout(() => {
+          lifetime.later(() => {
             root.dataset.testimonialsStarsActive = 'false';
           }, 3200);
-          window.setTimeout(() => {
+          lifetime.later(() => {
             root.querySelectorAll('[data-testimonial-card]').forEach((card) => {
               card.dataset.testimonialPrepared = 'false';
             });
           }, 850);
         }, { root: mobileScrollRoot, threshold: 0.08 });
-        releaseObserver.observe(root);
+        lifetime.observe(releaseObserver, root);
       }, {
         root: mobileScrollRoot,
         rootMargin: `${verticalMargin}px 0px`,
         threshold: 0.01,
       });
-      observer.observe(root);
+      lifetime.observe(observer, root);
     } else {
       prepareRenderingLayers();
     }
@@ -1138,8 +1175,8 @@ const setupTestimonials = () => {
           const releaseLayer = () => {
             card.dataset.testimonialTransitioning = 'false';
           };
-          card.addEventListener('transitionend', releaseLayer, { once: true });
-          window.setTimeout(releaseLayer, 650);
+          card.addEventListener('transitionend', releaseLayer, { once: true, ...eventOptions });
+          lifetime.later(releaseLayer, 650);
         }
         applyPosition(card, card.dataset.testimonialLayout === 'desktop' ? desktopPositions : mobilePositions);
       });
@@ -1163,21 +1200,22 @@ const setupTestimonials = () => {
       button.addEventListener('click', () => {
         activeIndex = wrapIndex(activeIndex - 1, items.length);
         render({ interactive: true });
-      });
+      }, eventOptions);
     });
     root.querySelectorAll('[data-testimonial-next]').forEach((button) => {
       button.addEventListener('click', () => {
         activeIndex = wrapIndex(activeIndex + 1, items.length);
         render({ interactive: true });
-      });
+      }, eventOptions);
     });
     root.querySelectorAll('[data-testimonial-dot]').forEach((dot, index) => {
       dot.addEventListener('click', () => {
         activeIndex = index % items.length;
         render({ interactive: true });
-      });
+      }, eventOptions);
     });
     setupMobileCarouselSwipe(root.querySelector('[data-testimonial-swipe-surface]'), {
+      lifetime,
       isEnabled: () => window.matchMedia('(max-width: 1023px)').matches,
       onPrevious: () => {
         activeIndex = wrapIndex(activeIndex - 1, items.length);
@@ -1190,6 +1228,7 @@ const setupTestimonials = () => {
     });
     render();
   });
+  return () => cleanups.forEach(cleanup => cleanup());
 };
 
 const setupNewsletterGame = () => {
@@ -2068,12 +2107,14 @@ const setupNewsletterGame = () => {
 export default function GalleryFixedSectionsInteractions() {
   useEffect(() => {
     const cleanupBeforeAfter = setupBeforeAfter();
-    setupInstagram();
-    setupTestimonials();
+    const cleanupInstagram = setupInstagram();
+    const cleanupTestimonials = setupTestimonials();
     const cleanupNewsletterGame = setupNewsletterGame();
     const cleanupPrewarm = setupRichSectionsPrewarm();
     return () => {
       cleanupBeforeAfter();
+      cleanupInstagram();
+      cleanupTestimonials();
       cleanupNewsletterGame();
       cleanupPrewarm();
     };

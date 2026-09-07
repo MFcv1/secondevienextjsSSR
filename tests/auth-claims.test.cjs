@@ -19,7 +19,7 @@ function createFirebaseFunctionsMock() {
   return functions;
 }
 
-function createFirebaseAdminMock({ adminUsersExists, adminUsersData }) {
+function createFirebaseAdminMock({ adminUsersExists, adminUsersData, registryRecord = null, removeInvitationDuringTransaction = false }) {
   const calls = {
     setCustomUserClaims: [],
     adminDocSet: [],
@@ -40,8 +40,19 @@ function createFirebaseAdminMock({ adminUsersExists, adminUsersData }) {
   const userDoc = {
     set: async (...args) => calls.userDocSet.push(args)
   };
+  const registryDoc = {
+    get: async () => ({ exists: Boolean(registryRecord), data: () => registryRecord }),
+    set: async (...args) => calls.registryDocSet.push(args)
+  };
 
   const firestore = () => ({
+    runTransaction: async callback => {
+      if (removeInvitationDuringTransaction) adminUsersData = { users: {} };
+      const writes = [];
+      const result = await callback({ get: ref => ref.get(), set: (ref, ...args) => writes.push(() => ref.set(...args)) });
+      for (const write of writes) await write();
+      return result;
+    },
     doc: (docPath) => {
       assert.equal(docPath, 'sys_metadata/admin_users');
       return adminDoc;
@@ -51,7 +62,7 @@ function createFirebaseAdminMock({ adminUsersExists, adminUsersData }) {
       return {
         doc: () => collectionName === 'users'
           ? userDoc
-          : { set: async (...args) => calls.registryDocSet.push(args) }
+          : registryDoc
       };
     }
   });
@@ -71,7 +82,7 @@ function createFirebaseAdminMock({ adminUsersExists, adminUsersData }) {
   };
 }
 
-async function runGrantAdminOnAuth({ superAdminEmail, adminUsersExists, adminUsersData, user }) {
+async function runGrantAdminOnAuth({ superAdminEmail, adminUsersExists, adminUsersData, user, registryRecord, removeInvitationDuringTransaction }) {
   const previousSuperAdminEmail = process.env.SUPER_ADMIN_EMAIL;
   process.env.SUPER_ADMIN_EMAIL = superAdminEmail || '';
 
@@ -81,7 +92,9 @@ async function runGrantAdminOnAuth({ superAdminEmail, adminUsersExists, adminUse
   const functionsMock = createFirebaseFunctionsMock();
   const { admin: adminMock, calls } = createFirebaseAdminMock({
     adminUsersExists,
-    adminUsersData
+    adminUsersData,
+    registryRecord,
+    removeInvitationDuringTransaction
   });
 
   const originalLoad = Module._load;
@@ -185,4 +198,20 @@ test('verified pending admin gets an active UID registry before claims', async (
     'uid-admin-verified',
     { existing: true, admin: true, superAdmin: false }
   ]]);
+});
+
+test('delayed Auth creation cannot restore a revoked admin or removed invitation', async () => {
+  for (const scenario of ['revoked', 'removed']) {
+    const calls = await runGrantAdminOnAuth({
+      superAdminEmail: 'owner@example.com',
+      adminUsersExists: true,
+      adminUsersData: { users: { pending_audit: { email: 'admin@example.test', status: 'pending' } } },
+      user: { uid: 'uid-admin-audit', email: 'admin@example.test', emailVerified: true },
+      registryRecord: scenario === 'revoked' ? { active: false } : null,
+      removeInvitationDuringTransaction: scenario === 'removed'
+    });
+    assert.equal(calls.registryDocSet.length, 0);
+    assert.equal(calls.setCustomUserClaims.length, 0);
+    assert.equal(calls.userDocSet.length, 0);
+  }
 });

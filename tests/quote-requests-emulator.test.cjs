@@ -207,7 +207,7 @@ test('devis: jeton étranger, faux contenu et dimensions extrêmes restent confi
     .file(`quote-requests/v1/${created.quoteId}/${extremePhotoId}.webp`)
     .exists();
   const [mismatchedExists] = await admin.storage().bucket()
-    .file(`quote-requests/v1/${created.quoteId}/${mismatchedPhotoId}.webp`)
+    .file(stored.data().photos[0].storagePath)
     .exists();
   assert.equal(fakeExists, false);
   assert.equal(extremeExists, false);

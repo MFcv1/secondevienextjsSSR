@@ -91,3 +91,10 @@ export {
     validateInsights,
     validateOrders
 };
+export function getConfirmedCapture(order) {
+    if (order?.payment?.status !== 'succeeded' || order.currency !== 'EUR') return null;
+    const cents = order.amounts?.capturedCents;
+    const timestamp = Date.parse(order.payment.succeededAt);
+    if (!Number.isSafeInteger(cents) || cents <= 0 || !Number.isFinite(timestamp)) return null;
+    return { timestamp, amount: cents / 100 };
+}

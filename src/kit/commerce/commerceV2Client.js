@@ -27,11 +27,13 @@ const assertConsumersEnabled = () => {
   }
 };
 
-export const createCheckoutV2 = async (input, { fixture = null } = {}) => {
+export const createCheckoutV2 = async (input, { fixture = null, customerEmail, checkoutOtpToken } = {}) => {
   assertConsumersEnabled();
   await ensureCheckoutAnonymousIdentity();
   return execute('createCheckoutV2', {
-    input,
+        input,
+        ...(customerEmail ? { customerEmail } : {}),
+        ...(checkoutOtpToken ? { checkoutOtpToken } : {}),
     ...(fixture ? { fixture } : {})
   });
 };

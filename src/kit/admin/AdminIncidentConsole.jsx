@@ -202,7 +202,7 @@ function OrderIncidentConsole({ darkMode = false, initialValue = '' }) {
               <StatusPill darkMode={darkMode} status={selected.order.status}>{selected.order.status}</StatusPill>
             </div>
             <Timeline darkMode={darkMode} events={selected.timeline} />
-            {selected.truncated && <p className="mt-4 text-xs font-bold text-amber-600">Historique limité aux 100 événements les plus récents.</p>}
+            {selected.truncated && <p className="mt-4 text-xs font-bold text-amber-600">Historique partiel : au plus 100 événements affichés, avec des limites de lecture par source.</p>}
           </section>
 
           <aside className="space-y-4 xl:sticky xl:top-6 xl:self-start">

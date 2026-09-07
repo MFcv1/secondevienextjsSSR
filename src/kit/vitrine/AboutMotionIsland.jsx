@@ -68,13 +68,19 @@ export default function AboutMotionIsland() {
         animateInstagramDomeParallax(gsap, ScrollTrigger, root);
         animateFaqDepth(gsap, ScrollTrigger, root);
         animateSimpleReveals(gsap, root);
-        animateInstagramCounter(gsap, ScrollTrigger, root);
+        const counterCleanup = animateInstagramCounter(gsap, ScrollTrigger, root);
+        if (counterCleanup) cleanupFns.push(counterCleanup);
 
-        window.setTimeout(() => ScrollTrigger.refresh(), 450);
+        const refreshTimer = window.setTimeout(() => { if (!cancelled) ScrollTrigger.refresh(); }, 450);
+        cleanupFns.push(() => window.clearTimeout(refreshTimer));
       }, root);
     }
 
-    setupMotion();
+    setupMotion().catch(() => {
+      ctx?.revert?.();
+      cleanupEffects();
+      cleanupSplits();
+    });
 
     return () => {
       cancelled = true;
@@ -725,7 +731,7 @@ function animateInstagramCounter(_gsap, ScrollTrigger, root) {
     onEnter: runCasino,
   });
 
-  window.setTimeout(runIfVisible, 600);
+  const visibilityTimer = window.setTimeout(runIfVisible, 600);
 
   const scrollUntilPlay = () => {
     if (counter.dataset.animated === 'true') {
@@ -735,6 +741,13 @@ function animateInstagramCounter(_gsap, ScrollTrigger, root) {
     runIfVisible();
   };
   window.addEventListener('scroll', scrollUntilPlay, { passive: true });
+  return () => {
+    window.clearTimeout(visibilityTimer);
+    window.clearInterval(intervalId);
+    window.removeEventListener('scroll', scrollUntilPlay);
+    valueEl.textContent = target.toFixed(1);
+    delete counter.dataset.animated;
+  };
 }
 
 function animateSimpleReveals(gsap, root) {

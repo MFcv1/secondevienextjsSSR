@@ -3,6 +3,7 @@ const { isPublicProduct, sha256, toPublicProduct } = require('./publicProjection
 const INVENTORY_FIELDS = Object.freeze([
     'status',
     'sold',
+    'availability',
     'stock',
     'currentPrice',
     'startingPrice'

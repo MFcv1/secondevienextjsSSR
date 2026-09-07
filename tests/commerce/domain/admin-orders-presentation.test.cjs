@@ -12,6 +12,15 @@ const presentationUrl = pathToFileURL(path.resolve(
 
 const loadPresentation = () => import(presentationUrl);
 
+test('order page merging preserves older loaded pages, removes duplicates and rejects stale versions', async () => {
+    const { mergeAdminOrders, formatPrice } = await loadPresentation();
+    assert.deepEqual(mergeAdminOrders([{ id: 'old', stateVersion: 3 }, { id: 'recent', stateVersion: 1 }], [{ id: 'old', stateVersion: 2 }, { id: 'recent', stateVersion: 2 }, { id: 'more', stateVersion: 1 }]), [
+        { id: 'old', stateVersion: 3 }, { id: 'recent', stateVersion: 2 }, { id: 'more', stateVersion: 1 },
+    ]);
+    assert.equal(formatPrice(null), 'Prix indisponible');
+    assert.match(formatPrice(0), /0,00/);
+});
+
 function order({
     allowedActions = [],
     capturedCents = 12000,
@@ -97,16 +106,16 @@ test('sales action plan rejects stale fulfillment actions during blocked refunds
     assert.equal(buildActionPlan(partial).primary?.id, 'fulfillment_prepare');
 });
 
-test('all sales are ordered by actionability while preserving order inside each segment', async () => {
+test('all sales keep newest creation first independently of business segment', async () => {
     const { filterOrders } = await loadPresentation();
-    const closed = order({ id: 'closed', fulfillment: 'delivered', custody: 'customer', status: 'completed' });
+    const closed = { ...order({ id: 'closed', fulfillment: 'delivered', custody: 'customer', status: 'completed' }), createdAt: '2026-09-06T12:00:00Z' };
     const waiting = order({ id: 'waiting', fulfillment: 'ready_for_pickup' });
     const todoFirst = order({ id: 'todo-first' });
     const todoSecond = order({ id: 'todo-second', fulfillment: 'preparing' });
 
     assert.deepEqual(
         filterOrders([closed, waiting, todoFirst, todoSecond]).map(({ id }) => id),
-        ['todo-first', 'todo-second', 'waiting', 'closed']
+        ['closed', 'waiting', 'todo-first', 'todo-second']
     );
 });
 

@@ -16,10 +16,11 @@ export const setAdminPreference = (key, value) => {
   if (runtime.ownerUid) runtime.preferences.set(key, value);
 };
 
-export const getAdminCachedData = (key) => {
+export const getAdminCachedData = (key, { allowStale = false } = {}) => {
   if (!runtime.ownerUid) return null;
   const entry = runtime.entries.get(key);
-  if (entry && Date.now() - entry.updatedAt >= entry.maxAgeMs) return null;
+  // Only list views opt in to keeping a stale authorized page visible.
+  if (!allowStale && entry && Date.now() - entry.updatedAt >= entry.maxAgeMs) return null;
   return entry?.data ?? null;
 };
 

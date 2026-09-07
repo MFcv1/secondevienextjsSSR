@@ -432,10 +432,8 @@ test('aucun moteur catalogue legacy ne subsiste dans le code executable', () => 
   assert.match(read('functions/src/catalog/catalogReconciler.js'), /if \(!impactPlan && !pendingPlanDeclared\)/);
   assert.equal(fs.existsSync(path.join(root, 'scripts/e2e-hosted-stripe-checkout.mjs')), false);
   const createOrder = read('functions/src/commerce/createOrder.js');
-  assert.match(createOrder, /reason: 'price_changed'/);
-  assert.equal((createOrder.match(/itemDb\.status !== 'published'/g) || []).length, 2);
-  assert.equal((createOrder.match(/itemDb\.currentPrice \?\? itemDb\.startingPrice \?\? itemDb\.price/g) || []).length, 2);
-  assert.doesNotMatch(createOrder, /itemDb\.currentPrice \|\| itemDb\.startingPrice/);
+  assert.match(createOrder, /return assertLegacyOrderCreationBlocked/);
+  assert.doesNotMatch(createOrder, /paymentIntents|runTransaction|batch\.delete|require\('stripe'\)/);
 
   const revalidationRoute = read('app/api/revalidate-catalog/route.js');
   assert.match(revalidationRoute, /validateCatalogRevalidationBody/);

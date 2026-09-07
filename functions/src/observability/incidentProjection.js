@@ -28,7 +28,7 @@ function normalizeIncidentCode(value) {
 
 function classifyIncidentCode(value) {
     const code = normalizeIncidentCode(value);
-    const exact = CODE_CONTRACT[code];
+    const exact = Object.hasOwn(CODE_CONTRACT, code) ? CODE_CONTRACT[code] : null;
     if (exact) return Object.freeze({ code, severity: exact[0], category: exact[1], known: true });
     if (WARNING_CODES.has(code)) {
         const category = code.startsWith('refund_') ? 'refund' : 'payment';

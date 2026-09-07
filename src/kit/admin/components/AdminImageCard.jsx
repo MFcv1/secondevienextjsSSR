@@ -4,6 +4,7 @@ const AdminImageCard = ({
     item,
     currentImage,
     isUpdating,
+    readOnly = false,
     darkMode,
     onFileSelect,
     onDownload,
@@ -16,7 +17,7 @@ const AdminImageCard = ({
     const isTextOnly = item.isTextOnly === true;
 
     const handleDrop = (e) => {
-        if (isTextOnly) return;
+        if (isTextOnly || readOnly || isUpdating) return;
         e.preventDefault();
         e.stopPropagation();
         if (e.dataTransfer.files && e.dataTransfer.files[0]) {
@@ -37,7 +38,8 @@ const AdminImageCard = ({
     };
 
     return (
-        <div
+        <fieldset
+            disabled={readOnly || isUpdating}
             className={`p-4 rounded-3xl ring-1 shadow-sm hover:shadow-md transition-all group relative flex flex-col will-change-transform ${darkMode ? 'bg-stone-800 ring-stone-700/50' : 'bg-white ring-stone-100'}`}
             onDrop={handleDrop}
             onDragOver={handleDragOver}
@@ -92,6 +94,7 @@ const AdminImageCard = ({
             </div>
 
             {/* ACTIONS */}
+            {readOnly ? <p className="mb-3 text-xs">Cette surface publique utilise le contenu du code. Données conservées en lecture seule.</p> : null}
             <div className="flex gap-2 mt-auto">
                 {isTextOnly ? (
                     <button
@@ -149,7 +152,7 @@ const AdminImageCard = ({
                     </>
                 )}
             </div>
-        </div>
+        </fieldset>
     );
 };
 

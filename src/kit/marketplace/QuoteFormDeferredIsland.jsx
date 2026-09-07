@@ -20,6 +20,8 @@ export default function QuoteFormDeferredIsland({ initialDarkMode = false }) {
       if (disposed) return;
       setReady(true);
     };
+    // An animation or observer must never prevent access to the actual form.
+    const fallbackTimer = window.setTimeout(reveal, 4500);
 
     if (document.documentElement.dataset.quoteMotion === 'complete') {
       reveal();
@@ -29,6 +31,7 @@ export default function QuoteFormDeferredIsland({ initialDarkMode = false }) {
 
     return () => {
       disposed = true;
+      window.clearTimeout(fallbackTimer);
       window.removeEventListener(FORM_MOUNT_EVENT, reveal);
     };
   }, []);

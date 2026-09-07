@@ -171,7 +171,8 @@ const scenarios = {
     context.ok(!orders.includes('FAC-{'));
     context.ok(!adminIsland.includes('COMMERCE_READ_ONLY_TABS'));
     context.ok(!adminIsland.includes('inert=""'));
-    context.ok(dashboard.includes('commerceStatus.data?.operations?.projection'));
+    context.ok(dashboard.includes('dashboardKpis.subscribe('), 'dashboard reads the authorized shared projection');
+    context.ok(dashboard.includes('validateCriticalSnapshot(snapshot,'), 'dashboard validates critical projection data');
     context.ok(!dashboard.includes('Actions critiques'));
     assertZeroEffects(context, context.effects, 'gate-0b-active-ui-contract');
   },

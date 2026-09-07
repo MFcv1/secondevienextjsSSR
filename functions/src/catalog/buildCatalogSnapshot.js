@@ -4,6 +4,7 @@ const { getFunctions } = require('firebase-admin/functions');
 const { APP_ID } = require('../../helpers/config');
 const { buildPublicProjection } = require('./publicProjection');
 const { buildInventoryOverview } = require('./inventoryProjection');
+const { projectAvailability } = require('./availability');
 const { buildImpactPlan, createFullImpactPlan } = require('./impactPlan');
 const {
     CONTROL_DOCUMENT,
@@ -304,6 +305,7 @@ async function buildCatalog(dependencies, input = {}) {
 
         const sourceSnapshot = await db.collection(SOURCE_PATH).get();
         sourceDocuments = sourceSnapshot.docs.map((docSnap) => ({ id: docSnap.id, data: docSnap.data() }));
+        sourceDocuments = await projectAvailability(db, sourceDocuments);
         const projection = buildPublicProjection(sourceDocuments);
         const inventory = buildInventoryOverview(sourceDocuments);
         const mutationTime = acquired.state.lastMutationAt?.toDate?.()

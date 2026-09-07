@@ -108,6 +108,13 @@ test('operational Functions authorization never falls back to an email', () => {
   assert.match(adminManagement, /removeAdminUser[\s\S]*?checkActiveStrongSuperAdmin\(context\)/);
 });
 
+test('admin invitation metadata cannot bypass owner-only Functions', () => {
+  const rules = read('firestore.rules');
+  const protectedDocuments = rules.match(/function isProtectedMetadataDoc\(docId\) \{([\s\S]*?)\n {4}\}/)?.[1];
+  assert.match(protectedDocuments || '', /'admin_users'/);
+  assert.match(rules, /allow write: if isStrongArtisan\(\) && !isProtectedMetadataDoc\(docId\)/);
+});
+
 test('customer order history has no Firestore email fallback', () => {
   const orderView = read('src/kit/commerce/MyOrdersView.jsx');
   const rules = read('firestore.rules');
@@ -115,7 +122,7 @@ test('customer order history has no Firestore email fallback', () => {
   assert.doesNotMatch(orderView, /where\(['"]userEmail['"]/);
   // History still uses the authorized callable. The new refund signal is
   // explicitly bounded and owned by UID, never an email-based fallback.
-  assert.match(orderView, /const liveQuery = query\(\s*collection\(db, 'orders'\),\s*where\('userId', '==', user\.uid\),\s*where\('updatedAt', '>', Timestamp\.fromMillis\(ordersLiveSince\)\),\s*orderBy\('updatedAt', 'asc'\),\s*limit\(25\)/);
+  assert.match(orderView, /const liveQuery = query\(\s*collection\(db, 'orders'\),\s*where\('userId', '==', user\.uid\),\s*where\('updatedAt', '>', new Date\(ordersLiveSince\)\.toISOString\(\)\),\s*orderBy\('updatedAt', 'desc'\),\s*limit\(25\)/);
   assert.equal([...orderView.matchAll(/collection\(db, ['"]orders['"]\)/g)].length, 1);
   assert.match(orderView, /if \(!user\?\.uid \|\| user\.isAnonymous \|\| !ordersLiveSince\) return undefined/);
   assert.match(orderView, /return onSnapshot\(liveQuery/);

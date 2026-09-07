@@ -62,7 +62,7 @@ export default function AboutSv4HeroMotionIsland() {
             );
           }
         }, root);
-      });
+      }).catch(() => { /* The static hero remains available if motion cannot load. */ });
     }
 
     return () => {

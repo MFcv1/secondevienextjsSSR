@@ -60,6 +60,15 @@ test('shared dialog focus helper wraps Tab and Shift+Tab', () => {
   assert.equal(fixture.ownerDocument.activeElement, fixture.elements.last);
 });
 
+test('dialog traversal excludes explicit negative tab stops and controls disabled through a fieldset', () => {
+  const fixture = createFocusFixture();
+  fixture.elements.first.tabIndex = -1;
+  fixture.elements.last.matches = selector => selector === ':disabled';
+  fixture.ownerDocument.activeElement = null;
+  assert.equal(trapDialogTabKey(fixture.makeEvent(), fixture.root), true);
+  assert.equal(fixture.ownerDocument.activeElement, fixture.elements.middle);
+});
+
 test('product detail hides the dormant drawer and exposes both zoom targets to the keyboard', async () => {
   const shell = await readSource('src/kit/marketplace/ProductDetailShellIsland.jsx');
   assert.match(shell, /data-mobile-bottom-sheet[\s\S]*?aria-hidden=\{isMobilePanelOpen \? 'false' : 'true'\}[\s\S]*?inert=\{isMobilePanelOpen \? undefined : true\}/);

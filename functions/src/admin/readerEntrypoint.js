@@ -1,6 +1,7 @@
 'use strict';
 
 const ORDER_READERS = {
+    listMyOrdersV2Gen2: 'createListMyOrdersHandler',
     listOrdersAdminV2Gen2: 'createListOrdersAdminHandler',
     listReturnsAdminV2Gen2: 'createListReturnsAdminHandler',
     listCustomerReturnRequestsAdminV2Gen2: 'createListCustomerReturnRequestsAdminHandler',

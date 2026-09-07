@@ -96,22 +96,33 @@ async function activateAdminAccess({ uid, email, role, activatedByUid }) {
     );
 }
 
+async function migrateAdminAccessIfMissing({ uid, email, activatedByUid }) {
+    const accessRef = db.collection(ADMIN_ACCESS_COLLECTION).doc(uid);
+    return db.runTransaction(async (transaction) => {
+        const accessSnap = await transaction.get(accessRef);
+        // A concurrent revocation always wins over legacy migration.
+        if (accessSnap.exists) return { migrated: false, access: accessSnap.data() };
+        const legacySnap = await transaction.get(db.doc('sys_metadata/admin_users'));
+        const entry = legacySnap.exists ? legacySnap.data().users?.[uid] : null;
+        if (!entry || entry.status !== 'active' || normalizeEmail(entry.email) !== normalizeEmail(email)) {
+            return { migrated: false, access: null };
+        }
+        const access = buildActiveAccessRecord({ uid, email, role: entry.role, activatedByUid });
+        transaction.set(accessRef, access);
+        return { migrated: true, access };
+    });
+}
+
 async function migrateLegacyAdminAccess(legacyUsers, activatedByUid) {
     const candidates = Object.values(legacyUsers || {})
         .filter((entry) => entry?.uid && !entry.uid.startsWith('pending_') && entry.status === 'active')
         .map(async (entry) => {
-            const accessRef = db.collection(ADMIN_ACCESS_COLLECTION).doc(entry.uid);
-            const accessSnap = await accessRef.get();
-            // Une entree inactive represente une revocation explicite et ne doit jamais
-            // etre reactivee par une migration ou une ancienne whitelist.
-            if (accessSnap.exists) return false;
-            await activateAdminAccess({
+            const result = await migrateAdminAccessIfMissing({
                 uid: entry.uid,
                 email: entry.email,
-                role: entry.role,
                 activatedByUid
             });
-            return true;
+            return result.migrated;
         });
     const results = await Promise.all(candidates);
     return results.filter(Boolean).length;
@@ -150,20 +161,22 @@ const ensureAdminAccessRegistryHandler = async (_data, context) => {
         );
     }
 
-    await activateAdminAccess({
+    const migration = await migrateAdminAccessIfMissing({
         uid: context.auth.uid,
         email: callerEmail,
-        role: legacyRecord.role,
         activatedByUid: context.auth.uid
     });
+    if (migration.access?.active !== true) {
+        throw new functions.https.HttpsError('permission-denied', 'Acces administrateur retire.', { reason: 'admin-access-inactive' });
+    }
     await writeSecurityAudit('admin.registry_self_migrated', context, {
         uid: context.auth.uid,
         role: legacyRecord.role === 'owner' ? 'owner' : 'admin'
     });
     return {
         success: true,
-        migrated: true,
-        role: legacyRecord.role === 'owner' ? 'owner' : 'admin'
+        migrated: migration.migrated,
+        role: migration.access.role
     };
 };
 
@@ -516,9 +529,12 @@ exports.logUserConnectionGen2 = onCall(
 // --- STATS UTILISATEURS (Admin) ---
 const getUserStatsHandler = async (data, context) => {
     await checkActiveStrongAdmin(context);
-
+    const includeUsers = data?.includeUsers === true;
+    const pageToken = data?.pageToken;
+    if (pageToken != null && (typeof pageToken !== 'string' || !pageToken || pageToken.length > 4096)) {
+        throw new functions.https.HttpsError('invalid-argument', 'Curseur utilisateurs invalide.');
+    }
     try {
-        const includeUsers = data?.includeUsers === true;
         const statsRef = db.doc('sys_user_stats/current');
         if (!includeUsers) {
             const cachedStats = await statsRef.get();
@@ -529,58 +545,24 @@ const getUserStatsHandler = async (data, context) => {
                     users: []
                 };
             }
+            throw new functions.https.HttpsError('unavailable', 'Le compteur utilisateurs est indisponible.');
         }
-        let nextPageToken;
-        const allUsers = [];
-        const userMetadataMap = {};
-
-        if (includeUsers) {
-            const userDocsSnapshot = await db.collection('users').get();
-            userDocsSnapshot.forEach(doc => { userMetadataMap[doc.id] = doc.data(); });
-        }
-
-        do {
-            const listUsersResult = await admin.auth().listUsers(1000, nextPageToken);
-            listUsersResult.users.forEach((userRecord) => {
-                if (!userRecord.email) return;
-                if (!includeUsers) {
-                    allUsers.push({ uid: userRecord.uid });
-                    return;
-                }
-                const meta = userMetadataMap[userRecord.uid] || {};
-                allUsers.push({
+        // Each request rechecks authorization and reads at most one Auth page.
+        // IP addresses and user agents are not needed by the customer export.
+        const result = await admin.auth().listUsers(500, pageToken || undefined);
+        const users = result.users.filter(userRecord => userRecord.email)
+            .map(userRecord => ({
                     uid: userRecord.uid,
                     email: userRecord.email,
                     displayName: userRecord.displayName || '',
                     emailVerified: userRecord.emailVerified,
                     creationTime: userRecord.metadata.creationTime,
-                    lastSignInTime: userRecord.metadata.lastSignInTime,
-                    ip: meta.securityData?.ip || 'N/A',
-                    device: meta.securityData?.ua || 'N/A'
-                });
-            });
-            nextPageToken = listUsersResult.pageToken;
-        } while (nextPageToken);
-
-        if (!includeUsers) {
-            await db.runTransaction(async (transaction) => {
-                const current = await transaction.get(statsRef);
-                if (!current.exists) {
-                    transaction.set(statsRef, {
-                        registeredUsers: allUsers.length,
-                        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-                        version: 1
-                    });
-                }
-            });
-        }
-
-        if (includeUsers) {
-            allUsers.sort((a, b) => new Date(b.creationTime) - new Date(a.creationTime));
-        }
-        return { success: true, count: allUsers.length, users: includeUsers ? allUsers : [] };
+                    lastSignInTime: userRecord.metadata.lastSignInTime
+            }));
+        return { success: true, count: users.length, users, nextPageToken: result.pageToken || null };
     } catch (error) {
-        console.error("❌ Erreur getUserStats:", error);
+        if (error instanceof functions.https.HttpsError) throw error;
+        console.error('getUserStats failed', error?.code || error?.name);
         throw new functions.https.HttpsError('internal', 'Statistiques utilisateurs indisponibles.');
     }
 };

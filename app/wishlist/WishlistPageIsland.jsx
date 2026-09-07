@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import WishlistView from '../../src/kit/marketplace/WishlistView';
 import { useAuth } from '../../src/kit/contexts/AuthContext';
@@ -23,6 +23,11 @@ function WishlistPageContent({ initialItems = [] }) {
   const [wishlistItems, setWishlistItems] = useState([]);
   const [catalogItems, setCatalogItems] = useState(initialItems);
   const [darkMode, setDarkMode] = useState(false);
+  const [operationPending, setOperationPending] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const operationRef = useRef(false);
+  const attemptedProductsRef = useRef(new Set());
+  const initialProductIdsRef = useRef(new Set(initialItems.map(getWishlistProductId)));
   const wishlistIds = useMemo(() => (
     Array.from(new Set(wishlistItems.map(getWishlistProductId).filter(Boolean)))
   ), [wishlistItems]);
@@ -44,30 +49,46 @@ function WishlistPageContent({ initialItems = [] }) {
     return subscribeWishlistItems(
       user,
       (items) => setWishlistItems(items),
-      (error) => console.error('Liste de souhaits sync error:', error)
+      () => setErrorMessage('Votre liste de souhaits n’a pas pu être actualisée. Rechargez la page pour réessayer.')
     );
   }, [user]);
 
   useEffect(() => {
     if (!wishlistIds.length) return undefined;
 
-    const knownIds = new Set(catalogItems.map((item) => getWishlistProductId(item)));
-    const missingIds = wishlistIds.filter((id) => !knownIds.has(id));
+    const knownIds = initialProductIdsRef.current;
+    const missingIds = wishlistIds.filter((id) => !knownIds.has(id) && !attemptedProductsRef.current.has(id));
     if (!missingIds.length) return undefined;
 
     let cancelled = false;
-    Promise.all(missingIds.map((id) => fetchPublicCatalogProduct(id)))
-      .then((products) => {
+    let cursor = 0;
+    const products = [];
+    const requestedIds = [];
+    Promise.all(Array.from({ length: Math.min(8, missingIds.length) }, async () => {
+      while (!cancelled && cursor < missingIds.length) {
+        const id = missingIds[cursor++];
+        requestedIds.push(id);
+        attemptedProductsRef.current.add(id);
+        const product = await fetchPublicCatalogProduct(id);
+        if (cancelled) {
+          return;
+        }
+        products.push(product);
+      }
+    }))
+      .then(() => {
         if (cancelled) return;
         const nextProducts = products.filter(Boolean);
         if (!nextProducts.length) return;
+        nextProducts.forEach(product => knownIds.add(getWishlistProductId(product)));
         setCatalogItems((currentItems) => mergeCatalogProducts(currentItems, nextProducts));
       });
 
     return () => {
       cancelled = true;
+      requestedIds.forEach(id => attemptedProductsRef.current.delete(id));
     };
-  }, [catalogItems, wishlistIds]);
+  }, [wishlistIds]);
 
   const addToCart = async (item) => {
     if (!isPurchasable(item)) return;
@@ -89,30 +110,37 @@ function WishlistPageContent({ initialItems = [] }) {
   };
 
   const toggleWishlist = async (item) => {
+    if (operationRef.current) return;
     const originalId = getWishlistProductId(item);
     const exists = wishlistItems.some((entry) => getWishlistProductId(entry) === originalId);
-    const previousItems = wishlistItems;
-    setWishlistItems((currentItems) => (
-      exists
-        ? currentItems.filter((entry) => getWishlistProductId(entry) !== originalId)
-        : [...currentItems, item]
-    ));
+    operationRef.current = true;
+    setOperationPending(true);
+    setErrorMessage('');
     try {
       await setWishlistItem(item, !exists, user);
     } catch (error) {
-      setWishlistItems(previousItems);
+      setErrorMessage('La modification n’a pas abouti. Votre liste reste disponible, réessayez.');
       console.error('Liste de souhaits update error:', error);
+    } finally {
+      operationRef.current = false;
+      setOperationPending(false);
     }
   };
 
   const handleClearWishlist = async () => {
+    if (operationRef.current) return;
     const previousItems = wishlistItems;
-    setWishlistItems([]);
+    operationRef.current = true;
+    setOperationPending(true);
+    setErrorMessage('');
     try {
       await clearWishlist(previousItems, user);
     } catch (error) {
-      setWishlistItems(previousItems);
+      setErrorMessage('La suppression n’a pas été entièrement confirmée. Réessayez pour les pièces restantes.');
       console.error('Liste de souhaits clear error:', error);
+    } finally {
+      operationRef.current = false;
+      setOperationPending(false);
     }
   };
 
@@ -123,6 +151,8 @@ function WishlistPageContent({ initialItems = [] }) {
   return (
     <WishlistView
       wishlistItems={wishlistItems}
+      operationPending={operationPending}
+      errorMessage={errorMessage}
       items={catalogItems}
       onAddToCart={addToCart}
       onToggleWishlist={toggleWishlist}
@@ -137,5 +167,6 @@ function WishlistPageContent({ initialItems = [] }) {
 }
 
 export default function WishlistPageIsland(props) {
-  return <WishlistPageContent {...props} />;
+  const { user } = useAuth();
+  return <WishlistPageContent key={user?.uid || 'guest'} {...props} />;
 }

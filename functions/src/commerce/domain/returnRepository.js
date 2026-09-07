@@ -5,6 +5,7 @@ const { deterministicEffectId } = require('./commerceEffects');
 const { hashPayload } = require('./idempotency');
 const { deriveInventoryStatus, validateInventorySummary } = require('./inventoryInvariants');
 const { reduceOrder, validateOrderV2 } = require('./orderState');
+const { assertCustomerReturnDecision, transitionCustomerReturnRequest } = require('./customerReturnRequest');
 const {
     createReturnCase,
     reduceReturnCase,
@@ -61,7 +62,8 @@ function createReturnRepository({ db, refs, clock }) {
         returnRequestId,
         requestedLines,
         actor,
-        reason
+        reason,
+        customerRequestId = null
     }) {
         validateActor(actor);
         const returnId = deterministicEffectId(['return', orderId, returnRequestId]);
@@ -107,6 +109,21 @@ function createReturnRepository({ db, refs, clock }) {
                 }),
                 requestHash
             };
+            if (customerRequestId) {
+                const requestRef = refs.customerReturnRequest(orderId, customerRequestId);
+                const requestSnap = await transaction.get(requestRef);
+                if (!snapshotExists(requestSnap)) throw repositoryError('COMMERCE_CUSTOMER_RETURN_REQUEST_NOT_FOUND');
+                const request = requestSnap.data();
+                assertCustomerReturnDecision(request, 'authorize_return');
+                if (request.orderId !== orderId || request.userId !== order.userId
+                    || customerRequestId !== returnRequestId
+                    || hashPayload(request.lines) !== hashPayload(requestedLines)) {
+                    throw repositoryError('COMMERCE_CUSTOMER_RETURN_REQUEST_ACCESS_DENIED');
+                }
+                transaction.set(requestRef, transitionCustomerReturnRequest(request, {
+                    type: 'authorize_return', returnId, actorUid: actor.uid, reason
+                }, { clock }));
+            }
             const orderLines = new Map(order.items.map((line) => [line.lineId, line]));
             nextReturn.lines.forEach((line, index) => {
                 const allocationSnap = snapshots[index + 3];

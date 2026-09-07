@@ -10,6 +10,7 @@ const {
     verifyAuthenticationResponse
 } = require('@simplewebauthn/server');
 const { getSiteUrl } = require('../../helpers/config');
+const { authorizePasskeyRegistration } = require('./passkeyRegistration');
 
 const db = admin.firestore();
 
@@ -176,8 +177,7 @@ async function mintPasskeyCustomToken(uid) {
 }
 
 async function resumeFailedTokenMint(operationRef, responseHash) {
-    let uid = null;
-    await db.runTransaction(async (transaction) => {
+    const uid = await db.runTransaction(async (transaction) => {
         const operationSnap = await transaction.get(operationRef);
         if (!operationSnap.exists) return;
         const operation = operationSnap.data();
@@ -186,12 +186,12 @@ async function resumeFailedTokenMint(operationRef, responseHash) {
             && Date.now() <= Number(operation.expiresAtMillis || 0)
             && Number(operation.retryCount || 0) < 1;
         if (!canResume) return;
-        uid = operation.uid;
         transaction.update(operationRef, {
             status: 'issuing',
             retryCount: Number(operation.retryCount || 0) + 1,
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
+        return operation.uid;
     });
     if (!uid) return null;
     try {
@@ -273,9 +273,7 @@ function assertActiveChallenge(challengeSnap, expectedChallenge = null) {
 
 const generatePasskeyRegistrationOptionsHandler = async (data, context) => {
     const startedAt = Date.now();
-    if (!context.auth) {
-        throw new functions.https.HttpsError('unauthenticated', 'Connexion requise.');
-    }
+    await authorizePasskeyRegistration(context);
 
     const uid = context.auth.uid;
     await consumeRateLimit(`registration:${uid}`, 10, 60 * 60 * 1000);
@@ -328,9 +326,7 @@ exports.generatePasskeyRegistrationOptionsGen2 = onCall(
 
 const verifyPasskeyRegistrationHandler = async (data, context) => {
     const startedAt = Date.now();
-    if (!context.auth) {
-        throw new functions.https.HttpsError('unauthenticated', 'Connexion requise.');
-    }
+    await authorizePasskeyRegistration(context);
 
     const uid = context.auth.uid;
     const challengeRef = db.doc(`users/${uid}/passkey_challenges/registration`);
@@ -522,6 +518,11 @@ const verifyPasskeyAuthenticationHandler = async (data, context) => {
         const freshChallenge = assertActiveChallenge(freshChallengeSnap, challengeData.challenge);
         if (freshChallenge.uid !== challengeData.uid || !freshPasskeySnap.exists) {
             throw new functions.https.HttpsError('permission-denied', 'Connexion passkey refusee.');
+        }
+        const freshPasskey = freshPasskeySnap.data();
+        if (freshPasskey.publicKey !== passkey.publicKey ||
+            Number(freshPasskey.counter || 0) !== Number(passkey.counter || 0)) {
+            throw new functions.https.HttpsError('aborted', 'Passkey utilisee simultanement. Recommencez la connexion.');
         }
         transaction.update(passkeyRef, {
             counter: verification.authenticationInfo.newCounter,

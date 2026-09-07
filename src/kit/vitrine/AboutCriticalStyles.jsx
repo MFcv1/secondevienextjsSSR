@@ -454,6 +454,11 @@ const ABOUT_CRITICAL_CSS = `
   .sv4-about-shell .sv4-hero__scroll-line { height: 36px; }
 }
 @media (prefers-reduced-motion: reduce) {
+  .sv4-about-shell .sv4-split-word > span {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
   .sv4-about-shell .sv4-hero__actions {
     transition: none !important;
   }

@@ -82,6 +82,25 @@ function makeCheckout(overrides = {}) {
     };
 }
 
+test('checkout rejects duplicate line identities while aggregating distinct lines of the same product', () => {
+    const input = makeCheckout();
+    const line = input.items[0];
+    for (const productId of [line.productId, 'other-product-gate2']) {
+        assert.throws(() => validateCheckoutInput({
+            ...input,
+            items: [line, { ...line, productId }]
+        }), { code: 'COMMERCE_CHECKOUT_LINE_INVALID' });
+    }
+    const validated = validateCheckoutInput({
+        ...input,
+        items: [line, { ...line, cartLineId: 'distinct-line-gate2' }]
+    });
+    const groups = aggregateCheckoutLines(validated.value.items);
+    assert.equal(groups.length, 1);
+    assert.equal(groups[0].quantity, 2);
+    assert.equal(groups[0].lineAllocations.length, 2);
+});
+
 test('checkout input is allowlisted, versioned and hashed without client prices', () => {
     const first = validateCheckoutInput(makeCheckout());
     const second = validateCheckoutInput({

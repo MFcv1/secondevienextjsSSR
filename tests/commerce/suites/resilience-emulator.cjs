@@ -363,7 +363,9 @@ const scenarios = {
                     template: 'order_confirmation',
                     status: 'failed',
                     attemptCount: 3,
-                    createdAt: FIXED_TIME,
+                    // The diagnostic retains the latest 100 events. Keep the
+                    // failure recent so it belongs in that bounded window.
+                    createdAt: new Date(Date.parse(FIXED_TIME) + 102).toISOString(),
                     testContext: { runId }
                 });
                 await batch.commit();

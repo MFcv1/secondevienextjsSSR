@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Moon, Sun } from 'lucide-react';
 
 const STORAGE_KEY = 'darkMode';
@@ -8,6 +8,7 @@ const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
 
 export default function DarkModeToggleIsland({ className = '' } = {}) {
   const [isDark, setIsDark] = useState(false);
+  const transitionTimerRef = useRef(null);
 
   const syncDocumentTheme = (nextDark) => {
     document.documentElement.classList.toggle('dark', nextDark);
@@ -15,17 +16,24 @@ export default function DarkModeToggleIsland({ className = '' } = {}) {
   };
 
   const persistTheme = (nextDark) => {
-    window.localStorage.setItem(STORAGE_KEY, String(nextDark));
-    document.cookie = `${STORAGE_KEY}=${String(nextDark)}; Max-Age=${COOKIE_MAX_AGE_SECONDS}; Path=/; SameSite=Lax`;
+    try { window.localStorage.setItem(STORAGE_KEY, String(nextDark)); } catch { /* Storage is optional. */ }
+    try { document.cookie = `${STORAGE_KEY}=${String(nextDark)}; Max-Age=${COOKIE_MAX_AGE_SECONDS}; Path=/; SameSite=Lax`; } catch { /* Cookies may be blocked. */ }
   };
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    const cookieMatch = document.cookie.match(new RegExp(`(?:^|; )${STORAGE_KEY}=([^;]*)`));
-    const nextDark = (stored ?? decodeURIComponent(cookieMatch?.[1] || '')) === 'true';
+    let stored = null;
+    let cookieValue = '';
+    try { stored = window.localStorage.getItem(STORAGE_KEY); } catch { /* Use the rendered theme. */ }
+    try { cookieValue = document.cookie.match(new RegExp(`(?:^|; )${STORAGE_KEY}=([^;]*)`))?.[1] || ''; } catch { /* Cookies are optional. */ }
+    const preference = stored ?? cookieValue;
+    const nextDark = preference ? preference === 'true' : document.documentElement.classList.contains('dark');
     syncDocumentTheme(nextDark);
     persistTheme(nextDark);
     setIsDark(nextDark);
+    return () => {
+      window.clearTimeout(transitionTimerRef.current);
+      document.documentElement.classList.remove('theme-transitioning');
+    };
   }, []);
 
   const toggle = () => {
@@ -35,7 +43,8 @@ export default function DarkModeToggleIsland({ className = '' } = {}) {
     persistTheme(nextDark);
     syncDocumentTheme(nextDark);
     window.dispatchEvent(new CustomEvent('sv:theme-change', { detail: { darkMode: nextDark } }));
-    window.setTimeout(() => {
+    window.clearTimeout(transitionTimerRef.current);
+    transitionTimerRef.current = window.setTimeout(() => {
       document.documentElement.classList.remove('theme-transitioning');
     }, 80);
   };

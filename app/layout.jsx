@@ -130,6 +130,8 @@ export const viewport = {
   colorScheme: 'light',
 };
 
+import CheckoutRecoveryPrompt from '../src/kit/commerce/CheckoutRecoveryPrompt';
+
 export default function RootLayout({ children }) {
   return (
     <html lang="fr" className={fontVariables} data-scroll-behavior="smooth" suppressHydrationWarning>
@@ -143,6 +145,7 @@ export default function RootLayout({ children }) {
       <body>
         <ViewportHeightSyncIsland />
         {children}
+        <CheckoutRecoveryPrompt />
         <RouteTransitionIsland />
         <SupportChatLauncherIsland />
         <AnalyticsCollectorIsland />

@@ -4,6 +4,15 @@ export const CHECKOUT_RECOVERY_CONTRACT_VERSION = 1;
 export const COMMERCE_V2_RECOVERY_ENABLED =
     COMMERCE_V2_UI_ENABLED;
 export const CHECKOUT_RECOVERY_STORAGE_KEY = 'secondevie:checkout-recovery:v1';
+export const CHECKOUT_RECOVERY_CHANGED_EVENT = 'secondevie:checkout-recovery-changed';
+
+export function resolveStripeReturnTarget(orderId, descriptor) {
+    const targetId = orderId || descriptor?.orderId || null;
+    return {
+        orderId: targetId,
+        cartLines: targetId && descriptor?.orderId === targetId ? descriptor.cartLines : []
+    };
+}
 
 const TERMINAL_CHECKOUT_REASONS = Object.freeze({
     COMMERCE_CHECKOUT_TERMINAL_PAID: 'paid',
@@ -82,6 +91,7 @@ export function writeCheckoutRecoveryDescriptor(
         CHECKOUT_RECOVERY_STORAGE_KEY,
         JSON.stringify(descriptor)
     );
+    window.dispatchEvent?.(new Event(CHECKOUT_RECOVERY_CHANGED_EVENT));
     return true;
 }
 
@@ -103,10 +113,18 @@ export function readCheckoutRecoveryDescriptor(
 }
 
 export function clearCheckoutRecoveryDescriptor(
-    { enabled = COMMERCE_V2_RECOVERY_ENABLED } = {}
+    { enabled = COMMERCE_V2_RECOVERY_ENABLED, ownerUid, orderId } = {}
 ) {
-    if (!enabled || typeof window === 'undefined') return;
-    window.localStorage.removeItem(CHECKOUT_RECOVERY_STORAGE_KEY);
+    if (!enabled || typeof window === 'undefined' || !ownerUid || !orderId) return false;
+    const current = readCheckoutRecoveryDescriptor(ownerUid, { enabled });
+    if (!current || current.orderId !== orderId) return false;
+    try {
+        window.localStorage.removeItem(CHECKOUT_RECOVERY_STORAGE_KEY);
+        window.dispatchEvent?.(new Event(CHECKOUT_RECOVERY_CHANGED_EVENT));
+        return true;
+    } catch {
+        return false;
+    }
 }
 
 export function getCheckoutRecoveryTerminalReason(error) {

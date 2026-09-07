@@ -1,12 +1,13 @@
 import Link from 'next/link';
 import { getProductUrl } from '../../utils/slug';
 import { getProductCardImage, getProductDisplayImageSrc, getProductImageItems } from '../../utils/imageUtils';
-import { getProductPriceAmount, getProductStockAmount, isPurchasable, isSoldOut, shouldRequestQuote } from '../commerce/purchasability';
+import { getProductPriceAmount, getProductStockAmount, getPurchaseUnavailableLabel, isPurchasable, isSoldOut, shouldRequestQuote } from '../commerce/purchasability';
 import { Heart, Plus } from 'lucide-react';
 import ProductCardMediaServer, { ProductCardHoverOverlay, ProductSoldBadge } from './ProductCardMediaServer';
 
 const formatPrice = (item) => {
   if (isSoldOut(item)) return 'VENDU';
+  if (getProductStockAmount(item) <= 0) return getPurchaseUnavailableLabel(item);
   if (shouldRequestQuote(item)) return 'Sur demande';
   const price = getProductPriceAmount(item);
   return price ? `${Number(price).toLocaleString('fr-FR')} EUR` : '';

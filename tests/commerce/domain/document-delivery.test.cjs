@@ -65,6 +65,25 @@ test('document delivery: le PDF serveur est déterministe et explicitement non f
     assert.ok(first.size < 2 * 1024 * 1024);
 });
 
+test('document delivery: le reçu contient les cinquante lignes admissibles du checkout', () => {
+    const { inflateSync } = require('node:zlib');
+    const input = fixtures();
+    input.order.items = Array.from({ length: 50 }, (_, index) => ({
+        titleSnapshot: `ARTICLEAUDIT${String(index + 1).padStart(2, '0')}`,
+        quantity: 1,
+        unitAmountCents: 100
+    }));
+    input.document.capturedCents = 5000;
+    const result = renderCommerceDocumentPdf(input);
+    const pdf = result.buffer.toString('latin1');
+    const contents = [...pdf.matchAll(/stream\r?\n([\s\S]*?)\r?\nendstream/g)]
+        .map((match) => inflateSync(Buffer.from(match[1], 'latin1')).toString('latin1'))
+        .join('\n');
+    for (const item of input.order.items) {
+        assert.ok(contents.includes(item.titleSnapshot), item.titleSnapshot);
+    }
+});
+
 test('document delivery: le stockage immuable est réutilisé sans réécriture', async () => {
     const input = fixtures();
     const files = new Map();

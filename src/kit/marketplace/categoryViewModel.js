@@ -86,43 +86,41 @@ export const getPublishedCategoryItems = (products = []) => (
 export const getCategoryFilterOptions = (products = [], categoryId) => {
   const categoryItems = getPublishedCategoryItems(products);
   const subCategories = getCategorySubCategories(categoryId);
-  const productPrices = categoryItems
-    .map(getCategoryProductPrice)
-    .filter((price) => Number.isFinite(price) && price > 0);
+  const materials = new Map();
+  const styles = new Map();
+  const collections = new Map();
+  let maxPrice = 0;
+  for (const item of categoryItems) {
+    const price = getCategoryProductPrice(item);
+    if (Number.isFinite(price) && price > maxPrice) maxPrice = price;
+    if (item.material) materials.set(item.material, (materials.get(item.material) || 0) + 1);
+    if (item.style) styles.set(item.style, (styles.get(item.style) || 0) + 1);
+    collections.set(item.category, (collections.get(item.category) || 0) + 1);
+  }
 
   return {
     subCategories,
-    materials: [...new Set(categoryItems.map((item) => item.material).filter(Boolean))].sort(),
-    styles: [...new Set(categoryItems.map((item) => item.style).filter(Boolean))].sort(),
-    maxPrice: productPrices.length ? Math.max(...productPrices) : 100,
+    materials: [...materials.keys()].sort(),
+    styles: [...styles.keys()].sort(),
+    maxPrice: maxPrice || 100,
     counts: {
       collections: Object.fromEntries(
         subCategories.map((sub) => [
           sub.id,
-          categoryItems.filter((item) => item.category === sub.id).length,
+          collections.get(sub.id) || 0,
         ])
       ),
-      materials: Object.fromEntries(
-        [...new Set(categoryItems.map((item) => item.material).filter(Boolean))]
-          .map((material) => [
-            material,
-            categoryItems.filter((item) => item.material === material).length,
-          ])
-      ),
-      styles: Object.fromEntries(
-        [...new Set(categoryItems.map((item) => item.style).filter(Boolean))]
-          .map((style) => [
-            style,
-            categoryItems.filter((item) => item.style === style).length,
-          ])
-      ),
+      materials: Object.fromEntries(materials),
+      styles: Object.fromEntries(styles),
     },
   };
 };
 
 export const getCategoryQueryState = (searchParams = {}, filterOptions = {}) => {
   const maxPrice = filterOptions.maxPrice || 100;
-  const priceMax = Number(getSearchParamValue(searchParams, 'maxPrice')) || maxPrice;
+  const rawPriceMax = getSearchParamValue(searchParams, 'maxPrice');
+  const parsedPriceMax = Number(rawPriceMax);
+  const priceMax = rawPriceMax !== undefined && Number.isFinite(parsedPriceMax) ? parsedPriceMax : maxPrice;
   const sortBy = getSearchParamValue(searchParams, 'sort') || 'newest';
 
   return {
@@ -145,13 +143,13 @@ export const hasActiveCategoryFilters = (state, maxPrice) => (
     || state.selectedCollections.length > 0
     || state.availabilityFilter !== 'all'
     || state.priceRange[0] > 0
-    || (state.priceRange[1] || maxPrice) < maxPrice
+    || (state.priceRange[1] ?? maxPrice) < maxPrice
     || state.searchQuery.length > 0
 );
 
 export const filterAndSortCategoryItems = (products = [], state, maxPrice) => {
   let result = [...getPublishedCategoryItems(products)];
-  const max = state.priceRange[1] || maxPrice;
+  const max = state.priceRange[1] ?? maxPrice;
 
   result = result.filter((item) => {
     const price = getCategoryProductPrice(item);
@@ -217,7 +215,7 @@ export const buildCategoryHref = (categoryId, currentState, patch = {}) => {
   if (next.viewMode && next.viewMode !== 'grid') params.set('view', next.viewMode);
   if (next.mobileViewMode && next.mobileViewMode !== 'list') params.set('mobileView', next.mobileViewMode);
   if (next.availabilityFilter && next.availabilityFilter !== 'all') params.set('availability', next.availabilityFilter);
-  if (next.priceRange?.[1] && next.priceRange[1] < next.roundedMaxPrice) params.set('maxPrice', String(next.priceRange[1]));
+  if (Number.isFinite(next.priceRange?.[1]) && next.priceRange[1] < next.roundedMaxPrice) params.set('maxPrice', String(next.priceRange[1]));
   if (next.searchQuery) params.set('q', next.searchQuery);
   (next.selectedMaterials || []).forEach((value) => params.append('material', value));
   (next.selectedStyles || []).forEach((value) => params.append('style', value));

@@ -202,7 +202,7 @@ test('checkout resume terminal classification distinguishes cancellation from ac
                 expiresAt: '2026-07-26T11:59:59.000Z'
             }
         }, { status: 'attached' }, nowMillis),
-        null
+        'COMMERCE_CHECKOUT_DEADLINE_REACHED'
     );
     assert.equal(
         resolveCheckoutResumeTerminalCode(
@@ -495,6 +495,26 @@ test('worker routes refund.failed through the authoritative refund retriever and
     assert.equal(applied.entry.type, 'refund.failed');
     assert.equal(repository.failed, 0);
     assert.equal(repository.applied, 1);
+});
+
+test('bounded sweeper clears its cursor when the last allowed page completes the listing', async () => {
+    for (const finalItems of [[], [{ id: 'last-item-audit' }]]) {
+        let calls = 0;
+        const worker = createBoundedWorkerSweeper({
+            listEligible: async () => ++calls === 1
+                ? { items: [{ id: 'first-item-audit' }], nextCursor: 'page-two' }
+                : { items: finalItems, nextCursor: null },
+            processItem: async () => {},
+            clock: { now: () => '2026-09-07T12:00:00Z', nowMillis: () => 1 },
+            pageSize: 1,
+            maxPages: 2
+        });
+        const result = await worker.run();
+        assert.equal(result.pages, 2);
+        assert.equal(result.exhausted, false);
+        assert.equal(result.nextCursor, null);
+        assert.equal(result.processed, 1 + finalItems.length);
+    }
 });
 
 test('bounded sweeper finds an eligible item behind more than fifty irrelevant rows', async () => {

@@ -278,7 +278,7 @@ export default function PublicationReviewStep({
               value={hashtags}
               onChange={(event) => onHashtagsChange?.(event.target.value.slice(0, 500))}
               rows={2}
-              disabled={!metaSelected}
+              disabled={uploading || !metaSelected}
               placeholder="#secondevie #mobilierancien #artisanat"
               className={`mt-2 w-full resize-none rounded-[16px] border-none px-4 py-3 text-[11px] font-semibold leading-5 outline-none ring-1 transition-colors duration-300 focus:ring-2 ${darkMode ? 'bg-black/25 text-white ring-white/10 placeholder:text-stone-700 focus:ring-white/25' : 'bg-[#f7f6f3] text-stone-950 ring-black/[0.055] placeholder:text-stone-400 focus:bg-white focus:ring-stone-300'}`}
             />

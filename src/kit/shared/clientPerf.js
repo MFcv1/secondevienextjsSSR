@@ -21,6 +21,7 @@ export const logClientPerf = (name, startedAt, extra = {}) => {
       performance.mark(markName);
       performance.measure(name, { start: startedAt, end: now });
       performance.clearMarks(markName);
+      performance.clearMeasures(name);
     } catch {
       // Some browsers do not support numeric measure options; console timing remains enough.
     }

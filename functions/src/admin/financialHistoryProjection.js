@@ -38,6 +38,9 @@ function createFinancialHistoryProjector(sourceKind) {
         const after = event.data?.after?.exists ? event.data.after.data() : null;
         const nextContribution = normalizeFinancialHistorySource(sourceKind, after);
         const previousContribution = normalizeFinancialHistorySource(sourceKind, before);
+        // The per-day ledger represents EUR only. An unrelated currency must
+        // not replace that contribution with zero, including on deletion.
+        if (nextContribution?.ignored || previousContribution?.ignored) return null;
         const dateKey = nextContribution?.dateKey || previousContribution?.dateKey;
         if (!dateKey) return null;
         if (nextContribution && previousContribution && nextContribution.dateKey !== previousContribution.dateKey) {

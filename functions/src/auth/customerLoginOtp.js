@@ -11,6 +11,7 @@ const {
     getTransactionalEmailRuntime
 } = require('../email/transactionalEmailRuntime');
 const { renderOtpEmail } = require('../email/otpEmailTemplates');
+const { updateOtpStateIfCurrent } = require('./otpState');
 
 const db = admin.firestore();
 
@@ -119,8 +120,8 @@ function buildEmailText(code) {
     }).text;
 }
 
-async function clearOtpAfterMailFailure(emailRef, error) {
-    await emailRef.set({
+async function clearOtpAfterMailFailure(emailRef, error, expiresAtMillis) {
+    await updateOtpStateIfCurrent(db, emailRef, { expiresAtMillis, status: 'active' }, {
         otpHash: admin.firestore.FieldValue.delete(),
         expiresAtMillis: admin.firestore.FieldValue.delete(),
         nextSendAtMillis: admin.firestore.FieldValue.delete(),
@@ -128,7 +129,13 @@ async function clearOtpAfterMailFailure(emailRef, error) {
         lastMailErrorCode: error?.code || null,
         lastMailErrorResponseCode: error?.responseCode || null,
         expireAt: timestampFromNow(SYSTEM_DOC_RETENTION_DAYS)
-    }, { merge: true });
+    });
+}
+
+async function updateOtpOperation(otpRef, responseHash, expiresAtMillis, patch) {
+    if (!await updateOtpStateIfCurrent(db, otpRef, { responseHash, expiresAtMillis }, patch)) {
+        throw new functions.https.HttpsError('aborted', 'Un nouveau code a ete demande. Utilisez le dernier code recu.');
+    }
 }
 
 function mapMailError(error) {
@@ -270,7 +277,7 @@ const sendCustomerLoginOtpHandler = async (data, context) => {
                 idempotencyKey: `customer-login-otp/${emailHash}/${expiresAtMillis}`
             });
         } catch (error) {
-            await clearOtpAfterMailFailure(emailRef, error).catch((cleanupError) => {
+            await clearOtpAfterMailFailure(emailRef, error, expiresAtMillis).catch((cleanupError) => {
                 console.error('Customer login OTP cleanup error:', cleanupError);
             });
             logFunctionPerf('sendCustomerLoginOtp', startedAt, {
@@ -342,7 +349,7 @@ const verifyCustomerLoginOtpHandler = async (data, _context) => {
                     retryCount: admin.firestore.FieldValue.increment(1),
                     expireAt: timestampFromNow(SYSTEM_DOC_RETENTION_DAYS)
                 });
-                return { success: true, uid: state.operationUid || null, resumed: true };
+                return { success: true, uid: state.operationUid || null, resumed: true, expiresAtMillis: state.expiresAtMillis };
             }
 
             const expectedHash = state.otpHash || '';
@@ -374,7 +381,7 @@ const verifyCustomerLoginOtpHandler = async (data, _context) => {
                 expireAt: timestampFromNow(SYSTEM_DOC_RETENTION_DAYS)
             });
 
-            return { success: true, uid: null, resumed: false };
+            return { success: true, uid: null, resumed: false, expiresAtMillis: state.expiresAtMillis };
         });
 
         if (!verificationResult.success) {
@@ -386,14 +393,14 @@ const verifyCustomerLoginOtpHandler = async (data, _context) => {
             try {
                 const userRecord = await getOrCreateCustomerUser(email);
                 uid = userRecord.uid;
-                await otpRef.update({
+                await updateOtpOperation(otpRef, responseHash, verificationResult.expiresAtMillis, {
                     operationUid: uid,
                     operationStage: 'token',
                     operationLeaseUntilMillis: Date.now() + OPERATION_LEASE_MS,
                     expireAt: timestampFromNow(SYSTEM_DOC_RETENTION_DAYS)
                 });
             } catch (error) {
-                await otpRef.update({
+                await updateOtpOperation(otpRef, responseHash, verificationResult.expiresAtMillis, {
                     status: 'failed_retryable',
                     operationStage: 'user',
                     operationLeaseUntilMillis: admin.firestore.FieldValue.delete(),
@@ -412,7 +419,7 @@ const verifyCustomerLoginOtpHandler = async (data, _context) => {
                 authAssurance: 'aal1',
                 userVerified: false
             });
-            await otpRef.update({
+            await updateOtpOperation(otpRef, responseHash, verificationResult.expiresAtMillis, {
                 status: 'token_issued',
                 usedAtMillis: Date.now(),
                 operationStage: admin.firestore.FieldValue.delete(),
@@ -423,7 +430,7 @@ const verifyCustomerLoginOtpHandler = async (data, _context) => {
                 expireAt: timestampFromNow(SYSTEM_DOC_RETENTION_DAYS)
             });
         } catch (error) {
-            await otpRef.update({
+            await updateOtpOperation(otpRef, responseHash, verificationResult.expiresAtMillis, {
                 status: 'failed_retryable',
                 operationUid: uid,
                 operationStage: 'token',

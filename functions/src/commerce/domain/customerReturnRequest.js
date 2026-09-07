@@ -102,6 +102,37 @@ function createCustomerReturnRequest({
     return request;
 }
 
+function assertCustomerReturnDecision(request, decision) {
+    validateCustomerReturnRequest(request);
+    const allowed = decision === 'reject'
+        ? request.status === 'pending_review'
+        : decision === 'authorize_return'
+            ? ['pending_review', 'return_authorized'].includes(request.status)
+            : decision === 'refund_now'
+                ? request.status === 'pending_review' || (
+                    ['refund_initiated', 'refund_failed', 'completed'].includes(request.status)
+                    && request.resolutionMode === 'direct_refund'
+                )
+                : decision === 'refund_after_return' && (
+                    request.status === 'return_authorized' || (
+                        ['refund_initiated', 'refund_failed', 'completed'].includes(request.status)
+                        && request.resolutionMode === 'return_then_refund'
+                    )
+                );
+    if (!allowed) throw requestError('COMMERCE_CUSTOMER_RETURN_REQUEST_TRANSITION_DENIED');
+}
+
+function isReturnReceiptComplete(returnCase, request) {
+    if (returnCase?.status !== 'resolved' || returnCase.orderId !== request.orderId
+        || !Array.isArray(returnCase.lines)) return false;
+    const received = new Map(returnCase.lines.map((line) => [line.lineId, line]));
+    return request.lines.every(({ lineId, quantity }) => {
+        const line = received.get(lineId);
+        return line && Number.isSafeInteger(line.receivedQty) && line.receivedQty >= quantity
+            && line.restockedQty + line.writtenOffQty === line.receivedQty;
+    });
+}
+
 function transitionCustomerReturnRequest(request, event, { clock }) {
     validateCustomerReturnRequest(request);
     const next = { ...request, lines: request.lines.map((line) => ({ ...line })) };
@@ -120,7 +151,7 @@ function transitionCustomerReturnRequest(request, event, { clock }) {
         next.resolutionMode = 'return_then_refund';
         next.returnId = event.returnId;
     } else if (event?.type === 'refund_started') {
-        if (!['pending_review', 'return_authorized', 'refund_failed'].includes(request.status)) {
+        if (!['pending_review', 'return_authorized', 'refund_failed', 'refund_initiated'].includes(request.status)) {
             throw requestError('COMMERCE_CUSTOMER_RETURN_REQUEST_TRANSITION_DENIED');
         }
         next.status = event.outcome === 'succeeded'
@@ -141,6 +172,8 @@ function transitionCustomerReturnRequest(request, event, { clock }) {
 }
 
 module.exports = {
+    assertCustomerReturnDecision,
+    isReturnReceiptComplete,
     CUSTOMER_RETURN_REQUEST_STATUSES,
     createCustomerReturnRequest,
     transitionCustomerReturnRequest,

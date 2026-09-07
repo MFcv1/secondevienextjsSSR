@@ -75,6 +75,15 @@ test('factures manuelles: les coordonnées légales et client sont obligatoires'
     );
 });
 
+test('factures manuelles: les dates impossibles ne sont pas reportées au mois suivant', () => {
+    for (const issueDate of ['2026-02-29', '2026-02-31', '2026-04-31']) {
+        assert.throws(() => normalizeInvoiceDraft({ ...draftFixture(), issueDate }), {
+            code: 'MANUAL_INVOICE_DATE_INVALID'
+        });
+    }
+    assert.equal(normalizeInvoiceDraft({ ...draftFixture(), issueDate: '2028-02-29' }).issueDate, '2028-02-29');
+});
+
 test('factures manuelles: le PDF émis est déterministe et lisible', () => {
     const invoice = {
         ...draftFixture(),

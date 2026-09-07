@@ -9,5 +9,5 @@ export const metadata = {
 
 export default async function PaymentLinkPage({ params }) {
   const { orderId, token } = await params;
-  return <PaymentLinkPageIsland orderId={orderId} token={token} />;
+  return <PaymentLinkPageIsland key={`${orderId}:${token}`} orderId={orderId} token={token} />;
 }

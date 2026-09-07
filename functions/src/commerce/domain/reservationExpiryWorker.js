@@ -34,7 +34,7 @@ function createReservationExpiryWorker({ checkoutRepository, sagaService, clock 
                 orderId
             };
         }
-        return sagaService.cancelProviderFirst(checkout);
+        return sagaService.cancelProviderFirst({ ...checkout, expectedExpiry: checkout.order.checkout.expiresAt });
     }
 
     return Object.freeze({ process });

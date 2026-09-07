@@ -1,35 +1,35 @@
-import { useState, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { X, Save, Type } from 'lucide-react';
+import useModalFocus from '../../ui/useModalFocus';
 
-const TextEditorModal = ({ isOpen, onClose, onSave, itemKey, initialData, fields, darkMode }) => {
-    const [formData, setFormData] = useState({});
-
-    useEffect(() => {
-        if (isOpen) {
-            // Merge initialData with defaults for all fields
-            const initializedData = {};
-            fields.forEach(field => {
-                // If data exists, use it. If not, use empty string (or default for boolean)
-                if (initialData && initialData[field.key] !== undefined) {
-                    initializedData[field.key] = initialData[field.key];
-                } else {
-                    initializedData[field.key] = field.type === 'toggle' ? false : '';
-                }
-            });
-            setFormData(initializedData);
-        }
-    }, [isOpen, initialData, fields]);
-
-    if (!isOpen) return null;
+const TextEditorSession = ({ onClose, onSave, itemKey, initialData, fields, darkMode }) => {
+    const [formData, setFormData] = useState(() => Object.fromEntries(fields.map(field => [
+        field.key, initialData?.[field.key] ?? (field.type === 'toggle' ? false : ''),
+    ])));
+    const [busy, setBusy] = useState(false);
+    const [error, setError] = useState('');
+    const runningRef = useRef(false);
+    const dialogRef = useModalFocus(true, onClose, busy);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        onSave(itemKey, formData);
+        if (runningRef.current) return;
+        runningRef.current = true;
+        setBusy(true);
+        setError('');
+        try {
+            await onSave(itemKey, formData);
+        } catch (failure) {
+            setError(failure?.message || 'Enregistrement impossible.');
+        } finally {
+            runningRef.current = false;
+            setBusy(false);
+        }
     };
 
     return (
@@ -37,11 +37,11 @@ const TextEditorModal = ({ isOpen, onClose, onSave, itemKey, initialData, fields
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
-                onClick={onClose}
+                onClick={() => { if (!runningRef.current) onClose(); }}
             ></div>
 
             {/* Modal */}
-            <div className={`relative w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden transform transition-all ${darkMode ? 'bg-stone-900 border border-stone-700' : 'bg-[#FAF9F6] border border-white'}`}>
+            <fieldset ref={dialogRef} disabled={busy} role="dialog" aria-modal="true" aria-label="Éditer le texte" aria-busy={busy} tabIndex={-1} className={`relative w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden transform transition-all ${darkMode ? 'bg-stone-900 border border-stone-700' : 'bg-[#FAF9F6] border border-white'}`}>
 
                 {/* Header */}
                 <div className={`px-6 py-4 md:px-8 md:py-6 border-b flex justify-between items-center ${darkMode ? 'border-stone-800' : 'border-black/5 bg-white'}`}>
@@ -55,6 +55,8 @@ const TextEditorModal = ({ isOpen, onClose, onSave, itemKey, initialData, fields
                         </div>
                     </div>
                     <button
+                        type="button"
+                        aria-label="Fermer l’éditeur"
                         onClick={onClose}
                         className={`p-2 rounded-full transition-colors ${darkMode ? 'hover:bg-stone-800 text-stone-400' : 'hover:bg-stone-100 text-stone-500'}`}
                     >
@@ -66,19 +68,24 @@ const TextEditorModal = ({ isOpen, onClose, onSave, itemKey, initialData, fields
                 <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-4 md:space-y-6 max-h-[70vh] overflow-y-auto">
                     {fields.map((field) => (
                         <div key={field.key} className="space-y-2">
-                            <label className={`block text-[10px] md:text-xs font-black uppercase tracking-widest ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>
+                            <label htmlFor={`text-editor-${field.key}`} className={`block text-[10px] md:text-xs font-black uppercase tracking-widest ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>
                                 {field.label}
                             </label>
 
                             {field.type === 'toggle' ? (
-                                <div
+                                <button
+                                    type="button"
+                                    id={`text-editor-${field.key}`}
+                                    role="switch"
+                                    aria-checked={Boolean(formData[field.key])}
                                     onClick={() => setFormData(prev => ({ ...prev, [field.key]: !prev[field.key] }))}
                                     className={`relative w-12 h-7 md:w-14 md:h-8 rounded-full cursor-pointer transition-all duration-300 p-1 ${formData[field.key] !== false ? 'bg-emerald-500' : 'bg-stone-300'}`}
                                 >
                                     <div className={`w-5 h-5 md:w-6 md:h-6 rounded-full bg-white shadow-sm transition-transform duration-300 ${formData[field.key] !== false ? 'translate-x-5 md:translate-x-6' : 'translate-x-0'}`} />
-                                </div>
+                                </button>
                             ) : field.type === 'textarea' ? (
                                 <textarea
+                                    id={`text-editor-${field.key}`}
                                     name={field.key}
                                     value={formData[field.key] || ''}
                                     onChange={handleChange}
@@ -88,6 +95,7 @@ const TextEditorModal = ({ isOpen, onClose, onSave, itemKey, initialData, fields
                                 />
                             ) : (
                                 <input
+                                    id={`text-editor-${field.key}`}
                                     type="text"
                                     name={field.key}
                                     value={formData[field.key] || ''}
@@ -100,6 +108,7 @@ const TextEditorModal = ({ isOpen, onClose, onSave, itemKey, initialData, fields
                         </div>
                     ))}
                 </form>
+                {error && <p role="alert" className="px-6 text-sm text-red-600">{error}</p>}
 
                 {/* Footer */}
                 <div className={`px-6 py-4 md:px-8 md:py-6 border-t flex justify-end gap-3 md:gap-4 ${darkMode ? 'border-stone-800 bg-stone-900' : 'border-black/5 bg-stone-50'}`}>
@@ -115,12 +124,14 @@ const TextEditorModal = ({ isOpen, onClose, onSave, itemKey, initialData, fields
                         className={`px-6 py-2.5 md:px-8 md:py-3 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest flex items-center gap-2 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all ${darkMode ? 'bg-white text-stone-900 hover:bg-stone-200' : 'bg-stone-900 text-white hover:bg-stone-800'}`}
                     >
                         <Save size={14} />
-                        Enregistrer
+                        {busy ? 'Enregistrement…' : 'Enregistrer'}
                     </button>
                 </div>
-            </div>
+            </fieldset>
         </div>
     );
 };
 
-export default TextEditorModal;
+export default function TextEditorModal(props) {
+    return props.isOpen ? <TextEditorSession key={props.itemKey} {...props} /> : null;
+}

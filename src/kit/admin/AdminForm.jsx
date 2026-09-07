@@ -17,6 +17,7 @@ import KIT_CONFIG from '../config/constants';
 import { clearAdminPublicCatalogCache } from './adminPublicCatalog';
 import { describeChannels } from './components/publicationContent';
 import { refreshAdminAuthorizationToken } from './adminAuthorization';
+import { runWithConcurrency } from './publicationConcurrency';
 import {
   adjustInventoryAdmin,
   createProductCommandSession,
@@ -84,18 +85,6 @@ const isStorageAuthorizationError = (error) => (
   error?.code === 'storage/unauthorized'
   || String(error?.message || '').includes('storage/unauthorized')
 );
-
-const runWithConcurrency = async (items, limit, worker) => {
-  let cursor = 0;
-  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
-    while (cursor < items.length) {
-      const index = cursor;
-      cursor += 1;
-      await worker(items[index], index);
-    }
-  });
-  await Promise.all(workers);
-};
 
 const COLOR_BANK = [
   { name: 'Naturel / Brut', hex: '#DEB887' },
@@ -220,6 +209,7 @@ const AdminForm = ({
     galleryItemsRef.current = galleryItems;
   }, [galleryItems]);
   const [uploading, setUploading] = useState(false);
+  const [recorded, setRecorded] = useState(false);
   const [preparingImages, setPreparingImages] = useState(false);
   const [msg, setMsg] = useState("");
   const [categoryError, setCategoryError] = useState(false);
@@ -247,6 +237,8 @@ const AdminForm = ({
   const batchSessionsRef = useRef(new Map());
   const batchPublishedProductsRef = useRef(new Map());
   const imagePreparationJobsRef = useRef(0);
+  const publicationRunningRef = useRef(false);
+  const uploadedVariantsRef = useRef(new WeakMap());
 
   // New state for drag reordering
   const [isDragging, setIsDragging] = useState(false);
@@ -301,6 +293,7 @@ const AdminForm = ({
   useEffect(() => {
     productCommandSessionRef.current = null;
     publishedProductRef.current = null;
+    setRecorded(false);
     setStep('compose');
     setProgress(0);
     setCompletedProduct(null);
@@ -407,6 +400,7 @@ const AdminForm = ({
   const meta = useMetaConnection({ onConnectionChange: handleMetaConnectionChange });
 
   const processFiles = async (files) => {
+    if (publicationRunningRef.current || imagePreparationJobsRef.current > 0) return;
     const availableSlots = Math.max(0, MAX_PRODUCT_IMAGES - galleryItems.length);
     const acceptedFiles = files.slice(0, availableSlots);
     const omittedCount = files.length - acceptedFiles.length;
@@ -434,7 +428,7 @@ const AdminForm = ({
 
     // Process optimization in background
     try {
-      const optimizedItems = await Promise.all(newItems.map(async (item) => {
+      const optimizedItems = await runWithConcurrency(newItems, 2, async (item) => {
         try {
           const compressed = await compressImage(item.file, 0.85, 1920);
           const metadata = await getImageFileMetadata(compressed);
@@ -448,7 +442,7 @@ const AdminForm = ({
           console.error("Auto-compression failed for", item.file.name, error);
           return item;
         }
-      }));
+      });
 
       // Update state with optimized versions
       setGalleryItems(prev => prev.map(current => {
@@ -511,6 +505,8 @@ const AdminForm = ({
   };
 
   const uploadProductVariantSet = async (sourceFile, progressPrefix, slotIndex, onVariantUploaded) => {
+    const previous = uploadedVariantsRef.current.get(sourceFile);
+    if (previous) return previous;
     setMsg(`${progressPrefix} Création des formats responsive...`);
     const variantFiles = await createProductImageVariantFiles(sourceFile);
     const uploadStamp = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -543,6 +539,7 @@ const AdminForm = ({
       onVariantUploaded?.();
     });
 
+    uploadedVariantsRef.current.set(sourceFile, uploaded);
     return uploaded;
   };
 
@@ -729,12 +726,14 @@ const AdminForm = ({
   };
 
   const publishBatch = async () => {
+    if (publicationRunningRef.current) return;
     if (mutationsBlocked) {
       setMsg('Actualise le back-office avant de reprendre ce lot.');
       return;
     }
     if (batchEntries.length === 0) return;
 
+    publicationRunningRef.current = true;
     setUploading(true);
     setPublicationPhase('authorization');
     setProgress(0.04);
@@ -762,6 +761,7 @@ const AdminForm = ({
         setMsg(`Préparation du lot · ${index + 1}/${batchEntries.length} — ${entry.formData.name}`);
         products[index] = await buildDraftPayload(entry, session, index, onVariantUploaded);
         batchPublishedProductsRef.current.set(entry.id, products[index]);
+        setRecorded(true);
       });
 
       clearAdminPublicCatalogCache();
@@ -812,16 +812,19 @@ const AdminForm = ({
       console.error('BATCH PUBLICATION ERROR:', error);
       setMsg(`Erreur du lot : ${error?.message || 'la publication groupée a échoué.'}`);
     } finally {
+      publicationRunningRef.current = false;
       setUploading(false);
     }
   };
 
   const addMeuble = async () => {
+    if (publicationRunningRef.current) return;
     if (mutationsBlocked) {
       setMsg('Actualise le back-office avant de reprendre cette publication.');
       return;
     }
     if (socialPublication && socialPublication.overallStatus !== 'published') {
+      publicationRunningRef.current = true;
       setUploading(true);
       setProgress(0.9);
       setMsg('Reprise de la publication Meta…');
@@ -854,6 +857,7 @@ const AdminForm = ({
         }
         setMsg(`Publication Meta à reprendre : ${retryError?.message || 'Meta ne répond pas.'}`);
       } finally {
+        publicationRunningRef.current = false;
         setUploading(false);
       }
       return;
@@ -863,6 +867,7 @@ const AdminForm = ({
       setStep('compose');
       return;
     }
+    publicationRunningRef.current = true;
     setUploading(true);
     setProgress(0.04);
     setPublicationPhase('authorization');
@@ -871,7 +876,7 @@ const AdminForm = ({
     try {
       const session = productCommandSessionRef.current || createProductCommandSession(editData?.id);
       productCommandSessionRef.current = session;
-      let commandProduct = !editData ? publishedProductRef.current : null;
+      let commandProduct = publishedProductRef.current;
       const adminIdToken = await refreshAdminAuthorizationToken();
 
       if (!commandProduct) {
@@ -992,8 +997,9 @@ const AdminForm = ({
             commerceVersion: created.commerceVersion,
             inventoryVersion: created.inventoryVersion
           };
-          publishedProductRef.current = commandProduct;
         }
+        publishedProductRef.current = { ...commandProduct, name: formData.name };
+        setRecorded(true);
 
         const abandonedPublication = getPendingPublicationDescriptor();
         if (abandonedPublication) {
@@ -1064,6 +1070,7 @@ const AdminForm = ({
       }
       setMsg(`${errorPrefix}: ${err.message || "Inconnue"}`);
     } finally {
+      publicationRunningRef.current = false;
       setUploading(false);
     }
   };
@@ -1284,7 +1291,7 @@ const AdminForm = ({
           productName={completedProduct?.name}
           batchCount={batchMode ? batchEntries.length : 0}
         />
-        <div className="flex h-full min-h-0 flex-col overflow-hidden px-4 py-4 sm:px-5 sm:py-5 xl:px-6 xl:py-5">
+        <div inert={uploading || Boolean(completedProduct)} className="flex h-full min-h-0 flex-col overflow-hidden px-4 py-4 sm:px-5 sm:py-5 xl:px-6 xl:py-5">
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
             <div className="min-w-0">
               <h3 className="text-[15px] font-extrabold tracking-[-0.025em]">{editData ? 'Modifier la publication' : batchMode ? 'Lot de publications' : 'Nouvelle publication'}</h3>
@@ -1306,7 +1313,7 @@ const AdminForm = ({
                   selectedIndex={selectedBatchIndex}
                   onToggle={toggleBatchMode}
                   onSelect={setSelectedBatchIndex}
-                  disabled={uploading}
+                  disabled={uploading || recorded}
                   darkMode={darkMode}
                   review={isReview}
                 />
@@ -1315,7 +1322,7 @@ const AdminForm = ({
               <PublicationStepRail
                 step={step}
                 darkMode={darkMode}
-                disabled={uploading}
+                disabled={uploading || recorded}
                 onSelect={(nextStep) => {
                   if (nextStep === step) return;
                   if (nextStep === 'review') {
@@ -1334,7 +1341,7 @@ const AdminForm = ({
               data-state={isReview ? 'idle' : 'active'}
               data-side="before"
               aria-hidden={isReview}
-              inert={isReview}
+              inert={isReview || recorded}
             >
           <div ref={categoryGroupRef} role="group" aria-labelledby="publication-category-label" aria-describedby={categoryError ? 'publication-category-error' : undefined}>
             <div className="flex items-center justify-between gap-3">
@@ -1406,7 +1413,7 @@ const AdminForm = ({
                 ))}
                 <button
                   type="button"
-                  disabled={uploading || galleryItems.length >= MAX_PRODUCT_IMAGES}
+                  disabled={uploading || preparingImages || galleryItems.length >= MAX_PRODUCT_IMAGES}
                   onClick={() => fileInputRef.current.click()}
                   title={galleryItems.length >= MAX_PRODUCT_IMAGES ? `Limite de ${MAX_PRODUCT_IMAGES} images atteinte` : 'Ajouter des images'}
                   className={`group flex aspect-square flex-col items-center justify-center rounded-[12px] border border-dashed transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] disabled:cursor-not-allowed ${galleryItems.length >= MAX_PRODUCT_IMAGES
@@ -1514,7 +1521,7 @@ const AdminForm = ({
                   else setInstagramHashtags(hashtags);
                 }}
                 socialPublication={socialPublication}
-                uploading={uploading}
+                uploading={uploading || recorded}
                 productId={editData?.id || null}
               />
             </div>
@@ -1532,6 +1539,7 @@ const AdminForm = ({
           connection={metaConnection}
           editData={editData}
           uploading={uploading}
+          recorded={recorded}
           progress={progress}
           message={msg}
           messageTone={messageTone}

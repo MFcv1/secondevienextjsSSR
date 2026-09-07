@@ -51,7 +51,7 @@ function productImpact(before, after) {
         afterPath: getCatalogProductPath(after),
         beforeCategories,
         afterCategories,
-        purchasabilityChanged: ['sold', 'stock', 'currentPrice', 'startingPrice', 'price', 'priceOnRequest', 'status']
+        purchasabilityChanged: ['sold', 'stock', 'availability', 'currentPrice', 'startingPrice', 'price', 'priceOnRequest', 'status']
             .some((field) => changedFields.includes(field)),
         searchChanged: !orderOnly,
         sitemapChanged

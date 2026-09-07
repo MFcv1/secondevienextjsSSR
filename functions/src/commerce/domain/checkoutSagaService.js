@@ -5,6 +5,7 @@ const {
     transitionAttempt,
     validatePaymentIntentForOrder
 } = require('./checkoutSaga');
+const { assertProviderCreateWindow } = require('./providerCreateWindow');
 
 function serviceError(code, cause = null) {
     const error = new Error(code);
@@ -47,13 +48,16 @@ function createCheckoutSagaService({ stripe, repository, clock, failpoints = nul
                 promotion: order.promotionSnapshot || null,
                 totalCents: order.amounts.totalCents,
                 connectedAccountId: attempt.connectedAccountId,
-                reused: true
+                reused: true,
+                expiresAt: order.checkout.expiresAt,
+                providerStatus: existing.status
             };
         }
         if (action !== 'create_with_same_idempotency_key') {
             throw serviceError('COMMERCE_CHECKOUT_SAGA_NOT_CREATABLE');
         }
 
+        assertProviderCreateWindow(attempt, clock);
         let current = transitionAttempt(attempt, { type: 'create_started' }, { clock });
         await repository.saveAttempt(current);
         let paymentIntent;
@@ -95,13 +99,21 @@ function createCheckoutSagaService({ stripe, repository, clock, failpoints = nul
             promotion: order.promotionSnapshot || null,
             totalCents: order.amounts.totalCents,
             connectedAccountId: current.connectedAccountId,
-            reused: false
+            reused: false,
+            expiresAt: order.checkout.expiresAt,
+            providerStatus: paymentIntent.status
         };
     }
 
-    async function cancelProviderFirst({ order, attempt }) {
+    async function cancelProviderFirst({ order, attempt, expectedExpiry = null }) {
+        if (!attempt.paymentIntentId) assertProviderCreateWindow(attempt, clock);
         let current = transitionAttempt(attempt, { type: 'cancel_requested' }, { clock });
-        await repository.saveAttempt(current);
+        try {
+            await repository.saveAttempt(current, { expectedExpiry });
+        } catch (error) {
+            if (error?.code === 'COMMERCE_EXPIRY_NOT_DUE') return { outcome: 'not_due', orderId: order.id };
+            throw error;
+        }
         failpoints?.hit('cancel.after_request');
 
         let paymentIntent = current.paymentIntentId
@@ -136,6 +148,11 @@ function createCheckoutSagaService({ stripe, repository, clock, failpoints = nul
         if (paymentIntent.status === 'succeeded') {
             await repository.commitHeldInventory(order, paymentIntent);
             return { outcome: 'paid', paymentIntentId: paymentIntent.id };
+        }
+        if (['processing', 'requires_action', 'requires_capture'].includes(paymentIntent.status)) {
+            // Keep the hold; the existing bounded task retries/reconciler own
+            // this uncertainty. Never cancel a bank challenge by the clock.
+            throw serviceError('COMMERCE_PAYMENT_INTENT_CANCEL_UNKNOWN');
         }
         if (paymentIntent.status !== 'canceled') {
             try {

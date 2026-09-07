@@ -11,7 +11,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import CheckoutPaymentStep from '../../../../src/kit/commerce/CheckoutPaymentStep';
 import {
   getAdminPaymentLinkPublic,
@@ -128,10 +128,15 @@ function TerminalState({ status }) {
 }
 
 export default function PaymentLinkPageIsland({ orderId, token }) {
+  const mountedRef = useRef(false);
+  const verificationRef = useRef(null);
+  const submissionRef = useRef(false);
+  const loadSequenceRef = useRef(0);
   const [state, setState] = useState({ status: 'loading', data: null, error: '' });
   const [payment, setPayment] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  const [verificationRequested, setVerificationRequested] = useState(false);
   const [form, setForm] = useState({
     email: '',
     fullName: '',
@@ -144,11 +149,14 @@ export default function PaymentLinkPageIsland({ orderId, token }) {
   });
 
   const load = useCallback(async () => {
+    const sequence = ++loadSequenceRef.current;
     try {
       const data = await getAdminPaymentLinkPublic(orderId, token);
+      if (!mountedRef.current || sequence !== loadSequenceRef.current) return null;
       setState({ status: 'ready', data, error: '' });
       return data;
     } catch (error) {
+      if (!mountedRef.current || sequence !== loadSequenceRef.current) return null;
       setState({
         status: 'error',
         data: null,
@@ -159,21 +167,33 @@ export default function PaymentLinkPageIsland({ orderId, token }) {
   }, [orderId, token]);
 
   useEffect(() => {
+    mountedRef.current = true;
     void load();
+    return () => {
+      mountedRef.current = false;
+      loadSequenceRef.current += 1;
+      verificationRef.current = null;
+    };
   }, [load]);
 
   const waitForConfirmation = useCallback(async () => {
+    if (verificationRef.current || !mountedRef.current) return;
+    const run = {};
+    verificationRef.current = run;
     setVerifying(true);
     const deadline = Date.now() + 45000;
-    while (Date.now() < deadline) {
-      const data = await load();
-      if (!data || ['paid', 'expired', 'canceled', 'needs_review'].includes(data.status)) {
-        setVerifying(false);
-        return;
+    try {
+      while (Date.now() < deadline && mountedRef.current && verificationRef.current === run) {
+        const data = await load();
+        if (!data || ['paid', 'expired', 'canceled', 'needs_review'].includes(data.status)) return;
+        await new Promise((resolve) => window.setTimeout(resolve, 1800));
       }
-      await new Promise((resolve) => window.setTimeout(resolve, 1800));
+    } finally {
+      if (mountedRef.current && verificationRef.current === run) {
+        verificationRef.current = null;
+        setVerifying(false);
+      }
     }
-    setVerifying(false);
   }, [load]);
 
   useEffect(() => {
@@ -184,6 +204,8 @@ export default function PaymentLinkPageIsland({ orderId, token }) {
 
   const startPayment = async (event) => {
     event?.preventDefault?.();
+    if (submissionRef.current) return;
+    submissionRef.current = true;
     setSubmitting(true);
     setState((current) => ({ ...current, error: '' }));
     try {
@@ -203,15 +225,18 @@ export default function PaymentLinkPageIsland({ orderId, token }) {
             country: form.country,
           },
         });
+      if (!mountedRef.current) return;
       setPayment(result);
       await load();
     } catch (error) {
+      if (!mountedRef.current) return;
       setState((current) => ({
         ...current,
         error: error?.message || 'Le paiement ne peut pas être préparé.',
       }));
     } finally {
-      setSubmitting(false);
+      submissionRef.current = false;
+      if (mountedRef.current) setSubmitting(false);
     }
   };
 
@@ -282,7 +307,7 @@ export default function PaymentLinkPageIsland({ orderId, token }) {
                 </div>
               )}
 
-              {verifying ? (
+              {verifying || verificationRequested || data.status === 'payment_in_progress' ? (
                 <div className="flex min-h-[28rem] flex-col items-center justify-center text-center">
                   <span className="relative grid h-14 w-14 place-items-center rounded-full bg-stone-900 text-white">
                     <PackageCheck size={23} />
@@ -290,6 +315,7 @@ export default function PaymentLinkPageIsland({ orderId, token }) {
                   </span>
                   <h2 className="mt-6 text-2xl font-semibold tracking-tight">Confirmation du paiement</h2>
                   <p className="mt-3 max-w-md text-sm leading-6 text-stone-600">Stripe confirme la transaction à l’atelier. Ne rechargez pas et ne tentez pas un second paiement.</p>
+                  {!verifying ? <button type="button" onClick={() => void waitForConfirmation()} className="mt-6 min-h-11 rounded-xl border border-stone-300 px-5 text-sm font-semibold">Vérifier à nouveau</button> : null}
                 </div>
               ) : payment && stripePromise && elementsOptions ? (
                 <div className="mt-7">
@@ -301,7 +327,11 @@ export default function PaymentLinkPageIsland({ orderId, token }) {
                         total={data.totalCents / 100}
                         orderId={orderId}
                         returnPath={returnPath}
-                        onPaymentSuccess={() => void waitForConfirmation()}
+                        expiresAt={data.expiresAt}
+                        onPaymentSuccess={() => {
+                          setVerificationRequested(true);
+                          void waitForConfirmation();
+                        }}
                       />
                     </Elements>
                   </div>

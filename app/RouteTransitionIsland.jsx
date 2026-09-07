@@ -61,6 +61,8 @@ export default function RouteTransitionIsland() {
   const transitionStartedAtRef = useRef(0);
   const pendingRef = useRef(null);
   const closeTimerRef = useRef(null);
+  const navigationTimerRef = useRef(null);
+  const safetyTimerRef = useRef(null);
   const [transition, setTransition] = useState(null);
 
   const activeTarget = transition?.targetConfig || null;
@@ -85,11 +87,15 @@ export default function RouteTransitionIsland() {
     const elapsed = window.performance.now() - transitionStartedAtRef.current;
     const remaining = Math.max(0, (reducedMotion ? 0 : (variant?.minVisibleMs || 0)) - elapsed);
     if (remaining > 0) await wait(remaining);
+    if (pendingRef.current !== pending) return;
 
     setTransition((current) => current ? { ...current, phase: 'leaving' } : current);
     const exitDuration = reducedMotion ? 120 : (variant?.exitDurationMs || 320);
     closeTimerRef.current = window.setTimeout(() => {
+      if (pendingRef.current !== pending) return;
       pendingRef.current = null;
+      window.clearTimeout(safetyTimerRef.current);
+      safetyTimerRef.current = null;
       closeTimerRef.current = null;
       setTransition(null);
     }, exitDuration);
@@ -124,6 +130,8 @@ export default function RouteTransitionIsland() {
 
   const startTransition = useCallback((href, targetConfig) => {
     clearCloseTimer();
+    if (navigationTimerRef.current) window.clearTimeout(navigationTimerRef.current);
+    window.clearTimeout(safetyTimerRef.current);
     const variant = ROUTE_TRANSITION_CONFIG.variants[targetConfig.variant || ROUTE_TRANSITION_CONFIG.defaultVariant];
     if (targetConfig.warmupVideo) warmupVideo(targetConfig.warmupVideo);
     const next = {
@@ -136,10 +144,20 @@ export default function RouteTransitionIsland() {
     pendingRef.current = next;
     transitionStartedAtRef.current = window.performance.now();
     setTransition(next);
+    // A failed or interrupted route load must never trap the page under a curtain.
+    safetyTimerRef.current = window.setTimeout(() => {
+      if (pendingRef.current !== next) return;
+      pendingRef.current = null;
+      safetyTimerRef.current = null;
+      clearCloseTimer();
+      setTransition(null);
+    }, 10000);
 
     window.dispatchEvent(new CustomEvent(TRANSITION_EVENT, { detail: { href, target: targetConfig } }));
 
-    window.setTimeout(() => {
+    navigationTimerRef.current = window.setTimeout(() => {
+      navigationTimerRef.current = null;
+      if (pendingRef.current !== next) return;
       router.push(href);
     }, prefersReducedMotion() ? 0 : (variant?.enterDelayMs || 180));
   }, [clearCloseTimer, router]);
@@ -211,6 +229,9 @@ export default function RouteTransitionIsland() {
 
   useEffect(() => () => {
     clearCloseTimer();
+    if (navigationTimerRef.current) window.clearTimeout(navigationTimerRef.current);
+    window.clearTimeout(safetyTimerRef.current);
+    pendingRef.current = null;
   }, [clearCloseTimer]);
 
   if (!transition || !activeTarget || !activeVariant) return null;

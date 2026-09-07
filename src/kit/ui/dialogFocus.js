@@ -1,5 +1,6 @@
 const FOCUSABLE_SELECTOR = [
   'a[href]',
+  'summary',
   'button:not([disabled])',
   'input:not([disabled])',
   'select:not([disabled])',
@@ -10,6 +11,8 @@ const FOCUSABLE_SELECTOR = [
 export const getDialogFocusableElements = (root) => (
   Array.from(root?.querySelectorAll?.(FOCUSABLE_SELECTOR) || []).filter((element) => (
     element?.getAttribute?.('aria-hidden') !== 'true'
+    && element?.tabIndex !== -1
+    && !element?.matches?.(':disabled')
     && !element?.closest?.('[inert]')
     && (typeof element?.getClientRects !== 'function' || element.getClientRects().length > 0)
   ))

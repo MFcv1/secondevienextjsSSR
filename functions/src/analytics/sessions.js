@@ -155,9 +155,9 @@ const tryResumeSession = async ({ sessionId, syncToken, authUid, device, browser
         syncSequence: 0,
         lastActivityAt: admin.firestore.FieldValue.serverTimestamp(),
         sessionActive: true,
-        device: device || current.device || 'Unknown',
-        browser: browser || current.browser || 'Unknown',
-        os: os || current.os || 'Unknown',
+        device: sanitizeString(device || current.device, 40) || 'Unknown',
+        browser: sanitizeString(browser || current.browser, 40) || 'Unknown',
+        os: sanitizeString(os || current.os, 40) || 'Unknown',
         resumedAt: admin.firestore.FieldValue.serverTimestamp(),
         analyticsVersion: 3
         });
@@ -177,6 +177,7 @@ const tryResumeSession = async ({ sessionId, syncToken, authUid, device, browser
         syncToken,
         ipDetected: Boolean(sessionData.ipMeta?.detected || sessionData.ip),
         startedAtMs: toMillis(sessionData.startedAt) || now,
+        duration: clampDuration(sessionData.duration),
         journeySnapshot: sanitizeJourney(sessionData.journey),
         journeyCount: Math.max(
             Array.isArray(sessionData.journey) ? sessionData.journey.length : 0,
@@ -272,9 +273,9 @@ const initLiveSessionHandler = async (data = {}, context) => {
         startedAt: admin.firestore.FieldValue.serverTimestamp(),
         lastActivityAt: admin.firestore.FieldValue.serverTimestamp(),
         duration: 0,
-        device: device || 'Unknown',
-        browser: browser || 'Unknown',
-        os: os || 'Unknown',
+        device: sanitizeString(device, 40) || 'Unknown',
+        browser: sanitizeString(browser, 40) || 'Unknown',
+        os: sanitizeString(os, 40) || 'Unknown',
         // Visitor IPs are not disclosed to an uncontracted third-party geo API.
         geo: { country: 'Unknown', city: 'Unknown', region: 'Unknown' },
         journey: [],

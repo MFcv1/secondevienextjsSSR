@@ -123,12 +123,10 @@ export async function submitQuoteRequest({ identity, payload, files = [], onProg
   if (created.data.intakeStatus === 'submitted') {
     return {
       ...created.data,
-      failedPhotoCount: 0,
-      confirmationEmailStatus: 'pending',
+      failedPhotoCount: Math.max(0, files.length - Number(created.data.photoCount || 0)),
     };
   }
 
-  let failedPhotoCount = 0;
   let uploadedPhotoCount = Number(created.data.photoCount || 0);
   for (let index = 0; index < files.length; index += 1) {
     try {
@@ -143,15 +141,17 @@ export async function submitQuoteRequest({ identity, payload, files = [], onProg
       });
       uploadedPhotoCount = Math.max(uploadedPhotoCount, Number(result.data.photoCount || 0));
     } catch {
-      failedPhotoCount += 1;
+      // Finalization reads the durable received-photo count. A lost upload
+      // acknowledgement alone is not proof that its photo failed.
     }
   }
 
   onProgress({ phase: 'finalizing', completed: files.length, total: files.length });
   const finalized = await finalizeQuote({ quoteId, uploadToken: identity.uploadToken });
+  const photoCount = Math.max(uploadedPhotoCount, Number(finalized.data.photoCount || 0));
   return {
     ...finalized.data,
-    photoCount: Math.max(uploadedPhotoCount, Number(finalized.data.photoCount || 0)),
-    failedPhotoCount,
+    photoCount,
+    failedPhotoCount: Math.max(0, files.length - photoCount),
   };
 }

@@ -69,10 +69,12 @@ function createOutboxWorker({
                     reason: response.reason || 'stale_effect'
                 });
             }
-            if (!response || typeof response.providerMessageId !== 'string') {
+            // A resolved sender may already have delivered the message even if
+            // its acknowledgement is incomplete. Never retry it blindly.
+            accepted = true;
+            if (!response || typeof response.providerMessageId !== 'string' || !response.providerMessageId.trim()) {
                 throw workerError('COMMERCE_OUTBOX_PROVIDER_RESPONSE_INVALID');
             }
-            accepted = true;
             return await repository.markSent(outboxId, {
                 leaseToken,
                 nowMillis: clock.nowMillis(),

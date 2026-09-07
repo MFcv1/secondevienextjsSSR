@@ -11,6 +11,7 @@ import { getGoogleAuthErrorMessage } from '../auth/googleAuthDiagnostics';
 import { LoginBackgroundVideo } from '../auth/LoginBackgroundVideo';
 import { logClientPerf, startClientPerf } from '../shared/clientPerf';
 import { ToastProvider, useToast } from '../ui/Toast';
+import KIT_CONFIG from '../config/constants';
 
 const PASSKEY_ENABLED_KEY = 'secondevie:passkey-enabled';
 const PASSKEY_EMAIL_KEY = 'secondevie:passkey-email';
@@ -229,6 +230,8 @@ export function LegacyLoginModalContent({ open, onOpenChange, onAuthenticated })
   const otpSendInFlightRef = useRef(false);
   const otpVerifyInFlightRef = useRef(false);
   const otpCustomTokenRef = useRef(null);
+  const loginOperationRef = useRef(false);
+  const activeRef = useRef(false);
   const dialogRef = useRef(null);
   const closeButtonRef = useRef(null);
   const previouslyFocusedRef = useRef(null);
@@ -258,6 +261,15 @@ export function LegacyLoginModalContent({ open, onOpenChange, onAuthenticated })
   const isOtpVerifying = otpStatus === 'verifying';
   const isOtpSigningIn = otpStatus === 'signing-in';
   const isOtpBusy = isOtpSending || isOtpVerifying || isOtpSigningIn;
+  const isIdentityBusy = isOtpBusy || isPasskeyBusy || googleStatus === 'pending';
+
+  useEffect(() => {
+    activeRef.current = open;
+    return () => {
+      activeRef.current = false;
+      otpCustomTokenRef.current = null;
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -441,6 +453,8 @@ export function LegacyLoginModalContent({ open, onOpenChange, onAuthenticated })
   if (!open) return null;
 
   const close = () => {
+    activeRef.current = false;
+    otpCustomTokenRef.current = null;
     setPasskeyUser(null);
     setPasskeyStatus('idle');
     setPasskeyMessage('');
@@ -480,7 +494,8 @@ export function LegacyLoginModalContent({ open, onOpenChange, onAuthenticated })
   };
 
   const handleCreatePasskey = async () => {
-    if (!passkeyUser) return;
+    if (!passkeyUser || loginOperationRef.current) return;
+    loginOperationRef.current = true;
     setPasskeyStatus('pending');
     setPasskeyRegistrationStep(
       passkeyRegistrationPrepareStatus === 'ready' && preparedPasskeyRegistration
@@ -492,21 +507,25 @@ export function LegacyLoginModalContent({ open, onOpenChange, onAuthenticated })
       const preparedRegistration = preparedPasskeyRegistration;
       setPreparedPasskeyRegistration(null);
       await registerPasskey(preparedRegistration, setPasskeyRegistrationStep);
+      if (!activeRef.current) return;
       saveLocalPasskeyState(passkeyUser.email);
       setLocalPasskeyEmails(readLocalPasskeyState().emails);
       setPasskeyStatus('success');
       setPasskeyMessage('Connexion rapide activee sur cet appareil.');
       window.setTimeout(() => {
-        onOpenChange(false);
+        if (activeRef.current) onOpenChange(false);
       }, 450);
     } catch (error) {
       setPasskeyRegistrationStep('idle');
       setPasskeyStatus('error');
       setPasskeyMessage(error?.message || 'Passkey indisponible sur cet appareil.');
+    } finally {
+      loginOperationRef.current = false;
     }
   };
 
   const handleSocialLogin = async (login) => {
+    if (loginOperationRef.current || otpSendInFlightRef.current) return;
     if (googleStatus === 'pending' || googleStatus === 'preparing') return;
     if (googleStatus === 'preload-error') {
       setGoogleStatus('preparing');
@@ -519,27 +538,34 @@ export function LegacyLoginModalContent({ open, onOpenChange, onAuthenticated })
       }
       return;
     }
+    loginOperationRef.current = true;
     setGoogleStatus('pending');
     try {
       const result = await login();
+      if (!activeRef.current) return;
       onAuthenticated?.(result?.user || null);
       offerPasskeyOrClose(result?.user);
     } catch (error) {
       toast(getGoogleAuthErrorMessage(error), { type: 'error' });
     } finally {
+      loginOperationRef.current = false;
       setGoogleStatus('ready');
     }
   };
 
   const handlePasskeyLogin = async () => {
+    if (loginOperationRef.current || otpSendInFlightRef.current) return;
+    loginOperationRef.current = true;
     setPasskeyStatus('pending');
     setPasskeyLoginStep('biometric');
     setPasskeyMessage('');
     try {
       const result = await loginWithPasskey(emailValue, preparedPasskeyAuth, setPasskeyLoginStep);
+      if (!activeRef.current) return;
       setPasskeyLoginStep('signing-in');
       const signInStartedAt = startClientPerf();
       const userCredential = await loginWithCustomToken(result.token, 'passkey');
+      if (!activeRef.current) return;
       logClientPerf('passkey.authentication.signInWithCustomToken', signInStartedAt, { phase: 'success' });
       onAuthenticated?.(userCredential?.user || null);
       saveLocalPasskeyState(result?.email || emailValue);
@@ -560,12 +586,14 @@ export function LegacyLoginModalContent({ open, onOpenChange, onAuthenticated })
       setPasskeyStatus('error');
       setPasskeyMessage(error?.message || 'Connexion rapide indisponible.');
       toast(error?.message || 'Connexion rapide indisponible.', { type: 'error' });
+    } finally {
+      loginOperationRef.current = false;
     }
   };
 
   const requestCustomerLoginCode = async (event) => {
     event.preventDefault();
-    if (otpSendInFlightRef.current) return;
+    if (otpSendInFlightRef.current || loginOperationRef.current) return;
 
     const email = normalizeEmailValue(emailValue);
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -588,6 +616,7 @@ export function LegacyLoginModalContent({ open, onOpenChange, onAuthenticated })
     try {
       const sendOtp = httpsCallable(functions, getFunctionTarget('sendCustomerLoginOtp'));
       const result = await sendOtp({ email });
+      if (!activeRef.current) return;
       logClientPerf('auth.email.sendCustomerLoginOtp', startedAt, { phase: 'success' });
       setResendAfter(Number(result.data?.resendAfterSeconds || 60));
       setOtpStatus('sent');
@@ -608,7 +637,7 @@ export function LegacyLoginModalContent({ open, onOpenChange, onAuthenticated })
 
   const verifyCustomerLoginCode = async (event, codeOverride = '') => {
     event?.preventDefault?.();
-    if (otpVerifyInFlightRef.current) return;
+    if (!activeRef.current || otpVerifyInFlightRef.current || loginOperationRef.current || otpSendInFlightRef.current) return;
 
     const email = normalizeEmailValue(emailValue);
     const code = codeOverride || otpDigits.join('');
@@ -618,25 +647,29 @@ export function LegacyLoginModalContent({ open, onOpenChange, onAuthenticated })
     }
 
     otpVerifyInFlightRef.current = true;
+    loginOperationRef.current = true;
     setOtpStatus('verifying');
     setOtpMessage('');
     const verifyStartedAt = startClientPerf();
     let currentPhase = 'verify';
     let signInStartedAt = null;
     try {
-      let customToken = otpCustomTokenRef.current;
+      const cached = otpCustomTokenRef.current;
+      let customToken = cached?.email === email && cached?.code === code ? cached.token : null;
       if (!customToken) {
         const verifyOtp = httpsCallable(functions, getFunctionTarget('verifyCustomerLoginOtp'));
         const result = await verifyOtp({ email, code });
+        if (!activeRef.current) return;
         logClientPerf('auth.email.verifyCustomerLoginOtp', verifyStartedAt, { phase: 'success' });
         if (!result.data?.token) throw new Error('Token de connexion manquant.');
         customToken = result.data.token;
-        otpCustomTokenRef.current = customToken;
+        otpCustomTokenRef.current = { email, code, token: customToken };
       }
       currentPhase = 'sign-in';
       setOtpStatus('signing-in');
       signInStartedAt = startClientPerf();
       const userCredential = await loginWithCustomToken(customToken, 'email_otp');
+      if (!activeRef.current) return;
       logClientPerf('auth.email.signInWithCustomToken', signInStartedAt, { phase: 'success' });
       onAuthenticated?.(userCredential?.user || null);
       otpCustomTokenRef.current = null;
@@ -663,6 +696,7 @@ export function LegacyLoginModalContent({ open, onOpenChange, onAuthenticated })
       toast(message, { type: 'error' });
     } finally {
       otpVerifyInFlightRef.current = false;
+      loginOperationRef.current = false;
     }
   };
 
@@ -809,11 +843,12 @@ export function LegacyLoginModalContent({ open, onOpenChange, onAuthenticated })
                 </p>
               </div>
 
+              <fieldset disabled={isIdentityBusy} className="min-w-0">
               <button
                 type="button"
                 onClick={() => handleSocialLogin(loginWithGoogle)}
-                onPointerEnter={() => void preloadGoogleLogin()}
-                onFocus={() => void preloadGoogleLogin()}
+                onPointerEnter={() => void preloadGoogleLogin().catch(() => {})}
+                onFocus={() => void preloadGoogleLogin().catch(() => {})}
                 disabled={googleStatus === 'preparing' || googleStatus === 'pending'}
                 className="flex w-full items-center justify-center gap-3 rounded-xl border border-[#2A2A2E] bg-[#141417] p-4 text-sm font-bold text-white transition-all hover:bg-[#1f1f22] disabled:cursor-wait disabled:opacity-70"
               >
@@ -849,6 +884,7 @@ export function LegacyLoginModalContent({ open, onOpenChange, onAuthenticated })
                     name="passkey-email"
                     type="email"
                     placeholder="Adresse email du compte"
+                    aria-label="Adresse email du compte"
                     value={emailValue}
                     onChange={(event) => {
                       setEmailValue(event.target.value);
@@ -993,6 +1029,7 @@ export function LegacyLoginModalContent({ open, onOpenChange, onAuthenticated })
                       <button
                         type="button"
                         onClick={() => {
+                          otpCustomTokenRef.current = null;
                           setOtpStep('email');
                           setOtpDigits(['', '', '', '', '', '']);
                           setOtpMessage('');
@@ -1057,11 +1094,12 @@ export function LegacyLoginModalContent({ open, onOpenChange, onAuthenticated })
                 </div>
               )}
 
+              </fieldset>
               <div className="mt-8 text-center text-[11px] leading-relaxed text-stone-500">
                 Votre connexion implique l'acceptation des{' '}
-                <button type="button" className="font-bold text-stone-400 hover:text-white">Conditions</button>
+                {KIT_CONFIG.legalLinks.terms ? <a href={KIT_CONFIG.legalLinks.terms} className="font-bold text-stone-400 hover:text-white">Conditions</a> : <span>Conditions (publication à venir)</span>}
                 {' '}et de la{' '}
-                <button type="button" className="font-bold text-stone-400 hover:text-white">Politique de confidentialite</button>
+                {KIT_CONFIG.legalLinks.privacy ? <a href={KIT_CONFIG.legalLinks.privacy} className="font-bold text-stone-400 hover:text-white">Politique de confidentialite</a> : <span>Politique de confidentialité (publication à venir)</span>}
               </div>
             </>
           )}

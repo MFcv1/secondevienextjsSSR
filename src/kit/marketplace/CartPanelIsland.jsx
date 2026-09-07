@@ -1,8 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { ShoppingBag } from 'lucide-react';
 import CartSidebar from '../commerce/CartSidebar';
@@ -30,11 +29,6 @@ function CartHeaderIcon({ darkMode = false } = {}) {
 
 const CLOSE_NAVIGATION_OVERLAYS_EVENT = 'sv:close-navigation-overlays';
 
-const LegacyLoginModalIsland = dynamic(() => import('./LegacyLoginModalFullIsland'), {
-  ssr: false,
-  loading: () => null,
-});
-
 const getCartTotal = (items) => (
   items.reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 1), 0)
 );
@@ -52,7 +46,7 @@ const resolvePersistedAuthUser = async () => {
   return auth.currentUser || null;
 };
 
-export default function CartPanelIsland({ className = '', darkMode = false, initialEvent = null, onReady } = {}) {
+export default function CartPanelIsland({ className = '', darkMode = false, onReady } = {}) {
   const router = useRouter();
   const authState = useAuthState();
   const user = authState.user;
@@ -60,9 +54,6 @@ export default function CartPanelIsland({ className = '', darkMode = false, init
   const [isOpen, setIsOpen] = useState(false);
   const [interacted, setInteracted] = useState(false);
   const [isCartPrimed, setIsCartPrimed] = useState(false);
-  const [loginOpen, setLoginOpen] = useState(false);
-  const [pendingCartItem, setPendingCartItem] = useState(null);
-  const consumedInitialEventRef = useRef(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -82,14 +73,21 @@ export default function CartPanelIsland({ className = '', darkMode = false, init
 
     let cancelled = false;
     let unsubscribe = null;
+    setCartItems([]);
 
     Promise.all([getDb(), loadFirestoreModule()])
       .then(([db, { collection, onSnapshot, query }]) => {
         if (cancelled) return;
         unsubscribe = onSnapshot(
           query(collection(db, 'users', user.uid, 'cart')),
-          (snap) => setCartItems(snap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))),
-          (error) => console.error('Cart sync error:', error)
+          (snap) => {
+            if (!cancelled) setCartItems(snap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() })));
+          },
+          (error) => {
+            if (cancelled) return;
+            setCartItems([]);
+            console.error('Cart sync error:', error);
+          }
         );
       })
       .catch((error) => {
@@ -230,30 +228,6 @@ export default function CartPanelIsland({ className = '', darkMode = false, init
     onReady?.();
   }, [onReady]);
 
-  useEffect(() => {
-    if (!initialEvent?.id || consumedInitialEventRef.current === initialEvent.id) return;
-
-    consumedInitialEventRef.current = initialEvent.id;
-
-    if (initialEvent.type === 'sv:open-cart') {
-      openCart();
-      return;
-    }
-
-    if (initialEvent.type === 'sv:product-added') {
-      void processProductAdded(initialEvent.detail || {});
-    }
-  }, [initialEvent, openCart, processProductAdded]);
-
-  useEffect(() => {
-    if (!pendingCartItem || !user) return;
-    addCartItem(pendingCartItem)
-      .then((added) => {
-        if (added) setPendingCartItem(null);
-      })
-      .catch((error) => console.error('Pending cart add error:', error));
-  }, [addCartItem, pendingCartItem, user]);
-
   const removeFromCart = useCallback(async (cartDocId) => {
     if (!user) {
       setCartItems(removeGuestCartItem(cartDocId));
@@ -295,13 +269,6 @@ export default function CartPanelIsland({ className = '', darkMode = false, init
           activeDesignId="architectural"
         />,
         document.body
-      ) : null}
-      {loginOpen ? (
-        <LegacyLoginModalIsland
-          open={loginOpen}
-          onOpenChange={setLoginOpen}
-          renderTrigger={false}
-        />
       ) : null}
     </>
   );

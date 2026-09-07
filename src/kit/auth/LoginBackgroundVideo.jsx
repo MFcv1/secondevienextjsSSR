@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const DESKTOP_MEDIA_QUERY = '(min-width: 768px)';
 
@@ -13,9 +13,23 @@ const DESKTOP_MEDIA_QUERY = '(min-width: 768px)';
 export function LoginBackgroundVideo({ className = '' }) {
   const canvasRef = useRef(null);
   const videoRef = useRef(null);
+  const [shouldPlay, setShouldPlay] = useState(false);
 
   useEffect(() => {
-    if (!window.matchMedia(DESKTOP_MEDIA_QUERY).matches) return undefined;
+    const desktop = window.matchMedia(DESKTOP_MEDIA_QUERY);
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const sync = () => setShouldPlay(desktop.matches && !reducedMotion.matches);
+    sync();
+    desktop.addEventListener('change', sync);
+    reducedMotion.addEventListener('change', sync);
+    return () => {
+      desktop.removeEventListener('change', sync);
+      reducedMotion.removeEventListener('change', sync);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!shouldPlay) return undefined;
 
     const canvas = canvasRef.current;
     const video = videoRef.current;
@@ -78,12 +92,12 @@ export function LoginBackgroundVideo({ className = '' }) {
       if (animationFrameId !== null) window.cancelAnimationFrame(animationFrameId);
       video.pause();
     };
-  }, []);
+  }, [shouldPlay]);
 
   return (
     <>
       <canvas ref={canvasRef} aria-hidden="true" className={className} />
-      <video
+      {shouldPlay ? <video
         ref={videoRef}
         aria-hidden="true"
         tabIndex={-1}
@@ -94,7 +108,7 @@ export function LoginBackgroundVideo({ className = '' }) {
         playsInline
         preload="auto"
         className="hidden"
-      />
+      /> : null}
     </>
   );
 }

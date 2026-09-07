@@ -248,8 +248,10 @@ async function loadInvoice(invoiceId) {
 async function prepareManualInvoicePdfHandler(data, context) {
     await checkActiveStrongAdmin(context);
     try {
-        const { invoice } = await loadInvoice(data?.invoiceId);
-        const artifact = renderManualInvoicePdf(invoice, { draft: invoice.status !== 'issued' });
+        const { ref, invoice } = await loadInvoice(data?.invoiceId);
+        const artifact = invoice.status === 'issued'
+            ? await materializeIssuedInvoice(ref, invoice)
+            : renderManualInvoicePdf(invoice, { draft: true });
         return {
             success: true,
             document: {
@@ -279,14 +281,17 @@ async function issueInvoice({ invoiceId, sendRequestId, recipient, actorUid }) {
             throw new functions.https.HttpsError('not-found', 'Facture introuvable.');
         }
         const current = invoiceSnapshot.data();
+        const recipientHash = crypto.createHash('sha256').update(recipient).digest('hex');
+        const delivery = deliverySnapshot.exists ? deliverySnapshot.data() : null;
+        if (delivery?.recipientHash && delivery.recipientHash !== recipientHash) {
+            throw new functions.https.HttpsError('failed-precondition', 'Cette demande d’envoi appartient à un autre destinataire.');
+        }
         if (deliverySnapshot.exists && deliverySnapshot.data()?.status === 'sent') {
             return { invoice: { ...current, invoiceId }, deliveryRef, alreadySent: true };
         }
-        if (deliverySnapshot.exists && deliverySnapshot.data()?.status === 'sending') {
-            const startedAt = deliverySnapshot.data()?.startedAt?.toMillis?.() || 0;
-            if (Date.now() - startedAt < 2 * 60 * 1000) {
-                throw new functions.https.HttpsError('aborted', 'Cet envoi est déjà en cours.');
-            }
+        if (['sending', 'delivery_unknown'].includes(delivery?.status)
+            || ['sending', 'delivery_unknown'].includes(current.emailStatus)) {
+            throw new functions.https.HttpsError('failed-precondition', 'Un envoi est en cours ou doit être vérifié avant de renvoyer cette facture.');
         }
 
         let invoice = { ...current, invoiceId };
@@ -333,7 +338,7 @@ async function issueInvoice({ invoiceId, sendRequestId, recipient, actorUid }) {
             schemaVersion: 1,
             sendRequestId,
             status: 'sending',
-            recipientHash: crypto.createHash('sha256').update(recipient).digest('hex'),
+            recipientHash,
             startedAt: admin.firestore.Timestamp.now(),
             startedBy: actorUid,
             provider: null,
@@ -346,35 +351,57 @@ async function issueInvoice({ invoiceId, sendRequestId, recipient, actorUid }) {
 }
 
 async function materializeIssuedInvoice(invoiceRef, invoice) {
-    const artifact = renderManualInvoicePdf(invoice, { draft: false });
-    const storagePath = `${INVOICE_STORAGE_ROOT}/${invoice.invoiceId}/${artifact.contentHash}.pdf`;
+    const contentHash = hashInvoice(invoice);
+    const storagePath = `${INVOICE_STORAGE_ROOT}/${invoice.invoiceId}/${contentHash}.pdf`;
     const file = admin.storage().bucket().file(storagePath);
     const [exists] = await file.exists();
     if (!exists) {
-        await file.save(artifact.buffer, {
+        const rendered = renderManualInvoicePdf(invoice, { draft: false });
+        try { await file.save(rendered.buffer, {
             resumable: false,
-            contentType: artifact.contentType,
+            preconditionOpts: { ifGenerationMatch: 0 },
+            contentType: rendered.contentType,
             metadata: {
                 cacheControl: 'private, max-age=0, no-store',
                 metadata: {
                     invoiceId: invoice.invoiceId,
                     invoiceNumber: invoice.number,
-                    contentHash: artifact.contentHash,
-                    sha256: artifact.sha256
+                    contentHash,
+                    sha256: rendered.sha256
                 }
             }
-        });
+        }); } catch (error) {
+            // A concurrent materialization won: reuse that immutable object.
+            if (Number(error?.code) !== 412) throw error;
+        }
     }
-    await invoiceRef.collection('artifacts').doc(artifact.contentHash).set({
-        schemaVersion: 1,
-        contentHash: artifact.contentHash,
-        sha256: artifact.sha256,
-        size: artifact.size,
-        filename: artifact.filename,
-        contentType: artifact.contentType,
-        storagePath,
-        createdAt: admin.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
+    const [metadata] = await file.getMetadata();
+    if (!Number.isSafeInteger(Number(metadata.size)) || Number(metadata.size) < 100 || Number(metadata.size) > 2 * 1024 * 1024) {
+        throw new Error('MANUAL_INVOICE_PDF_SIZE_INVALID');
+    }
+    const [buffer] = await admin.storage().bucket().file(storagePath, { generation: metadata.generation }).download();
+    const sha256 = crypto.createHash('sha256').update(buffer).digest('hex');
+    if (buffer.length !== Number(metadata.size) || buffer.subarray(0, 5).toString() !== '%PDF-' || (metadata.metadata?.sha256 && metadata.metadata.sha256 !== sha256)) {
+        throw new Error('MANUAL_INVOICE_ARTIFACT_INTEGRITY');
+    }
+    const artifact = {
+        buffer, contentHash, sha256, size: buffer.length, contentType: 'application/pdf',
+        filename: `Facture_${String(invoice.number || 'BROUILLON').replace(/[^A-Za-z0-9_-]/g, '_')}.pdf`
+    };
+    const artifactRef = invoiceRef.collection('artifacts').doc(contentHash);
+    await db.runTransaction(async transaction => {
+        const existing = await transaction.get(artifactRef);
+        if (existing.exists) {
+            if (existing.data().sha256 !== sha256) throw new Error('MANUAL_INVOICE_ARTIFACT_INTEGRITY');
+            return;
+        }
+        const { buffer: _buffer, ...descriptor } = artifact;
+        void _buffer;
+        transaction.create(artifactRef, {
+            schemaVersion: 1, ...descriptor, storagePath,
+            createdAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+    });
     return artifact;
 }
 
@@ -383,6 +410,8 @@ async function sendManualInvoiceHandler(data, context) {
     const invoiceId = normalizeFirestoreId(data?.invoiceId, 'Facture');
     const sendRequestId = normalizeFirestoreId(data?.sendRequestId, 'Envoi');
     let recipient;
+    let claimedDelivery = null;
+    let accepted = false;
     try {
         recipient = email(data?.recipient, { required: true });
         const issued = await issueInvoice({
@@ -394,6 +423,7 @@ async function sendManualInvoiceHandler(data, context) {
         if (issued.alreadySent) {
             return { success: true, alreadySent: true, invoice: issued.invoice };
         }
+        claimedDelivery = issued.deliveryRef;
         const invoiceRef = db.collection(INVOICES_COLLECTION).doc(invoiceId);
         const artifact = await materializeIssuedInvoice(invoiceRef, issued.invoice);
         const runtime = createTransactionalEmailRuntime({
@@ -407,6 +437,7 @@ async function sendManualInvoiceHandler(data, context) {
             invoiceEmail(issued.invoice, recipient, runtime.fromAddress, artifact),
             { idempotencyKey: `manual-invoice/${sendRequestId}` }
         );
+        accepted = true;
         if (!result?.id) throw new Error('MANUAL_INVOICE_PROVIDER_RESPONSE_INVALID');
         const completedAt = admin.firestore.Timestamp.now();
         await db.runTransaction(async (transaction) => {
@@ -439,21 +470,23 @@ async function sendManualInvoiceHandler(data, context) {
             }
         };
     } catch (error) {
-        if (invoiceId && sendRequestId) {
-            const deliveryRef = db.collection(INVOICES_COLLECTION).doc(invoiceId)
-                .collection('deliveries').doc(sendRequestId);
-            const ambiguous = ['ECONNRESET', 'ESOCKET', 'ETIMEDOUT', 'GMAIL_SEND_FAILED'].includes(error?.code);
-            await Promise.allSettled([
-                deliveryRef.set({
+        if (claimedDelivery) {
+            const ambiguous = accepted || ['ECONNRESET', 'ESOCKET', 'ETIMEDOUT', 'GMAIL_SEND_FAILED'].includes(error?.code);
+            await db.runTransaction(async (transaction) => {
+                const delivery = await transaction.get(claimedDelivery);
+                // A denied duplicate never owns this write; a successful commit
+                // whose response was lost must keep its durable sent status.
+                if (delivery.data()?.status !== 'sending') return;
+                transaction.update(claimedDelivery, {
                     status: ambiguous ? 'delivery_unknown' : 'failed',
                     errorCode: String(error?.code || 'SEND_FAILED').slice(0, 120),
                     completedAt: admin.firestore.FieldValue.serverTimestamp()
-                }, { merge: true }),
-                db.collection(INVOICES_COLLECTION).doc(invoiceId).set({
+                });
+                transaction.update(db.collection(INVOICES_COLLECTION).doc(invoiceId), {
                     emailStatus: ambiguous ? 'delivery_unknown' : 'failed',
                     updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                }, { merge: true })
-            ]);
+                });
+            }).catch(() => {});
         }
         throw callableError(error);
     }

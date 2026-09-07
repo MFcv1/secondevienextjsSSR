@@ -48,25 +48,26 @@ const ANALYTICS_SESSION_ID_KEY = 'analytics_session_id';
 const ANALYTICS_SESSION_TOKEN_KEY = 'analytics_session_token';
 const ANALYTICS_SESSION_CLOSED_AT_KEY = 'analytics_session_closed_at';
 
-const readStorageValue = (storage, key) => {
+const readStorageValue = (storageName, key) => {
     try {
-        return storage?.getItem(key) || null;
+        return window[storageName]?.getItem(key) || null;
     } catch {
         return null;
     }
 };
 
 const getStoredAnalyticsSession = () => {
-    const sessionId = readStorageValue(sessionStorage, ANALYTICS_SESSION_ID_KEY);
-    const syncToken = readStorageValue(sessionStorage, ANALYTICS_SESSION_TOKEN_KEY);
-    const closedAt = Number(readStorageValue(sessionStorage, ANALYTICS_SESSION_CLOSED_AT_KEY));
+    const sessionId = readStorageValue('sessionStorage', ANALYTICS_SESSION_ID_KEY);
+    const syncToken = readStorageValue('sessionStorage', ANALYTICS_SESSION_TOKEN_KEY);
+    const closedAt = Number(readStorageValue('sessionStorage', ANALYTICS_SESSION_CLOSED_AT_KEY));
     if (!sessionId || !syncToken) return null;
     if (Number.isFinite(closedAt) && closedAt > 0 && Date.now() - closedAt > CLOSED_SESSION_RESUME_GRACE_MS) return null;
     return { sessionId, syncToken };
 };
 
-const persistStorageValue = (storage, key, value) => {
+const persistStorageValue = (storageName, key, value) => {
     try {
+        const storage = window[storageName];
         if (value) storage?.setItem(key, value);
         else storage?.removeItem(key);
     } catch {
@@ -75,12 +76,12 @@ const persistStorageValue = (storage, key, value) => {
 };
 
 const persistAnalyticsSession = (sessionId, syncToken) => {
-    persistStorageValue(sessionStorage, ANALYTICS_SESSION_ID_KEY, sessionId);
-    persistStorageValue(sessionStorage, ANALYTICS_SESSION_TOKEN_KEY, syncToken);
-    persistStorageValue(sessionStorage, ANALYTICS_SESSION_CLOSED_AT_KEY, null);
+    persistStorageValue('sessionStorage', ANALYTICS_SESSION_ID_KEY, sessionId);
+    persistStorageValue('sessionStorage', ANALYTICS_SESSION_TOKEN_KEY, syncToken);
+    persistStorageValue('sessionStorage', ANALYTICS_SESSION_CLOSED_AT_KEY, null);
     // Remove stale V1 values: a new tab or a reopened browser is a new session.
-    persistStorageValue(localStorage, ANALYTICS_SESSION_ID_KEY, null);
-    persistStorageValue(localStorage, ANALYTICS_SESSION_TOKEN_KEY, null);
+    persistStorageValue('localStorage', ANALYTICS_SESSION_ID_KEY, null);
+    persistStorageValue('localStorage', ANALYTICS_SESSION_TOKEN_KEY, null);
 };
 
 const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedItemPrice, selectedItemContext = null }) => {
@@ -91,7 +92,6 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
     const syncSequenceRef = useRef(0);
     const [sessionRestart, setSessionRestart] = useState(0);
     const initCalledRef = useRef(false);
-    const journeyToSend = useRef([]);
     const journeyHistoryRef = useRef([]);
     const journeyCountRef = useRef(0);
     const pageCountsRef = useRef({});
@@ -112,6 +112,17 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
     const heartbeatTimerRef = useRef(null);
     const armHeartbeatRef = useRef(() => {});
     const flushSessionRef = useRef(async () => false);
+    const mountedRef = useRef(false);
+
+    useEffect(() => {
+        mountedRef.current = true;
+        return () => {
+            mountedRef.current = false;
+            clearTimeout(routeSyncTimerRef.current);
+            clearTimeout(heartbeatTimerRef.current);
+            pendingSyncRef.current = null;
+        };
+    }, []);
 
     useEffect(() => {
         latestViewRef.current = { view, selectedItemId, selectedItemName, selectedItemPrice, selectedItemContext };
@@ -192,7 +203,6 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
             timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
             duration: durationSinceLast
         };
-        journeyToSend.current.push(step);
         journeyHistoryRef.current = [...journeyHistoryRef.current, step].slice(-25);
         journeyCountRef.current += 1;
         const page = String(current.view || 'unknown').slice(0, 80);
@@ -211,7 +221,7 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
 
     armHeartbeatRef.current = () => {
         clearHeartbeatTimer();
-        if (!sessionIdRef.current || isAdmin || document.visibilityState !== 'visible') return;
+        if (!mountedRef.current || !sessionIdRef.current || isAdmin || document.visibilityState !== 'visible') return;
 
         const elapsedSinceLastSync = Math.max(0, Date.now() - lastSyncAtRef.current);
         const delay = Math.max(250, ANALYTICS_SYNC_INTERVAL_MS - elapsedSinceLastSync);
@@ -226,7 +236,7 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
     };
 
     flushSessionRef.current = async ({ sessionActive = true, ensureView = false, reason = 'manual' } = {}) => {
-        if (!sessionIdRef.current || isAdmin) return false;
+        if (!mountedRef.current || !sessionIdRef.current || isAdmin) return false;
         if (syncInFlightRef.current) {
             // A heartbeat never needs a second write immediately after an
             // already-running route/visibility synchronization.
@@ -244,8 +254,6 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
             recordCurrentView({ allowPartialDetail: true });
         }
 
-        const chunk = [...journeyToSend.current];
-        journeyToSend.current = [];
         syncInFlightRef.current = true;
         lastSyncAtRef.current = Date.now();
         const requestSessionId = sessionIdRef.current;
@@ -266,7 +274,7 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
                 sessionActive,
                 reason
             });
-            if (requestSessionId !== sessionIdRef.current || requestGeneration !== syncGenerationRef.current) return false;
+            if (!mountedRef.current || requestSessionId !== sessionIdRef.current || requestGeneration !== syncGenerationRef.current) return false;
             if (!result.data?.success || result.data?.missing) {
                 if (result.data?.missing || result.data?.invalidToken || result.data?.generationMismatch) {
                     sessionIdRef.current = null;
@@ -278,7 +286,6 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
             }
             return true;
         } catch {
-            journeyToSend.current = [...chunk, ...journeyToSend.current];
             return false;
         } finally {
             syncInFlightRef.current = false;
@@ -293,6 +300,7 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
     };
 
     const scheduleRouteSync = (reason = 'route') => {
+        if (!mountedRef.current) return;
         if (routeSyncTimerRef.current) clearTimeout(routeSyncTimerRef.current);
         routeSyncTimerRef.current = setTimeout(() => {
             flushSessionRef.current({
@@ -351,7 +359,9 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
                     eventPreviewRef.current = Array.isArray(initRes.data.lastEventPreview)
                         ? initRes.data.lastEventPreview.slice(-16)
                         : [];
-                    accumulatedActiveMsRef.current = 0;
+                    accumulatedActiveMsRef.current = Math.max(0, Math.min(86400, Number(initRes.data.duration) || 0)) * 1000;
+                    lastRecordedKeyRef.current = null;
+                    hasRecordedJourneyRef.current = false;
                     activeStartedAtRef.current = document.visibilityState === 'hidden' ? null : Date.now();
                     lastActionTimeRef.current = Date.now();
                     persistAnalyticsSession(initRes.data.sessionId, initRes.data.syncToken);
@@ -415,7 +425,6 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
                 timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
                 duration: durationSinceLast
             };
-            journeyToSend.current.push(step);
             journeyHistoryRef.current = [...journeyHistoryRef.current, step].slice(-25);
             journeyCountRef.current += 1;
             pageCountsRef.current[step.page] = (pageCountsRef.current[step.page] || 0) + 1;
@@ -434,7 +443,7 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
             if (!sessionIdRef.current || isAdmin) return;
             const now = Date.now();
             if (!isActive && now - lastBeaconAtRef.current < MIN_BEACON_GAP_MS) return;
-            if (!isActive) persistStorageValue(sessionStorage, ANALYTICS_SESSION_CLOSED_AT_KEY, String(now));
+            if (!isActive) persistStorageValue('sessionStorage', ANALYTICS_SESSION_CLOSED_AT_KEY, String(now));
 
             if (!hasRecordedJourneyRef.current) {
                 recordCurrentView({ allowPartialDetail: true });
@@ -443,8 +452,6 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
             const totalDuration = getTrackedDuration();
             const beaconTarget = getFunctionTarget('syncSessionBeacon');
             const url = `https://${functionsRegion}-${functions.app.options.projectId}.cloudfunctions.net/${beaconTarget}`;
-            const chunk = [...journeyToSend.current];
-            if (!isActive) journeyToSend.current = [];
             lastBeaconAtRef.current = now;
 
             const payload = JSON.stringify({
@@ -468,9 +475,7 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
                     body: payload,
                     headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
                     keepalive: true
-                }).catch(() => {
-                    if (!isActive) journeyToSend.current = [...chunk, ...journeyToSend.current];
-                });
+                }).catch(() => {});
             }
         };
 
@@ -484,7 +489,7 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
 
             if (document.visibilityState === 'visible' && sessionIdRef.current && !isAdmin) {
                 resumeActiveTimer();
-                persistStorageValue(sessionStorage, ANALYTICS_SESSION_CLOSED_AT_KEY, null);
+                persistStorageValue('sessionStorage', ANALYTICS_SESSION_CLOSED_AT_KEY, null);
                 flushSessionRef.current({
                     sessionActive: true,
                     ensureView: true,

@@ -17,6 +17,7 @@ import ProductDetailActionsIsland from './ProductDetailActionsIsland';
 import RichTextStory from '../shared/RichTextStory';
 import { stripStoryFormatting } from '../../lib/content/storyFormatting';
 import { getCurrentWishlistUser, readWishlistIds, setWishlistItem } from './wishlistState';
+import { createCartEventHandoff } from './cartEventHandoff';
 
 const ProductDetailLightboxIsland = dynamic(() => import('./ProductDetailLightboxIsland'), {
   ssr: false,
@@ -245,6 +246,7 @@ export default function ProductDetailShellIsland({
   const [hasPrimaryImagePainted, setHasPrimaryImagePainted] = useState(false);
   const [cartPanelEvent, setCartPanelEvent] = useState(null);
   const mainImageRef = useRef(null);
+  const mobileMainImageRef = useRef(null);
   const swipeRef = useRef({ x: 0, y: 0 });
   const wheelStateRef = useRef({ acc: 0, resetTimer: 0, lastSwitchAt: 0 });
   const containerRef = useRef(null);
@@ -262,8 +264,12 @@ export default function ProductDetailShellIsland({
   const activeImgRef = useRef(0);
   const navigationImgRef = useRef(0);
   const imageSwitchRequestRef = useRef(0);
-  const cartPanelMountedRef = useRef(false);
-  const cartPanelEventIdRef = useRef(0);
+  const cartHandoffRef = useRef(null);
+  if (!cartHandoffRef.current) {
+    cartHandoffRef.current = createCartEventHandoff(({ type, detail }) => {
+      window.dispatchEvent(new CustomEvent(type, { detail }));
+    });
+  }
   const sharpSrcsRef = useRef({});
   const underlayClearTimerRef = useRef(0);
   const mobileImageDragRef = useRef(null);
@@ -515,13 +521,8 @@ export default function ProductDetailShellIsland({
 
   useEffect(() => {
     const deferCartPanelEvent = (event) => {
-      if (cartPanelMountedRef.current) return;
-      cartPanelEventIdRef.current += 1;
-      setCartPanelEvent({
-        id: cartPanelEventIdRef.current,
-        type: event.type,
-        detail: event.detail || null,
-      });
+      if (!cartHandoffRef.current.capture({ type: event.type, detail: event.detail || {} })) return;
+      setCartPanelEvent(true);
     };
 
     window.addEventListener('sv:open-cart', deferCartPanelEvent);
@@ -533,7 +534,7 @@ export default function ProductDetailShellIsland({
   }, []);
 
   const handleCartPanelReady = useCallback(() => {
-    cartPanelMountedRef.current = true;
+    cartHandoffRef.current.ready();
   }, []);
 
   useEffect(() => {
@@ -574,6 +575,7 @@ export default function ProductDetailShellIsland({
   }, [activeImg, hasPrimaryImagePainted, preloadDetailImageAtIndex, safeImages.length]);
 
   useEffect(() => () => {
+    imageSwitchRequestRef.current += 1;
     if (wheelStateRef.current.resetTimer) {
       window.clearTimeout(wheelStateRef.current.resetTimer);
     }
@@ -621,7 +623,7 @@ export default function ProductDetailShellIsland({
   }, []);
 
   useEffect(() => {
-    const node = mainImageRef.current;
+    const node = window.innerWidth < 1024 ? mobileMainImageRef.current : mainImageRef.current;
     if (node?.complete && node.naturalWidth > 0) {
       setHasPrimaryImagePainted(true);
     }
@@ -800,7 +802,7 @@ export default function ProductDetailShellIsland({
 
   const openProductLightbox = useCallback(() => {
     if (suppressImageClickRef.current || isClosingToGalleryRef.current) return;
-    const imageNode = mainImageRef.current;
+    const imageNode = window.innerWidth < 1024 ? mobileMainImageRef.current : mainImageRef.current;
     const visibleSrc = imageNode?.currentSrc || imageNode?.src || activeImageSrc;
     const rect = imageNode?.getBoundingClientRect?.();
     setLightboxOriginRect(rect && rect.width > 0 && rect.height > 0
@@ -1138,7 +1140,7 @@ export default function ProductDetailShellIsland({
                     {activeMobileSrc ? (
                       <img
                         key={`mobile-${activeImg}`}
-                        ref={mainImageRef}
+                        ref={mobileMainImageRef}
                         src={activeMobileSrc}
                         srcSet={undefined}
                         sizes={PRODUCT_DETAIL_IMAGE_SIZES}
@@ -1404,7 +1406,7 @@ export default function ProductDetailShellIsland({
         />
       ) : null}
       {cartPanelEvent ? (
-        <CartPanelIsland className="hidden" initialEvent={cartPanelEvent} onReady={handleCartPanelReady} />
+        <CartPanelIsland className="hidden" onReady={handleCartPanelReady} />
       ) : null}
     </div>
   );

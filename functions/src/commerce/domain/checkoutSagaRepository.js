@@ -34,7 +34,7 @@ function createCheckoutSagaRepository({
     }
 
     return Object.freeze({
-        saveAttempt: (attempt) => checkoutRepository.saveAttempt(attempt),
+        saveAttempt: (attempt, options) => checkoutRepository.saveAttempt(attempt, options),
         commitHeldInventory: settle,
         releaseHeldInventory: settle
     });

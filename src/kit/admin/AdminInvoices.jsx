@@ -69,8 +69,8 @@ const EMPTY_CUSTOMER = {
 };
 
 const createDraft = (seller, products = []) => ({
-  invoiceId: null,
-  version: null,
+  invoiceId: uid('invoice'),
+  version: 0,
   status: 'draft',
   number: null,
   seller: { ...(seller || {}) },
@@ -284,11 +284,20 @@ function Editor({ initialInvoice, onBack, onSaved, onSent, darkMode }) {
     invoice.seller.email,
   ].every(Boolean));
   const messageTimer = useRef(null);
+  const sendRequestRef = useRef(null);
+  const sendingRef = useRef(false);
+  const saveRef = useRef(null);
+  const mountedRef = useRef(true);
   const locked = invoice.status === 'issued';
+  const busy = saving || downloading || sending;
   const inputClass = `min-h-11 w-full rounded-xl border px-3 text-sm outline-none transition focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 ${darkMode ? 'border-white/10 bg-white/[.04] text-white' : 'border-stone-200 bg-white text-stone-900'}`;
 
-  useEffect(() => () => window.clearTimeout(messageTimer.current), []);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; window.clearTimeout(messageTimer.current); };
+  }, []);
   const notify = (kind, text) => {
+    if (!mountedRef.current) return;
     setMessage({ kind, text });
     window.clearTimeout(messageTimer.current);
     messageTimer.current = window.setTimeout(() => setMessage(null), 6000);
@@ -300,29 +309,35 @@ function Editor({ initialInvoice, onBack, onSaved, onSent, darkMode }) {
 
   const save = async ({ quiet = false } = {}) => {
     if (locked) return invoice;
+    if (saveRef.current) return saveRef.current;
     setSaving(true);
-    try {
+    const request = (async () => { try {
       const callable = await getCallableFunction('saveManualInvoiceDraftAdmin');
       const result = await callable({ invoiceId: invoice.invoiceId, expectedVersion: invoice.version, invoice });
       const saved = normalizeLoadedInvoice(result.data.invoice);
-      setInvoice(saved);
-      onSaved(saved);
+      if (mountedRef.current) { setInvoice(saved); onSaved(saved); }
       if (!quiet) notify('success', 'Brouillon sauvegardé. Vous pouvez le reprendre plus tard.');
       return saved;
     } catch (error) {
       notify('error', error?.message || 'La facture n’a pas pu être sauvegardée.');
       throw error;
     } finally {
-      setSaving(false);
-    }
+      if (mountedRef.current) setSaving(false);
+      saveRef.current = null;
+    } })();
+    saveRef.current = request;
+    return request;
   };
 
   const download = async () => {
+    if (busy) return;
     setDownloading(true);
     try {
-      const saved = invoice.invoiceId ? invoice : await save({ quiet: true });
+      const saved = locked ? invoice : await save({ quiet: true });
+      if (!mountedRef.current) return;
       const callable = await getCallableFunction('prepareManualInvoicePdfAdmin');
       const result = await callable({ invoiceId: saved.invoiceId });
+      if (!mountedRef.current) return;
       const binary = window.atob(result.data.document.contentBase64);
       const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
       const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
@@ -342,27 +357,38 @@ function Editor({ initialInvoice, onBack, onSaved, onSent, darkMode }) {
   };
 
   const openSend = async () => {
+    if (busy) return;
     try {
       const saved = locked ? invoice : await save({ quiet: true });
+      if (!mountedRef.current) return;
       setRecipient(saved.customer.email || recipient);
       setSendOpen(true);
     } catch { /* Le message inline explique déjà l’erreur. */ }
   };
 
   const sendInvoice = async () => {
+    if (sendingRef.current) return;
+    sendingRef.current = true;
+    const requestKey = `${invoice.invoiceId}:${recipient.trim().toLowerCase()}`;
+    if (sendRequestRef.current?.key !== requestKey) {
+      sendRequestRef.current = { key: requestKey, id: uid('send') };
+    }
     setSending(true);
     try {
       const callable = await getCallableFunction('sendManualInvoiceAdmin');
-      const result = await callable({ invoiceId: invoice.invoiceId, recipient, sendRequestId: uid('send') });
+      const result = await callable({ invoiceId: invoice.invoiceId, recipient, sendRequestId: sendRequestRef.current.id });
+      if (!mountedRef.current) return;
       const issued = normalizeLoadedInvoice({ ...invoice, ...result.data.invoice, status: 'issued', emailStatus: 'sent' });
       setInvoice(issued);
       onSent(issued);
       setSendOpen(false);
       setSendSuccess(true);
+      sendRequestRef.current = null;
     } catch (error) {
       notify('error', error?.message || 'L’envoi a échoué. La facture reste enregistrée.');
       setSendOpen(false);
     } finally {
+      sendingRef.current = false;
       setSending(false);
     }
   };
@@ -371,19 +397,19 @@ function Editor({ initialInvoice, onBack, onSaved, onSent, darkMode }) {
     <section className="space-y-5">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
         <div>
-          <button className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-stone-500 transition hover:text-stone-900 dark:hover:text-white" onClick={onBack} type="button"><ArrowLeft size={16} /> Toutes les factures</button>
+          <button className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-stone-500 transition hover:text-stone-900 dark:hover:text-white" disabled={busy} onClick={onBack} type="button"><ArrowLeft size={16} /> Toutes les factures</button>
           <div className="flex flex-wrap items-center gap-3"><p className="text-xs font-semibold text-amber-700 dark:text-amber-400">Étape 2 sur 3 · Édition</p>{locked ? <span className="rounded-md bg-emerald-100 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-300">Émise · verrouillée</span> : <span className="rounded-md bg-stone-200 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-stone-600 dark:bg-white/10 dark:text-stone-300">Brouillon modifiable</span>}</div>
           <h3 className="mt-2 text-3xl font-black tracking-tight">{locked ? invoice.number : 'Composer la facture'}</h3>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-bold transition active:translate-y-px ${darkMode ? 'border-white/10 hover:bg-white/10' : 'border-stone-200 bg-white hover:border-stone-400'}`} disabled={downloading || saving} onClick={download} type="button">{downloading ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />} PDF</button>
-          {!locked ? <button className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-bold transition active:translate-y-px ${darkMode ? 'border-white/10 hover:bg-white/10' : 'border-stone-200 bg-white hover:border-stone-400'}`} disabled={saving} onClick={() => save()} type="button">{saving ? <Loader2 className="animate-spin" size={16} /> : <CheckCircle2 size={16} />} Sauvegarder</button> : null}
-          <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-stone-950 px-5 text-sm font-bold text-white transition hover:bg-stone-800 active:translate-y-px disabled:opacity-50 dark:bg-white dark:text-stone-950" disabled={saving || sending} onClick={openSend} type="button"><Mail size={16} /> {locked ? 'Renvoyer par e-mail' : 'Enregistrer et envoyer'}</button>
+          <button className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-bold transition active:translate-y-px ${darkMode ? 'border-white/10 hover:bg-white/10' : 'border-stone-200 bg-white hover:border-stone-400'}`} disabled={busy} onClick={download} type="button">{downloading ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />} PDF</button>
+          {!locked ? <button className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-bold transition active:translate-y-px ${darkMode ? 'border-white/10 hover:bg-white/10' : 'border-stone-200 bg-white hover:border-stone-400'}`} disabled={busy} onClick={() => { void save().catch(() => {}); }} type="button">{saving ? <Loader2 className="animate-spin" size={16} /> : <CheckCircle2 size={16} />} Sauvegarder</button> : null}
+          <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-stone-950 px-5 text-sm font-bold text-white transition hover:bg-stone-800 active:translate-y-px disabled:opacity-50 dark:bg-white dark:text-stone-950" disabled={busy} onClick={openSend} type="button"><Mail size={16} /> {locked ? 'Renvoyer par e-mail' : 'Enregistrer et envoyer'}</button>
         </div>
       </div>
       {message ? <div aria-live="polite" className={`flex items-start gap-3 rounded-xl border px-4 py-3 text-sm ${message.kind === 'error' ? 'border-red-200 bg-red-50 text-red-800 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-200' : 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-200'}`}>{message.kind === 'error' ? <X className="mt-0.5 shrink-0" size={16} /> : <CheckCircle2 className="mt-0.5 shrink-0" size={16} />}<span>{message.text}</span></div> : null}
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(28rem,.92fr)]">
-        <div className={`space-y-4 ${locked ? 'pointer-events-none opacity-70' : ''}`} aria-disabled={locked}>
+        <fieldset className={`min-w-0 space-y-4 ${locked ? 'opacity-70' : ''}`} disabled={locked || busy || sendOpen}>
           <section className={`rounded-2xl border p-5 ${darkMode ? 'border-white/10 bg-white/[.035]' : 'border-stone-200 bg-white'}`}>
             <div className="mb-5 flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-xl bg-amber-100 text-amber-800 dark:bg-amber-400/15 dark:text-amber-300"><UserRound size={18} /></span><div><h4 className="font-black">Coordonnées du client</h4><p className="text-xs text-stone-500">Ces informations apparaissent sur la facture.</p></div></div>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -443,10 +469,11 @@ function Editor({ initialInvoice, onBack, onSaved, onSent, darkMode }) {
               <Field label="Forme juridique"><input className={inputClass} onChange={(event) => setSeller('legalForm', event.target.value)} value={invoice.seller.legalForm || ''} /></Field>
             </div> : null}
           </section>
-        </div>
+        </fieldset>
         <aside className="xl:sticky xl:top-5 xl:self-start">
           <div className="mb-3 flex items-center justify-between"><p className="text-xs font-bold text-stone-500">Aperçu en direct</p><p className="text-xs font-bold tabular-nums">{euro(total)}</p></div>
           <InvoicePreview invoice={invoice} />
+          {invoice.lines.length > 8 ? <p className="mt-3 text-xs text-stone-500">Aperçu limité aux 8 premières lignes. Le PDF contient les {invoice.lines.length} lignes.</p> : null}
         </aside>
       </div>
 
@@ -454,7 +481,7 @@ function Editor({ initialInvoice, onBack, onSaved, onSent, darkMode }) {
         <div className="flex items-start justify-between gap-4"><span className="grid h-12 w-12 place-items-center rounded-2xl bg-amber-100 text-amber-800 dark:bg-amber-400/15 dark:text-amber-300"><Send size={21} /></span><button aria-label="Fermer" className="grid h-9 w-9 place-items-center rounded-lg text-stone-500 hover:bg-stone-100 dark:hover:bg-white/10" disabled={sending} onClick={() => setSendOpen(false)} type="button"><X size={18} /></button></div>
         <h3 className="mt-5 text-2xl font-black tracking-tight" id="invoice-send-title">Envoyer la facture</h3>
         <p className="mt-2 text-sm leading-6 text-stone-500">Le PDF sera joint à un e-mail Seconde Vie. Lors du premier envoi, un numéro définitif sera attribué et la facture sera verrouillée.</p>
-        <Field className="mt-6" label="Adresse e-mail du destinataire" required><input className={inputClass} onChange={(event) => setRecipient(event.target.value)} placeholder="client@exemple.fr" type="email" value={recipient} /></Field>
+        <Field className="mt-6" label="Adresse e-mail du destinataire" required><input className={inputClass} disabled={sending} onChange={(event) => setRecipient(event.target.value)} placeholder="client@exemple.fr" type="email" value={recipient} /></Field>
         <div className="mt-4 rounded-xl bg-stone-100 p-4 text-xs leading-5 text-stone-600 dark:bg-white/[.06] dark:text-stone-300"><strong className="text-stone-900 dark:text-white">Avant l’envoi :</strong> vérifiez le nom, l’adresse, le montant, le régime de TVA et les informations légales de l’entreprise.</div>
         <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button className="min-h-11 rounded-xl px-4 text-sm font-bold text-stone-500 hover:text-stone-900 dark:hover:text-white" disabled={sending} onClick={() => setSendOpen(false)} type="button">Annuler</button><button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-stone-950 px-5 text-sm font-bold text-white transition hover:bg-stone-800 disabled:opacity-50 dark:bg-white dark:text-stone-950" disabled={sending || !recipient.trim()} onClick={sendInvoice} type="button">{sending ? <Loader2 className="animate-spin" size={16} /> : <Send size={16} />}{sending ? 'Envoi en cours…' : 'Émettre et envoyer'}</button></div>
       </Dialog> : null}
@@ -470,7 +497,8 @@ function Editor({ initialInvoice, onBack, onSaved, onSent, darkMode }) {
 }
 
 export default function AdminInvoices({ darkMode = false }) {
-  const initialWorkspaceRef = useRef(getAdminCachedData(INVOICE_WORKSPACE_CACHE_KEY));
+  const initialWorkspaceRef = useRef(getAdminCachedData(INVOICE_WORKSPACE_CACHE_KEY, { allowStale: true }));
+  const hasKnownWorkspaceRef = useRef(Boolean(initialWorkspaceRef.current));
   const [workspace, setWorkspace] = useState(initialWorkspaceRef.current || EMPTY_WORKSPACE);
   const [status, setStatus] = useState(initialWorkspaceRef.current ? 'ready' : 'loading');
   const [error, setError] = useState(null);
@@ -481,17 +509,18 @@ export default function AdminInvoices({ darkMode = false }) {
 
   const load = useCallback(async ({ foreground = true, force = true } = {}) => {
     const sequence = ++readSequenceRef.current;
-    setStatus(foreground ? 'loading' : 'refreshing');
+    setStatus(foreground && !hasKnownWorkspaceRef.current ? 'loading' : 'refreshing');
     setError(null);
     try {
       const nextWorkspace = await preloadAdminInvoicesData({ force });
       if (sequence !== readSequenceRef.current) return;
       setWorkspace(nextWorkspace);
+      hasKnownWorkspaceRef.current = true;
       setStatus('ready');
     } catch (loadError) {
       if (sequence !== readSequenceRef.current) return;
       setError(loadError?.message || 'Les factures ne sont pas disponibles.');
-      setStatus('error');
+      setStatus(hasKnownWorkspaceRef.current ? 'ready' : 'error');
     }
   }, []);
   useEffect(() => {
@@ -499,6 +528,7 @@ export default function AdminInvoices({ darkMode = false }) {
       foreground: !initialWorkspaceRef.current,
       force: false,
     });
+    return () => { readSequenceRef.current += 1; };
   }, [load]);
 
   const upsertInvoice = (invoice) => { invalidateAdminCachedPrefix('manual-invoices:'); setWorkspace((current) => ({
@@ -526,6 +556,7 @@ export default function AdminInvoices({ darkMode = false }) {
   const loadInvoicePage = async (cursor = null) => {
     const sequence = ++readSequenceRef.current;
     setStatus('refreshing');
+    setError(null);
     try {
       const callable = await getCallableFunction('getManualInvoiceWorkspaceAdmin');
       const payload = { includeProducts: false, cursor, reference: reference.trim() || null };
@@ -535,7 +566,7 @@ export default function AdminInvoices({ darkMode = false }) {
       setStatus('ready');
     } catch (loadError) {
       if (sequence !== readSequenceRef.current) return;
-      setError(loadError?.message || 'Lecture impossible.'); setStatus('error');
+      setError(loadError?.message || 'Lecture impossible.'); setStatus(hasKnownWorkspaceRef.current ? 'ready' : 'error');
     }
   };
 
@@ -558,6 +589,7 @@ export default function AdminInvoices({ darkMode = false }) {
       <section>
         {typeof workspace.hasMore === 'boolean' && <form className="mb-4 flex gap-2" onSubmit={(event) => { event.preventDefault(); void loadInvoicePage(); }}><input className="min-h-11 min-w-0 flex-1 rounded-xl border border-stone-300 bg-transparent px-3 text-sm dark:border-white/10" aria-label="Référence exacte de facture" placeholder="FAC-AAAA-NNNNNN" value={reference} onChange={(event) => setReference(event.target.value)} /><button className="px-3 text-xs font-bold" type="submit" disabled={status === 'refreshing'}>Rechercher la référence exacte</button></form>}
         {workspace.nextCursor && <button className="mb-4 min-h-11 px-4 text-xs font-bold" type="button" disabled={status === 'refreshing'} onClick={() => loadInvoicePage(workspace.nextCursor)}>Charger la suite des factures</button>}
+        {error && status !== 'error' ? <p role="alert" className="mb-4 text-sm text-red-600">{error} · Dernières données connues. <button type="button" onClick={() => load()}>Réessayer</button></p> : null}
         <div className="mb-4 flex items-center justify-between gap-4"><div><h4 className="text-xl font-black">Factures enregistrées</h4><p className="mt-1 text-sm text-stone-500">Reprenez un brouillon ou renvoyez une facture déjà émise.</p></div><span className="text-xs font-bold text-stone-400">{['loading', 'refreshing'].includes(status) ? 'Synchronisation…' : `${workspace.invoices.length} document${workspace.invoices.length > 1 ? 's' : ''}`}</span></div>
         {status === 'loading' ? <p role="status">Chargement des factures…</p> : status === 'error' ? <div className={`rounded-2xl border p-6 text-center ${darkMode ? 'border-red-400/20 bg-red-400/10' : 'border-red-200 bg-red-50'}`}><p className="font-black">Les données de facturation ne sont pas disponibles</p><p className="mt-2 text-sm text-stone-500">{error}</p><button className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl bg-stone-950 px-4 text-sm font-bold text-white dark:bg-white dark:text-stone-950" onClick={() => load()} type="button"><RefreshCw size={15} /> Réessayer</button></div> : workspace.invoices.length ? <div className={`overflow-hidden rounded-2xl border ${darkMode ? 'border-white/10' : 'border-stone-200 bg-white'}`}>
           {workspace.invoices.map((invoice, index) => {

@@ -11,6 +11,7 @@ const {
     getTransactionalEmailRuntime
 } = require('../email/transactionalEmailRuntime');
 const { renderOtpEmail } = require('../email/otpEmailTemplates');
+const { updateOtpStateIfCurrent } = require('./otpState');
 
 const db = admin.firestore();
 
@@ -105,8 +106,8 @@ function buildEmailText(code) {
     }).text;
 }
 
-async function clearOtpAfterMailFailure(emailRef, error) {
-    await emailRef.set({
+async function clearOtpAfterMailFailure(emailRef, error, expiresAtMillis, otpHash) {
+    await updateOtpStateIfCurrent(db, emailRef, { expiresAtMillis, otpHash }, {
         otpHash: admin.firestore.FieldValue.delete(),
         expiresAt: admin.firestore.FieldValue.delete(),
         expiresAtMillis: admin.firestore.FieldValue.delete(),
@@ -115,7 +116,7 @@ async function clearOtpAfterMailFailure(emailRef, error) {
         lastMailErrorCode: error?.code || null,
         lastMailErrorResponseCode: error?.responseCode || null,
         expireAt: timestampFromNow(SYSTEM_DOC_RETENTION_DAYS)
-    }, { merge: true });
+    });
 }
 
 function mapMailError(error) {
@@ -217,7 +218,7 @@ const sendGuestCheckoutOtpHandler = async (data, context) => {
                 idempotencyKey: `guest-checkout-otp/${emailHash}/${expiresAtMillis}`
             });
         } catch (error) {
-            await clearOtpAfterMailFailure(emailRef, error).catch((cleanupError) => {
+            await clearOtpAfterMailFailure(emailRef, error, expiresAtMillis, hashOtp(email, code)).catch((cleanupError) => {
                 console.error('Guest checkout OTP cleanup error:', cleanupError);
             });
             logFunctionPerf('sendGuestCheckoutOtp', startedAt, {

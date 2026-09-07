@@ -1,5 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
-import { collection, limit, onSnapshot, orderBy, query, Timestamp, where } from 'firebase/firestore';
+import { collection, limit, onSnapshot, orderBy, query, where } from 'firebase/firestore';
 import {
     AlertTriangle,
     ArrowLeft,
@@ -43,6 +43,8 @@ import {
     requestOrderCancellation,
 } from './commerceCommandClient';
 import { adaptCommerceOrder } from './orderAdapter';
+import { useRouter } from 'next/navigation';
+import { isPendingCheckout, pendingCheckoutMessage, prepareOwnedCheckoutResume } from './pendingCheckout';
 import CommerceDocumentModal from './CommerceDocumentModal';
 import { listMyNewsletterRewards } from '../marketplace/newsletterRewardClient';
 import { db } from '../config/firebase';
@@ -54,10 +56,7 @@ const BUSINESS_PHONE_TEL = BUSINESS_PHONE.replace(/\s/g, '');
 const CONTACT_NAME = process.env.NEXT_PUBLIC_CONTACT_NAME || KIT_CONFIG.brandName;
 const REVIEW_URL = process.env.NEXT_PUBLIC_REVIEW_URL || '';
 const FALLBACK_ITEM_IMAGES = [
-    '/images/before-after/apresu.webp',
-    '/images/before-after/apres.webp',
-    '/images/before-after/apresx.webp',
-    '/images/before-after/avantu.webp',
+    '/images/furniture-placeholder.svg',
 ];
 
 /* ------------------------------------------------------------------ *
@@ -711,6 +710,13 @@ const getOrderTotal = (order) => {
 };
 
 const getRefundAmount = (order) => {
+    if (order?.schemaVersion === 2) {
+        const confirmed = order.amounts?.refundedCents;
+        const pending = order.refundAggregate?.pendingCents;
+        return Number.isSafeInteger(confirmed) && Number.isSafeInteger(pending)
+            ? (confirmed + pending) / 100
+            : null;
+    }
     const amount = Number(order?.refundAmount);
     if (Number.isFinite(amount) && amount > 0) return amount / 100;
     return getOrderTotal(order);
@@ -729,6 +735,14 @@ const getOrderImage = (order, index = 0) => (
 const getOrderNumber = (order) => {
     return getOrderReference(order);
 };
+
+function ResumeOrderButton({ order, ownerUid }) {
+    const router = useRouter();
+    return <button type="button" className="acc-btn acc-btn--sm mt-3" onClick={() => {
+        prepareOwnedCheckoutResume(order, ownerUid);
+        router.push('/checkout');
+    }}>Reprendre le paiement</button>;
+}
 
 const getOrderItemsSummary = (order) => (
     (order?.items || [])
@@ -755,6 +769,10 @@ const getDocumentAmount = (document) => (
 
 const getStatusInfo = (status = '') => {
     switch (status) {
+        case 'pending_payment':
+            return { label: 'Paiement à finaliser', tone: 'amber', icon: WalletCards };
+        case 'expired':
+            return { label: 'Réservation expirée', tone: 'neutral', icon: X };
         case 'completed':
             return { label: 'Livrée', tone: 'green', icon: CheckCircle };
         case 'shipped':
@@ -776,7 +794,7 @@ const getStatusInfo = (status = '') => {
         case 'paid':
             return { label: 'Payée', tone: 'green', icon: CheckCircle };
         default:
-            return { label: 'Préparée', tone: 'neutral', icon: Package };
+            return { label: 'Statut à vérifier', tone: 'neutral', icon: Package };
     }
 };
 
@@ -826,7 +844,12 @@ const getCustomerReturnRequestCopy = (request) => {
     }
 };
 
-const getRefundHelpText = (status = '') => {
+const getRefundHelpText = (order) => {
+    const status = order?.status || '';
+    if (order?.schemaVersion === 2) {
+        if (order.refundAggregate?.status === 'none') return '';
+        if (order.refundAggregate?.status === 'partial') return 'Un remboursement partiel a été confirmé. Le montant indiqué correspond à la partie remboursée.';
+    }
     if (status === 'refund_pending') {
         return 'Le remboursement a été initié par l’atelier. Stripe indique un crédit visible sous environ 5 à 10 jours ouvrables selon votre banque.';
     }
@@ -1078,7 +1101,9 @@ const MyOrdersView = ({
         : orders.slice(0, 6);
     const hasAddress = addressLines.length > 1;
     const refundedTotal = orders.reduce((sum, order) => (
-        getRefundHelpText(order.status) ? sum + getRefundAmount(order) : sum
+        sum + (order.schemaVersion === 2
+            ? (Number.isSafeInteger(order.amounts?.refundedCents) ? order.amounts.refundedCents / 100 : 0)
+            : order.status === 'refunded' ? getRefundAmount(order) : 0)
     ), 0);
     const orderDocuments = useMemo(() => (
         orders.flatMap((order) => (
@@ -1126,8 +1151,8 @@ const MyOrdersView = ({
         const liveQuery = query(
             collection(db, 'orders'),
             where('userId', '==', user.uid),
-            where('updatedAt', '>', Timestamp.fromMillis(ordersLiveSince)),
-            orderBy('updatedAt', 'asc'),
+            where('updatedAt', '>', new Date(ordersLiveSince).toISOString()),
+            orderBy('updatedAt', 'desc'),
             limit(25)
         );
         return onSnapshot(liveQuery, (snapshot) => {
@@ -1334,13 +1359,18 @@ const MyOrdersView = ({
                 requestId = createCommerceCommandId('cancel');
                 cancellationRequestIdsRef.current.set(orderId, requestId);
             }
-            await requestOrderCancellation(
+            const result = await requestOrderCancellation(
                 orderId,
                 'Annulation explicite demandee depuis espace client',
                 requestId
             );
 
-            setShowCancelSuccess(true);
+            setShowCancelSuccess(result.outcome === 'canceled');
+            if (result.outcome !== 'canceled') setReturnNotice({
+                type: result.outcome === 'paid' ? 'success' : 'error',
+                text: result.outcome === 'paid' ? 'Votre paiement est confirmé. La commande n’a pas été annulée.' : 'Le paiement est en cours de vérification. La réservation n’a pas été libérée.'
+            });
+            setOrdersReloadKey((value) => value + 1);
             setOrders((current) => current.map((order) => (
                 order.id === orderId
                     ? { ...order, allowedActions: [] }
@@ -1505,7 +1535,7 @@ const MyOrdersView = ({
     ];
 
     const focusedNav = navItems.find((item) => item.id === focusedSection) || null;
-    const ordersCountLabel = loading || ordersError ? '—' : orders.length;
+    const ordersCountLabel = loading || ordersError ? '—' : `${orders.length}${ordersCursor ? '+' : ''}`;
     const documentsCountLabel = loading || ordersError ? '—' : orderDocuments.length;
 
     return (
@@ -1693,7 +1723,7 @@ const MyOrdersView = ({
                                 tone="graphite"
                                 value={ordersCountLabel}
                                 label="Commandes"
-                                sub="Historique complet"
+                                sub={ordersCursor ? 'Historique à compléter' : 'Historique complet'}
                                 onClick={() => openSection('commandes')}
                             />
                             <MetricCell
@@ -1701,7 +1731,7 @@ const MyOrdersView = ({
                                 tone="blue"
                                 value={documentsCountLabel}
                                 label="Documents"
-                                sub="Reçus et confirmations"
+                                sub={ordersCursor ? 'Documents des commandes chargées' : 'Reçus et confirmations'}
                                 onClick={() => openSection('documents')}
                             />
                             <MetricCell
@@ -1717,7 +1747,7 @@ const MyOrdersView = ({
                                 tone="green"
                                 value={loading || ordersError ? '—' : formatPrice(refundedTotal)}
                                 label="Remboursements"
-                                sub="Suivi Stripe"
+                                sub={ordersCursor ? 'Confirmés · commandes chargées' : 'Remboursements confirmés'}
                                 onClick={() => openSection('documents')}
                             />
                         </div>
@@ -1878,7 +1908,7 @@ const MyOrdersView = ({
                                 <div className="acc-list">
                                     {recentOrders.map((order, index) => {
                                         const status = getStatusInfo(order.status);
-                                        const refundHelpText = getRefundHelpText(order.status);
+                                        const refundHelpText = getRefundHelpText(order);
                                         const itemsSummary = getOrderItemsSummary(order);
                                         const itemsCount = getOrderItemsCount(order);
                                         const documents = order.documents || [];
@@ -1919,11 +1949,16 @@ const MyOrdersView = ({
                                                     </div>
                                                 </div>
 
+                                                {isPendingCheckout(order) ? <div className="acc-note acc-note--amber sm:ml-20">
+                                                    <p className="acc-note-title">Paiement à finaliser · {formatPrice(getOrderTotal(order))}</p>
+                                                    <p className="acc-note-body">{pendingCheckoutMessage(order)}</p>
+                                                    <ResumeOrderButton order={order} ownerUid={user?.uid} />
+                                                </div> : null}
                                                 {refundHelpText ? (
                                                     <div className="acc-note acc-note--blue sm:ml-20">
                                                         <div className="flex flex-wrap items-center justify-between gap-2">
                                                             <p className="acc-note-title">
-                                                                Remboursement · <span className="acc-num">{formatPrice(getRefundAmount(order))}</span>
+                                                                Remboursement · <span className="acc-num">{getRefundAmount(order) === null ? 'Montant à vérifier' : formatPrice(getRefundAmount(order))}</span>
                                                             </p>
                                                             <span className="text-[11.5px] font-semibold" style={{ color: 'var(--acc-ink-3)' }}>Stripe</span>
                                                         </div>
@@ -2003,12 +2038,12 @@ const MyOrdersView = ({
                                                             <FileText size={14} strokeWidth={2} />
                                                             {documents.length === 1 ? 'Ouvrir le document' : `${documents.length} documents`}
                                                         </button>
-                                                    ) : (
+                                                    ) : ['paid', 'shipped', 'completed', 'refunded', 'refund_pending'].includes(order.status) ? (
                                                         <span className="acc-btn acc-btn--well acc-btn--sm" style={{ color: 'var(--acc-ink-3)', cursor: 'default' }}>
                                                             <FileText size={14} strokeWidth={2} />
                                                             Document à venir
                                                         </span>
-                                                    )}
+                                                    ) : null}
 
                                                     {canRequestReturn(order) ? (
                                                         <button
@@ -2415,7 +2450,7 @@ const MyOrdersView = ({
                             <span className="mx-auto flex w-fit"><IconTile icon={Check} tone="green" size={48} radius={15} /></span>
                             <h3 className="mt-5 text-[21px] font-semibold" style={{ letterSpacing: '-.024em' }}>Annulation confirmée</h3>
                             <p className="mt-2.5 text-[13.5px] leading-6" style={{ color: 'var(--acc-ink-2)' }}>
-                                Votre demande a bien été traitée. La commande a été retirée de votre historique.
+                                Votre réservation est annulée. La commande reste consultable dans votre historique.
                             </p>
                             <button
                                 type="button"
@@ -2436,6 +2471,7 @@ const MyOrdersView = ({
                         className="acc-scrim-close"
                         aria-label="Fermer"
                         onClick={() => setOrderToCancelId(null)}
+                        disabled={isCancelling}
                     />
                     <div className="acc-sheet max-w-[420px]" role="dialog" aria-modal="true" aria-label="Confirmer l’annulation">
                         <div className="acc-grabber" />

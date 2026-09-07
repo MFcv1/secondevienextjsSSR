@@ -65,6 +65,7 @@ const CommerceDocumentModal = ({ entry, onClose }) => {
     const dialogRef = useRef(null);
     const closeButtonRef = useRef(null);
     const objectUrlRef = useRef(null);
+    const requestGenerationRef = useRef(0);
     const helpText = useMemo(deviceHelp, []);
 
     const installDocument = useCallback((result) => {
@@ -86,6 +87,7 @@ const CommerceDocumentModal = ({ entry, onClose }) => {
 
     const loadDelivery = useCallback(async ({ resend = false } = {}) => {
         if (!entry?.order?.id || !entry?.document?.documentId) return;
+        const generation = ++requestGenerationRef.current;
         if (resend) setResending(true);
         else setStatus('preparing');
         setShareError('');
@@ -94,18 +96,21 @@ const CommerceDocumentModal = ({ entry, onClose }) => {
                 entry.order.id,
                 entry.document.documentId
             );
+            if (generation !== requestGenerationRef.current) return;
             installDocument(result);
         } catch (error) {
+            if (generation !== requestGenerationRef.current) return;
             console.error('Commerce document delivery failed:', error);
             if (!resend) setStatus('error');
             else setShareError('L’e-mail ne peut pas être reprogrammé pour le moment. Le PDF reste disponible.');
         } finally {
-            setResending(false);
+            if (generation === requestGenerationRef.current) setResending(false);
         }
     }, [entry?.document?.documentId, entry?.order?.id, installDocument]);
 
     useEffect(() => {
         loadDelivery();
+        return () => { requestGenerationRef.current += 1; };
     }, [loadDelivery]);
 
     useEffect(() => () => {

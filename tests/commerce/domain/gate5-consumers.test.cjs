@@ -192,7 +192,7 @@ test('checkout v2 transport derives owner identity from Auth and ignores payload
     }, {
         auth: {
             uid: 'trusted-owner-uid',
-            token: { email: 'owner@example.test' }
+            token: { email: 'owner@example.test', email_verified: true }
         }
     });
     assert.deepEqual(result, { orderId: 'order-v2-transport' });
@@ -840,14 +840,19 @@ test('Gate 4/5 consumers contain no direct commerce writer on v2 surfaces', () =
     assert.ok(adminReturns.includes('returnLineSummary'));
     assert.ok(adminCommerceData.includes('Promise.allSettled'));
     assert.ok(adminCommerceData.includes('loadAdminOrdersFirstPage({ force })'));
-    assert.ok(adminOrders.includes('loadAdminOrdersFirstPage({ force: true })'));
+    assert.ok(adminOrders.includes('invalidateAdminCachedData(ADMIN_ORDERS_FIRST_PAGE_KEY)'));
+    assert.ok(adminOrders.includes('listOrdersAdminV2({ orderId: order.id })'));
     assert.ok(adminOrders.includes("case 'fulfillment_prepare'"));
     assert.ok(adminReturns.includes('loadAdminReturnsFirstPage()'));
     assert.equal(adminIsland.includes('preloadAdminCommerceData'), false);
     assert.equal(adminIsland.includes('preloadAdminDashboardData'), false);
     assert.equal(adminIsland.includes('requestIdleCallback(preload'), false);
     assert.equal(adminDashboard.includes("DASHBOARD_CORE_CACHE_KEY = 'admin-dashboard:core'"), false);
-    assert.ok(adminDashboard.includes("DASHBOARD_INSIGHTS_CACHE_KEY = 'admin-dashboard:insights'"));
+    assert.ok(adminDashboard.includes('dashboardInsights.subscribe('));
+    const dashboardReads = source('src/kit/admin/dashboardReads.js');
+    assert.ok(dashboardReads.includes('dashboardInsights = createRetainedRead('));
+    assert.ok(dashboardReads.includes("doc(db, 'admin_dashboard', 'insights')"));
+    assert.ok(dashboardReads.includes('dashboardInsights.clear()'));
     assert.ok(adminReturns.includes('handleResumeRefund(order)'));
     assert.ok(adminReturns.includes('attempt.refundRequestId'));
     assert.ok(adminReturns.includes('loadAdminReturnsFirstPage({ force: true })'));
@@ -860,7 +865,8 @@ test('Gate 4/5 consumers contain no direct commerce writer on v2 surfaces', () =
     assert.ok(checkout.includes('await resumeCheckoutV2(descriptor.orderId)'));
     assert.ok(checkout.includes('await openExistingPayment()'));
     assert.ok(checkout.includes("setCheckoutState('payment_paused')"));
-    assert.ok(checkoutPage.includes('resumeCheckoutV2(recoverableOrderId)'));
+    assert.ok(checkoutPage.includes("onSnapshot(doc(db, 'orders', recoverableOrderId)"));
+    assert.ok(checkoutPage.includes('setStripeReturnChecking(true)'));
     assert.ok(checkoutPage.includes('isPurchasedCartLineUnchanged'));
     assert.equal(checkout.includes('pagehide'), false);
     assert.equal(checkout.includes('beforeunload'), false);

@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import { createPaymentSubmission } from './paymentSubmission.js';
 import { PaymentElement, ExpressCheckoutElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { AlertCircle, Lock, ShieldCheck } from 'lucide-react';
 
@@ -12,73 +13,44 @@ const buildStripeReturnUrl = (orderId, returnPath = '/checkout') => {
 /**
  * CheckoutPaymentStep — formulaire Stripe isole dans l'ecran de paiement.
  */
-const CheckoutPaymentStep = ({ total, orderId, onPaymentSuccess, onPaymentError, darkMode = false, returnPath = '/checkout' }) => {
+const CheckoutPaymentStep = ({ total, orderId, onPaymentSuccess, onPaymentError, onSubmissionState, expiresAt, darkMode = false, returnPath = '/checkout' }) => {
     const stripe = useStripe();
     const elements = useElements();
     const [isProcessing, setIsProcessing] = useState(false);
     const [errorMessage, setErrorMessage] = useState(null);
     const [expressCheckoutReady, setExpressCheckoutReady] = useState(false);
+    const submitRef = useRef(null);
+    const propsRef = useRef(null);
+    propsRef.current = { stripe, elements, onPaymentSuccess, onPaymentError, onSubmissionState };
+    if (!submitRef.current) submitRef.current = createPaymentSubmission({
+        expiresAt,
+        confirm: () => propsRef.current.stripe.confirmPayment({
+            elements: propsRef.current.elements,
+            confirmParams: { return_url: buildStripeReturnUrl(orderId, returnPath) },
+            redirect: 'if_required',
+        }),
+        onState: (state) => {
+            setIsProcessing(state !== 'idle');
+            setErrorMessage(null);
+            propsRef.current.onSubmissionState?.(state);
+        },
+        onError: (message) => {
+            setErrorMessage(message);
+            propsRef.current.onPaymentError?.(message);
+        },
+        onResult: (intent) => propsRef.current.onPaymentSuccess?.(intent),
+    });
 
     const handleCardSubmit = async (e) => {
         e.preventDefault();
         if (!stripe || !elements) return;
 
-        setIsProcessing(true);
-        setErrorMessage(null);
-
-        try {
-            const { error, paymentIntent } = await stripe.confirmPayment({
-                elements,
-                confirmParams: {
-                    return_url: buildStripeReturnUrl(orderId, returnPath),
-                },
-                redirect: 'if_required'
-            });
-
-            if (error) {
-                setErrorMessage(error.message);
-                onPaymentError?.(error.message);
-                setIsProcessing(false);
-            } else if (paymentIntent) {
-                onPaymentSuccess?.(paymentIntent);
-            } else {
-                setErrorMessage('Stripe n’a pas renvoyé d’état de paiement. Réessayez sans recréer la commande.');
-                setIsProcessing(false);
-            }
-        } catch (err) {
-            setErrorMessage(err?.message || "Une erreur inattendue est survenue.");
-            setIsProcessing(false);
-        }
+        await submitRef.current();
     };
 
     const handleExpressCheckoutConfirm = async () => {
         if (!stripe || !elements) return;
-        setIsProcessing(true);
-        setErrorMessage(null);
-
-        try {
-            const { error, paymentIntent } = await stripe.confirmPayment({
-                elements,
-                confirmParams: {
-                    return_url: buildStripeReturnUrl(orderId, returnPath),
-                },
-                redirect: 'if_required'
-            });
-
-            if (error) {
-                setErrorMessage(error.message);
-                onPaymentError?.(error.message);
-                setIsProcessing(false);
-            } else if (paymentIntent) {
-                onPaymentSuccess?.(paymentIntent);
-            } else {
-                setErrorMessage('Stripe n’a pas renvoyé d’état de paiement. Réessayez sans recréer la commande.');
-                setIsProcessing(false);
-            }
-        } catch {
-            setErrorMessage("Erreur lors du paiement express.");
-            setIsProcessing(false);
-        }
+        await submitRef.current();
     };
 
     return (

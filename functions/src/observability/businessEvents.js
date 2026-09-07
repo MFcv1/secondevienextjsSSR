@@ -105,6 +105,7 @@ async function projectFinanceDashboard() {
 
 async function ensureCapturedOrderCount(factId, fact) {
     if (fact?.type !== 'capture') return { outcome: 'not_capture' };
+    if (String(fact.currency || '').toUpperCase() !== 'EUR') return { outcome: 'other_currency' };
     const ledgerRef = admin.firestore().doc(`admin_finance_capture_projections/${factId}`);
     const totalRef = admin.firestore().doc('commerce_financial_totals/EUR');
     return admin.firestore().runTransaction(async (transaction) => {
@@ -153,14 +154,16 @@ async function markFinanceProjectionUnavailable(error) {
     await batch.commit();
 }
 
-async function upsertSourceIncident({ sourceKind, sourceId, code, active, occurredAt }) {
+async function upsertSourceIncident({ sourceKind, sourceId, code, active, occurredAt, sourceUpdateTime }) {
     const classification = classifyIncidentCode(code);
     const incidentId = `${sourceKind}-${hashOpaque(sourceId).slice(0, 32)}`;
     const reference = admin.firestore().doc(`commerce_incidents/${incidentId}`);
     const observedAt = toTimestamp(occurredAt);
+    const version = sourceUpdateTime || observedAt;
     await admin.firestore().runTransaction(async (transaction) => {
         const snapshot = await transaction.get(reference);
         const current = snapshot.exists ? snapshot.data() : null;
+        if (compareTimestamps(version, current?.sourceUpdateTime) <= 0) return;
         transaction.set(reference, {
             schemaVersion: 2,
             code: classification.code,
@@ -170,6 +173,7 @@ async function upsertSourceIncident({ sourceKind, sourceId, code, active, occurr
             source: `commerce_${sourceKind}`,
             sourceKeyHash: hashOpaque(sourceId),
             lastSeenAt: observedAt,
+            sourceUpdateTime: version,
             occurrenceCount: Math.max(0, Number(current?.occurrenceCount || 0)) + 1,
             ...(active
                 ? { openedAt: current?.openedAt || observedAt, resolvedAt: null }
@@ -399,6 +403,7 @@ const journalOutboxStatusGen2 = onDocumentWritten(
                 sourceId: event.params.outboxId,
                 code: incidentCodeByStatus[after.status] || incidentCodeByStatus[before?.status],
                 active: afterIsIncident,
+                sourceUpdateTime: event.data.after.updateTime,
                 occurredAt: after.sentAt || after.suppressedAt || after.deliveryUnknownAt || event.data.after.updateTime
             });
         }
@@ -428,6 +433,7 @@ const journalWebhookStatusGen2 = onDocumentWritten(
                 sourceId: event.params.inboxId,
                 code: 'operations_dueInbox',
                 active: ['failed', 'dead_letter'].includes(after.status),
+                sourceUpdateTime: event.data.after.updateTime,
                 occurredAt: after.processedAt || after.receivedAt || event.data.after.updateTime
             });
         }

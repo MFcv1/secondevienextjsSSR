@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
+const vm = require('node:vm');
 const {
     normalizeFinancialHistorySource,
     planFinancialHistorySource
@@ -54,6 +55,22 @@ test('la contribution absolue absorbe rejeu, correction et tombstone', () => {
     });
     assert.equal(deleted.deltaCents, -1000);
     assert.equal(deleted.nextSource.tombstone, true);
+});
+
+test('un événement hors EUR ne modifie jamais la contribution EUR, y compris à la suppression', async () => {
+    const scope = vm.createContext({
+        normalizeFinancialHistorySource,
+        db: { runTransaction: () => { throw new Error('Unexpected EUR ledger write'); } },
+        Date
+    });
+    const source = read('functions/src/admin/financialHistoryProjection.js');
+    vm.runInContext(source.slice(source.indexOf('function createFinancialHistoryProjector('), source.indexOf('const commonOptions =')), scope);
+    const handler = scope.createFinancialHistoryProjector('commerce');
+    const present = { exists: true, data: () => ({ dateKey: '2026-09-02', currency: 'USD', netCents: 900 }) };
+    const absent = { exists: false };
+    for (const [before, after] of [[absent, present], [present, present], [present, absent]]) {
+        assert.equal(await handler({ data: { before, after } }), null);
+    }
 });
 
 test('le dashboard ne lit jamais 3650 jours et borne max aux annees materialisees', () => {

@@ -8,6 +8,7 @@ const { regionalFunctions } = require('../../helpers/runtime');
 const { STRIPE_SECRET_KEY } = require('../../helpers/secrets');
 const { createCheckoutRuntime } = require('./domain/v2Runtime');
 const { ensurePromotionMaterialized } = require('./promotionMaterialization');
+const { resolveCheckoutEmail } = require('./checkoutEmailIdentity');
 
 function requireOwner(context) {
     if (!context.auth?.uid) {
@@ -72,6 +73,13 @@ function normalizeFixtureRequest(value) {
 function mapDomainError(error) {
     if (error instanceof functions.https.HttpsError) return error;
     const code = String(error?.code || '');
+    if (code === 'COMMERCE_PROVIDER_RECONCILIATION_REQUIRED') {
+        return new functions.https.HttpsError(
+            'failed-precondition',
+            'Un rapprochement du paiement par l atelier est requis avant de poursuivre.',
+            { reason: code }
+        );
+    }
     if (code.startsWith('COMMERCE_PROMOTION_')) {
         return new functions.https.HttpsError(
             code.endsWith('_NOT_FOUND') ? 'not-found' : 'failed-precondition',
@@ -79,7 +87,7 @@ function mapDomainError(error) {
             { reason: code }
         );
     }
-    if (code.startsWith('COMMERCE_CHECKOUT_TERMINAL_')) {
+    if (code.startsWith('COMMERCE_CHECKOUT_TERMINAL_') || code === 'COMMERCE_CHECKOUT_DEADLINE_REACHED') {
         return new functions.https.HttpsError(
             'failed-precondition',
             'Cette reservation de commande n est plus active.',
@@ -135,6 +143,7 @@ function mapDomainError(error) {
 
 function createCheckoutHandler({
     authorize = requireOwner,
+    resolveEmail = resolveCheckoutEmail,
     runtimeFactory = checkoutRuntime
 } = {}) {
     return async (data, context) => {
@@ -146,6 +155,7 @@ function createCheckoutHandler({
                     'Contrat checkout invalide.'
                 );
             }
+            const customerEmail = await resolveEmail(context, data);
             if (data.input.promotionCode) {
                 await ensurePromotionMaterialized(
                     admin.firestore(),
@@ -154,7 +164,7 @@ function createCheckoutHandler({
             }
             return await runtimeFactory().checkout.createCheckout({
                 ownerUid: owner.uid,
-                ownerEmail: owner.email,
+                ownerEmail: customerEmail,
                 input: data.input,
                 fixtureContext: normalizeFixtureRequest(data.fixture)
             });

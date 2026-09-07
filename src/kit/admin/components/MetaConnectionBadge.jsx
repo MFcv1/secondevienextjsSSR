@@ -114,7 +114,7 @@ export default function MetaConnectionBadge({ darkMode = false, meta, disabled =
       </button>
 
       {open && (
-        <div className={`absolute right-0 top-[calc(100%+8px)] z-40 w-[min(21rem,calc(100vw-2rem))] rounded-[18px] p-3.5 shadow-[0_22px_60px_rgba(28,25,23,0.18)] ring-1 ${darkMode ? 'bg-[#181816] ring-white/12' : 'bg-white ring-black/[0.08]'}`}>
+        <fieldset disabled={disabled || busy} className={`absolute right-0 top-[calc(100%+8px)] z-40 w-[min(21rem,calc(100vw-2rem))] rounded-[18px] p-3.5 shadow-[0_22px_60px_rgba(28,25,23,0.18)] ring-1 ${darkMode ? 'bg-[#181816] ring-white/12' : 'bg-white ring-black/[0.08]'}`}>
           <div className="flex items-center justify-between gap-3">
             <span className="text-[10px] font-extrabold">Connexions sociales</span>
             {connected && <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400">Prêtes</span>}
@@ -211,7 +211,7 @@ export default function MetaConnectionBadge({ darkMode = false, meta, disabled =
               </span>
             </div>
           )}
-        </div>
+        </fieldset>
       )}
     </div>
   );

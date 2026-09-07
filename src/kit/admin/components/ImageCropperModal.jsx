@@ -1,13 +1,32 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import Cropper from 'react-easy-crop';
 import { X, Check, RotateCw, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
 import { getCroppedImg } from '../../../utils/imageUtils';
+import useModalFocus from '../../ui/useModalFocus';
 
 const ImageCropperModal = ({ isOpen, image, onClose, onCropComplete, aspect = 3 / 4, darkMode = false }) => {
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
     const [rotation, setRotation] = useState(0);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+    const [busy, setBusy] = useState(false);
+    const [error, setError] = useState('');
+    const runningRef = useRef(false);
+    const activeRef = useRef(false);
+    const generationRef = useRef(0);
+    const dialogRef = useModalFocus(isOpen && Boolean(image), onClose, busy);
+
+    useEffect(() => {
+        activeRef.current = isOpen;
+        generationRef.current += 1;
+        setBusy(runningRef.current);
+        setCrop({ x: 0, y: 0 });
+        setZoom(1);
+        setRotation(0);
+        setCroppedAreaPixels(null);
+        setError('');
+        return () => { activeRef.current = false; };
+    }, [isOpen, image]);
 
     const onCropChange = (crop) => setCrop(crop);
     const onZoomChange = (zoom) => setZoom(zoom);
@@ -18,14 +37,21 @@ const ImageCropperModal = ({ isOpen, image, onClose, onCropComplete, aspect = 3 
     }, []);
 
     const handleGenerateCroppedImage = async () => {
+        if (!image || !croppedAreaPixels || runningRef.current) return;
+        runningRef.current = true;
+        setBusy(true);
+        setError('');
+        const generation = generationRef.current;
         try {
-            if (!image || !croppedAreaPixels) return;
             const croppedBlob = await getCroppedImg(image, croppedAreaPixels, rotation);
-            onCropComplete(croppedBlob);
-            onClose();
+            if (!activeRef.current || generation !== generationRef.current) return;
+            await onCropComplete(croppedBlob);
+            if (activeRef.current && generation === generationRef.current) onClose();
         } catch (e) {
-            console.error(e);
-            alert("Erreur lors du recadrage");
+            if (activeRef.current && generation === generationRef.current) setError(e?.message || 'Erreur lors du recadrage.');
+        } finally {
+            runningRef.current = false;
+            if (activeRef.current) setBusy(false);
         }
     };
 
@@ -33,7 +59,7 @@ const ImageCropperModal = ({ isOpen, image, onClose, onCropComplete, aspect = 3 
 
     return (
         <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 md:p-10 animate-in fade-in duration-300">
-            <div className={`relative w-full max-w-4xl h-[80vh] flex flex-col rounded-[2.5rem] overflow-hidden shadow-2xl border ${darkMode ? 'bg-stone-900 border-stone-800' : 'bg-white border-stone-100'}`}>
+            <fieldset ref={dialogRef} disabled={busy} role="dialog" aria-modal="true" aria-label="Recadrage de l’image" aria-busy={busy} tabIndex={-1} className={`relative w-full max-w-4xl h-[80vh] flex flex-col rounded-[2.5rem] overflow-hidden shadow-2xl border ${darkMode ? 'bg-stone-900 border-stone-800' : 'bg-white border-stone-100'}`}>
 
                 {/* Header */}
                 <div className={`flex justify-between items-center p-6 border-b ${darkMode ? 'border-stone-800' : 'border-stone-50'}`}>
@@ -42,6 +68,8 @@ const ImageCropperModal = ({ isOpen, image, onClose, onCropComplete, aspect = 3 
                         <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mt-1">Ajustez l'image pour le cadre</p>
                     </div>
                     <button
+                        type="button"
+                        aria-label="Fermer le recadrage"
                         onClick={onClose}
                         className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${darkMode ? 'hover:bg-stone-800 text-stone-400' : 'hover:bg-stone-50 text-stone-500'}`}
                     >
@@ -50,7 +78,7 @@ const ImageCropperModal = ({ isOpen, image, onClose, onCropComplete, aspect = 3 
                 </div>
 
                 {/* Cropper Area */}
-                <div className="relative flex-1 bg-stone-950 overflow-hidden">
+                <div inert={busy ? true : undefined} className="relative flex-1 bg-stone-950 overflow-hidden">
                     <Cropper
                         image={image}
                         crop={crop}
@@ -82,8 +110,8 @@ const ImageCropperModal = ({ isOpen, image, onClose, onCropComplete, aspect = 3 
                                 min={1}
                                 max={3}
                                 step={0.1}
-                                aria-labelledby="Zoom"
-                                onChange={(e) => setZoom(e.target.value)}
+                                aria-label="Zoom"
+                                onChange={(e) => setZoom(Number(e.target.value))}
                                 className="flex-1 accent-amber-500 h-1.5 bg-stone-200 dark:bg-stone-800 rounded-full appearance-none cursor-pointer"
                             />
                             <ZoomIn size={16} className="text-stone-400" />
@@ -108,6 +136,7 @@ const ImageCropperModal = ({ isOpen, image, onClose, onCropComplete, aspect = 3 
                         </div>
                     </div>
 
+                    {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
                     <div className="flex justify-between items-center gap-4 pt-4 border-t border-stone-200 dark:border-stone-800">
                         <button
                             onClick={onClose}
@@ -116,16 +145,17 @@ const ImageCropperModal = ({ isOpen, image, onClose, onCropComplete, aspect = 3 
                             Annuler
                         </button>
                         <button
+                            disabled={busy || !croppedAreaPixels}
                             onClick={handleGenerateCroppedImage}
                             className="flex-[2] py-4 bg-amber-500 text-white font-black uppercase text-[9px] sm:text-[10px] tracking-[0.1em] sm:tracking-[0.2em] rounded-2xl hover:bg-amber-600 transition-all shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2"
                         >
                             <Check size={16} className="hidden sm:block" />
-                            Valider le recadrage
+                            {busy ? 'Enregistrement…' : 'Valider le recadrage'}
                         </button>
                     </div>
                 </div>
 
-            </div>
+            </fieldset>
         </div>
     );
 };

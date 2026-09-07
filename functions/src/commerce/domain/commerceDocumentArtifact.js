@@ -189,7 +189,7 @@ function renderCommerceDocumentPdf({ order, document }) {
     drawTableHeader();
 
     const items = Array.isArray(order.items) && order.items.length
-        ? order.items.slice(0, 20)
+        ? order.items
         : [{ quantity: 1, titleSnapshot: 'Commande enregistrée', unitAmountCents: 0 }];
     for (const item of items) {
         const quantity = Math.max(1, Number(item.quantity) || 1);

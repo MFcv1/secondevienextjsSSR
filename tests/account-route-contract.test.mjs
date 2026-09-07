@@ -51,7 +51,8 @@ test('account wishlist preview resolves missing products through the public cata
 });
 
 test('wishlist uses the document id when a historical favorite has no originalId', () => {
-  assert.match(wishlistSource, /missingIds\.map\(\(id\) => fetchPublicCatalogProduct\(id\)\)/);
+  assert.match(wishlistSource, /const id = missingIds\[cursor\+\+\]/);
+  assert.match(wishlistSource, /await fetchPublicCatalogProduct\(id\)/);
   assert.doesNotMatch(wishlistSource, /missingIds\.map\(fetchPublicCatalogProduct\)/);
 
   const [resolved] = resolveWishlistCatalogItems(

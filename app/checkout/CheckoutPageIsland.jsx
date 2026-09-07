@@ -8,7 +8,6 @@ import { useAuth } from '../../src/kit/contexts/AuthContext';
 import { getDb, loadFirestoreModule } from '../../src/kit/config/firebaseLazy';
 import {
   clearCheckoutCartHandoff,
-  clearGuestCart,
   getCartDocumentId,
   GUEST_CART_CHANGED_EVENT,
   readCheckoutCartHandoff,
@@ -22,13 +21,16 @@ import {
   getCheckoutRecoveryTerminalReason,
   isPurchasedCartLineUnchanged,
   readCheckoutRecoveryDescriptor,
+  resolveStripeReturnTarget,
 } from '../../src/kit/commerce/checkoutRecovery';
 import {
   COMMERCE_V2_CONSUMERS_ENABLED,
   ensureCheckoutAnonymousIdentity,
-  resumeCheckoutV2,
+  listMyOrdersV2,
 } from '../../src/kit/commerce/commerceV2Client';
+import { isPendingCheckout, prepareOwnedCheckoutResume } from '../../src/kit/commerce/pendingCheckout';
 import { adaptCommerceOrder } from '../../src/kit/commerce/orderAdapter';
+import { clearPurchasedRemoteCart } from '../../src/kit/commerce/purchasedCartCleanup';
 import {
   persistGate8FixtureContext,
   readGate8FixtureCart,
@@ -66,17 +68,15 @@ const migrateGuestCartToUserCart = async (db, firestore, user) => {
     const cartRef = firestore.doc(db, 'users', user.uid, 'cart', cartDocId);
     await firestore.runTransaction(db, async (transaction) => {
       const currentSnapshot = await transaction.get(cartRef);
-      const current = currentSnapshot.exists() ? currentSnapshot.data() : null;
+      // A repeated import or an account-side addition must never be replaced
+      // by an older guest snapshot (including after a lost acknowledgement).
+      if (currentSnapshot.exists()) return;
       transaction.set(cartRef, {
         ...getUserCartPayload(item, firestore.serverTimestamp),
-        cartLineId: current?.cartLineId || item.cartLineId,
-        cartRevision: Number.isSafeInteger(current?.cartRevision)
-          ? current.cartRevision + 1
-          : item.cartRevision,
       }, { merge: true });
     });
+    writeGuestCart(readGuestCart().filter((current) => !isPurchasedCartLineUnchanged(current, item)));
   }
-  clearGuestCart();
   return true;
 };
 
@@ -89,32 +89,39 @@ function CheckoutPageContent() {
   const [orderSuccessMethod, setOrderSuccessMethod] = useState('');
   const [orderSuccessNumber, setOrderSuccessNumber] = useState(null);
   const [checkoutReturnNotice, setCheckoutReturnNotice] = useState('');
-  const [checkoutConflict, setCheckoutConflict] = useState(false);
   const [cartLoading, setCartLoading] = useState(true);
   const [fixtureContext, setFixtureContext] = useState(null);
   const [fixtureCartItems, setFixtureCartItems] = useState([]);
   const [checkoutRecoveryChecked, setCheckoutRecoveryChecked] = useState(!COMMERCE_V2_CONSUMERS_ENABLED);
+  const [checkoutRecoveryError, setCheckoutRecoveryError] = useState('');
   const [hasRecoverableCheckout, setHasRecoverableCheckout] = useState(false);
+  const [stripeReturnChecking, setStripeReturnChecking] = useState(false);
   const handledStripeReturnRef = useRef(false);
-  const lastNonEmptyCartRef = useRef([]);
   const expectedCartClearRef = useRef(false);
-
-  useEffect(() => {
-    if (cartItems.length > 0) lastNonEmptyCartRef.current = cartItems;
-  }, [cartItems]);
 
   useEffect(() => {
     if (!COMMERCE_V2_CONSUMERS_ENABLED) return undefined;
     let cancelled = false;
     ensureCheckoutAnonymousIdentity()
-      .then((identity) => {
+      .then(async (identity) => {
         if (cancelled) return;
-        const descriptor = readCheckoutRecoveryDescriptor(identity.uid, {
+        let descriptor = readCheckoutRecoveryDescriptor(identity.uid, {
           enabled: COMMERCE_V2_RECOVERY_ENABLED,
         });
+        if (!descriptor) {
+          const page = await listMyOrdersV2({ pageSize: 25 });
+          if (cancelled) return;
+          const pending = page.orders?.find((order) => order.userId === identity.uid && isPendingCheckout(order));
+          if (pending) {
+            prepareOwnedCheckoutResume(pending, identity.uid);
+            descriptor = readCheckoutRecoveryDescriptor(identity.uid);
+          }
+        }
         setHasRecoverableCheckout(Boolean(descriptor));
       })
       .catch((error) => {
+        if (cancelled) return;
+        setCheckoutRecoveryError('Vos paiements en cours ne peuvent pas être vérifiés. Réessayez avant de créer une commande.');
         console.error('Checkout recovery identity failed:', error);
       })
       .finally(() => {
@@ -187,19 +194,11 @@ function CheckoutPageContent() {
         unsubscribe = onSnapshot(
           query(collection(db, 'users', user.uid, 'cart')),
           (snap) => {
+            if (cancelled) return;
             const nextItems = snap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }));
-            if (
-              nextItems.length === 0
-              && lastNonEmptyCartRef.current.length > 0
-              && !expectedCartClearRef.current
-            ) {
-              setCheckoutConflict(true);
-              setCartItems(lastNonEmptyCartRef.current);
-            } else {
-              expectedCartClearRef.current = false;
-              setCheckoutConflict(false);
-              setCartItems(nextItems);
-            }
+            // Availability belongs to checkout/stock, not to cart emptiness.
+            expectedCartClearRef.current = false;
+            setCartItems(nextItems);
             clearCheckoutCartHandoff();
             setCartLoading(false);
           },
@@ -254,32 +253,24 @@ function CheckoutPageContent() {
       expectedCartClearRef.current = false;
       return;
     }
-    const [db, { collection, doc, getDocs, writeBatch }] = await Promise.all([getDb(), loadFirestoreModule()]);
-    const cartSnap = await getDocs(collection(db, 'users', user.uid, 'cart'));
-    const batch = writeBatch(db);
-    let deleteCount = 0;
-    cartSnap.docs.forEach((docSnap) => {
-      const line = docSnap.data();
-      const purchased = purchasedByLineId.get(line.cartLineId);
-      if (!isPurchasedCartLineUnchanged(line, purchased)) return;
-      batch.delete(doc(db, 'users', user.uid, 'cart', docSnap.id));
-      deleteCount += 1;
-    });
-    if (deleteCount > 0) await batch.commit();
+    const [db, firestore] = await Promise.all([getDb(), loadFirestoreModule()]);
+    await clearPurchasedRemoteCart({ db, firestore, ownerUid: user.uid, purchasedCartLines });
     clearCheckoutCartHandoff();
   }, [user]);
 
-  const handleRecoveryTerminal = useCallback(async (reason, purchasedCartLines = []) => {
-    clearCheckoutRecoveryDescriptor({ enabled: COMMERCE_V2_RECOVERY_ENABLED });
+  const handleRecoveryTerminal = useCallback(async (reason, purchasedCartLines = [], orderId = null) => {
+    clearCheckoutRecoveryDescriptor({ enabled: COMMERCE_V2_RECOVERY_ENABLED, ownerUid: user?.uid, orderId });
     setHasRecoverableCheckout(false);
     setCheckoutReturnNotice(getCheckoutRecoveryTerminalMessage(reason));
     if (reason !== 'paid') return;
+    setOrderSuccessMethod('stripe_elements');
+    setShowOrderSuccess(true);
     try {
       await clearCartAfterOrder(purchasedCartLines);
     } catch (error) {
       console.error('Paid checkout recovery cart cleanup failed:', error);
     }
-  }, [clearCartAfterOrder]);
+  }, [clearCartAfterOrder, user?.uid]);
 
   const handlePlaceOrder = async (orderData = {}) => {
     expectedCartClearRef.current = true;
@@ -288,7 +279,7 @@ function CheckoutPageContent() {
     setShowOrderSuccess(true);
     try {
       await clearCartAfterOrder(orderData.purchasedCartLines || []);
-      clearCheckoutRecoveryDescriptor({ enabled: COMMERCE_V2_RECOVERY_ENABLED });
+      clearCheckoutRecoveryDescriptor({ enabled: COMMERCE_V2_RECOVERY_ENABLED, ownerUid: user?.uid, orderId: orderData.id });
     } catch (error) {
       console.error('Paid order cart cleanup failed:', error);
     }
@@ -315,14 +306,13 @@ function CheckoutPageContent() {
     const isStripeReturn = params.get('order_success') === 'true';
     const orderId = params.get('order_id');
     const paymentIntentClientSecret = params.get('payment_intent_client_secret');
-    const redirectStatus = params.get('redirect_status');
 
     const recoveryDescriptor = user
       ? readCheckoutRecoveryDescriptor(user.uid, {
           enabled: COMMERCE_V2_RECOVERY_ENABLED,
         })
       : null;
-    const recoverableOrderId = recoveryDescriptor?.orderId || orderId;
+    const { orderId: recoverableOrderId, cartLines: returnCartLines } = resolveStripeReturnTarget(orderId, recoveryDescriptor);
 
     // La reprise simple apres fermeture/reload est geree dans CheckoutView afin
     // de rouvrir le Payment Element. Cette branche reste reservee au retour
@@ -340,21 +330,15 @@ function CheckoutPageContent() {
     let timeoutId = null;
     let cancelled = false;
 
-    if (redirectStatus && !['succeeded', 'processing'].includes(redirectStatus)) {
-      setCheckoutReturnNotice('Le paiement n’a pas été finalisé. Vos articles sont toujours là et vous pouvez reprendre quand vous le souhaitez.');
-      window.history.replaceState({}, '', '/checkout');
-      return undefined;
-    }
-
-    const resumePromise = COMMERCE_V2_CONSUMERS_ENABLED
-      ? resumeCheckoutV2(recoverableOrderId)
-      : Promise.resolve(null);
-
-    Promise.all([resumePromise, getDb(), loadFirestoreModule()])
-      .then(([, db, { doc, onSnapshot }]) => {
+    setStripeReturnChecking(true);
+    setCheckoutReturnNotice('Paiement en cours de vérification. Aucun nouveau paiement ne doit être lancé avant confirmation.');
+    Promise.all([getDb(), loadFirestoreModule()])
+      .then(([db, { doc, onSnapshot }]) => {
         if (cancelled) return;
         timeoutId = window.setTimeout(() => {
           if (cancelled) return;
+          unsubscribe?.();
+          setCheckoutReturnNotice('La vérification prend plus de temps. Consultez le dossier ou reprenez la vérification.');
           window.history.replaceState({}, '', '/checkout');
         }, 45000);
         unsubscribe = onSnapshot(doc(db, 'orders', recoverableOrderId), async (snap) => {
@@ -364,7 +348,16 @@ function CheckoutPageContent() {
           const isPaid = projection.schemaVersion === 2
             ? projection.paymentStatus === 'succeeded'
             : projection.status === 'paid';
-          if (!isPaid) return;
+          if (!isPaid) {
+            if (['expired', 'canceled'].includes(projection.status)) {
+              unsubscribe?.();
+              window.clearTimeout(timeoutId);
+              setStripeReturnChecking(false);
+              handleRecoveryTerminal(projection.status, [], recoverableOrderId);
+              window.history.replaceState({}, '', '/checkout');
+            }
+            return;
+          }
           if (cancelled) return;
           cancelled = true;
           window.clearTimeout(timeoutId);
@@ -373,29 +366,33 @@ function CheckoutPageContent() {
           setOrderSuccessNumber(Number.isSafeInteger(order.orderNumber) ? order.orderNumber : null);
           setCheckoutReturnNotice('');
           setShowOrderSuccess(true);
+          setStripeReturnChecking(false);
           window.history.replaceState({}, '', '/checkout');
           try {
             await clearCartAfterOrder(
-              recoveryDescriptor?.cartLines || cartItems.map((item) => ({
-                cartLineId: item.cartLineId,
-                cartRevision: item.cartRevision,
-              }))
+              returnCartLines
             );
             clearCheckoutRecoveryDescriptor({
               enabled: COMMERCE_V2_RECOVERY_ENABLED,
+              ownerUid: user?.uid,
+              orderId: recoverableOrderId,
             });
           } catch (error) {
             console.error('Stripe return cart cleanup failed:', error);
           }
         }, (error) => {
+          if (cancelled) return;
+          window.clearTimeout(timeoutId);
+          setCheckoutReturnNotice('Le résultat reste à vérifier. Consultez le dossier avant de réessayer.');
           console.error('Stripe return confirmation error:', error);
           window.history.replaceState({}, '', '/checkout');
         });
       })
       .catch((error) => {
+        if (cancelled) return;
         const terminalReason = getCheckoutRecoveryTerminalReason(error);
         if (terminalReason) {
-          handleRecoveryTerminal(terminalReason);
+          handleRecoveryTerminal(terminalReason, [], recoverableOrderId);
         } else {
           console.error('Stripe return setup error:', error);
         }
@@ -407,11 +404,24 @@ function CheckoutPageContent() {
       if (timeoutId) window.clearTimeout(timeoutId);
       unsubscribe?.();
     };
-  }, [cartItems, clearCartAfterOrder, handleRecoveryTerminal, user]);
+  }, [clearCartAfterOrder, handleRecoveryTerminal, user]);
 
   if (loading || cartLoading || !checkoutRecoveryChecked) {
     return <div className="min-h-screen bg-[#FAFAF9]" />;
   }
+  if (checkoutRecoveryError) return <CheckoutState darkMode={darkMode} title="Vérification nécessaire" message={checkoutRecoveryError} primaryLabel="Réessayer" onPrimary={() => window.location.reload()} />;
+  if (stripeReturnChecking && !showOrderSuccess) return <CheckoutState
+    darkMode={darkMode}
+    title="Paiement en cours de vérification"
+    message={checkoutReturnNotice}
+    primaryLabel="Consulter le dossier"
+    onPrimary={() => router.push('/mes-commandes')}
+    secondaryLabel="Reprendre la vérification"
+    onSecondary={() => {
+      window.history.replaceState(window.history.state, '', '/checkout');
+      window.location.reload();
+    }}
+  />;
 
   if (cartItems.length === 0 && !hasRecoverableCheckout && !showOrderSuccess) {
     return (
@@ -433,7 +443,7 @@ function CheckoutPageContent() {
         </div>
       ) : null}
       <CheckoutView
-        key={hasRecoverableCheckout ? 'recovering-checkout' : 'fresh-checkout'}
+        key={user?.uid || 'guest'}
         cartItems={cartItems}
         total={total}
         user={user}
@@ -442,22 +452,9 @@ function CheckoutPageContent() {
         onPlaceOrder={handlePlaceOrder}
         fixtureContext={fixtureContext}
         recoveryExpected={hasRecoverableCheckout}
+        onCheckoutReserved={() => setHasRecoverableCheckout(true)}
         onRecoveryTerminal={handleRecoveryTerminal}
       />
-      {checkoutConflict ? (
-        <div className="fixed inset-0 z-[300] grid place-items-center bg-stone-950/45 px-5 backdrop-blur-sm" role="alertdialog" aria-modal="true" aria-labelledby="checkout-conflict-title">
-          <div className={`w-full max-w-md rounded-[28px] border p-7 text-center shadow-2xl ${darkMode ? 'border-white/10 bg-stone-950 text-white' : 'border-stone-200 bg-white text-stone-950'}`}>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600">Disponibilité actualisée</p>
-            <h2 id="checkout-conflict-title" className="mt-3 text-2xl font-black tracking-tight">Cette pièce vient d’être vendue</h2>
-            <p className={`mt-3 text-sm leading-6 ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>
-              Une autre personne a finalisé son paiement juste avant vous. Votre brouillon reste affiché pour que vous compreniez ce qui s’est passé, mais aucun paiement n’a été créé sur ce compte.
-            </p>
-            <button type="button" onClick={() => router.push('/')} className={`mt-6 min-h-12 w-full rounded-full px-5 text-sm font-extrabold ${darkMode ? 'bg-white text-stone-950' : 'bg-stone-950 text-white'}`}>
-              Retourner à la galerie
-            </button>
-          </div>
-        </div>
-      ) : null}
       {showOrderSuccess ? (
         <OrderSuccessModal
           paymentMethod={orderSuccessMethod}
@@ -471,7 +468,8 @@ function CheckoutPageContent() {
 }
 
 export default function CheckoutPageIsland() {
-  return <CheckoutPageContent />;
+  const { user } = useAuth();
+  return <CheckoutPageContent key={user?.uid || 'guest'} />;
 }
 
 function CheckoutState({

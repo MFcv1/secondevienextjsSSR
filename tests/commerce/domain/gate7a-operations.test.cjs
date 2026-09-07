@@ -713,8 +713,11 @@ test('Gate 7A: le dashboard consomme les montants qualifies sans exposer les con
     );
     assert.doesNotMatch(adminIsland, /getCommerceOperationsStatusAdmin/);
     assert.match(adminIsland, /admin_incident_summary/);
-    assert.match(dashboard, /collection\(db, 'admin_dashboard'\)/);
-    assert.match(dashboard, /includeMetadataChanges:\s*true/);
+    const dashboardReads = fs.readFileSync(path.join(repositoryRoot, 'src/kit/admin/dashboardReads.js'), 'utf8');
+    assert.match(dashboard, /import \{ dashboardKpis, dashboardOrders, dashboardInsights \} from '\.\/dashboardReads'/);
+    assert.match(dashboardReads, /collection\(db, 'admin_dashboard'\)/);
+    assert.match(dashboardReads, /where\(documentId\(\), 'in', CRITICAL_DOCUMENT_IDS\)/);
+    assert.match(dashboardReads, /includeMetadataChanges:\s*true/);
     assert.doesNotMatch(dashboard, /commerceStatus\.data|analytics_sessions/);
     assert.match(dashboard, /Bilan des ventes/);
     assert.match(dashboard, /Affichage des ventes/);
@@ -724,7 +727,8 @@ test('Gate 7A: le dashboard consomme les montants qualifies sans exposer les con
     assert.match(dashboard, /\{ id: '1day', label: '24h' \}/);
     assert.match(dashboard, /\{ id: 'max', label: 'Max' \}/);
     assert.doesNotMatch(dashboard, /paymentStatusLabel/);
-    assert.match(dashboard, /'À jour'/);
+    assert.match(dashboard, /projection\.serverConfirmed/);
+    assert.match(dashboard, /'Synchronisés' : 'Données partielles'/);
     assert.match(dashboard, /aria-label="Période du graphique"/);
     assert.match(dashboard, /margin = \{ top: 48/);
     assert.doesNotMatch(dashboard, /-translate-y-\[65%\]/);

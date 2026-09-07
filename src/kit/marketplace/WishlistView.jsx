@@ -15,6 +15,8 @@ const WishlistView = ({
     onClearWishlist,
     onBack,
     darkMode,
+    operationPending = false,
+    errorMessage = '',
     user,
     onShowLogin
 }) => {
@@ -33,12 +35,18 @@ const WishlistView = ({
 
     const purchasableItems = enrichedItems.filter(isPurchasable);
 
-    const handleShare = () => {
+    const [shareMessage, setShareMessage] = React.useState('');
+    const handleShare = async () => {
         const url = window.location.href;
-        if (navigator.share) {
-            navigator.share({ title: 'Ma liste de souhaits', url });
-        } else {
-            navigator.clipboard.writeText(url);
+        try {
+            if (navigator.share) {
+                await navigator.share({ title: 'Seconde Vie — liste de souhaits', url });
+            } else {
+                await navigator.clipboard.writeText(url);
+                setShareMessage('Lien copié. Chaque visiteur retrouve sa propre liste sur cette page.');
+            }
+        } catch (error) {
+            if (error?.name !== 'AbortError') setShareMessage('Le lien n’a pas pu être partagé.');
         }
     };
 
@@ -89,10 +97,11 @@ const WishlistView = ({
                         className={`flex items-center gap-2 px-5 py-2 text-sm transition-colors ${darkMode ? 'text-stone-400 hover:text-white' : 'text-stone-500 hover:text-stone-900'}`}
                     >
                         <Upload size={15} strokeWidth={1.5} />
-                        Partager ma liste de souhaits
+                        Partager le lien de cette page
                     </button>
                     <button
                         onClick={purchasableItems.length > 0 ? handleAddAll : undefined}
+                        disabled={purchasableItems.length === 0 || operationPending}
                         className={`flex items-center gap-2 px-5 py-2 text-sm transition-colors ${purchasableItems.length === 0 ? 'opacity-30 pointer-events-none' : (darkMode ? 'text-stone-400 hover:text-white' : 'text-stone-500 hover:text-stone-900')}`}
                     >
                         <ShoppingCart size={15} strokeWidth={1.5} />
@@ -100,12 +109,15 @@ const WishlistView = ({
                     </button>
                     <button
                         onClick={wishlistItems.length > 0 ? onClearWishlist : undefined}
+                        disabled={wishlistItems.length === 0 || operationPending}
                         className={`flex items-center gap-2 px-5 py-2 text-sm transition-colors ${wishlistItems.length === 0 ? 'opacity-30 pointer-events-none' : (darkMode ? 'text-stone-400 hover:text-red-400' : 'text-stone-500 hover:text-red-500')}`}
                     >
                         <X size={15} strokeWidth={1.5} />
                         Vider ma liste de souhaits
                     </button>
                 </div>
+                {errorMessage && <p role="alert" className="mt-3 text-sm text-red-600">{errorMessage}</p>}
+                {shareMessage && <p role="status" className="mt-3 text-sm">{shareMessage}</p>}
                 </div>
             </div>
 
@@ -146,6 +158,7 @@ const WishlistView = ({
                                         {/* Bouton X retirer */}
                                         <button
                                             onClick={() => onToggleWishlist(item)}
+                                            disabled={operationPending}
                                             className={`absolute top-2 right-2 z-10 w-7 h-7 flex items-center justify-center rounded-full text-xs font-bold transition-all shadow ${darkMode ? 'bg-[#1a1a1a] text-stone-300 hover:bg-red-900/40 hover:text-red-400 border border-white/10' : 'bg-white text-stone-500 hover:bg-red-50 hover:text-red-500 border border-stone-200'}`}
                                             title="Retirer de la liste de souhaits"
                                         >

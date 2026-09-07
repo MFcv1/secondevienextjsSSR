@@ -28,13 +28,13 @@ class ErrorBoundary extends React.Component {
                     </div>
                     <h1 className="text-2xl font-black uppercase tracking-widest mb-2">Oups, une erreur est survenue</h1>
                     <p className="max-w-md text-stone-500 mb-8 leading-relaxed">
-                        Une erreur inattendue a empêché l'affichage de cette page. Cela peut arriver lors du développement ou d'une mise à jour.
+                        Cette page n’a pas pu être affichée. Rechargez-la pour réessayer.
                     </p>
 
-                    <div className="w-full max-w-lg bg-white p-4 rounded-lg shadow-sm border border-stone-200 text-left overflow-auto max-h-48 mb-8 text-xs font-mono">
+                    {process.env.NODE_ENV !== 'production' && <div className="w-full max-w-lg bg-white p-4 rounded-lg shadow-sm border border-stone-200 text-left overflow-auto max-h-48 mb-8 text-xs font-mono">
                         <p className="font-bold text-red-500 mb-1">{this.state.error && this.state.error.toString()}</p>
                         <p className="text-stone-400 whitespace-pre-wrap">{this.state.errorInfo && this.state.errorInfo.componentStack}</p>
-                    </div>
+                    </div>}
 
                     <button
                         onClick={() => window.location.reload()}

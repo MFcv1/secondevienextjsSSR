@@ -165,8 +165,8 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
     if (typeof window === 'undefined') return undefined;
 
     const readClientTheme = () => {
-      const nextDark = window.localStorage.getItem(THEME_STORAGE_KEY) === 'true'
-        || document.documentElement.classList.contains('dark');
+      let nextDark = document.documentElement.classList.contains('dark');
+      try { nextDark ||= window.localStorage.getItem(THEME_STORAGE_KEY) === 'true'; } catch { /* Theme storage is optional. */ }
       setEffectiveDarkMode(nextDark);
     };
 
@@ -286,6 +286,7 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
     unlockTransition();
     setPanelOpen(false);
     setPanelClosing(false);
+    setHeldNavigationPath(null);
     document.documentElement.classList.remove(DESKTOP_MENU_OPEN_CLASS);
   }, [clearCloseTimer, clearOpenFrame, unlockTransition]);
 
@@ -296,6 +297,12 @@ export default function GlobalMenuTriggerIsland({ darkMode = false } = {}) {
       setHeldNavigationPath(null);
     }
   }, [closePanelInstantly, heldNavigationPath, pathname]);
+
+  useEffect(() => {
+    if (!heldNavigationPath) return undefined;
+    const timeoutId = window.setTimeout(closePanelInstantly, 10000);
+    return () => window.clearTimeout(timeoutId);
+  }, [closePanelInstantly, heldNavigationPath]);
 
   const setPanelOpenWithMotion = useCallback((nextValue) => {
     const resolvedValue = typeof nextValue === 'function' ? nextValue(panelOpen) : nextValue;

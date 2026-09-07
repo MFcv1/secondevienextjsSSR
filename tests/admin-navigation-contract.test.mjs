@@ -46,13 +46,13 @@ test('Ventes se precharge sur intention et les retours affichent un badge materi
   assert.match(sidebar, /actionCounts\[tab\.id\]/);
 });
 
-test('la concurrence checkout conserve le brouillon et les remboursements arrivent en direct', () => {
+test('le checkout distingue disponibilité et panier vide; le signal client utilise les dates ISO v2', () => {
   const checkout = read('app/checkout/CheckoutPageIsland.jsx');
   const orders = read('src/kit/commerce/MyOrdersView.jsx');
-  assert.match(checkout, /lastNonEmptyCartRef/);
-  assert.match(checkout, /Cette pièce vient d’être vendue/);
-  assert.match(checkout, /aucun paiement n’a été créé/);
-  assert.match(orders, /where\('updatedAt', '>', Timestamp\.fromMillis\(ordersLiveSince\)\)/);
+  assert.doesNotMatch(checkout, /lastNonEmptyCartRef/);
+  assert.match(checkout, /setCartItems\(nextItems\)/);
+  assert.match(orders, /where\('updatedAt', '>', new Date\(ordersLiveSince\)\.toISOString\(\)\)/);
+  assert.match(orders, /orderBy\('updatedAt', 'desc'\)/);
   assert.match(orders, /limit\(25\)/);
   assert.match(orders, /return onSnapshot\(liveQuery/);
 });

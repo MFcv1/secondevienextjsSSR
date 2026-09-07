@@ -357,6 +357,9 @@ function createPaymentEffectApplier({
                     stock: product.stock + availableDelta,
                     inventoryVersion: inventoryVersion + 1
                 });
+            } else if (movementType === 'commit') {
+                // A hold -> sale changes public availability even at stock zero.
+                transaction.update(entryValue.productRef, { availability: 'sold', updatedAt: now });
             }
             transaction.set(entryValue.reservationRef, reservation);
             transaction.set(entryValue.movementRef, {

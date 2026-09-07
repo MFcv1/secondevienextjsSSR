@@ -20,7 +20,7 @@ import {
     getOrderTimelineAdminV2,
     listOrdersAdminV2,
 } from '../commerce/commerceV2Client';
-import { getAdminCachedData } from './adminDataCache';
+import { getAdminCachedData, invalidateAdminCachedData } from './adminDataCache';
 import {
     ADMIN_ORDERS_FIRST_PAGE_KEY,
     loadAdminOrdersFirstPage,
@@ -39,6 +39,7 @@ import {
     buildOrdersSummary,
     filterOrders,
     getAllowedActions,
+    mergeAdminOrders,
     normalizeAdminOrders,
 } from './components/orders/orderPresentation';
 import { mutedTextClass, surfaceClass } from './components/orders/orderTones';
@@ -62,7 +63,7 @@ const useWideViewport = () => {
 };
 
 const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled = false }) => {
-    const cachedPage = getAdminCachedData(ADMIN_ORDERS_FIRST_PAGE_KEY);
+    const cachedPage = getAdminCachedData(ADMIN_ORDERS_FIRST_PAGE_KEY, { allowStale: true });
     const orderCommandsEnabled = mutationsEnabled && COMMERCE_V2_ADMIN_ORDER_COMMANDS_ENABLED;
     const isWide = useWideViewport();
 
@@ -72,6 +73,7 @@ const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled =
     const [search, setSearch] = useState('');
     const [orderLimit, setOrderLimit] = useState(50);
     const [isLoading, setIsLoading] = useState(!cachedPage);
+    const [refreshing, setRefreshing] = useState(false);
     const [readError, setReadError] = useState(false);
     const [readRetry, setReadRetry] = useState(0);
     const [activeOrderId, setActiveOrderId] = useState(null);
@@ -83,27 +85,33 @@ const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled =
     const [confirmRequest, setConfirmRequest] = useState(null);
     const [actionError, setActionError] = useState('');
     const listRef = useRef(null);
+    const listGenerationRef = useRef(0);
 
     useEffect(() => {
+        listGenerationRef.current += 1;
         setReadError(false);
-        setIsLoading(!getAdminCachedData(ADMIN_ORDERS_FIRST_PAGE_KEY));
+        setRefreshing(true);
+        setIsLoading(!getAdminCachedData(ADMIN_ORDERS_FIRST_PAGE_KEY, { allowStale: true }));
         if (COMMERCE_V2_ADMIN_READERS_ENABLED) {
             let cancelled = false;
-            loadAdminOrdersFirstPage()
+            loadAdminOrdersFirstPage({ force: readRetry > 0 })
                 .then((result) => {
                     if (cancelled) return;
                     setOrders(normalizeAdminOrders(result.orders || []));
                     setNextCursor(result.nextCursor || null);
                     setIsLoading(false);
+                    setRefreshing(false);
                 })
                 .catch((error) => {
                     if (cancelled) return;
                     console.error('Admin v2 orders read failed:', error);
                     setReadError(true);
                     setIsLoading(false);
+                    setRefreshing(false);
                 });
             return () => {
                 cancelled = true;
+                listGenerationRef.current += 1;
             };
         }
         const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(orderLimit));
@@ -134,7 +142,7 @@ const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled =
         setActionError('');
         loadOrderTimeline(order);
         if (order.refundDetailsDeferred) void listOrdersAdminV2({ orderId: order.id }).then((result) => {
-            setOrders((current) => current.map((row) => row.id === order.id ? normalizeAdminOrders(result.orders)[0] : row));
+            setOrders((current) => mergeAdminOrders(current, normalizeAdminOrders(result.orders || [])));
         }).catch(() => setActionError('Détails du remboursement indisponibles. Rouvrez le dossier pour réessayer.'));
     }, [loadOrderTimeline]);
 
@@ -144,6 +152,17 @@ const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled =
         const target = orders.find((order) => order.id === focusOrderId);
         if (target) selectOrder(target);
     }, [focusOrderId, orders, selectOrder, selectedOrderId]);
+
+    useEffect(() => {
+        if (!COMMERCE_V2_ADMIN_READERS_ENABLED || !focusOrderId || isLoading || orders.some(order => order.id === focusOrderId)) return undefined;
+        let cancelled = false;
+        listOrdersAdminV2({ orderId: focusOrderId }).then(result => {
+            if (cancelled) return;
+            if (!result.orders?.some(order => order.id === focusOrderId)) { setReadError(true); return; }
+            setOrders(current => mergeAdminOrders(current, normalizeAdminOrders(result.orders)));
+        }).catch(() => { if (!cancelled) setReadError(true); });
+        return () => { cancelled = true; };
+    }, [focusOrderId, isLoading, orders]);
 
     const summary = useMemo(() => buildOrdersSummary(orders), [orders]);
     const visibleOrders = useMemo(
@@ -160,21 +179,26 @@ const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled =
     );
 
     const loadMoreOrders = async () => {
-        if (!COMMERCE_V2_ADMIN_READERS_ENABLED || !nextCursor || isLoading) return;
+        if (!COMMERCE_V2_ADMIN_READERS_ENABLED || !nextCursor || isLoading || refreshing) return;
+        const generation = listGenerationRef.current;
+        setReadError(false);
         setIsLoading(true);
         try {
             const result = await listOrdersAdminV2({ pageSize: 50, cursor: nextCursor });
-            setOrders((current) => [...current, ...normalizeAdminOrders(result.orders || [])]);
+            if (generation !== listGenerationRef.current) return;
+            setOrders((current) => mergeAdminOrders(current, normalizeAdminOrders(result.orders || [])));
             setNextCursor(result.nextCursor || null);
+        } catch {
+            if (generation === listGenerationRef.current) setReadError(true);
         } finally {
-            setIsLoading(false);
+            if (generation === listGenerationRef.current) setIsLoading(false);
         }
     };
 
     const refreshOrder = async (order) => {
-        const result = await loadAdminOrdersFirstPage({ force: true });
-        setOrders(normalizeAdminOrders(result.orders || []));
-        setNextCursor(result.nextCursor || null);
+        invalidateAdminCachedData(ADMIN_ORDERS_FIRST_PAGE_KEY);
+        const result = await listOrdersAdminV2({ orderId: order.id });
+        setOrders(current => mergeAdminOrders(current, normalizeAdminOrders(result.orders || [])));
         const timeline = await getOrderTimelineAdminV2(order.id);
         setOrderTimelines((current) => ({ ...current, [order.id]: timeline.timeline || [] }));
     };
@@ -191,7 +215,7 @@ const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled =
     };
 
     const runOrderAction = async (order, actionId) => {
-        if (!orderCommandsEnabled) return;
+        if (!orderCommandsEnabled || activeOrderId) return;
         if (!getAllowedActions(order).has(actionId)) return;
         let commandApplied = false;
         try {
@@ -214,7 +238,7 @@ const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled =
 
     const runShipmentAction = async (shipment) => {
         const dialog = shipmentDialog;
-        if (!dialog || activeOrderId === dialog.order.id) return;
+        if (!dialog || activeOrderId || !orderCommandsEnabled) return;
         let commandApplied = false;
         try {
             setShipmentError('');
@@ -238,7 +262,7 @@ const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled =
     };
 
     const handleAction = (action) => {
-        if (!selectedOrder) return;
+        if (!selectedOrder || activeOrderId) return;
         if (action.id === 'fulfillment_ship' || action.id === 'fulfillment_update_tracking') {
             setShipmentError('');
             setShipmentDialog({ order: selectedOrder, mode: action.id === 'fulfillment_ship' ? 'ship' : 'update' });
@@ -343,8 +367,10 @@ const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled =
             </div>
 
             <p className={`mb-3 -mt-2 shrink-0 text-[10.5px] leading-4 ${mutedTextClass(darkMode)}`} aria-live="polite">
+                {refreshing ? 'Actualisation en cours · Dernières données connues. ' : ''}
                 {orders.length} commande{orders.length !== 1 ? 's' : ''} chargée{orders.length !== 1 ? 's' : ''}
                 {hasMoreOrders ? ' sur un historique plus large' : ''}. Recherche, compteurs et export portent sur ce périmètre.
+                <button type="button" disabled={refreshing} onClick={() => setReadRetry((value) => value + 1)} className="ml-3 underline">Actualiser</button>
             </p>
 
             <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(390px,33%)] 2xl:gap-6">
@@ -365,7 +391,8 @@ const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled =
                             aria-label="Liste des commandes chargées"
                             className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1 custom-scrollbar"
                         >
-                            {readError ? <div role="alert">Impossible de charger les commandes. <button type="button" onClick={() => setReadRetry((value) => value + 1)}>Réessayer</button></div> : isLoading && orders.length === 0 ? (
+                            {readError ? <div role="alert">Actualisation impossible. Les dernières données connues restent affichées. <button type="button" onClick={() => setReadRetry((value) => value + 1)}>Réessayer</button></div> : null}
+                            {readError && orders.length === 0 ? null : isLoading && orders.length === 0 ? (
                                 <div className="space-y-2 px-1 py-1" aria-busy="true" aria-label="Chargement des commandes">
                                     {Array.from({ length: 8 }, (_, index) => (
                                         <div
@@ -410,6 +437,7 @@ const AdminOrders = ({ darkMode = false, focusOrderId = null, mutationsEnabled =
                         {hasMoreOrders ? (
                             <button
                                 type="button"
+                                disabled={isLoading || refreshing}
                                 onClick={() => {
                                     if (COMMERCE_V2_ADMIN_READERS_ENABLED) {
                                         loadMoreOrders();

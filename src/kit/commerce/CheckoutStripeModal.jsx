@@ -112,7 +112,7 @@ const PaymentConfirmationPanel = ({ darkMode, state, message }) => (
             </div>
             <div className="min-w-0">
                 <p className={`text-[11px] font-semibold uppercase tracking-[0.2em] ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>
-                    {state === 'error' ? 'À vérifier' : 'Paiement reçu'}
+                    {state === 'error' ? 'À vérifier' : 'Paiement en cours de vérification'}
                 </p>
                 <h4 className={`mt-2 text-xl font-semibold tracking-[-0.025em] md:text-2xl ${darkMode ? 'text-white' : 'text-stone-900'}`}>
                     {state === 'error' ? 'Nous vérifions votre paiement' : 'Votre commande se finalise'}
@@ -136,21 +136,54 @@ const CheckoutStripeModal = ({
     formData,
     stripeElementsOptions,
     purchasedCartLines,
+    expiresAt,
+    initialVerification = false,
+    onSubmissionState,
     onClose,
     onPlaceOrder,
     onPaymentConfirmed,
 }) => {
-    const [confirmationState, setConfirmationState] = useState('idle');
+    const [confirmationState, setConfirmationState] = useState(initialVerification ? 'error' : 'idle');
     const [confirmationMessage, setConfirmationMessage] = useState('');
     const closeButtonRef = useRef(null);
     const dialogRef = useRef(null);
     const stripePromise = getStripePromise(stripeConnectedAccountId || '');
+    const mountedRef = useRef(true);
+    const submissionStateRef = useRef('idle');
+    const closeStateRef = useRef(null);
+    useEffect(() => {
+        mountedRef.current = true;
+        return () => { mountedRef.current = false; };
+    }, []);
+    const verifyPayment = async (paymentIntent) => {
+        setConfirmationState('waiting');
+        setConfirmationMessage('');
+        try {
+            const confirmedOrder = await waitForPaidOrder({ orderId: createdOrderId, email: formData.email, checkoutOtpToken });
+            if (!mountedRef.current) return;
+            onPaymentConfirmed?.(confirmedOrder);
+            await onPlaceOrder({
+                id: createdOrderId,
+                orderNumber: confirmedOrder?.orderNumber || createdOrderNumber,
+                ...formData,
+                paymentMethod: 'stripe_elements',
+                total: orderTotal,
+                paymentIntentId: paymentIntent?.id,
+                purchasedCartLines,
+            });
+        } catch (error) {
+            if (!mountedRef.current) return;
+            setConfirmationState('error');
+            setConfirmationMessage(error?.message || 'Nous vérifions encore le paiement.');
+        }
+    };
 
     const canClose = confirmationState === 'idle' || confirmationState === 'error';
     const requestClose = useCallback(() => {
-        if (!canClose) return;
+        if (!canClose || submissionStateRef.current === 'submitting') return;
         onClose();
     }, [canClose, onClose]);
+    closeStateRef.current = { canClose, requestClose };
 
     useEffect(() => {
         const previousActiveElement = document.activeElement;
@@ -159,9 +192,9 @@ const CheckoutStripeModal = ({
         closeButtonRef.current?.focus({ preventScroll: true });
 
         const handleKeyDown = (event) => {
-            if (event.key === 'Escape' && canClose) {
+            if (event.key === 'Escape' && closeStateRef.current.canClose) {
                 event.preventDefault();
-                requestClose();
+                closeStateRef.current.requestClose();
                 return;
             }
             if (event.key !== 'Tab') return;
@@ -188,7 +221,7 @@ const CheckoutStripeModal = ({
             document.body.style.overflow = previousOverflow;
             previousActiveElement?.focus?.({ preventScroll: true });
         };
-    }, [canClose, requestClose]);
+    }, []);
 
     if (typeof document === 'undefined') return null;
 
@@ -224,7 +257,9 @@ const CheckoutStripeModal = ({
                             Votre pièce vous attend.
                         </h2>
                         <p className="mt-4 max-w-[46ch] text-sm leading-6 text-stone-400 lg:mt-6 lg:text-base lg:leading-7">
-                            Elle reste réservée le temps de régler votre commande. Vous pouvez encore revenir vérifier vos informations.
+                            {confirmationState === 'idle' && expiresAt
+                                ? `Vos pièces sont réservées jusqu’à ${new Date(expiresAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}. Aucun paiement n’a encore été effectué.`
+                                : 'Le paiement est en cours de vérification. La confirmation apparaîtra après validation de votre commande.'}
                         </p>
 
                         <div className="mt-8 border-y border-white/10 py-5 lg:mt-10 lg:py-6">
@@ -302,40 +337,25 @@ const CheckoutStripeModal = ({
 
                         {isStripeConfigured ? (
                             <>
-                                {confirmationState !== 'idle' ? (
+                                {!['idle', 'submitting'].includes(confirmationState) ? (
                                     <PaymentConfirmationPanel darkMode={darkMode} state={confirmationState} message={confirmationMessage} />
                                 ) : null}
-                                {confirmationState === 'idle' ? (
+                                {confirmationState === 'error' ? <div className="flex gap-4 py-4"><button type="button" onClick={() => verifyPayment(null)}>Vérifier à nouveau</button><a href="/mes-commandes">Consulter le dossier</a></div> : null}
+                                {['idle', 'submitting'].includes(confirmationState) ? (
                                     <Elements stripe={stripePromise} options={stripeElementsOptions}>
                                         <CheckoutPaymentStep
                                             total={finalTotal}
                                             orderId={createdOrderId}
                                             darkMode={darkMode}
                                             shipping={formData}
+                                            expiresAt={expiresAt}
+                                            onSubmissionState={(state) => {
+                                                submissionStateRef.current = state;
+                                                setConfirmationState(state === 'verification' ? 'waiting' : state);
+                                                onSubmissionState?.(state);
+                                            }}
                                             onPaymentSuccess={async (paymentIntent) => {
-                                                setConfirmationState('waiting');
-                                                setConfirmationMessage('');
-                                                try {
-                                                    const confirmedOrder = await waitForPaidOrder({
-                                                        orderId: createdOrderId,
-                                                        email: formData.email,
-                                                        checkoutOtpToken
-                                                    });
-                                                    onPaymentConfirmed?.(confirmedOrder);
-                                                    await onPlaceOrder({
-                                                        id: createdOrderId,
-                                                        orderNumber: confirmedOrder?.orderNumber || createdOrderNumber,
-                                                        ...formData,
-                                                        paymentMethod: 'stripe_elements',
-                                                        total: orderTotal,
-                                                        paymentIntentId: paymentIntent.id,
-                                                        purchasedCartLines
-                                                    });
-                                                } catch (error) {
-                                                    console.error('Order paid confirmation timeout:', error);
-                                                    setConfirmationState('error');
-                                                    setConfirmationMessage(error?.message || 'Nous vérifions encore le paiement. Votre commande apparaîtra dans votre espace dès sa confirmation.');
-                                                }
+                                                await verifyPayment(paymentIntent);
                                             }}
                                             onPaymentError={(error) => {
                                                 console.error('Payment error inline:', error);

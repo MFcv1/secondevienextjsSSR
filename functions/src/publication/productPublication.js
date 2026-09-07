@@ -52,6 +52,7 @@ function dominantColor(stats) {
 }
 
 async function processImage(bucket, { buffer, sessionId, productId, slotKey }) {
+    const renditionId = crypto.randomUUID();
     const rotated = sharp(buffer, { failOn: 'none', limitInputPixels: 40000000 }).rotate();
     const [stats, blurBuffer] = await Promise.all([
         rotated.stats(),
@@ -66,7 +67,7 @@ async function processImage(bucket, { buffer, sessionId, productId, slotKey }) {
             .webp({ quality: spec.quality })
             .toBuffer({ resolveWithObject: true });
         if (spec.key === 'full') fullInfo = info;
-        const objectName = `furniture/publication-sessions/${sessionId}/variants/${slotKey}/${spec.folder}/${spec.key}.webp`;
+        const objectName = `furniture/publication-sessions/${sessionId}/variants/${slotKey}/${renditionId}/${spec.folder}/${spec.key}.webp`;
         const token = crypto.randomUUID();
         await bucket.file(objectName).save(output, {
             resumable: false,
@@ -116,6 +117,14 @@ function buildMedia(slots, expectedMediaCount) {
         imageUrl: images[0] || '',
         thumbnailUrl: thumbnails[0] || images[0] || ''
     };
+}
+
+function mayProcessImageEvent(session, slotKey, generation) {
+    if (!['uploading', 'processing', 'ready', 'failed'].includes(session?.status)) return false;
+    const currentGeneration = String(session.slots?.[slotKey]?.originalGeneration || '');
+    const incomingGeneration = String(generation || '');
+    return !(/^\d+$/.test(currentGeneration) && /^\d+$/.test(incomingGeneration)
+        && BigInt(currentGeneration) > BigInt(incomingGeneration));
 }
 
 async function acquireFinalization(sessionRef) {
@@ -254,7 +263,8 @@ const processProductPublicationImage = onObjectFinalized({
     if (!String(object.contentType || '').startsWith('image/') || Number(object.size || 0) > 10 * 1024 * 1024) {
         await admin.firestore().runTransaction(async (transaction) => {
             const fresh = await transaction.get(sessionRef);
-            if (!fresh.exists) return;
+            if (!fresh.exists || !mayProcessImageEvent(fresh.data(), slotKey, object.generation)
+                || fresh.data().slots?.[slotKey]?.status === 'ready') return;
             transaction.set(sessionRef, {
                 status: 'uploading',
                 slots: {
@@ -273,6 +283,7 @@ const processProductPublicationImage = onObjectFinalized({
             const fresh = await transaction.get(sessionRef);
             if (!fresh.exists) return 'skip';
             const current = fresh.data();
+            if (!mayProcessImageEvent(current, slotKey, object.generation)) return 'skip';
             const existingSlot = current.slots?.[slotKey];
             if (existingSlot?.status === 'ready' && String(existingSlot.originalGeneration) === String(object.generation)) {
                 const readyCount = Object.values(current.slots || {}).filter((slot) => slot?.status === 'ready').length;
@@ -310,12 +321,14 @@ const processProductPublicationImage = onObjectFinalized({
         }
         if (processingDecision !== 'process') return;
         const bucket = admin.storage().bucket(MEDIA_BUCKET);
-        const [buffer] = await bucket.file(objectName).download();
+        const [buffer] = await bucket.file(objectName, { generation: String(object.generation) }).download();
         const processed = await processImage(bucket, { buffer, sessionId, productId: session.productId, slotKey });
         const ready = await admin.firestore().runTransaction(async (transaction) => {
             const fresh = await transaction.get(sessionRef);
             if (!fresh.exists) return false;
             const current = fresh.data();
+            if (!mayProcessImageEvent(current, slotKey, object.generation)
+                || current.slots?.[slotKey]?.status === 'ready') return false;
             if (String(current.slots?.[slotKey]?.originalGeneration || '') !== String(object.generation || '')) return false;
             const slots = {
                 ...(current.slots || {}),
@@ -358,6 +371,8 @@ const processProductPublicationImage = onObjectFinalized({
             const fresh = await transaction.get(sessionRef);
             if (!fresh.exists) return;
             const current = fresh.data();
+            if (!mayProcessImageEvent(current, slotKey, object.generation)
+                || current.slots?.[slotKey]?.status === 'ready') return;
             if (String(current.slots?.[slotKey]?.originalGeneration || '') !== String(object.generation || '')) return;
             transaction.set(sessionRef, {
                 status: 'uploading',

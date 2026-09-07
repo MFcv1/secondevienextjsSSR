@@ -39,7 +39,9 @@ function email(value, { required = false } = {}) {
 function date(value, label, { required = true } = {}) {
     const normalized = String(value ?? '').trim();
     if (!normalized && !required) return '';
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized) || !Number.isFinite(Date.parse(`${normalized}T12:00:00.000Z`))) {
+    const millis = Date.parse(`${normalized}T12:00:00.000Z`);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized) || !Number.isFinite(millis)
+        || new Date(millis).toISOString().slice(0, 10) !== normalized) {
         throw invoiceError('MANUAL_INVOICE_DATE_INVALID', `${label} invalide.`);
     }
     return normalized;

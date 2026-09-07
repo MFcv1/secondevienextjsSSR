@@ -3,11 +3,7 @@
 import React from 'react';
 import { Search, SlidersHorizontal } from 'lucide-react';
 import Link from 'next/link';
-
-const getQueryFromUrl = () => {
-  if (typeof window === 'undefined') return '';
-  return new URLSearchParams(window.location.search).get('q') || '';
-};
+import { useSearchParams } from 'next/navigation';
 
 const fetchSearchResults = async (query, signal) => {
   const params = new URLSearchParams({ q: query, mode: 'results', limit: '48' });
@@ -44,50 +40,40 @@ const ProductResult = ({ item }) => (
   </Link>
 );
 
-export default function SearchResultsIsland() {
-  const [query, setQuery] = React.useState('');
+function SearchResultsContent() {
+  const searchParams = useSearchParams();
+  const query = (searchParams.get('q') || '').slice(0, 80);
   const [draftQuery, setDraftQuery] = React.useState('');
   const [data, setData] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(false);
-  const [ready, setReady] = React.useState(false);
 
   React.useEffect(() => {
-    const syncFromUrl = () => {
-      const nextQuery = getQueryFromUrl();
-      setQuery(nextQuery);
-      setDraftQuery(nextQuery);
-      setReady(true);
-    };
-    syncFromUrl();
-    window.addEventListener('popstate', syncFromUrl);
-    return () => window.removeEventListener('popstate', syncFromUrl);
-  }, []);
+    setDraftQuery(query);
+  }, [query]);
 
   React.useEffect(() => {
-    if (!ready) return undefined;
     const controller = new AbortController();
     setLoading(true);
     setError(false);
 
     fetchSearchResults(query, controller.signal)
-      .then((payload) => setData(payload))
+      .then((payload) => { if (!controller.signal.aborted) setData(payload); })
       .catch((searchError) => {
-        if (searchError?.name !== 'AbortError') setError(true);
+        if (!controller.signal.aborted && searchError?.name !== 'AbortError') setError(true);
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
       });
 
     return () => controller.abort();
-  }, [query, ready]);
+  }, [query]);
 
   const submit = (event) => {
     event.preventDefault();
     const nextQuery = draftQuery.trim();
     const nextHref = nextQuery ? `/recherche?q=${encodeURIComponent(nextQuery)}` : '/recherche';
     window.history.pushState(null, '', nextHref);
-    setQuery(nextQuery);
   };
 
   const results = data?.products || [];
@@ -110,6 +96,8 @@ export default function SearchResultsIsland() {
           <form onSubmit={submit} className="relative flex items-center rounded-lg border border-stone-200 bg-white">
             <input
               type="search"
+              aria-label="Rechercher dans le catalogue"
+              maxLength={80}
               value={draftQuery}
               onChange={(event) => setDraftQuery(event.target.value)}
               placeholder="Rechercher un produit..."
@@ -123,7 +111,7 @@ export default function SearchResultsIsland() {
 
         <div className="flex items-center justify-between gap-4 py-4">
           <p className="text-[12px] font-medium text-stone-500">
-            {loading ? 'Recherche en cours...' : `${data?.total || 0} resultat${(data?.total || 0) !== 1 ? 's' : ''}`}
+            {loading ? 'Recherche en cours...' : error ? 'Résultats indisponibles' : `${data?.total || 0} résultat${(data?.total || 0) !== 1 ? 's' : ''}${data?.hasMore ? ` · ${results.length} affichés, affinez votre recherche` : ''}`}
           </p>
           <span className="hidden items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-stone-400 md:flex">
             <SlidersHorizontal size={14} strokeWidth={1.6} />
@@ -182,4 +170,8 @@ export default function SearchResultsIsland() {
       </div>
     </section>
   );
+}
+
+export default function SearchResultsIsland() {
+  return <React.Suspense fallback={<section className="min-h-[60dvh] p-8" role="status">Chargement de la recherche…</section>}><SearchResultsContent /></React.Suspense>;
 }
