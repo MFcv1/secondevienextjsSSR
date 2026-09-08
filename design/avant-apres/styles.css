@@ -103,7 +103,8 @@ input[type=checkbox]{accent-color:#637455;width:16px;height:16px;margin:0}
 [data-theme=light] .scene{--scene-bg:#f4f1e9;--scene-label:#929080}
 .light-wash{inset:0;background:radial-gradient(ellipse at 76% 28%,#fffcf7 5%,transparent 53%),radial-gradient(ellipse at 0 70%,#e6ddce66,transparent 56%),radial-gradient(ellipse at 83% 100%,#d7b38b70,transparent 50%)}
 [data-theme=light] .sage-disc{background:linear-gradient(130deg,#fffdf7,#e4d9c7 75%);box-shadow:inset 4px 5px 7px #ffffffa6,inset -9px -15px 26px #c1ad9160,25px 35px 40px -20px #9d896b50}
-[data-theme=light] .sage-pill{background:linear-gradient(100deg,#fffaf0,#dfcfb7);box-shadow:inset 3px 1px 4px #ffffffbf,inset -10px 0 25px #b9a17d50,-23px 28px 33px -16px #98806245}
+[data-theme=light] .sage-pill{width:clamp(400px,40vw,680px);height:clamp(300px,28vw,480px);right:-18vw;bottom:-12vw;transform:rotate(-20deg);border-radius:50%;background:linear-gradient(125deg,#f9f4eb,#eae0cf 62%,#e0d2bc);box-shadow:inset 2px 1px 6px #ffffff80,inset -8px -5px 26px #b9a17d26,-18px 23px 34px -18px #98806230}
+@media(max-width:600px){[data-theme=light] .sage-pill{width:360px;height:270px;right:-185px;bottom:-150px}}
 /* 02 — solid architectural volumes, no line ornaments. */
 [data-theme=sage] .scene{--scene-bg:#dfe4d8;--scene-label:#66735d;--surface:#f9faf4;--copy:#f3f5ed;--rail:#dfe5d5;--border:#cbd3c0;--accent:#6b8059;--ink:#273021;--muted:#68715f;--button:#34432c;--logo:#8a9975;--tag:#65794f;--wash:#a8ba8730}
 .sage-plane{inset:0;background:linear-gradient(120deg,#eef0e7 0%,#dfe4d6 50%,#cbd4bf)}

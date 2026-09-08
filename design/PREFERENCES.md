@@ -8,6 +8,10 @@ avant/après et newsletter ; ils ne constituent pas une refonte globale du site.
   harmoniser leurs couleurs.
 - Direction retenue : ivoire lumineux, champagne et neutres chauds ; moderne,
   épurée, dans un esprit Apple OS, avec volumes mats et ombres douces.
+- Ajustement après livraison : pour l’avant/après, remplacer la coupe
+  diagonale inférieure droite par un ovale large et couché, incliné à −20°.
+  Conserver le disque supérieur et différencier ce galet de l’ovale plus
+  vertical de la newsletter. Nuances douces et reflet discret conservés.
 - Les formes de « Relief sauge » plaisent : disque partiellement hors cadre et
   grand volume arrondi, modelés par la lumière. Leur couleur verte ne convient
   pas au reste du site.
