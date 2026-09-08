@@ -14,6 +14,15 @@ const {
 const root = path.resolve(__dirname, '../../..');
 const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8');
 
+test('le transport du reveil outbox decode un CloudEvent Firestore', async () => {
+    const { GCLOUD_GEN2_TARGETS } = await import('../../../scripts/deploy-functions-targeted.mjs');
+    const target = GCLOUD_GEN2_TARGETS.onCommerceOutboxWrittenGen2;
+    assert.ok(target.environmentVariables?.includes('FUNCTION_SIGNATURE_TYPE=cloudevent'));
+    assert.equal(target.documentPathPattern, 'commerce_outbox/{outboxId}');
+    assert.equal(target.retry, true);
+    assert.equal(target.maxInstances, '1');
+});
+
 test('chaque etat outbox eligible produit une tache deterministe', () => {
     const entry = { status: 'failed', attemptCount: 2, nextAttemptAt: 12345 };
     assert.deepEqual(outboxSchedule(entry), { attemptCount: 2, nextAttemptAt: 12345 });

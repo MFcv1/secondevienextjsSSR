@@ -226,11 +226,11 @@ const DASHBOARD_EVENT_TARGETS = Object.freeze({
     documentPathPattern: 'orders/{orderId}/customer_return_requests/{requestId}',
     runtimeServiceAccount: 'commerce-operations-reconciler@secondevienextjsssr.iam.gserviceaccount.com'
   }),
-  onCommerceOutboxWrittenGen2: dashboardEventTarget({
+  onCommerceOutboxWrittenGen2: Object.freeze({ ...dashboardEventTarget({
     name: 'onCommerceOutboxWrittenGen2',
     documentPathPattern: 'commerce_outbox/{outboxId}',
     runtimeServiceAccount: 'commerce-outbox-dispatcher@secondevienextjsssr.iam.gserviceaccount.com'
-  }),
+  }), environmentVariables: ['FUNCTION_SIGNATURE_TYPE=cloudevent'] }),
   onCommerceReservationWrittenGen2: Object.freeze({ ...dashboardEventTarget({
     name: 'onCommerceReservationWrittenGen2',
     documentPathPattern: 'inventory_reservations/{reservationId}',

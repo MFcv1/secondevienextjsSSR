@@ -55,7 +55,14 @@
       "onRegisteredUserDeleted",
       "onRegisteredUserCreated"
     ],
-    "configMutations": [],
+    "configMutations": [
+      {
+        "target": "onCommerceOutboxWrittenGen2",
+        "field": "serviceConfig.environmentVariables.FUNCTION_SIGNATURE_TYPE",
+        "value": "cloudevent",
+        "reason": "Recette C145: Firestore events acknowledged without scheduling pending emails; select the CloudEvent transport. Preserve all other configuration."
+      }
+    ],
     "productionAllowed": false
   },
   "functions": [
