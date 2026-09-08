@@ -54,7 +54,7 @@ async function upload(version, archivePath = path.join(directory, 'source.zip'),
   if (!region || !['europe-west1', 'us-central1'].includes(region)) throw new Error('SOURCE_REGION_NOT_ALLOWLISTED');
   const result = await request(`projects/${project}/locations/${region}/functions:generateUploadUrl`, 'POST', {}, version);
   const archive = fs.readFileSync(archivePath);
-  const response = await fetch(result.uploadUrl, { method: 'PUT', headers: { 'Content-Type': 'application/zip', ...(new URL(result.uploadUrl).searchParams.has('GoogleAccessId') ? {} : { Authorization: `Bearer ${token}` }) }, body: archive });
+  const response = await fetch(result.uploadUrl, { method: 'PUT', headers: { 'Content-Type': 'application/zip', ...(version === 'v1' ? { 'x-goog-content-length-range': '0,104857600' } : {}), ...(new URL(result.uploadUrl).searchParams.has('GoogleAccessId') ? {} : { Authorization: `Bearer ${token}` }) }, body: archive });
   if (!response.ok) throw new Error(`SOURCE_UPLOAD_HTTP_${response.status}`);
   const uploaded = { sha256: sha(archive), ...(version === 'v1' ? { sourceUploadUrl: result.uploadUrl } : { storageSource: { ...result.storageSource, generation: response.headers.get('x-goog-generation') || result.storageSource.generation } }) };
   if (persist) write(`uploaded-${version}.private.json`, uploaded);
