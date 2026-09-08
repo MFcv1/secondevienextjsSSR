@@ -31,7 +31,7 @@ git(['merge-base', '--is-ancestor', manifest.metadata.baselineCommit, currentCom
 const rollback = read('rollback-manifest.json');
 for (const target of manifest.functions) {
   const backup = rollback.find(item => item.name === target.name && item.status === 'captured');
-  if (!backup || sha(fs.readFileSync(path.join(directory, 'rollback', `${target.name}.zip`))) !== backup.sha256) throw new Error(`ROLLBACK_MISSING:${target.name}`);
+  if (!backup || backup.sha256 !== target.rollbackSha256 || sha(fs.readFileSync(path.join(directory, 'rollback', `${target.name}.zip`))) !== backup.sha256) throw new Error(`ROLLBACK_MISSING:${target.name}`);
 }
 if (names.length) validateDeploymentRequest({ args: { project, codebase: 'main', commit: currentCommit, allowlist: names.join(',') }, manifest, rootDir, manifestPath, digestPath: path.resolve(directory, 'digest.json'), currentCommit, activeFirebaseProject: project, baselineIsAncestor: true });
 if (command === 'validate') { console.log(JSON.stringify({ valid: true, targets: names, sourceCommit: source.commit, sourceSha256: source.sha256 })); process.exit(0); }
