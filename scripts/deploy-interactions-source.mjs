@@ -21,7 +21,10 @@ const before = read('functions-before.private.json');
 const currentCommit = git(['rev-parse', 'HEAD']);
 const source = read('source.json');
 if (!git(['branch', '--show-current']).startsWith('codex/')) throw new Error('CODEX_BRANCH_REQUIRED');
-if (source.commit !== currentCommit) throw new Error('SOURCE_COMMIT_MISMATCH');
+// Later delivery-report/launcher commits may advance HEAD. The packaged
+// Functions tree must still match the recorded source commit byte for byte.
+git(['merge-base', '--is-ancestor', source.commit, currentCommit]);
+if (git(['rev-parse', `${source.commit}:functions`]) !== git(['rev-parse', `${currentCommit}:functions`])) throw new Error('SOURCE_TREE_MISMATCH');
 if (sha(fs.readFileSync(path.join(directory, 'source.zip'))) !== source.sha256) throw new Error('SOURCE_DIGEST_MISMATCH');
 if (git(['status', '--porcelain', '--untracked-files=all', '--', 'functions', 'firebase.json', 'scripts/deploy-interactions-source.mjs', 'scripts/deploy-functions-targeted.mjs', 'deploy/interactions-20260908.json'])) throw new Error('UNCOMMITTED_DEPLOYMENT_INPUTS');
 git(['merge-base', '--is-ancestor', manifest.metadata.baselineCommit, currentCommit]);
@@ -45,7 +48,11 @@ async function request(resource, method = 'GET', body, version = 'v2') {
 }
 const revision = row => row.serviceConfig?.revision || row.versionId;
 async function upload(version, archivePath = path.join(directory, 'source.zip'), persist = true) {
-  const result = await request(`projects/${project}/locations/europe-west1/functions:generateUploadUrl`, 'POST', {}, version);
+  const region = version === 'v1'
+    ? before.find(row => row.name.endsWith('/grantAdminOnAuth'))?.name.split('/')[3]
+    : 'europe-west1';
+  if (!region || !['europe-west1', 'us-central1'].includes(region)) throw new Error('SOURCE_REGION_NOT_ALLOWLISTED');
+  const result = await request(`projects/${project}/locations/${region}/functions:generateUploadUrl`, 'POST', {}, version);
   const archive = fs.readFileSync(archivePath);
   const response = await fetch(result.uploadUrl, { method: 'PUT', headers: { 'Content-Type': 'application/zip', ...(new URL(result.uploadUrl).searchParams.has('GoogleAccessId') ? {} : { Authorization: `Bearer ${token}` }) }, body: archive });
   if (!response.ok) throw new Error(`SOURCE_UPLOAD_HTTP_${response.status}`);
