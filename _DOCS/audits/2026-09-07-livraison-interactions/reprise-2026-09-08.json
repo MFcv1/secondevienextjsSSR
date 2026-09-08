@@ -1,0 +1,104 @@
+{
+  "status": "BLOCKED_NO_DEPLOYMENT",
+  "sourceCommit": "6326dabf367916dc2f62dbca8fe59150e8d371da",
+  "documentationCommitConfirmedOnRemote": "8d65c1b1378a78471d02a8484723c52644ba96b2",
+  "branch": "codex/livraison-interactions-20260907",
+  "evidence": [
+    {
+      "path": "logs/livraison/2026-09-07-interactions/dependency-audit-resume.json",
+      "sha256": "42761b8ce51f4fc79bc0d349e9d0039e7fbbdb98939cba0a415698cadd8ccb18",
+      "result": {
+        "advisories": {
+          "1164823": {
+            "findings": [
+              {
+                "version": "1.9.1",
+                "paths": [
+                  ".>firebase-tools>stream-json"
+                ],
+                "dev": true,
+                "optional": false,
+                "bundled": false
+              }
+            ],
+            "id": 1164823,
+            "title": "stream-json: pick/ignore/filter/replace filters are O(depth²) on nested input — small crafted JSON blocks the event loop for seconds→minutes (DoS)",
+            "module_name": "stream-json",
+            "vulnerable_versions": "<=3.4.0",
+            "patched_versions": ">=3.4.1",
+            "severity": "moderate",
+            "cwe": "CWE-407",
+            "github_advisory_id": "GHSA-528h-pc64-c93x",
+            "url": "https://github.com/advisories/GHSA-528h-pc64-c93x"
+          }
+        },
+        "metadata": {
+          "vulnerabilities": {
+            "info": 0,
+            "low": 0,
+            "moderate": 1,
+            "high": 0,
+            "critical": 0
+          },
+          "dependencies": 249,
+          "devDependencies": 671,
+          "optionalDependencies": 110,
+          "totalDependencies": 1011
+        }
+      }
+    },
+    {
+      "path": "logs/livraison/2026-09-08-reprise/compatibility.json",
+      "sha256": "655fb4b49e0fc374a6c14228270c7b07bcba5beb9ae2fd3c6c70b9a02ee38c96",
+      "result": {
+        "date": "2026-09-08",
+        "firebaseToolsInstalled": "15.26.0",
+        "firebaseToolsLatest": "15.29.0",
+        "latestStreamJsonDependency": "^1.7.3",
+        "candidate": "stream-json@3.6.0",
+        "integrity": "sha512-NiJdqxKyau579z/E8vfqcjWfSDWxW/AT99javFXdPXF147Z5za85LRXSHEmSX9TKOakB7gaIccfD0fOIctb7KQ==",
+        "requiredImports": [
+          {
+            "import": "stream-json/filters/Pick",
+            "resolvedByCandidateExports": "src/filters/Pick",
+            "exists": false
+          },
+          {
+            "import": "stream-json/filters/Filter",
+            "resolvedByCandidateExports": "src/filters/Filter",
+            "exists": false
+          },
+          {
+            "import": "stream-json/streamers/StreamArray",
+            "resolvedByCandidateExports": "src/streamers/StreamArray",
+            "exists": false
+          },
+          {
+            "import": "stream-json/streamers/StreamObject",
+            "resolvedByCandidateExports": "src/streamers/StreamObject",
+            "exists": false
+          }
+        ],
+        "availableImplementations": [
+          "src/filters/filter.js",
+          "src/filters/pick.js",
+          "src/streamers/stream-array.js",
+          "src/streamers/stream-object.js"
+        ]
+      }
+    },
+    {
+      "path": "logs/livraison/2026-09-08-reprise/public-version.json",
+      "sha256": "8046d34bc7ae8443f60986dc6a85bab5db91e2cd56d4cfeeb2f24a96e65d8f80",
+      "result": {
+        "checkedAt": "2026-09-08T10:38:26.798Z",
+        "url": "https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app/",
+        "status": 200,
+        "deploymentIds": [
+          "sv-mtp4ho36-474b1fdfaa07"
+        ],
+        "cacheControl": "s-maxage=300"
+      }
+    }
+  ]
+}
