@@ -27,7 +27,14 @@ Les comportements du comparateur et du jeu serveur restent en place.
 Validation : build Next 16.3 sous Node 22, 9 tests newsletter/cache, contrats
 mobile/SEO/routes, ESLint ciblé sans erreur (8 avertissements), captures du
 site à 390/1440 px sans débordement ni erreur JavaScript.
-Déploiement App Hosting sandbox demandé ; contrôle de livraison en cours.
+Livré sur App Hosting sandbox le 8 septembre à 15:57 (Europe/Paris), depuis
+le commit `323b031`, branche `codex/design-sections-20260908`.
+Build/rollout `build-2026-09-08-001` : `READY` / `SUCCEEDED` ; deployment ID
+servi `sv-mtsqcm71-b1c129e1acd3`. HTTP 200, deux décors présents, images
+chargées et comparateur clavier fonctionnel ; captures hébergées à 390/1440 px
+sans débordement ni erreur JavaScript. Aucun envoi newsletter réel effectué.
+Retour arrière identifié : `build-20260908-6188058` (rollout précédent réussi).
+Preuves locales : `logs/designs-20260908/`.
 Contrats : [Interface](ux/INTERFACE_NAVIGATION.md#section-avant--après).
 
 ## Socle et fonctionnalités
