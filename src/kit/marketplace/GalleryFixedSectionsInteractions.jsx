@@ -86,22 +86,6 @@ const setupRichSectionsPrewarm = () => {
     });
   });
 
-  const warmDecorativeBackground = (element) => {
-    const style = window.getComputedStyle(element);
-    if (style.display === 'none') return;
-    const match = /url\("?([^")]+)"?\)/.exec(style.backgroundImage || '');
-    if (!match?.[1]) return;
-    const image = new Image();
-    image.decoding = 'async';
-    image.fetchPriority = 'low';
-    image.src = match[1];
-    if (typeof image.decode === 'function') void image.decode().catch(() => {});
-  };
-
-  document.querySelectorAll('.atelier-showcase__ornament, .discount-section__ornament').forEach((element) => {
-    tasks.push(() => warmDecorativeBackground(element));
-  });
-
   const warmImage = (image) => {
     if (!image || !(image.currentSrc || image.getAttribute('src'))) return;
     image.fetchPriority = 'low';

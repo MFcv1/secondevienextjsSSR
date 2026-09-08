@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Seconde Vie — Trois ambiances avant / après</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="preview.js" defer></script>
+</head>
+<body>
+  <header class="studio-header">
+    <a class="brand" href="#main"><img src="assets/logoanais-320.webp" alt="" width="34" height="43"><span>Seconde Vie<span class="brand-dot">.</span><small>par Anaïs</small></span></a>
+    <span class="studio-label">ÉTUDE D’AMBIANCES <span>/</span> AVANT · APRÈS</span>
+    <span class="local-badge">Exploration design</span>
+  </header>
+  <main id="main">
+    <div class="intro">
+      <div><p class="eyebrow">LE MÊME MODULE. TROIS UNIVERS.</p><h1>Une autre lumière sur <em>Seconde Vie.</em></h1></div>
+      <p>Explore les fonds, compare les matières.<br>Les images et la composition restent les tiennes.</p>
+    </div>
+    <div class="controls" aria-label="Options de présentation">
+      <nav class="theme-picker" aria-label="Choisir une proposition">
+        <button type="button" data-choice="light" aria-pressed="true"><span class="dot dot-light"></span><span>01 <b>Lumière d’atelier</b></span></button>
+        <button type="button" data-choice="sage" aria-pressed="false"><span class="dot dot-sage"></span><span>02 <b>Relief sauge</b></span></button>
+        <button type="button" data-choice="night" aria-pressed="false"><span class="dot dot-night"></span><span>03 <b>Galerie nocturne</b></span></button>
+      </nav>
+      <button type="button" id="compare" class="compare-button" aria-pressed="false">Voir les trois ↓</button>
+    </div>
+    <div class="fine-controls">
+      <label class="color-option"><input id="original-colors" type="checkbox"> Garder les couleurs actuelles du module</label>
+      <label class="intensity-option" for="intensity">Présence du décor <input id="intensity" type="range" min="0" max="100" value="80"><output id="intensity-value" for="intensity">80 %</output></label>
+    </div>
+    <div id="proposals">
+      <article class="proposal" data-theme="light" aria-labelledby="title-light">
+        <div class="proposal-note"><div><span class="number">01</span><h2 id="title-light">Lumière d’atelier</h2><span class="recommendation">Version affinée</span></div><p>Ivoire lumineux · reliefs mats · reflets champagne</p></div>
+        <section class="scene" aria-label="Aperçu Lumière d’atelier">
+          <div class="decor" aria-hidden="true"><div class="light-wash"></div><div class="sage-disc"></div><div class="sage-pill"></div><div class="sage-light"></div></div>
+          <div class="scene-caption" aria-hidden="true"><span>LES BELLES CHOSES ONT PLUSIEURS VIES.</span><span>SECONDE VIE — ATELIER DE RESTAURATION</span></div>
+          <div class="module-mount"></div>
+          <div class="scene-bottom" aria-hidden="true"><span>Une histoire conservée. Une nouvelle présence.</span><span class="material-note"><i></i> Lumière & matière</span></div>
+        </section>
+        <div class="design-note"><p><b>L’intention</b> Les volumes sculptés de Relief sauge, dans la palette de Lumière d’atelier : un disque ivoire en haut à gauche et une forme arrondie champagne à droite, éclairés en douceur.</p><p><b>Le caractère</b> Chaleureux, épuré, plus affirmé. Les ombres donnent de la profondeur au fond et mettent le module en valeur.</p></div>
+      </article>
+      <article class="proposal" data-theme="sage" aria-labelledby="title-sage" hidden>
+        <div class="proposal-note"><div><span class="number">02</span><h2 id="title-sage">Relief sauge</h2></div><p>Sauge minérale · volumes mats · lumière rasante</p></div>
+        <section class="scene" aria-label="Aperçu Relief sauge">
+          <div class="decor" aria-hidden="true"><div class="sage-plane"></div><div class="sage-disc"></div><div class="sage-pill"></div><div class="sage-light"></div></div>
+          <div class="scene-caption" aria-hidden="true"><span>LE CHARME D’HIER. L’ÉQUILIBRE D’AUJOURD’HUI.</span><span>SECONDE VIE — ATELIER DE RESTAURATION</span></div>
+          <div class="module-mount"></div>
+          <div class="scene-bottom" aria-hidden="true"><span>Révéler la matière, simplement.</span><span class="material-note"><i></i> Relief & douceur</span></div>
+        </section>
+        <div class="design-note"><p><b>L’intention</b> Des formes pleines, comme découpées dans une matière mate. Un disque et un volume arrondi évoquent les gestes et les courbes du mobilier.</p><p><b>Le caractère</b> Plus affirmé, naturel, architectural. Le sauge fait écho aux meubles restaurés.</p></div>
+      </article>
+      <article class="proposal" data-theme="night" aria-labelledby="title-night" hidden>
+        <div class="proposal-note"><div><span class="number">03</span><h2 id="title-night">Galerie nocturne</h2></div><p>Charbon velouté · halo bronze · éclat de verre</p></div>
+        <section class="scene" aria-label="Aperçu Galerie nocturne">
+          <div class="decor" aria-hidden="true"><div class="night-glow"></div><div class="night-disc"></div><div class="night-horizon"></div></div>
+          <div class="scene-caption" aria-hidden="true"><span>CHAQUE PIÈCE MÉRITE SA LUMIÈRE.</span><span>SECONDE VIE — ATELIER DE RESTAURATION</span></div>
+          <div class="module-mount"></div>
+          <div class="scene-bottom" aria-hidden="true"><span>Le regard change. L’histoire continue.</span><span class="material-note"><i></i> Ombre & éclat</span></div>
+        </section>
+        <div class="design-note"><p><b>L’intention</b> Un fond profond et un halo chaud, comme un meuble éclairé dans une galerie. Une grande lentille fumée crée un relief discret.</p><p><b>Le caractère</b> Plus spectaculaire, enveloppant, précieux. Une vraie rupture de rythme dans une page claire.</p></div>
+      </article>
+    </div>
+    <footer class="studio-footer"><span>Seconde Vie / Recherche visuelle — septembre 2026</span><span>Comparateurs actifs · 3 meubles à explorer · Aucun changement sur le site</span></footer>
+  </main>
+  <template id="module-template">
+    <div class="ba-shell">
+      <div class="ba-grid">
+        <div class="ba-copy">
+          <img class="ba-watermark" src="assets/logoanais-320.webp" alt="" aria-hidden="true" width="320" height="240">
+          <div class="ba-kicker"><span class="kicker-rule"></span>ATELIER SECONDE VIE<span class="ba-edition">01 — 03</span></div>
+          <h3 class="ba-title"><span>Chiner sans</span><span>courir les</span><span>brocantes,</span><em>c’est possible !</em></h3>
+          <p class="ba-description">On s’occupe de tout pour vous. De la sélection à la livraison de nos pépites, découvrez comment chiner autrement avec Seconde Vie.</p>
+          <a class="ba-cta" href="https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app/a-propos" target="_blank" rel="noopener noreferrer"><span>ON VOUS EXPLIQUE TOUT</span><span class="cta-arrow" aria-hidden="true">→</span></a>
+        </div>
+        <div class="ba-visual">
+          <div class="ba-bezel">
+            <div class="ba-stage" style="--split:50%">
+              <img class="ba-after" src="assets/apres-gallery.webp" alt="La Commode Oubliée après restauration" width="1600" height="970" draggable="false">
+              <span class="state-badge state-after"><i>02</i> APRÈS</span>
+              <div class="ba-before-clip"><img class="ba-before" src="assets/avant-gallery.webp" alt="La Commode Oubliée avant restauration" width="1600" height="970" draggable="false"><span class="state-badge state-before"><i>01</i> AVANT</span></div>
+              <div class="ba-divider" aria-hidden="true"><span class="ba-handle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg><i></i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span></div>
+              <input class="ba-range" type="range" min="0" max="100" value="50" aria-label="Part de l’image avant restauration" aria-valuetext="50 % avant, 50 % après">
+            </div>
+          </div>
+          <div class="ba-rail">
+            <div class="ba-project" aria-live="polite" aria-atomic="true"><p class="project-tag">RÉNOVATION COMPLÈTE</p><h4 class="project-title">La Commode Oubliée</h4><p class="project-desc">Sablage délicat et peinture Céladon.</p></div>
+            <div class="ba-navigation"><span class="segments" aria-hidden="true"><i class="active"></i><i></i><i></i></span><span class="project-count">01 / 03</span><div class="project-buttons"><button type="button" data-step="-1" aria-label="Meuble précédent"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button><button type="button" data-step="1" aria-label="Meuble suivant"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+  <noscript><p class="no-script">Active JavaScript pour afficher les trois propositions et utiliser les comparateurs.</p></noscript>
+</body>
+</html>

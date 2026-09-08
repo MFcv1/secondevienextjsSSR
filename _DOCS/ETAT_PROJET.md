@@ -18,6 +18,18 @@ La gate CLI est corrigée sans dérogation. Les états d'audit ci-dessous sont h
 le design local ultérieur reste hors livraison. Preuves, périmètre et recette dans le
 [dossier de livraison](audits/2026-09-07-livraison-interactions/README.md).
 
+## Avant / après et newsletter — livraison des designs du 8 septembre
+
+Les deux designs retenus sont intégrés : relief ivoire/champagne pour
+l’avant/après, ovales « Champagne équilibré » et en-tête euro pour la
+newsletter. Anciens décors et préchargement retirés, médias conservés.
+Les comportements du comparateur et du jeu serveur restent en place.
+Validation : build Next 16.3 sous Node 22, 9 tests newsletter/cache, contrats
+mobile/SEO/routes, ESLint ciblé sans erreur (8 avertissements), captures du
+site à 390/1440 px sans débordement ni erreur JavaScript.
+Déploiement App Hosting sandbox demandé ; contrôle de livraison en cours.
+Contrats : [Interface](ux/INTERFACE_NAVIGATION.md#section-avant--après).
+
 ## Socle et fonctionnalités
 
 | Domaine | État documenté | Référence |

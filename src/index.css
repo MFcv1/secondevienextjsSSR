@@ -5110,8 +5110,16 @@ html.dark .before-after-state-badge,
 /* Chevrons proportionnels a la pastille : sur mobile la version desktop (14px)
    remplissait tout le disque et donnait une poignee massive. */
 .before-after-slider-handle svg {
+  display: block;
+  flex: none;
   width: 10px;
   height: 10px;
+}
+
+/* Repère clavier limité à la poignée ; aucun cadre ajouté au clic sur la photo. */
+.before-after-media-stage:has([data-ba-range]:focus-visible) .before-after-slider-handle {
+  outline: 2px solid var(--ba-ink);
+  outline-offset: 4px;
 }
 
 /* Un flou plein cadre a chaque frame de glissement fait tomber le framerate sur
@@ -5228,6 +5236,10 @@ html.dark .before-after-media-stage[data-ba-dragging='true'] .before-after-slide
 }
 
 .before-after-project-nav__button {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  line-height: 1;
   color: var(--ba-ink);
   border: 1px solid var(--ba-border);
   background: var(--ba-surface-raised);
@@ -5242,6 +5254,11 @@ html.dark .before-after-media-stage[data-ba-dragging='true'] .before-after-slide
 
 .before-after-project-nav__button:active {
   transform: scale(0.93);
+}
+
+.before-after-project-nav__button svg {
+  display: block;
+  flex: none;
 }
 
 /* Segments de progression : l'actif s'allonge au lieu d'un simple compteur fige. */
@@ -5551,41 +5568,12 @@ html.dark .custom-radio {
   --check-color: #1c1917;
 }
 
-/* Avant / après — décor d'atelier imprimé, indépendant du slider. */
+/* Avant / après — relief ivoire/champagne, indépendant du comparateur. */
 .atelier-showcase {
-  --atelier-bg-light: #fffaf3;
-  --atelier-bg-base: #f7ead9;
-  --atelier-bg-warm: #f1dcc2;
-  --atelier-line: #bd8248;
-  --atelier-line-soft: rgba(189, 130, 72, 0.22);
-  --atelier-line-faint: rgba(189, 130, 72, 0.12);
-  --atelier-white-line: rgba(255, 255, 255, 0.65);
-  --atelier-ornament-opacity: 0.27;
-  --atelier-ornament-size: clamp(18rem, 23vw, 25rem);
-  --atelier-halo-opacity: 0.86;
-  --atelier-arch-opacity: 0.9;
   position: relative;
   isolation: isolate;
-  background:
-    radial-gradient(ellipse 57% 78% at 50% 51%, rgba(255, 253, 248, 0.98) 0%, rgba(255, 250, 243, 0.82) 42%, transparent 72%),
-    radial-gradient(ellipse 52% 64% at 3% 100%, rgba(229, 201, 166, 0.42), transparent 72%),
-    radial-gradient(ellipse 46% 62% at 98% 4%, rgba(229, 201, 166, 0.32), transparent 72%),
-    linear-gradient(116deg, var(--atelier-bg-warm) -18%, var(--atelier-bg-base) 35%, var(--atelier-bg-light) 61%, #f3e3cf 118%);
-}
-
-.atelier-showcase::before {
-  position: absolute;
-  z-index: 0;
-  inset: 0;
-  pointer-events: none;
-  content: "";
-  opacity: 0.28;
-  background-image:
-    radial-gradient(rgba(119, 84, 51, 0.18) 0.45px, transparent 0.7px),
-    radial-gradient(rgba(255, 255, 255, 0.72) 0.45px, transparent 0.75px);
-  background-position: 0 0, 4px 5px;
-  background-size: 8px 8px, 11px 11px;
-  mix-blend-mode: soft-light;
+  padding: 60px 12px;
+  background: #f4f1e9;
 }
 
 .atelier-showcase__content {
@@ -5593,188 +5581,110 @@ html.dark .custom-radio {
   z-index: 2;
 }
 
-.discount-section__ornament {
+.atelier-showcase__decor {
   position: absolute;
-  z-index: 1;
-  bottom: -2.5rem;
-  display: none;
-  width: clamp(19rem, 23vw, 28rem);
-  max-width: none;
-  pointer-events: none;
-  user-select: none;
-  opacity: 0.27;
-  background-repeat: no-repeat;
-  background-position: center bottom;
-  background-size: contain;
-  filter: sepia(0.2) saturate(0.78) contrast(0.92);
-  mix-blend-mode: multiply;
-}
-
-.discount-section__ornament--notre-dame {
-  left: clamp(-8.5rem, -4.5vw, -3.5rem);
-  aspect-ratio: 978 / 1608;
-  background-image: url('/decorations/newsletter-notre-dame-engraving-v1.webp');
-  -webkit-mask-image: linear-gradient(to right, #000 0 68%, rgba(0, 0, 0, 0.54) 83%, transparent 100%);
-  mask-image: linear-gradient(to right, #000 0 68%, rgba(0, 0, 0, 0.54) 83%, transparent 100%);
-}
-
-.discount-section__ornament--vieux-port {
-  right: clamp(-9rem, -4.8vw, -3.75rem);
-  bottom: -1.75rem;
-  aspect-ratio: 1023 / 1537;
-  background-image: url('/decorations/newsletter-vieux-port-engraving-v1.webp');
-  -webkit-mask-image: linear-gradient(to left, #000 0 70%, rgba(0, 0, 0, 0.54) 84%, transparent 100%);
-  mask-image: linear-gradient(to left, #000 0 70%, rgba(0, 0, 0, 0.54) 84%, transparent 100%);
-}
-
-@media (min-width: 768px) {
-  .discount-section__ornament {
-    display: block;
-  }
-}
-
-html.dark .discount-section__ornament,
-.discount-section--dark .discount-section__ornament {
-  display: none;
-}
-
-.atelier-showcase__halo {
-  position: absolute;
-  z-index: 0;
-  top: 9%;
-  bottom: 9%;
-  left: 50%;
-  width: min(84%, 1380px);
-  border-radius: 46% 54% 45% 55% / 45% 45% 55% 55%;
-  pointer-events: none;
-  opacity: var(--atelier-halo-opacity);
-  background: radial-gradient(ellipse at center, rgba(255, 255, 252, 0.96) 0%, rgba(255, 252, 247, 0.76) 47%, rgba(255, 252, 247, 0) 76%);
-  box-shadow: 0 28px 72px rgba(132, 91, 51, 0.11);
-  filter: blur(10px);
-  transform: translateX(-50%);
-}
-
-.atelier-showcase__arch {
-  position: absolute;
-  z-index: 0;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
+  z-index: 0;
   pointer-events: none;
-  opacity: var(--atelier-arch-opacity);
-  -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.12) 0%, rgba(0, 0, 0, 0.42) 2%, rgba(0, 0, 0, 0.78) 5%, #000 9% 26%, rgba(0, 0, 0, 0.72) 35%, rgba(0, 0, 0, 0.32) 43%, transparent 50%);
-  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.12) 0%, rgba(0, 0, 0, 0.42) 2%, rgba(0, 0, 0, 0.78) 5%, #000 9% 26%, rgba(0, 0, 0, 0.72) 35%, rgba(0, 0, 0, 0.32) 43%, transparent 50%);
+  opacity: 0.8;
 }
 
-.atelier-showcase__curve-line {
-  fill: none;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  vector-effect: non-scaling-stroke;
-}
-
-.atelier-showcase__curve-line--warm {
-  stroke: rgba(189, 130, 72, 0.29);
-  stroke-width: 1.05;
-}
-
-.atelier-showcase__curve-line--light {
-  stroke: rgba(255, 255, 255, 0.92);
-  stroke-width: 1px;
-  opacity: 0.7;
-}
-
-.atelier-showcase__ornament {
+.atelier-showcase__decor > span {
   position: absolute;
-  z-index: 1;
-  bottom: -1.4rem;
-  display: none;
-  width: var(--atelier-ornament-size);
-  max-width: none;
   pointer-events: none;
-  user-select: none;
-  opacity: var(--atelier-ornament-opacity);
-  background-repeat: no-repeat;
-  background-position: center bottom;
-  background-size: contain;
-  filter: sepia(0.24) saturate(0.82) contrast(0.94);
-  mix-blend-mode: multiply;
 }
 
-.atelier-showcase__ornament--left {
-  left: clamp(-8rem, -4vw, -3rem);
-  -webkit-mask-image: linear-gradient(to right, #000 0 68%, rgba(0, 0, 0, 0.5) 82%, transparent 100%);
-  mask-image: linear-gradient(to right, #000 0 68%, rgba(0, 0, 0, 0.5) 82%, transparent 100%);
+.atelier-showcase__wash {
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 76% 28%, #fffcf7 5%, transparent 53%),
+    radial-gradient(ellipse at 0 70%, #e6ddce66, transparent 56%),
+    radial-gradient(ellipse at 83% 100%, #d7b38b70, transparent 50%);
 }
 
-.atelier-showcase__ornament--right {
-  right: clamp(-8rem, -4vw, -3rem);
-  -webkit-mask-image: linear-gradient(to right, #000 0 68%, rgba(0, 0, 0, 0.5) 82%, transparent 100%);
-  mask-image: linear-gradient(to right, #000 0 68%, rgba(0, 0, 0, 0.5) 82%, transparent 100%);
-  transform: scaleX(-1);
-  transform-origin: center bottom;
+.atelier-showcase__disc {
+  width: 540px;
+  aspect-ratio: 1;
+  left: -190px;
+  top: -245px;
+  border-radius: 50%;
+  background: linear-gradient(130deg, #fffdf7, #e4d9c7 75%);
+  box-shadow: inset 4px 5px 7px #ffffffa6, inset -9px -15px 26px #c1ad9160, 25px 35px 40px -20px #9d896b50;
 }
 
-@media (min-width: 768px) {
-  .atelier-showcase__ornament {
-    display: block;
+.atelier-showcase__pill {
+  width: 330px;
+  height: 790px;
+  right: -150px;
+  bottom: -280px;
+  transform: rotate(34deg);
+  border-radius: 180px;
+  background: linear-gradient(100deg, #fffaf0, #dfcfb7);
+  box-shadow: inset 3px 1px 4px #ffffffbf, inset -10px 0 25px #b9a17d50, -23px 28px 33px -16px #98806245;
+}
+
+.atelier-showcase__light {
+  inset: 0;
+  background: linear-gradient(125deg, transparent 29%, #ffffff59 30%, #ffffff05 48%, transparent 49%);
+  filter: blur(12px);
+}
+
+/* Palette validée : les overrides restent limités au mode clair de cette section. */
+html:not(.dark) .atelier-showcase:not(.before-after-premium--dark) {
+  --ba-surface: #fffdf8;
+  --ba-surface-raised: #fffdf8;
+  --ba-tray: #eee7d9;
+  --ba-ink: #28271f;
+  --ba-muted: #79796e;
+  --ba-bronze: #b18d5a;
+  --ba-border: #dfd8c9;
+  --ba-border-soft: #dfd8c959;
+}
+
+html:not(.dark) .atelier-showcase:not(.before-after-premium--dark) .before-after-premium-shell {
+  background: linear-gradient(152deg, #fffefb, #dfd8c9) !important;
+  box-shadow: 0 35px 80px -45px #3f331c4d, 0 8px 25px -15px #28261f26, inset 0 1px 0 #ffffffcc;
+}
+
+html:not(.dark) .atelier-showcase:not(.before-after-premium--dark) :is(.before-after-premium-shell__inner, .before-after-premium-shell__grid, .before-after-premium-visual) {
+  background: var(--ba-surface);
+}
+
+html:not(.dark) .atelier-showcase:not(.before-after-premium--dark) .before-after-premium-copy--warm {
+  background: radial-gradient(ellipse at 100% 0, #cfb69b1f, transparent 75%), #fdfbf6 !important;
+}
+
+@media (min-width: 640px) {
+  html:not(.dark) .atelier-showcase:not(.before-after-premium--dark) .before-after-media-bezel {
+    background: linear-gradient(145deg, var(--ba-surface), var(--ba-tray));
   }
-
-  .atelier-showcase__ornament--left {
-    aspect-ratio: 800 / 1130;
-    background-image: url('/decorations/atelier-ornament-left-engraving.webp');
-  }
-
-  .atelier-showcase__ornament--right {
-    aspect-ratio: 800 / 1093;
-    background-image: url('/decorations/atelier-ornament-right-engraving.webp');
-  }
 }
 
-.atelier-showcase .before-after-premium-shell {
-  box-shadow:
-    0 42px 94px -64px rgba(80, 53, 30, 0.5),
-    0 14px 35px -28px rgba(126, 85, 44, 0.3),
-    0 2px 7px rgba(94, 62, 34, 0.08);
-}
-
+html.dark .atelier-showcase,
 .atelier-showcase.before-after-premium--dark {
   background: #141210;
 }
 
-.atelier-showcase.before-after-premium--dark::before,
-.atelier-showcase.before-after-premium--dark .atelier-showcase__halo,
-.atelier-showcase.before-after-premium--dark .atelier-showcase__arch,
-.atelier-showcase.before-after-premium--dark .atelier-showcase__ornament {
+html.dark .atelier-showcase__decor,
+.atelier-showcase.before-after-premium--dark .atelier-showcase__decor {
   display: none;
 }
 
-@media (max-width: 1199px) {
-  .atelier-showcase {
-    --atelier-ornament-size: clamp(16rem, 27vw, 21rem);
-    --atelier-ornament-opacity: 0.13;
-  }
-
-  .atelier-showcase__ornament--left { left: -7rem; }
-  .atelier-showcase__ornament--right { right: -7rem; }
-
-  .atelier-showcase__arch {
-    opacity: 0.68;
-  }
+@media (min-width: 768px) {
+  .atelier-showcase { padding: 88px 25px 82px; }
 }
 
-@media (max-width: 767px) {
-  .atelier-showcase.before-after-premium .before-after-premium-atmosphere {
-    background: none;
-  }
+@media (min-width: 1024px) {
+  .atelier-showcase { padding: 110px max(5.5vw, 24px) 100px; }
+}
 
-  .atelier-showcase::before,
-  .atelier-showcase__halo,
-  .atelier-showcase__arch,
-  .atelier-showcase__ornament {
-    display: none;
-  }
+@media (min-width: 1600px) {
+  .atelier-showcase { padding-top: 135px; padding-bottom: 125px; }
+}
+
+@media (max-width: 600px) {
+  .atelier-showcase__disc { width: 370px; top: -250px; left: -150px; }
+  .atelier-showcase__pill { width: 240px; right: -230px; bottom: -180px; }
 }
 
 /* ==========================================================================
@@ -7026,6 +6936,90 @@ html.dark .discount-shell,
 html.dark .discount-shell::before,
 .discount-section--dark .discount-shell::before {
   background: linear-gradient(90deg, transparent, rgba(241, 214, 170, 0.4), transparent);
+}
+
+/* Newsletter — Champagne équilibré, deux ovales mats sans liseré extérieur. */
+.discount-section {
+  isolation: isolate;
+  container-type: inline-size;
+  padding: 73px 13px 79px;
+}
+
+html:not(.dark) .discount-section:not(.discount-section--dark) {
+  background: linear-gradient(130deg, #f5f2eb, #eee7da);
+  --nl-ink: #27251e;
+  --nl-muted: #81786c;
+  --nl-bronze: #a78455;
+  --nl-raised: #fdfbf6;
+  --nl-border: #e0d7c9;
+}
+
+.discount-section__decor { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.discount-section__oval {
+  position: absolute;
+  border-radius: 50%;
+  background: linear-gradient(130deg, #f6f1e8, #eae1d3 60%, #e2d7c6);
+  box-shadow: inset 4px 5px 9px #ffffff40, inset -9px -15px 30px #c1ad912e, 20px 28px 38px -20px #9d896b30;
+}
+.discount-section__oval--top { width: 54cqw; height: 40cqw; left: -19cqw; top: -14.5cqw; transform: rotate(-18deg); }
+.discount-section__oval--bottom {
+  width: 38cqw; height: 52cqw; right: -19cqw; bottom: -23.5cqw; transform: rotate(28deg);
+  background: linear-gradient(110deg, #f6f1e8, #eae1d3 62%, #e2d7c6);
+  box-shadow: inset -8px 0 26px #c1ad912e, -18px 23px 34px -18px #9d896b30;
+}
+.discount-section__oval--bottom::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit;
+  box-shadow: inset 2px 1px 5px #fffdf7a6;
+  mask-image: linear-gradient(155deg, transparent 12%, #000 34%, #000 52%, transparent 76%);
+}
+.discount-section__caption, .discount-section__signature {
+  position: absolute; z-index: 1; left: max(5.5vw, 24px); right: max(5.5vw, 24px);
+  display: flex; justify-content: space-between; align-items: center; pointer-events: none; color: #9d927e;
+}
+.discount-section__caption { top: 44px; font-size: 8px; letter-spacing: .18em; text-transform: uppercase; }
+.discount-section__caption span:last-child { font-size: 7px; }
+.discount-section__signature { bottom: 37px; font-family: var(--font-serif); font-size: 18px; font-style: italic; }
+.discount-section__signature span:last-child { font-family: var(--font-sans); font-size: 9px; font-style: normal; letter-spacing: .06em; }
+.discount-offer-row { display: flex; align-items: center; gap: 16px; min-height: 33px; }
+.discount-offer {
+  display: inline-flex; align-items: center; gap: 9px; padding: 8px 13px; border: 1px solid var(--nl-border);
+  border-radius: 7px; background: #eee7dc; color: var(--nl-bronze);
+  font-size: 8px; font-weight: 600; letter-spacing: .17em; text-transform: uppercase; white-space: nowrap;
+}
+.discount-offer svg { display: block; flex: none; }
+.discount-offer__line { height: 1px; min-width: 12px; background: var(--nl-border); flex: 1; }
+.discount-offer__monogram { display: block; width: 32px; height: 24px; object-fit: contain; flex: none; filter: grayscale(1) sepia(.8); opacity: .58; }
+html:not(.dark) .discount-section:not(.discount-section--dark) .discount-shell {
+  background: #fffdf8 !important;
+  --tw-ring-color: #fffdf8;
+  box-shadow: 0 35px 80px -45px #3f331c4d, 0 8px 25px -15px #28261f26, inset 0 1px 0 #ffffffcc;
+}
+html:not(.dark) .discount-section:not(.discount-section--dark) .discount-shell > div { background: #fffdf8; }
+html:not(.dark) .discount-section:not(.discount-section--dark) .discount-copy { background: radial-gradient(ellipse at 91% 12%, #c9b49418, transparent 33%), #fdfbf6; }
+html:not(.dark) .discount-section:not(.discount-section--dark) .discount-game { background: radial-gradient(ellipse at 50% 73%, #c7ac8030, transparent 50%), #fffdf8; }
+html:not(.dark) .discount-section:not(.discount-section--dark) .discount-form { background: #eee7dc; --tw-ring-color: #e0d7c9; }
+html.dark .discount-section__decor, .discount-section--dark .discount-section__decor { display: none; }
+html.dark .discount-offer, .discount-section--dark .discount-offer { background: #ffffff0e; }
+@media (min-width: 768px) { .discount-section { padding: 85px 25px; } }
+@media (min-width: 1024px) { .discount-section { padding: 110px max(5.5vw, 24px) 104px; } }
+@media (min-width: 1600px) {
+  .discount-section { padding-top: 135px; padding-bottom: 125px; }
+  .discount-section__caption { top: 55px; }
+  .discount-section__signature { bottom: 50px; }
+}
+@media (max-width: 767px) {
+  .discount-section__caption { left: 23px; right: 23px; top: 30px; font-size: 6px; letter-spacing: .12em; }
+  .discount-section__caption span:last-child { display: none; }
+  .discount-section__signature { left: 23px; right: 23px; bottom: 25px; display: block; font-size: 15px; }
+  .discount-section__signature span:last-child { display: block; margin-top: 8px; font-size: 8px; }
+}
+@media (max-width: 600px) {
+  .discount-section__oval--top { width: 80cqw; height: 64cqw; left: -34cqw; top: -33cqw; }
+  .discount-section__oval--bottom { width: 64cqw; height: 90cqw; right: -39cqw; bottom: -44cqw; }
+  .discount-offer-row { gap: 10px; min-height: 29px; }
+  .discount-offer { font-size: 6px; letter-spacing: .13em; padding: 7px 10px; gap: 7px; }
+  .discount-offer svg { width: 17px; height: 14px; }
+  .discount-offer__monogram { width: 27px; height: 21px; }
 }
 
 /* ============================================================

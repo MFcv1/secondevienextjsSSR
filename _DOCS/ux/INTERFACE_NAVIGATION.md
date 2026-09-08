@@ -64,6 +64,27 @@ Invariants:
 
 Le contrat statique est verifie par `npm run mobile:contract`; le comportement visuel demande le gate menu mobile si la zone est modifiee.
 
+### Section avant / après
+
+Le décor clair de `BeforeAfterSectionServer` utilise un fond ivoire/champagne
+avec deux volumes mats en CSS, sans image décorative à précharger. Ces formes
+restent non interactives et masquées aux technologies d’assistance ; le mode
+sombre conserve son fond dédié. Le comparateur, ses images et ses gestes
+restent ceux du composant existant. Les chevrons SVG sont centrés dans leurs
+contrôles ; le repère de focus clavier du curseur porte sur la poignée,
+sans ajouter de cadre autour de la photo lors d’un clic ou d’un glissement.
+
+### Section newsletter
+
+`NewsletterSectionServer` reprend « Champagne équilibré » : deux ovales
+asymétriques en CSS, nuances proches, bord supérieur mat et reflet partiel
+sur le volume inférieur. Les gravures et leur préchargement sont retirés ;
+les fichiers restent conservés. Le cartouche « Offre exclusive » utilise une
+étiquette euro en SVG, un long filet et le monogramme, sans étoiles.
+Le décor est non interactif, masqué aux technologies d’assistance et adapté
+au mobile ; le mode sombre conserve ses surfaces dédiées. Le jeu serveur,
+ses gains, le consentement et l’envoi du code gardent leurs contrats existants.
+
 ## 5. Parcours principaux
 
 ### Visiteur

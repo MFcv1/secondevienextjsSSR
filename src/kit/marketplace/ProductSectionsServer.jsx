@@ -370,32 +370,12 @@ const BeforeAfterSliderPlaceholder = ({ project = restorationProjects[0], projec
 export const BeforeAfterSectionServer = ({ darkMode = false, projects = restorationProjects } = {}) => {
   return (
     <section className={`atelier-showcase before-after-industrial before-after-premium ${darkMode ? 'before-after-premium--dark' : ''} relative flex w-full items-center overflow-hidden px-3 py-10 sm:px-5 sm:py-12 md:min-h-[690px] md:px-7 md:py-14 lg:min-h-[760px] lg:px-8 lg:py-16 2xl:min-h-[780px] 2xl:px-10 dark:bg-[#0e0d0c] ${darkMode ? 'bg-[#141210]' : 'bg-[#f8f1e6]'}`}>
-      <div className="before-after-premium-atmosphere pointer-events-none absolute inset-0" aria-hidden="true" />
-      <div className="atelier-showcase__halo" aria-hidden="true" />
-      <svg
-        className="atelier-showcase__arch"
-        viewBox="0 0 1600 720"
-        preserveAspectRatio="none"
-        aria-hidden="true"
-        focusable="false"
-      >
-        <g className="atelier-showcase__curve atelier-showcase__curve--left">
-          <path className="atelier-showcase__curve-line atelier-showcase__curve-line--warm" d="M 360 -110 C 310 -55 255 -12 195 40 C 105 120 35 205 0 320" />
-          <path className="atelier-showcase__curve-line atelier-showcase__curve-line--light" d="M 376 -106 C 326 -48 271 -4 211 49 C 121 129 50 211 14 312" />
-        </g>
-        <g className="atelier-showcase__curve atelier-showcase__curve--right" transform="translate(1600 0) scale(-1 1)">
-          <path className="atelier-showcase__curve-line atelier-showcase__curve-line--warm" d="M 360 -110 C 310 -55 255 -12 195 40 C 105 120 35 205 0 320" />
-          <path className="atelier-showcase__curve-line atelier-showcase__curve-line--light" d="M 376 -106 C 326 -48 271 -4 211 49 C 121 129 50 211 14 312" />
-        </g>
-      </svg>
-      <span
-        aria-hidden="true"
-        className="atelier-showcase__ornament atelier-showcase__ornament--left"
-      />
-      <span
-        aria-hidden="true"
-        className="atelier-showcase__ornament atelier-showcase__ornament--right"
-      />
+      <div className="atelier-showcase__decor" aria-hidden="true">
+        <span className="atelier-showcase__wash" />
+        <span className="atelier-showcase__disc" />
+        <span className="atelier-showcase__pill" />
+        <span className="atelier-showcase__light" />
+      </div>
       <div className="atelier-showcase__content relative z-[2] w-full">
         <div className={`before-after-premium-shell relative mx-auto w-full max-w-[1480px] overflow-hidden rounded-[26px] p-[1px] shadow-[0_30px_86px_-68px_rgba(37,29,22,0.56),0_10px_30px_-28px_rgba(124,88,55,0.38)] ring-1 dark:bg-[#19140f] dark:ring-[#3a3027]/85 dark:shadow-[0_30px_86px_-72px_rgba(0,0,0,0.96)] ${darkMode ? 'bg-[#19140f] ring-[#3a3027]/85' : 'bg-[#fff9ef]/78 ring-[#d7c4ad]/80'}`}>
         <div className={`before-after-premium-shell__inner relative overflow-hidden rounded-[25px] p-1.5 dark:bg-[#181511] dark:shadow-[inset_0_1px_0_rgba(216,173,115,0.035)] ${darkMode ? 'bg-[#1d1a16] shadow-[inset_0_1px_0_rgba(216,173,115,0.035)]' : 'bg-[#fffaf4] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]'}`}>
@@ -974,25 +954,30 @@ const newsletterAssurances = [
 
 export const NewsletterSectionServer = ({ darkMode = false } = {}) => (
   <section className={`gallery-deferred-render discount-section ${darkMode ? 'discount-section--dark' : ''} relative flex items-center overflow-hidden px-3 py-10 sm:px-5 sm:py-12 md:min-h-[690px] md:px-7 md:py-14 lg:min-h-[760px] lg:px-8 lg:py-16 2xl:min-h-[780px] 2xl:px-10 dark:bg-[#0e0d0c] ${darkMode ? 'bg-[#141210]' : 'bg-[#f8f1e6]'}`}>
-    <div className={`pointer-events-none absolute inset-0 dark:bg-[radial-gradient(circle_at_76%_32%,rgba(184,132,72,0.13),transparent_31%),radial-gradient(circle_at_20%_72%,rgba(130,148,112,0.09),transparent_34%),linear-gradient(180deg,#0b0a09_0%,#14110f_100%)] ${darkMode ? 'bg-[radial-gradient(circle_at_76%_32%,rgba(184,132,72,0.14),transparent_31%),radial-gradient(circle_at_20%_72%,rgba(130,148,112,0.11),transparent_34%)]' : 'bg-[linear-gradient(112deg,#f3e7d7_0%,#f8f1e6_48%,#efe0cd_100%)]'}`} />
-    <span aria-hidden="true" className="discount-section__ornament discount-section__ornament--notre-dame" />
-    <span aria-hidden="true" className="discount-section__ornament discount-section__ornament--vieux-port" />
+    <div className="discount-section__decor" aria-hidden="true">
+      <span className="discount-section__oval discount-section__oval--top" />
+      <span className="discount-section__oval discount-section__oval--bottom" />
+    </div>
+    <div className="discount-section__caption" aria-hidden="true"><span>Les belles surprises commencent ici.</span><span>Seconde Vie — Les nouvelles de l’atelier</span></div>
+    <div className="discount-section__signature" aria-hidden="true"><span>Un peu de chance. Beaucoup de belles choses.</span><span>Champagne & équilibre</span></div>
 
     <div className={`discount-shell relative z-[2] mx-auto w-full max-w-[1480px] overflow-hidden rounded-[26px] p-[1px] shadow-[0_30px_86px_-68px_rgba(37,29,22,0.56),0_10px_30px_-28px_rgba(124,88,55,0.38)] ring-1 dark:bg-[#19140f] dark:ring-[#3a3027]/85 dark:shadow-[0_30px_86px_-72px_rgba(0,0,0,0.96)] ${darkMode ? 'bg-[#19140f] ring-[#3a3027]/85' : 'bg-gradient-to-br from-[#e1d1bd] via-[#fffaf3] to-[#d7c5b2] ring-[#d8c9b6]'}`}>
       <div className={`relative overflow-hidden rounded-[25px] p-1.5 dark:bg-[#181511] dark:shadow-[inset_0_1px_0_rgba(216,173,115,0.035)] ${darkMode ? 'bg-[#1d1a16] shadow-[inset_0_1px_0_rgba(216,173,115,0.035)]' : 'bg-[#fffaf3] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]'}`}>
         <div className={`pointer-events-none absolute inset-1.5 rounded-[21px] ring-1 dark:ring-[#d8ad73]/6 ${darkMode ? 'ring-[#d8ad73]/6' : 'ring-[#d9c9b5]'}`} />
         <div className={`relative grid overflow-hidden rounded-[20px] ring-1 lg:grid-cols-[minmax(0,1.02fr)_minmax(370px,0.98fr)] dark:bg-[#181511] dark:ring-[#302820] ${darkMode ? 'bg-[#1d1a16] ring-[#302820]' : 'bg-[#fffdf8] ring-[#e4d7c7]'}`}>
-          <div className={`relative flex min-h-[340px] flex-col justify-center overflow-hidden border-b p-5 sm:min-h-[360px] sm:p-7 md:p-8 lg:min-h-[470px] lg:border-b-0 lg:border-r lg:p-9 xl:p-10 2xl:p-12 dark:border-[#302820] dark:bg-[#181511] ${darkMode ? 'border-[#332b23] bg-[#1d1a16]' : 'border-[#e4d7c7] bg-[#fffdf8]'}`}>
-            <div className={`pointer-events-none absolute inset-0 dark:bg-[radial-gradient(circle_at_90%_14%,rgba(184,132,72,0.11),transparent_26%),radial-gradient(ellipse_at_6%_44%,rgba(101,81,58,0.12),transparent_21%)] ${darkMode ? 'bg-[radial-gradient(circle_at_90%_14%,rgba(184,132,72,0.11),transparent_26%)]' : 'bg-[radial-gradient(circle_at_89%_13%,rgba(166,138,100,0.12),transparent_24%),radial-gradient(ellipse_at_6%_44%,rgba(119,91,61,0.09),transparent_21%)]'}`} />
-            <div className="pointer-events-none absolute -left-16 top-28 hidden h-56 w-32 rotate-[-18deg] rounded-full bg-[#5e4b37]/10 blur-2xl dark:bg-[#b9864f]/10 lg:block" />
+          <div className={`discount-copy relative flex min-h-[340px] flex-col justify-center overflow-hidden border-b p-5 sm:min-h-[360px] sm:p-7 md:p-8 lg:min-h-[470px] lg:border-b-0 lg:border-r lg:p-9 xl:p-10 2xl:p-12 dark:border-[#302820] dark:bg-[#181511] ${darkMode ? 'border-[#332b23] bg-[#1d1a16]' : 'border-[#e4d7c7] bg-[#fffdf8]'}`}>
 
-            <div className="relative flex items-center gap-4">
-              <span className={`inline-flex h-8 items-center gap-2 rounded-full px-4 font-sans text-[9px] font-extrabold uppercase tracking-[0.24em] shadow-[inset_0_1px_0_rgba(255,255,255,0.74)] ring-1 dark:bg-white/[0.055] dark:text-[#d8c6b2] dark:ring-[#3a332a] ${darkMode ? 'bg-white/[0.055] text-[#d8c6b2] ring-[#3a332a]' : 'bg-[#f5ede3] text-[#8a6646] ring-[#e6d9c9]'}`}>
-                <Sparkles size={13} strokeWidth={1.35} aria-hidden="true" />
+            <div className="discount-offer-row relative">
+              <span className="discount-offer">
+                <svg viewBox="0 0 28 24" width="19" height="16" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M3 4h15l7 8-7 8H3a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z" />
+                  <circle cx="20" cy="12" r=".75" />
+                  <path d="M13.8 8.1a4 4 0 1 0 0 7.8M7 10.5h5.7M7 13.5h5.2" />
+                </svg>
                 Offre exclusive
               </span>
-              <span className={`hidden h-px flex-1 sm:block dark:bg-[#5c4a36]/55 ${darkMode ? 'bg-[#5c4a36]/55' : 'bg-[#dfd0be]'}`} />
-              <span className={`hidden text-[22px] leading-none sm:block dark:text-[#8a6b48] ${darkMode ? 'text-[#8a6b48]' : 'text-[#b79e7d]'}`} aria-hidden="true">*</span>
+              <span className="discount-offer__line" aria-hidden="true" />
+              <img className="discount-offer__monogram" src="/images/logoanais-320.webp" width="32" height="24" alt="" loading="lazy" decoding="async" />
             </div>
 
             <h2 className={`discount-title relative mt-7 max-w-[690px] font-serif text-[clamp(2.85rem,4.15vw,4.55rem)] font-medium leading-[0.9] tracking-normal sm:mt-8 lg:mt-9 dark:text-[#f8f1e8] ${darkMode ? 'text-[#f8f1e8]' : 'text-[#191713]'}`}>
