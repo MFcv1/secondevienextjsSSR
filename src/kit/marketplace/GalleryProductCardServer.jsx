@@ -114,23 +114,23 @@ export default function GalleryProductCardServer({
         ) : null}
       </div>
 
-      <Link href={productUrl} prefetch={false} draggable={false} data-gallery-product-link className={`product-card-info flex cursor-pointer text-inherit no-underline ${compact ? 'flex-col gap-1 md:flex-row md:items-start md:justify-between md:gap-4' : 'items-start justify-between gap-2 md:gap-4'} ${layoutMode === 'list' ? 'flex-1 pt-6' : ''}`}>
-        <div className="flex min-w-0 flex-1 flex-col gap-0.5 md:gap-1">
-          <div className={`truncate font-black uppercase tracking-widest opacity-50 ${compact ? 'text-[8px] md:text-[9px]' : 'text-[9px]'}`}>
+      <Link href={productUrl} prefetch={false} draggable={false} data-gallery-product-link className={`product-card-info cursor-pointer text-inherit no-underline ${compact ? 'grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-3 gap-y-1' : 'flex items-start justify-between gap-2 md:gap-4'} ${layoutMode === 'list' ? 'flex-1 pt-6' : ''}`}>
+        <div className={compact ? 'contents' : 'flex min-w-0 flex-1 flex-col gap-0.5 md:gap-1'}>
+          <div className={`truncate font-black uppercase tracking-widest opacity-50 ${compact ? 'col-start-1 row-start-1 text-[8px] md:text-[9px]' : 'text-[9px]'}`}>
             {item?.material || 'Matiere inconnue'}
           </div>
-          <h3 className={`font-serif leading-tight ${compact ? 'text-[13px] md:text-lg lg:text-xl' : 'text-[15px] md:text-lg lg:text-xl'} ${layoutMode === 'list' ? 'text-4xl' : ''}`}>
+          <h3 title={title} className={`min-w-0 truncate font-serif leading-tight ${compact ? `col-start-1 row-start-2 text-[13px] md:text-lg lg:text-xl ${soldOut ? 'col-span-2' : ''}` : 'text-[15px] md:text-lg lg:text-xl'} ${layoutMode === 'list' ? 'text-4xl' : ''}`}>
             {title}
           </h3>
         </div>
 
-        <div className={`flex shrink-0 ${compact ? 'flex-row items-center justify-between md:flex-col md:items-end' : 'flex-col items-end'} gap-0.5 text-right md:gap-1`}>
-          <div className={`whitespace-nowrap font-black uppercase tracking-widest opacity-50 ${compact ? 'text-[8px] md:text-[9px]' : 'text-[9px]'}`}>
+        <div className={compact ? 'contents' : 'flex shrink-0 flex-col items-end gap-0.5 text-right md:gap-1'}>
+          <div className={`whitespace-nowrap font-black uppercase tracking-widest opacity-50 ${compact ? 'col-start-2 row-start-1 text-right text-[8px] md:text-[9px]' : 'text-[9px]'}`}>
             {soldOut ? 'Stock: 0' : `Stock: ${getProductStockAmount(item)}`}
           </div>
-          <p className={`product-card-price whitespace-nowrap font-bold tabular-nums ${compact ? 'text-[10px] md:text-xs lg:text-sm' : 'text-[11px] md:text-xs lg:text-sm'}`}>
+          {!soldOut && <p className={`product-card-price whitespace-nowrap font-bold tabular-nums ${compact ? 'col-start-2 row-start-2 text-right text-[10px] md:text-xs lg:text-sm' : 'text-[11px] md:text-xs lg:text-sm'}`}>
             {formatPrice(item)}
-          </p>
+          </p>}
         </div>
       </Link>
     </div>

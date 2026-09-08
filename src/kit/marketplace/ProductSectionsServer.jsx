@@ -382,23 +382,36 @@ export const BeforeAfterSectionServer = ({ darkMode = false, projects = restorat
           <div className={`before-after-premium-shell__inner-ring pointer-events-none absolute inset-1.5 rounded-[21px] ring-1 dark:ring-[#d8ad73]/6 ${darkMode ? 'ring-[#d8ad73]/6' : 'ring-[#e2cfba]'}`} />
           <div className={`before-after-premium-shell__grid relative grid overflow-hidden rounded-[20px] ring-1 lg:grid-cols-[minmax(0,0.95fr)_minmax(410px,1.05fr)] dark:bg-[#181511] dark:ring-[#302820] ${darkMode ? 'bg-[#1d1a16] ring-[#302820]' : 'bg-[#fffaf3] ring-[#ead8c4]'}`}>
         <div className={`before-after-premium-copy before-after-premium-copy--warm relative flex min-h-[320px] flex-col justify-center border-b p-5 sm:min-h-[340px] sm:p-7 md:p-8 lg:min-h-[430px] lg:border-b-0 lg:border-r lg:p-8 xl:p-9 2xl:p-10 dark:border-[#302820] dark:bg-[#181511] ${darkMode ? 'border-[#332b23] bg-[#1d1a16]' : 'border-[#ead8c4] bg-[#fffaf3]'}`}>
-          <img
-            src="/images/logoanais-320.webp"
-            alt=""
-            aria-hidden="true"
-            className="before-after-premium-brand-watermark"
-          />
           <div className={`before-after-premium-kicker mb-7 flex items-center gap-3 font-sans text-[9px] font-bold uppercase tracking-[0.24em] sm:mb-9 ${darkMode ? 'text-[#d8ad73]' : 'text-[#8b5c37]'}`}>
-            <span className={`h-px w-8 ${darkMode ? 'bg-[#d8ad73]/55' : 'bg-[#b9854f]/60'}`} />
+            <svg className="shrink-0" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="m14.5 9.5-2-2 5-5 4 4-2 2-2-2-3 3Z" />
+              <path d="m12.5 9.5-9 9a1.4 1.4 0 0 0 2 2l9-9M15 14l5 5a1.4 1.4 0 0 1-2 2l-5-5" />
+              <path d="m10 11-3-3M3 2l5 3-3 3-3-5Z" />
+            </svg>
             <span>Atelier Seconde Vie</span>
             <span className={`ml-auto text-[8px] tracking-[0.16em] ${darkMode ? 'text-[#d8ad73]/60' : 'text-[#f0d5b6]/56'}`}>01 — 03</span>
           </div>
-          <h2 className={`before-after-premium-title max-w-[650px] font-serif text-[clamp(3.1rem,7.6vw,5.2rem)] font-semibold leading-[0.88] tracking-normal lg:text-[clamp(3.35rem,4.15vw,5rem)] dark:text-[#fbf2e7] ${darkMode ? 'text-[#fbf2e7]' : 'text-[#1d1914]'}`}>
+          <div className="before-after-premium-heading relative">
+          <svg viewBox="0 0 320 240" width="320" height="240" aria-hidden="true" data-logo-finish="dark-relief" className="before-after-premium-brand-watermark">
+            <defs>
+              <radialGradient id="atelier-brand-relief" cx="43%" cy="38%" r="65%">
+                <stop offset="0%" stopColor="#59432f" />
+                <stop offset="48%" stopColor="#38291d" />
+                <stop offset="100%" stopColor="#211911" />
+              </radialGradient>
+              <mask id="atelier-brand-silhouette" maskUnits="userSpaceOnUse" x="0" y="0" width="320" height="240" style={{ maskType: 'alpha' }}>
+                <image href="/images/logoanais-320.webp" width="320" height="240" />
+              </mask>
+            </defs>
+            <rect width="320" height="240" fill="url(#atelier-brand-relief)" mask="url(#atelier-brand-silhouette)" />
+          </svg>
+          <h2 className={`before-after-premium-title relative max-w-[650px] font-serif text-[clamp(3.1rem,7.6vw,5.2rem)] font-semibold leading-[0.88] tracking-normal lg:text-[clamp(3.35rem,4.15vw,5rem)] dark:text-[#fbf2e7] ${darkMode ? 'text-[#fbf2e7]' : 'text-[#1d1914]'}`}>
             <span className="before-after-title-line block">Chiner sans</span>
             <span className="before-after-title-line block">courir les</span>
             <span className="before-after-title-line block">brocantes,</span>
             <span className={`before-after-title-line block pt-1 font-light italic ${darkMode ? 'text-[#d8ad73]' : 'text-[#b9864f]'}`}>c'est possible&nbsp;!</span>
           </h2>
+          </div>
           <p className={`before-after-premium-description mt-8 max-w-[520px] font-sans text-[13px] leading-[1.6] sm:mt-9 sm:text-[13.5px] md:text-[14px] dark:text-[#d5c8b9]/78 ${darkMode ? 'text-[#d5c8b9]/78' : 'text-[#5f554a]'}`}>
             On s'occupe de tout pour vous. De la selection a la livraison de nos pepites, decouvrez comment chiner autrement avec Seconde Vie.
           </p>
@@ -959,7 +972,7 @@ export const NewsletterSectionServer = ({ darkMode = false } = {}) => (
       <span className="discount-section__oval discount-section__oval--bottom" />
     </div>
     <div className="discount-section__caption" aria-hidden="true"><span>Les belles surprises commencent ici.</span><span>Seconde Vie — Les nouvelles de l’atelier</span></div>
-    <div className="discount-section__signature" aria-hidden="true"><span>Un peu de chance. Beaucoup de belles choses.</span><span>Champagne & équilibre</span></div>
+    <div className="discount-section__signature" aria-hidden="true"><span>Un peu de chance. Beaucoup de belles choses.</span></div>
 
     <div className={`discount-shell relative z-[2] mx-auto w-full max-w-[1480px] overflow-hidden rounded-[26px] p-[1px] shadow-[0_30px_86px_-68px_rgba(37,29,22,0.56),0_10px_30px_-28px_rgba(124,88,55,0.38)] ring-1 dark:bg-[#19140f] dark:ring-[#3a3027]/85 dark:shadow-[0_30px_86px_-72px_rgba(0,0,0,0.96)] ${darkMode ? 'bg-[#19140f] ring-[#3a3027]/85' : 'bg-gradient-to-br from-[#e1d1bd] via-[#fffaf3] to-[#d7c5b2] ring-[#d8c9b6]'}`}>
       <div className={`relative overflow-hidden rounded-[25px] p-1.5 dark:bg-[#181511] dark:shadow-[inset_0_1px_0_rgba(216,173,115,0.035)] ${darkMode ? 'bg-[#1d1a16] shadow-[inset_0_1px_0_rgba(216,173,115,0.035)]' : 'bg-[#fffaf3] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]'}`}>

@@ -1369,8 +1369,8 @@ img {
 
 /* Pas de desaturation des pieces vendues : elle avait du sens dans la maquette
    ou une carte sur cinq etait vendue, mais le catalogue est vendu a 97%, donc
-   elle vidait de sa couleur la galerie entiere. La pastille « Vendu » et le
-   prix en brun signalent l'etat sans toucher a la photo. */
+   elle vidait de sa couleur la galerie entiere. La pastille « Vendu » signale
+   l'etat sans toucher a la photo ni repeter le statut sous le stock. */
 
 /* Pastilles posees dans la photo, donc decalees des 6px du passe-partout */
 .product-card-badge,
@@ -4568,7 +4568,7 @@ html.dark .before-after-premium-atmosphere,
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
 }
 
-.before-after-premium-copy > .before-after-premium-brand-watermark {
+.before-after-premium-heading > .before-after-premium-brand-watermark {
   position: absolute;
   z-index: 0 !important;
 
@@ -4577,24 +4577,38 @@ html.dark .before-after-premium-atmosphere,
      grandissait avec le panneau alors que la largeur du logo est plafonnee en
      px, donc le logo se faisait rogner de plus en plus. Seule la taille varie
      ensuite selon la place disponible. */
-  top: 34%;
+  top: 0;
   right: -2%;
   display: block;
   width: min(64%, 244px);
   height: auto;
+  aspect-ratio: 4 / 3;
   pointer-events: none;
   user-select: none;
 
-  /* Valeur de reference desktop, ajustee localement sur le petit mobile. */
-  opacity: 0.46;
-
-  /* Un orange moyen pose a faible opacite se delave en rose poudre. On part
-     donc d'une terre de sienne nettement plus sombre et plus saturee : la
-     teinte reste dense une fois fondue dans le creme, et l'opacite ne fait que
-     la temperer au lieu de la laver. */
-  filter: saturate(1.4) brightness(0.52);
-  transform: translateY(-50%);
+  /* Relief mat dans la silhouette, sans halo ni contour ajoute. */
+  --ba-logo-light: #ddd0b8;
+  --ba-logo-mid: #c5b391;
+  --ba-logo-edge: #a59172;
+  opacity: 0.88;
+  transform: translateY(clamp(-5px, -0.3vw, -2px));
 }
+
+/* Relief espresso : centre brun eclaire, bords assortis au bouton et aux badges. */
+.before-after-premium-heading > [data-logo-finish='dark-relief'] {
+  --ba-logo-light: #59432f;
+  --ba-logo-mid: #38291d;
+  --ba-logo-edge: #211911;
+}
+
+/* Variante foncee conservee pour comparaison, sans modifier la geometrie. */
+.before-after-premium-heading > [data-logo-finish='ink'] {
+  --ba-logo-light: #000;
+  --ba-logo-mid: #000;
+  --ba-logo-edge: #000;
+  opacity: 0.72;
+}
+.before-after-premium-heading > [data-logo-finish='ink'] > rect { fill: #000; }
 
 @media (max-width: 639.98px) {
   .before-after-premium-title {
@@ -4605,32 +4619,32 @@ html.dark .before-after-premium-atmosphere,
     font-size: clamp(2.45rem, 10.4vw, 2.55rem);
   }
 
-  .before-after-premium-copy > .before-after-premium-brand-watermark {
+  .before-after-premium-heading > .before-after-premium-brand-watermark {
     right: -7%;
     width: min(53%, 202px);
     opacity: 0.17;
   }
 }
 
-html.dark .before-after-premium-copy > .before-after-premium-brand-watermark,
-.before-after-premium--dark .before-after-premium-copy > .before-after-premium-brand-watermark {
-  /* Meme logique en sombre : hue de marque conservee, juste eclaircie pour
-     rester lisible sur le panneau fonce. */
+html.dark .before-after-premium-heading > .before-after-premium-brand-watermark,
+.before-after-premium--dark .before-after-premium-heading > .before-after-premium-brand-watermark {
+  --ba-logo-light: #e5cda8;
+  --ba-logo-mid: #c8a57a;
+  --ba-logo-edge: #9c7955;
   opacity: 0.24;
-  filter: saturate(1.2) brightness(1.18);
 }
 
 /* Palier tablette : le panneau redevient large et le texte ne remplit plus la
    colonne, le logo peut donc grandir et s'affirmer. Position inchangee. */
 @media (min-width: 640px) and (max-width: 1023px) {
-  .before-after-premium-copy > .before-after-premium-brand-watermark {
+  .before-after-premium-heading > .before-after-premium-brand-watermark {
     width: min(46%, 300px);
   }
 }
 
 @media (min-width: 1024px) {
-  .before-after-premium-copy > .before-after-premium-brand-watermark {
-    top: 34%;
+  .before-after-premium-heading > .before-after-premium-brand-watermark {
+    top: 0;
     right: -2%;
     width: min(50%, 340px);
   }
@@ -6982,8 +6996,7 @@ html:not(.dark) .discount-section:not(.discount-section--dark) {
 .discount-section__signature span:last-child { font-family: var(--font-sans); font-size: 9px; font-style: normal; letter-spacing: .06em; }
 .discount-offer-row { display: flex; align-items: center; gap: 16px; min-height: 33px; }
 .discount-offer {
-  display: inline-flex; align-items: center; gap: 9px; padding: 8px 13px; border: 1px solid var(--nl-border);
-  border-radius: 7px; background: #eee7dc; color: var(--nl-bronze);
+  display: inline-flex; align-items: center; gap: 9px; padding: 0; color: var(--nl-bronze);
   font-size: 8px; font-weight: 600; letter-spacing: .17em; text-transform: uppercase; white-space: nowrap;
 }
 .discount-offer svg { display: block; flex: none; }
@@ -6999,7 +7012,6 @@ html:not(.dark) .discount-section:not(.discount-section--dark) .discount-copy { 
 html:not(.dark) .discount-section:not(.discount-section--dark) .discount-game { background: radial-gradient(ellipse at 50% 73%, #c7ac8030, transparent 50%), #fffdf8; }
 html:not(.dark) .discount-section:not(.discount-section--dark) .discount-form { background: #eee7dc; --tw-ring-color: #e0d7c9; }
 html.dark .discount-section__decor, .discount-section--dark .discount-section__decor { display: none; }
-html.dark .discount-offer, .discount-section--dark .discount-offer { background: #ffffff0e; }
 @media (min-width: 768px) { .discount-section { padding: 85px 25px; } }
 @media (min-width: 1024px) { .discount-section { padding: 110px max(5.5vw, 24px) 104px; } }
 @media (min-width: 1600px) {
@@ -7017,9 +7029,117 @@ html.dark .discount-offer, .discount-section--dark .discount-offer { background:
   .discount-section__oval--top { width: 80cqw; height: 64cqw; left: -34cqw; top: -33cqw; }
   .discount-section__oval--bottom { width: 64cqw; height: 90cqw; right: -39cqw; bottom: -44cqw; }
   .discount-offer-row { gap: 10px; min-height: 29px; }
-  .discount-offer { font-size: 6px; letter-spacing: .13em; padding: 7px 10px; gap: 7px; }
+  .discount-offer { font-size: 6px; letter-spacing: .13em; gap: 7px; }
   .discount-offer svg { width: 17px; height: 14px; }
   .discount-offer__monogram { width: 27px; height: 21px; }
+}
+
+/* Galerie : recul des deux compositions sur ordinateur. Les dimensions
+   restent dans le flux ; aucun scale ne laisse de hauteur vide au scroll. */
+@media (min-width: 1024px) {
+  .atelier-showcase,
+  .discount-section {
+    min-height: 0;
+    padding: clamp(64px, 5vw, 84px) max(7vw, 32px);
+  }
+
+  .before-after-premium-shell,
+  .discount-shell {
+    max-width: 1240px;
+  }
+
+  .before-after-premium-copy,
+  .discount-copy {
+    min-height: 0;
+    padding: clamp(26px, 2.2vw, 34px);
+  }
+
+  .before-after-premium-title {
+    font-size: clamp(42px, 3.35vw, 56px);
+  }
+  .before-after-premium-kicker { margin-top: auto; margin-bottom: 42px; }
+  .before-after-premium-copy { justify-content: flex-start; padding-bottom: 32px; }
+  .before-after-premium-description {
+    margin-top: 0;
+    padding-top: clamp(56px, calc(3vw + 24px), 68px);
+    margin-bottom: 0;
+    font-size: 13px;
+  }
+  .before-after-premium-cta { margin-top: 24px; min-height: 48px; max-width: 290px; }
+  .before-after-premium-cta__icon { width: 34px; height: 34px; }
+  .before-after-premium-visual { padding: 20px; justify-content: flex-end; }
+  .before-after-project-card { padding: 10px; }
+  .before-after-project-card [data-ba-tag] { font-size: 9px; }
+  .before-after-project-card h3 { margin-top: 8px; font-size: 21px; }
+  .before-after-project-card p { font-size: 11px; }
+  .before-after-project-actions { gap: 10px; padding-inline: 6px; }
+  .before-after-premium-heading > .before-after-premium-brand-watermark { width: min(48%, 280px); }
+
+  .discount-title { margin-top: 26px; font-size: clamp(40px, 3.35vw, 54px); }
+  .discount-promo-cycle { margin-top: 22px; --discount-promo-size: clamp(39px, 3.25vw, 53px); }
+  .discount-form { margin-top: 20px; }
+  .discount-form > label:first-child { min-height: 48px; padding-inline: 14px; }
+  .discount-form__submit { min-width: 190px; min-height: 48px; padding-left: 16px; font-size: 8px; }
+  .discount-form__submit > span:last-child { width: 30px; height: 30px; margin-left: 10px; }
+  .discount-assurances { margin-top: 18px; gap: 10px 16px; }
+  .discount-assurance { font-size: 8px; }
+  .discount-fine { font-size: 9px; }
+  .discount-game { min-height: 0; padding: 28px; }
+
+  .atelier-showcase__disc { width: 440px; left: -155px; top: -200px; }
+  .atelier-showcase__pill {
+    width: clamp(360px, 34vw, 560px); height: clamp(260px, 24vw, 400px);
+    right: -15vw; bottom: -10vw;
+  }
+  .discount-section__oval--top { width: 46cqw; height: 34cqw; left: -16cqw; top: -12.5cqw; }
+  .discount-section__oval--bottom { width: 32cqw; height: 44cqw; right: -16cqw; bottom: -20cqw; }
+  .discount-section__caption { top: 25px; }
+  .discount-section__signature { bottom: 24px; font-size: 16px; }
+
+  #gallery-pieces,
+  #gallery-small-prices {
+    padding: 42px max(7vw, calc((100vw - 1320px) / 2));
+  }
+  :is(#gallery-pieces, #gallery-small-prices) > div:first-child { margin-bottom: 28px; }
+  :is(#gallery-pieces, #gallery-small-prices) h2 { font-size: 40px; }
+}
+@media (min-width: 1280px) {
+  .before-after-premium-shell,
+  .discount-shell { width: min(100%, 78vw); }
+}
+
+/* Les controles suivent le panneau, y compris en fenetre partagee. */
+.before-after-interactive { container-type: inline-size; }
+.before-after-slider-handle {
+  width: clamp(30px, 8cqw, 46px);
+  height: clamp(30px, 8cqw, 46px);
+  min-width: 0;
+  padding: 0;
+}
+.before-after-slider-handle svg { width: clamp(10px, 2.3cqw, 13px); height: clamp(10px, 2.3cqw, 13px); }
+.before-after-slider-handle__divider { height: 12px; margin-inline: 2px; }
+.before-after-state-badge[data-ba-chip] {
+  min-height: clamp(24px, 6cqw, 32px);
+  padding: 5px clamp(8px, 2cqw, 12px);
+  gap: 5px;
+  font-size: clamp(7px, 1.65cqw, 9px);
+}
+.before-after-state-badge[data-ba-chip] .before-after-state-index { font-size: clamp(9px, 2.2cqw, 12px); }
+.before-after-state-badge[data-ba-chip] .before-after-state-divider { height: 11px; }
+.before-after-project-card [data-ba-tag] { font-size: clamp(7px, 1.55cqw, 9px); letter-spacing: .15em; line-height: 1.45; }
+.before-after-project-card h3 { font-size: clamp(18px, 3.8cqw, 22px); line-height: 1.1; }
+.before-after-project-card p { font-size: clamp(10px, 2.2cqw, 12px); line-height: 1.5; }
+@container (max-width: 520px) {
+  .before-after-project-actions { gap: 8px; padding-inline: 4px; }
+  .before-after-project-segments { gap: 4px; }
+  .before-after-project-segment { width: 12px; }
+  .before-after-project-nav__button { width: 34px; height: 34px; }
+  .before-after-project-count { font-size: 8px; letter-spacing: .05em; }
+}
+@container (max-width: 420px) {
+  .before-after-project-rail { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .before-after-project-actions { justify-content: flex-end; padding-bottom: 2px; }
+  .before-after-project-segments { margin-right: auto; }
 }
 
 /* ============================================================

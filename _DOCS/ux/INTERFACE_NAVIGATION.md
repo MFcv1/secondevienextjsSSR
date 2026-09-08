@@ -66,6 +66,16 @@ Le contrat statique est verifie par `npm run mobile:contract`; le comportement v
 
 ### Section avant / après
 
+Sur ordinateur (à partir de 1024 px), les modules avant/après et newsletter
+sont plafonnés à 1240 px. Titres, espacements internes, marges de section et
+volumes du fond sont réduits ensemble, sans transformation globale ni hauteur
+minimale imposée. Les sections Nouveautés et Petits Prix reprennent des marges
+et un titre plus compacts. Le mobile conserve ses tailles lisibles et tactiles.
+Les cartes de ces grilles gardent leur titre sur une ligne avec ellipse ; le
+nom complet reste dans le lien et son infobulle. Pour une pièce vendue, seule
+la pastille photo porte « Vendu » : le titre utilise toute la largeur sous
+la ligne matière/stock. Le prix reste affiché pour les pièces non vendues.
+
 Le décor clair de `BeforeAfterSectionServer` utilise un fond ivoire/champagne
 avec deux volumes mats en CSS, sans image décorative à précharger. Ces formes
 restent non interactives et masquées aux technologies d’assistance ; le mode
@@ -73,14 +83,25 @@ sombre conserve son fond dédié. Le comparateur, ses images et ses gestes
 restent ceux du composant existant. Les chevrons SVG sont centrés dans leurs
 contrôles ; le repère de focus clavier du curseur porte sur la poignée,
 sans ajouter de cadre autour de la photo lors d’un clic ou d’un glissement.
+L’en-tête atelier porte des outils croisés en SVG. Le grand monogramme utilise
+la silhouette originale comme masque, avec un relief sombre mat : centre
+brun lumineux et bords espresso assortis au bouton et aux badges Avant/Après,
+sans halo ni contour ajouté.
+Le monogramme est ancré au titre, indépendamment de la hauteur du panneau,
+avec une légère remontée optique vers le sommet des minuscules.
+Poignée, badges et typographie du projet suivent la largeur du comparateur ;
+sous 420 px de panneau, les commandes passent sous la description pour
+préserver la lisibilité du nom du meuble. Le curseur conserve sa surface de
+glissement et son accès clavier, même lorsque son disque visuel est réduit.
 
 ### Section newsletter
 
 `NewsletterSectionServer` reprend « Champagne équilibré » : deux ovales
 asymétriques en CSS, nuances proches, bord supérieur mat et reflet partiel
 sur le volume inférieur. Les gravures et leur préchargement sont retirés ;
-les fichiers restent conservés. Le cartouche « Offre exclusive » utilise une
-étiquette euro en SVG, un long filet et le monogramme, sans étoiles.
+les fichiers restent conservés. « Offre exclusive » utilise une étiquette euro
+en SVG, un long filet et le monogramme, sans encadré ni étoiles. Le nom de
+variante « Champagne & équilibre » n’est pas affiché sur le site.
 Le décor est non interactif, masqué aux technologies d’assistance et adapté
 au mobile ; le mode sombre conserve ses surfaces dédiées. Le jeu serveur,
 ses gains, le consentement et l’envoi du code gardent leurs contrats existants.
