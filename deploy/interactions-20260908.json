@@ -1,0 +1,1455 @@
+{
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "codebase": "main",
+    "environment": "sandbox",
+    "backend": "secondevie-next-sandbox",
+    "baselineCommit": "66b36efe81a4de4f029c2eb4be2ce87bf95740f2",
+    "observedAt": "2026-09-08T10:52:01.264Z",
+    "impactInventory": "_DOCS/audits/2026-09-07-livraison-interactions/manifest.json"
+  },
+  "deploymentPolicy": {
+    "maxTargetsPerDeploy": 1,
+    "transport": "source-only-existing-functions-api",
+    "forbiddenTargets": [
+      "onOrderCreated",
+      "projectAdminActionSummaryGen2",
+      "projectSystemIncidentGen2",
+      "trackAdminIPGen2",
+      "setPromotionCodeStatusAdminGen2",
+      "archiveOrderAdminGen2",
+      "requestStripeConnectReconnectGen2",
+      "markOrderReadyForPickupAdminGen2",
+      "listPromotionCodesAdminGen2",
+      "startStripeConnectOnboardingGen2",
+      "confirmStripeConnectReconnectGen2",
+      "createProductAdminGen2",
+      "previewPromotionCodeV2Gen2",
+      "markOrderShippedAdminGen2",
+      "publishProductAdminGen2",
+      "markOrderPreparingAdminGen2",
+      "saveDeliveryPolicyAdminGen2",
+      "completeBillingGuideAdminGen2",
+      "updateProductOfferAdminGen2",
+      "getBillingGuideStatusGen2",
+      "preflightProductMutationAdminGen2",
+      "getBillingGuideOperatorStatusGen2",
+      "createPublishedProductAdminGen2",
+      "syncStripeConnectAccountGen2",
+      "onOrderUpdated",
+      "saveBillingGuideProgressGen2",
+      "markOrderDeliveredAdminGen2",
+      "markOrderPickedUpAdminGen2",
+      "getDeliveryPolicyAdminGen2",
+      "onOrderStatsWrite",
+      "getStripeConnectStatusGen2",
+      "createPromotionCodeAdminGen2",
+      "adjustInventoryAdminGen2",
+      "sendTestEmailGen2",
+      "updateOrderTrackingAdminGen2",
+      "getSystemIncidentsAdminGen2",
+      "sendRefundStatusEmailAdminGen2",
+      "projectNewsletterSubscriberGen2",
+      "deleteProductAdminGen2",
+      "resetBillingGuideTestGen2",
+      "onRegisteredUserDeleted",
+      "onRegisteredUserCreated"
+    ],
+    "configMutations": [],
+    "productionAllowed": false
+  },
+  "functions": [
+    {
+      "name": "addAdminUserGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "addadminusergen2-00001-vok"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "589416713bcba6a3df30b45fe890f04033ed583a67a943a38a327237db63c993"
+    },
+    {
+      "name": "aggregateAnalyticsSessionGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "aggregateanalyticssessiongen2-00010-wow"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "2ba1d422bc76f24d36a60ae37342450d0f785e0c7c41c682d0bb21f7a56d63c1"
+    },
+    {
+      "name": "cancelAdminPaymentLinkGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "canceladminpaymentlinkgen2-00003-xor"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "09a64e0615b07618b671bb63d0b0a325d903c5555267425be86d007f01a45538"
+    },
+    {
+      "name": "cancelReturnAdminGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "cancelreturnadmingen2-00001-xur"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "81b055b246a0fc88a5bc258c2e6376c7cf05b023d7e6c0a099e7cac2f7132f15"
+    },
+    {
+      "name": "catalogMediaGarbageCollector",
+      "cloud": {
+        "generation": 2,
+        "revision": "catalogmediagarbagecollector-00010-zen"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "15f6b946217a9b90a967abc9214bff741e8b8b6cd5b5be5601080ed525afc1bf"
+    },
+    {
+      "name": "catalogReconciler",
+      "cloud": {
+        "generation": 2,
+        "revision": "catalogreconciler-00011-hoc"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "3af5a11627cea5d05d3efe5e457d93c8e8af300354d634222e23feeb95ca10cf"
+    },
+    {
+      "name": "claimNewsletterRewardGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "claimnewsletterrewardgen2-00001-deb"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "dacf4c1eb1257fdd18c94a03889822dfa042642d0835b0dd68b3be8f9b8f46da"
+    },
+    {
+      "name": "cleanupFixtureRunAdminGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "cleanupfixturerunadmingen2-00001-xox"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "eca9071b2e678eac9ca3516da50a9fefc91ed181c33fc42edb8dd0055d24ecde"
+    },
+    {
+      "name": "cleanupProductPublicationSessions",
+      "cloud": {
+        "generation": 2,
+        "revision": "cleanupproductpublicationsessions-00003-hig"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "0862ce14a41f003628964bc50c176758583b2720272e8fc685e34a310b8d9c1f"
+    },
+    {
+      "name": "commerceOperationsReconcilerGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "commerceoperationsreconcilergen2-00005-boj"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "b8a60e31bc1c21694dc5b198c1999b590e175b22983e1b0775f52c029fe99c92"
+    },
+    {
+      "name": "commerceOutboxDispatcherGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "commerceoutboxdispatchergen2-00008-quk"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "2ba1d422bc76f24d36a60ae37342450d0f785e0c7c41c682d0bb21f7a56d63c1"
+    },
+    {
+      "name": "commerceReservationExpiryDispatcherGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "commercereservationexpirydispatchergen2-00002-yuy"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "09a64e0615b07618b671bb63d0b0a325d903c5555267425be86d007f01a45538"
+    },
+    {
+      "name": "commerceWebhookCoverageWatchdogGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "commercewebhookcoveragewatchdoggen2-00001-dub"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "21c134ebc7de1e42c2ba39c981d3f2e44c3a76e3ecd094992dd312337937b67f"
+    },
+    {
+      "name": "createAdminPaymentLinkGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "createadminpaymentlinkgen2-00003-puj"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "2ba1d422bc76f24d36a60ae37342450d0f785e0c7c41c682d0bb21f7a56d63c1"
+    },
+    {
+      "name": "createCheckoutV2Gen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "createcheckoutv2gen2-00005-pob"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "09a64e0615b07618b671bb63d0b0a325d903c5555267425be86d007f01a45538"
+    },
+    {
+      "name": "createOrderGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "createordergen2-00001-vut"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "81b055b246a0fc88a5bc258c2e6376c7cf05b023d7e6c0a099e7cac2f7132f15"
+    },
+    {
+      "name": "createQuoteRequestGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "createquoterequestgen2-00001-jep"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "dacf4c1eb1257fdd18c94a03889822dfa042642d0835b0dd68b3be8f9b8f46da"
+    },
+    {
+      "name": "decideCustomerReturnRequestAdminGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "decidecustomerreturnrequestadmingen2-00001-mef"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "81b055b246a0fc88a5bc258c2e6376c7cf05b023d7e6c0a099e7cac2f7132f15"
+    },
+    {
+      "name": "deleteSessionGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "deletesessiongen2-00001-mug"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "6ba72b5a9a065d5bf458b6d32826805b4e39e0824248f829989797299a28c2df"
+    },
+    {
+      "name": "disconnectInstagramConnectionAdminGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "disconnectinstagramconnectionadmingen2-00001-jix"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "180403395bcc5b99f6cf41afdecee79112f5f5e9bae0447df4476bf571ee8dde"
+    },
+    {
+      "name": "disconnectMetaConnectionAdminGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "disconnectmetaconnectionadmingen2-00001-qen"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "180403395bcc5b99f6cf41afdecee79112f5f5e9bae0447df4476bf571ee8dde"
+    },
+    {
+      "name": "dispatchCatalogBuild",
+      "cloud": {
+        "generation": 2,
+        "revision": "dispatchcatalogbuild-00016-tat"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "09a64e0615b07618b671bb63d0b0a325d903c5555267425be86d007f01a45538"
+    },
+    {
+      "name": "dispatchCatalogRevalidation",
+      "cloud": {
+        "generation": 2,
+        "revision": "dispatchcatalogrevalidation-00014-tam"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "3af5a11627cea5d05d3efe5e457d93c8e8af300354d634222e23feeb95ca10cf"
+    },
+    {
+      "name": "dispatchCommerceOutboxTaskGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "dispatchcommerceoutboxtaskgen2-00002-gev"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "2ba1d422bc76f24d36a60ae37342450d0f785e0c7c41c682d0bb21f7a56d63c1"
+    },
+    {
+      "name": "dispatchCommerceReservationExpiryTaskGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "dispatchcommercereservationexpirytaskgen2-00002-cic"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "09a64e0615b07618b671bb63d0b0a325d903c5555267425be86d007f01a45538"
+    },
+    {
+      "name": "drawNewsletterRewardGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "drawnewsletterrewardgen2-00001-mew"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "dacf4c1eb1257fdd18c94a03889822dfa042642d0835b0dd68b3be8f9b8f46da"
+    },
+    {
+      "name": "ensureAdminAccessRegistryGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "ensureadminaccessregistrygen2-00001-lak"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "79789754649f2e2ea0ba88b26e4d251196d9d1930f8530b0317dd3a7406dd2fd"
+    },
+    {
+      "name": "expireAdminPaymentLinksGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "expireadminpaymentlinksgen2-00002-mir"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "09a64e0615b07618b671bb63d0b0a325d903c5555267425be86d007f01a45538"
+    },
+    {
+      "name": "extendAdminPaymentLinkGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "extendadminpaymentlinkgen2-00002-ras"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "a6608c17e5065470e204a3e62d9824a1801f7e13ecbd4877ed1b5d8af3006021"
+    },
+    {
+      "name": "finalizeQuoteRequestGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "finalizequoterequestgen2-00001-yap"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "dacf4c1eb1257fdd18c94a03889822dfa042642d0835b0dd68b3be8f9b8f46da"
+    },
+    {
+      "name": "generatePasskeyAuthenticationOptionsGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "generatepasskeyauthenticationoptionsgen2-00001-mam"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "0551e566b3e97687b5daf84fd792b2c7d2f2db6ca3454da370b4af6b23275d67"
+    },
+    {
+      "name": "generatePasskeyRegistrationOptionsGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "generatepasskeyregistrationoptionsgen2-00001-ron"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "489d84cfae341199c06470fb16eb05674bf9ce027a8362b93f9f87ae69b91ad5"
+    },
+    {
+      "name": "getAdminPaymentLinkPublicGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "getadminpaymentlinkpublicgen2-00002-xep"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "a6608c17e5065470e204a3e62d9824a1801f7e13ecbd4877ed1b5d8af3006021"
+    },
+    {
+      "name": "getAnalyticsAdminGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "getanalyticsadmingen2-00002-qer"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "7c63665fb2a764f365c20b6bab11149a6467c799cda570447915fe5caf64a69d"
+    },
+    {
+      "name": "getCatalogPublicationStatusGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "getcatalogpublicationstatusgen2-00004-hiv"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "c9dcb334d8d55b990c319d34f7467fb7fcdbf95de52ee8876bedb1de6c851911"
+    },
+    {
+      "name": "getCommerceOperationsStatusAdminGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "getcommerceoperationsstatusadmingen2-00003-pic"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "ecfb339970e5664dec64a1bd23e62f96faf2efc85bdfc822ccf4ed74a09a2af5"
+    },
+    {
+      "name": "getDiagnosticTimelineAdminGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "getdiagnostictimelineadmingen2-00003-bad"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "a6608c17e5065470e204a3e62d9824a1801f7e13ecbd4877ed1b5d8af3006021"
+    },
+    {
+      "name": "getInstagramConnectionStatusAdminGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "getinstagramconnectionstatusadmingen2-00001-feh"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "180403395bcc5b99f6cf41afdecee79112f5f5e9bae0447df4476bf571ee8dde"
+    },
+    {
+      "name": "getManualInvoiceWorkspaceAdminGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "getmanualinvoiceworkspaceadmingen2-00003-gaz"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "2ba1d422bc76f24d36a60ae37342450d0f785e0c7c41c682d0bb21f7a56d63c1"
+    },
+    {
+      "name": "getMetaConnectionStatusAdminGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "getmetaconnectionstatusadmingen2-00001-von"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "180403395bcc5b99f6cf41afdecee79112f5f5e9bae0447df4476bf571ee8dde"
+    },
+    {
+      "name": "getOrderStatusClientGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "getorderstatusclientgen2-00001-zuy"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "81b055b246a0fc88a5bc258c2e6376c7cf05b023d7e6c0a099e7cac2f7132f15"
+    },
+    {
+      "name": "getOrderTimelineAdminV2Gen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "getordertimelineadminv2gen2-00003-qut"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "2ba1d422bc76f24d36a60ae37342450d0f785e0c7c41c682d0bb21f7a56d63c1"
+    },
+    {
+      "name": "getQuoteRequestAdminGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "getquoterequestadmingen2-00004-xah"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "2ba1d422bc76f24d36a60ae37342450d0f785e0c7c41c682d0bb21f7a56d63c1"
+    },
+    {
+      "name": "getSocialPublicationStatusAdminGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "getsocialpublicationstatusadmingen2-00001-poh"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "180403395bcc5b99f6cf41afdecee79112f5f5e9bae0447df4476bf571ee8dde"
+    },
+    {
+      "name": "getUserStatsGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "getuserstatsgen2-00001-niv"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "408980d49599ca9814738c290f9d43f540ee16ac613dc93001de81d74757adbd"
+    },
+    {
+      "name": "grantAdminOnAuth",
+      "cloud": {
+        "generation": 1,
+        "revision": "28"
+      },
+      "decision": {
+        "classification": "KEEP_GEN1",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "21c384770b05f0b72ccf72e81402511b017124781e82ee1b6c7140c1b35b63de"
+    },
+    {
+      "name": "initLiveSessionGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "initlivesessiongen2-00003-poc"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "2ba1d422bc76f24d36a60ae37342450d0f785e0c7c41c682d0bb21f7a56d63c1"
+    },
+    {
+      "name": "instagramOAuthCallbackGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "instagramoauthcallbackgen2-00002-til"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "180403395bcc5b99f6cf41afdecee79112f5f5e9bae0447df4476bf571ee8dde"
+    },
+    {
+      "name": "journalCommerceIncidentGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "journalcommerceincidentgen2-00004-seb"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "81f683921dc433a8f6440b10bda2a3ba1a000db6caac2d71311afbda701e1bf3"
+    },
+    {
+      "name": "journalFinancialFactGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "journalfinancialfactgen2-00003-wuk"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "ddd1af8bf364a520192cd3168359a9618ab895a782d276c627b1846d4e836bfd"
+    },
+    {
+      "name": "journalInventoryMovementGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "journalinventorymovementgen2-00001-mev"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "5c0b9a441a89cac39aac5cd5d2e1aa7e68e76fe0801d75f405651040abf3c509"
+    },
+    {
+      "name": "journalOrderEventGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "journalordereventgen2-00001-qew"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "5c0b9a441a89cac39aac5cd5d2e1aa7e68e76fe0801d75f405651040abf3c509"
+    },
+    {
+      "name": "journalOutboxStatusGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "journaloutboxstatusgen2-00002-gim"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "21c134ebc7de1e42c2ba39c981d3f2e44c3a76e3ecd094992dd312337937b67f"
+    },
+    {
+      "name": "journalWebhookStatusGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "journalwebhookstatusgen2-00002-zej"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "21c134ebc7de1e42c2ba39c981d3f2e44c3a76e3ecd094992dd312337937b67f"
+    },
+    {
+      "name": "listAdminPaymentLinksGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "listadminpaymentlinksgen2-00003-jug"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "94e76a4769e343c78833b67767cc62a1259474ed5ac4e4bb07c256f77135c140"
+    },
+    {
+      "name": "listCustomerReturnRequestsAdminV2Gen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "listcustomerreturnrequestsadminv2gen2-00005-lex"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "13d9893ccd2fde6dd310f4f2c951daa48ae1d28545151ae5180d05a6d8749e8e"
+    },
+    {
+      "name": "listMyNewsletterRewardsGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "listmynewsletterrewardsgen2-00001-kip"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "dacf4c1eb1257fdd18c94a03889822dfa042642d0835b0dd68b3be8f9b8f46da"
+    },
+    {
+      "name": "listMyOrdersV2Gen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "listmyordersv2gen2-00004-xeb"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "be4ccbcd2745638100cf737b20d68b7af8a83d3e72b99e8410a9e66300681f4b"
+    },
+    {
+      "name": "listOrdersAdminV2Gen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "listordersadminv2gen2-00005-feg"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "13d9893ccd2fde6dd310f4f2c951daa48ae1d28545151ae5180d05a6d8749e8e"
+    },
+    {
+      "name": "listQuoteRequestsAdminGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "listquoterequestsadmingen2-00003-siv"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "2ba1d422bc76f24d36a60ae37342450d0f785e0c7c41c682d0bb21f7a56d63c1"
+    },
+    {
+      "name": "listReturnsAdminV2Gen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "listreturnsadminv2gen2-00003-ham"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "2ba1d422bc76f24d36a60ae37342450d0f785e0c7c41c682d0bb21f7a56d63c1"
+    },
+    {
+      "name": "logUserConnectionGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "loguserconnectiongen2-00001-fab"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "3c2316059c08bd4182cbebd2a601aca7f48444c9ef896ab2799c12971b6ed63c"
+    },
+    {
+      "name": "maintainAnalyticsGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "maintainanalyticsgen2-00004-tab"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "2ba1d422bc76f24d36a60ae37342450d0f785e0c7c41c682d0bb21f7a56d63c1"
+    },
+    {
+      "name": "markReturnReceivedAdminGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "markreturnreceivedadmingen2-00001-voh"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "81b055b246a0fc88a5bc258c2e6376c7cf05b023d7e6c0a099e7cac2f7132f15"
+    },
+    {
+      "name": "metaOAuthCallbackGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "metaoauthcallbackgen2-00002-noj"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "180403395bcc5b99f6cf41afdecee79112f5f5e9bae0447df4476bf571ee8dde"
+    },
+    {
+      "name": "onArtifactDeleted",
+      "cloud": {
+        "generation": 2,
+        "revision": "onartifactdeleted-00024-roh"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "15f6b946217a9b90a967abc9214bff741e8b8b6cd5b5be5601080ed525afc1bf"
+    },
+    {
+      "name": "onArtifactUpdated",
+      "cloud": {
+        "generation": 2,
+        "revision": "onartifactupdated-00024-cuj"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "15f6b946217a9b90a967abc9214bff741e8b8b6cd5b5be5601080ed525afc1bf"
+    },
+    {
+      "name": "onCatalogSourceWrite",
+      "cloud": {
+        "generation": 2,
+        "revision": "oncatalogsourcewrite-00012-ves"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "09a64e0615b07618b671bb63d0b0a325d903c5555267425be86d007f01a45538"
+    },
+    {
+      "name": "onCommerceOutboxWrittenGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "oncommerceoutboxwrittengen2-00002-zuz"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "2ba1d422bc76f24d36a60ae37342450d0f785e0c7c41c682d0bb21f7a56d63c1"
+    },
+    {
+      "name": "onCommerceReservationWrittenGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "oncommercereservationwrittengen2-00002-run"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "09a64e0615b07618b671bb63d0b0a325d903c5555267425be86d007f01a45538"
+    },
+    {
+      "name": "onQuoteRequestSubmittedGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "onquoterequestsubmittedgen2-00002-nix"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "dacf4c1eb1257fdd18c94a03889822dfa042642d0835b0dd68b3be8f9b8f46da"
+    },
+    {
+      "name": "openReturnAdminGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "openreturnadmingen2-00001-zos"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "81b055b246a0fc88a5bc258c2e6376c7cf05b023d7e6c0a099e7cac2f7132f15"
+    },
+    {
+      "name": "prepareAdminPaymentLinkPaymentGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "prepareadminpaymentlinkpaymentgen2-00002-xac"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "a6608c17e5065470e204a3e62d9824a1801f7e13ecbd4877ed1b5d8af3006021"
+    },
+    {
+      "name": "prepareCommerceDocumentDeliveryGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "preparecommercedocumentdeliverygen2-00004-xuq"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "a6608c17e5065470e204a3e62d9824a1801f7e13ecbd4877ed1b5d8af3006021"
+    },
+    {
+      "name": "prepareManualInvoicePdfAdminGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "preparemanualinvoicepdfadmingen2-00001-wuh"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "dacf4c1eb1257fdd18c94a03889822dfa042642d0835b0dd68b3be8f9b8f46da"
+    },
+    {
+      "name": "prepareSocialPublicationAdminGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "preparesocialpublicationadmingen2-00001-zah"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "180403395bcc5b99f6cf41afdecee79112f5f5e9bae0447df4476bf571ee8dde"
+    },
+    {
+      "name": "processProductPublicationImage",
+      "cloud": {
+        "generation": 2,
+        "revision": "processproductpublicationimage-00004-nep"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "db9dfe95472f8d7e8674b04964c4c19f11c22975a0dfa24fc28538ce782ad2cd"
+    },
+    {
+      "name": "projectCommerceFinancialHistoryGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "projectcommercefinancialhistorygen2-00001-fup"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "e8bafc6e6a80e0a8d44a51821954665c848ea180103b4efefb407ed3c0d8996e"
+    },
+    {
+      "name": "projectLegacyFinancialHistoryGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "projectlegacyfinancialhistorygen2-00001-ban"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "e8bafc6e6a80e0a8d44a51821954665c848ea180103b4efefb407ed3c0d8996e"
+    },
+    {
+      "name": "rebuildCatalogSnapshotGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "rebuildcatalogsnapshotgen2-00002-nij"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "e8bafc6e6a80e0a8d44a51821954665c848ea180103b4efefb407ed3c0d8996e"
+    },
+    {
+      "name": "rebuildCommerceOperationsAdminGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "rebuildcommerceoperationsadmingen2-00002-gep"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "ecfb339970e5664dec64a1bd23e62f96faf2efc85bdfc822ccf4ed74a09a2af5"
+    },
+    {
+      "name": "reconcileProductPublicationSessions",
+      "cloud": {
+        "generation": 2,
+        "revision": "reconcileproductpublicationsessions-00004-pip"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "28f6cf77f257a9833bfb72d274c18a2a8f23e7540c191a86751f03a3bd69866a"
+    },
+    {
+      "name": "recreateAdminPaymentLinkGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "recreateadminpaymentlinkgen2-00003-kad"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "2ba1d422bc76f24d36a60ae37342450d0f785e0c7c41c682d0bb21f7a56d63c1"
+    },
+    {
+      "name": "regenerateAdminPaymentLinkGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "regenerateadminpaymentlinkgen2-00002-ciy"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "a6608c17e5065470e204a3e62d9824a1801f7e13ecbd4877ed1b5d8af3006021"
+    },
+    {
+      "name": "removeAdminUserGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "removeadminusergen2-00001-qef"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "589416713bcba6a3df30b45fe890f04033ed583a67a943a38a327237db63c993"
+    },
+    {
+      "name": "requestCustomerReturnGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "requestcustomerreturngen2-00001-moz"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "81b055b246a0fc88a5bc258c2e6376c7cf05b023d7e6c0a099e7cac2f7132f15"
+    },
+    {
+      "name": "requestOrderCancellationGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "requestordercancellationgen2-00002-xip"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "09a64e0615b07618b671bb63d0b0a325d903c5555267425be86d007f01a45538"
+    },
+    {
+      "name": "requestRefundAdminGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "requestrefundadmingen2-00002-yoq"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "10a81743fd4b52781b97609dd0029b6bc8a1982aad5824eb68aa2940b5920f2d"
+    },
+    {
+      "name": "resolveReturnAdminGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "resolvereturnadmingen2-00001-vam"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "81b055b246a0fc88a5bc258c2e6376c7cf05b023d7e6c0a099e7cac2f7132f15"
+    },
+    {
+      "name": "restockReturnLinesAdminGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "restockreturnlinesadmingen2-00001-civ"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "81b055b246a0fc88a5bc258c2e6376c7cf05b023d7e6c0a099e7cac2f7132f15"
+    },
+    {
+      "name": "resumeAdminPaymentLinkPaymentGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "resumeadminpaymentlinkpaymentgen2-00002-det"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "a6608c17e5065470e204a3e62d9824a1801f7e13ecbd4877ed1b5d8af3006021"
+    },
+    {
+      "name": "resumeCheckoutV2Gen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "resumecheckoutv2gen2-00003-kaz"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "09a64e0615b07618b671bb63d0b0a325d903c5555267425be86d007f01a45538"
+    },
+    {
+      "name": "rollbackCatalogSnapshotGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "rollbackcatalogsnapshotgen2-00002-hif"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "3af5a11627cea5d05d3efe5e457d93c8e8af300354d634222e23feeb95ca10cf"
+    },
+    {
+      "name": "runSocialPublicationAdminGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "runsocialpublicationadmingen2-00001-mod"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "180403395bcc5b99f6cf41afdecee79112f5f5e9bae0447df4476bf571ee8dde"
+    },
+    {
+      "name": "saveManualInvoiceDraftAdminGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "savemanualinvoicedraftadmingen2-00001-wij"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "dacf4c1eb1257fdd18c94a03889822dfa042642d0835b0dd68b3be8f9b8f46da"
+    },
+    {
+      "name": "selectMetaAssetAdminGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "selectmetaassetadmingen2-00001-mey"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "180403395bcc5b99f6cf41afdecee79112f5f5e9bae0447df4476bf571ee8dde"
+    },
+    {
+      "name": "sendCustomerLoginOtpGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "sendcustomerloginotpgen2-00003-gex"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "2787fb875bb0095a8413f8e092cc0a498e6cf6aea81000f67bca647fde14062d"
+    },
+    {
+      "name": "sendGuestCheckoutOtpGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "sendguestcheckoutotpgen2-00002-mas"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "2787fb875bb0095a8413f8e092cc0a498e6cf6aea81000f67bca647fde14062d"
+    },
+    {
+      "name": "sendManualInvoiceAdminGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "sendmanualinvoiceadmingen2-00002-vuw"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "dacf4c1eb1257fdd18c94a03889822dfa042642d0835b0dd68b3be8f9b8f46da"
+    },
+    {
+      "name": "startInstagramOAuthAdminGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "startinstagramoauthadmingen2-00002-suw"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "180403395bcc5b99f6cf41afdecee79112f5f5e9bae0447df4476bf571ee8dde"
+    },
+    {
+      "name": "startMetaOAuthAdminGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "startmetaoauthadmingen2-00002-pef"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "180403395bcc5b99f6cf41afdecee79112f5f5e9bae0447df4476bf571ee8dde"
+    },
+    {
+      "name": "stripeConnectWebhookV2Gen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "stripeconnectwebhookv2gen2-00003-jot"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "09a64e0615b07618b671bb63d0b0a325d903c5555267425be86d007f01a45538"
+    },
+    {
+      "name": "stripeWebhookV2Gen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "stripewebhookv2gen2-00004-zon"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "09a64e0615b07618b671bb63d0b0a325d903c5555267425be86d007f01a45538"
+    },
+    {
+      "name": "syncSessionBeaconGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "syncsessionbeacongen2-00005-yaq"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "2ba1d422bc76f24d36a60ae37342450d0f785e0c7c41c682d0bb21f7a56d63c1"
+    },
+    {
+      "name": "syncSessionGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "syncsessiongen2-00003-vuz"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "2ba1d422bc76f24d36a60ae37342450d0f785e0c7c41c682d0bb21f7a56d63c1"
+    },
+    {
+      "name": "syncSuperAdminClaimGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "syncsuperadminclaimgen2-00001-kej"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "589416713bcba6a3df30b45fe890f04033ed583a67a943a38a327237db63c993"
+    },
+    {
+      "name": "updateQuoteRequestAdminGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "updatequoterequestadmingen2-00001-yic"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "dacf4c1eb1257fdd18c94a03889822dfa042642d0835b0dd68b3be8f9b8f46da"
+    },
+    {
+      "name": "updateUserSessionsGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "updateusersessionsgen2-00003-net"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "7c63665fb2a764f365c20b6bab11149a6467c799cda570447915fe5caf64a69d"
+    },
+    {
+      "name": "uploadQuoteRequestPhotoGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "uploadquoterequestphotogen2-00002-xaj"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "dacf4c1eb1257fdd18c94a03889822dfa042642d0835b0dd68b3be8f9b8f46da"
+    },
+    {
+      "name": "verifyCustomerLoginOtpGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "verifycustomerloginotpgen2-00001-kew"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "0551e566b3e97687b5daf84fd792b2c7d2f2db6ca3454da370b4af6b23275d67"
+    },
+    {
+      "name": "verifyGuestCheckoutOtpGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "verifyguestcheckoutotpgen2-00001-wim"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "39473ba00a9551599ac406acff06f90398998b1288316b51d516227bbc140551"
+    },
+    {
+      "name": "verifyInstagramConnectionAdminGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "verifyinstagramconnectionadmingen2-00001-liv"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "180403395bcc5b99f6cf41afdecee79112f5f5e9bae0447df4476bf571ee8dde"
+    },
+    {
+      "name": "verifyMetaConnectionAdminGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "verifymetaconnectionadmingen2-00001-pic"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "180403395bcc5b99f6cf41afdecee79112f5f5e9bae0447df4476bf571ee8dde"
+    },
+    {
+      "name": "verifyPasskeyAuthenticationGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "verifypasskeyauthenticationgen2-00001-geb"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "0551e566b3e97687b5daf84fd792b2c7d2f2db6ca3454da370b4af6b23275d67"
+    },
+    {
+      "name": "verifyPasskeyRegistrationGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "verifypasskeyregistrationgen2-00001-guw"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "489d84cfae341199c06470fb16eb05674bf9ce027a8362b93f9f87ae69b91ad5"
+    },
+    {
+      "name": "writeOffReturnLinesAdminGen2",
+      "cloud": {
+        "generation": 2,
+        "revision": "writeoffreturnlinesadmingen2-00001-poc"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "rollbackSha256": "81b055b246a0fc88a5bc258c2e6376c7cf05b023d7e6c0a099e7cac2f7132f15"
+    }
+  ]
+}
