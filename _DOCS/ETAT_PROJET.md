@@ -35,6 +35,13 @@ chargées et comparateur clavier fonctionnel ; captures hébergées à 390/1440 
 sans débordement ni erreur JavaScript. Aucun envoi newsletter réel effectué.
 Retour arrière identifié : `build-20260908-6188058` (rollout précédent réussi).
 Preuves locales : `logs/designs-20260908/`.
+Complément du 8 septembre : le galet inférieur droit de l’avant/après est
+désormais un ovale couché (−20°), distinct de celui de la newsletter. Livré
+depuis `86e9c68`, build/rollout `build-2026-09-08-002` réussi, deployment ID
+`sv-mtsv22jg-de1f25aba992`. Build local Node 22 et quatre tests cache validés ;
+contrôle hébergé à 390/1440 px : HTTP 200, rayon 50 %, aucune erreur JS ni
+débordement. Preuves : `logs/designs-20260908-ovale/`. Retour arrière :
+`build-2026-09-08-001`.
 Contrats : [Interface](ux/INTERFACE_NAVIGATION.md#section-avant--après).
 
 ## Socle et fonctionnalités
