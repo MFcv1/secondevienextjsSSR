@@ -1,7 +1,9 @@
 # Audits d’architecture et de fiabilité
 
-**Préparation de livraison du 7 septembre : [qualification, blocage et recette utilisateur](2026-09-07-livraison-interactions/README.md).**
-Sources enregistrées ; aucune nouvelle livraison sandbox, gate dépendances CLI ouverte.
+**Livraison sandbox du 8 septembre : [versions, preuves et recette utilisateur](2026-09-07-livraison-interactions/README.md).**
+`build-20260908-6188058`, 116 Functions, rules et 22 index READY ; C145 payée/remboursée
+en Stripe test. Prêt pour la recette, réserves de délivrabilité et contrôle visuel des PDF.
+Le dossier d'audit reste une photographie historique antérieure à cette livraison.
 
 Créé le 5 septembre 2026 à la demande du propriétaire du projet.
 

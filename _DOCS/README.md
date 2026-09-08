@@ -11,7 +11,10 @@ Ouvrir le chapitre du sujet traité, pas toute cette bibliothèque.
 ## Références durables
 
 Livraison des interactions : [dossier du 7 septembre](audits/2026-09-07-livraison-interactions/README.md),
-avec qualification, gate bloquante et fiche de recette. Aucun nouveau déploiement sandbox.
+livrée le 8 septembre : `build-20260908-6188058`, 116 Functions, rules et 22 index READY.
+Recette C145 payée/remboursée en Stripe test ; prêt pour la recette utilisateur,
+avec réserves mails en spam et PDF à contrôler visuellement. Les statuts de non-déploiement
+dans la photographie de l'audit décrivent sa clôture antérieure à cette livraison.
 
 | Sujet | Référence | À lire pour |
 | --- | --- | --- |

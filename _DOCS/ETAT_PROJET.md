@@ -10,9 +10,12 @@ Ce document est la synthèse de reprise. Les contrats restent dans les chapitres
 les détails de chaque campagne restent dans son suivi. Un statut historique,
 une date dépassée ou un fichier local ne suffisent pas à prouver une livraison.
 
-Préparation du 7 septembre : sources enregistrées sur `codex/livraison-interactions-20260907`,
-tests/build/émulateurs qualifiés ; **déploiement bloqué par la gate de dépendances CLI**.
-La sandbox sert toujours la version antérieure. Preuves, périmètre et recette dans le
+Livraison du 8 septembre sur `codex/livraison-interactions-20260907` :
+**sandbox livrée et prête pour la recette utilisateur**, `build-20260908-6188058`,
+116 Functions, rules et 22 index READY. C145 : paiement 3DS et remboursement Stripe test
+de 2 € vérifiés ; mails reçus, dont deux en spam côté client. PDF à contrôler visuellement.
+La gate CLI est corrigée sans dérogation. Les états d'audit ci-dessous sont historiques ;
+le design local ultérieur reste hors livraison. Preuves, périmètre et recette dans le
 [dossier de livraison](audits/2026-09-07-livraison-interactions/README.md).
 
 ## Socle et fonctionnalités

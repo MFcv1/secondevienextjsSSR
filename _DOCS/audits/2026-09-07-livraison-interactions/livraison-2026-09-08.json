@@ -1,0 +1,1435 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-09-08T12:54:44.097Z",
+  "verdict": "READY_FOR_USER_RECIPE_WITH_RESERVATIONS",
+  "project": "secondevienextjsssr",
+  "backend": "secondevie-next-sandbox",
+  "branch": "codex/livraison-interactions-20260907",
+  "applicationCommit": "6188058a112fcf691308956043c663c536045916",
+  "mailTransportCommit": "eb973d5",
+  "url": "https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app/",
+  "hosting": {
+    "checkedAt": "2026-09-08T12:47:50.674Z",
+    "rollout": "projects/secondevienextjsssr/locations/europe-west4/backends/secondevie-next-sandbox/rollouts/rollout-20260908-6188058",
+    "state": "SUCCEEDED",
+    "error": null,
+    "build": "projects/secondevienextjsssr/locations/europe-west4/backends/secondevie-next-sandbox/builds/build-20260908-6188058",
+    "currentTraffic": [
+      {
+        "build": "projects/231220287936/locations/europe-west4/backends/secondevie-next-sandbox/builds/build-20260908-6188058",
+        "percent": 100
+      }
+    ],
+    "http": [
+      {
+        "route": "/",
+        "status": 200,
+        "cacheControl": "s-maxage=300",
+        "deploymentId": "sv-mtsl55c9-5fafadb9b720"
+      },
+      {
+        "route": "/admin",
+        "status": 200,
+        "cacheControl": "private, no-store, max-age=0",
+        "deploymentId": "sv-mtsl55c9-5fafadb9b720"
+      },
+      {
+        "route": "/api/catalog/version",
+        "status": 200,
+        "cacheControl": "public, max-age=0, s-maxage=0, must-revalidate",
+        "deploymentId": null
+      }
+    ]
+  },
+  "rules": {
+    "ruleset": "bea0db5f-4f97-45b6-a306-6e8e60391ead",
+    "sha256": "9d5b466b699a8f9dbd76652d8033e699f86c44c72c70e9696297eb48b68dd558",
+    "readbackMatches": true,
+    "storageRulesChanged": false
+  },
+  "indexes": {
+    "ready": 22,
+    "added": [
+      "orders(userId ASC, updatedAt DESC)",
+      "business_events(aggregateId ASC, occurredAt DESC)"
+    ],
+    "deleted": 0,
+    "existingFieldOverridesPreserved": 3
+  },
+  "functions": {
+    "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+    "gen2": [
+      {
+        "name": "addAdminUserGen2",
+        "status": "verified",
+        "revision": "addadminusergen2-00002-wel",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:06:19.118Z"
+      },
+      {
+        "name": "cancelAdminPaymentLinkGen2",
+        "status": "verified",
+        "revision": "canceladminpaymentlinkgen2-00004-quj",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:06:19.168Z"
+      },
+      {
+        "name": "aggregateAnalyticsSessionGen2",
+        "status": "verified",
+        "revision": "aggregateanalyticssessiongen2-00011-fuz",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:06:19.740Z"
+      },
+      {
+        "name": "catalogMediaGarbageCollector",
+        "status": "verified",
+        "revision": "catalogmediagarbagecollector-00011-cov",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:07:55.567Z"
+      },
+      {
+        "name": "cancelReturnAdminGen2",
+        "status": "verified",
+        "revision": "cancelreturnadmingen2-00002-hod",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:07:55.641Z"
+      },
+      {
+        "name": "catalogReconciler",
+        "status": "verified",
+        "revision": "catalogreconciler-00012-jef",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:07:56.268Z"
+      },
+      {
+        "name": "cleanupFixtureRunAdminGen2",
+        "status": "verified",
+        "revision": "cleanupfixturerunadmingen2-00002-duj",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:09:31.995Z"
+      },
+      {
+        "name": "claimNewsletterRewardGen2",
+        "status": "verified",
+        "revision": "claimnewsletterrewardgen2-00002-vim",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:09:32.036Z"
+      },
+      {
+        "name": "cleanupProductPublicationSessions",
+        "status": "verified",
+        "revision": "cleanupproductpublicationsessions-00004-mop",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:09:32.660Z"
+      },
+      {
+        "name": "commerceOutboxDispatcherGen2",
+        "status": "verified",
+        "revision": "commerceoutboxdispatchergen2-00009-yar",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:10:37.730Z"
+      },
+      {
+        "name": "commerceReservationExpiryDispatcherGen2",
+        "status": "verified",
+        "revision": "commercereservationexpirydispatchergen2-00003-qas",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:11:08.968Z"
+      },
+      {
+        "name": "commerceOperationsReconcilerGen2",
+        "status": "verified",
+        "revision": "commerceoperationsreconcilergen2-00006-wag",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:11:39.677Z"
+      },
+      {
+        "name": "commerceWebhookCoverageWatchdogGen2",
+        "status": "verified",
+        "revision": "commercewebhookcoveragewatchdoggen2-00002-lof",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:12:14.114Z"
+      },
+      {
+        "name": "createAdminPaymentLinkGen2",
+        "status": "verified",
+        "revision": "createadminpaymentlinkgen2-00004-sub",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:12:45.423Z"
+      },
+      {
+        "name": "createCheckoutV2Gen2",
+        "status": "verified",
+        "revision": "createcheckoutv2gen2-00006-fuy",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:13:16.044Z"
+      },
+      {
+        "name": "createOrderGen2",
+        "status": "verified",
+        "revision": "createordergen2-00002-hih",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:13:50.782Z"
+      },
+      {
+        "name": "decideCustomerReturnRequestAdminGen2",
+        "status": "verified",
+        "revision": "decidecustomerreturnrequestadmingen2-00002-mif",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:14:22.057Z"
+      },
+      {
+        "name": "createQuoteRequestGen2",
+        "status": "verified",
+        "revision": "createquoterequestgen2-00002-fes",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:14:22.207Z"
+      },
+      {
+        "name": "deleteSessionGen2",
+        "status": "verified",
+        "revision": "deletesessiongen2-00002-som",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:15:28.599Z"
+      },
+      {
+        "name": "disconnectInstagramConnectionAdminGen2",
+        "status": "verified",
+        "revision": "disconnectinstagramconnectionadmingen2-00002-dar",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:15:28.814Z"
+      },
+      {
+        "name": "disconnectMetaConnectionAdminGen2",
+        "status": "verified",
+        "revision": "disconnectmetaconnectionadmingen2-00002-gaq",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:15:59.914Z"
+      },
+      {
+        "name": "dispatchCatalogBuild",
+        "status": "verified",
+        "revision": "dispatchcatalogbuild-00017-lez",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:16:35.863Z"
+      },
+      {
+        "name": "dispatchCatalogRevalidation",
+        "status": "verified",
+        "revision": "dispatchcatalogrevalidation-00015-pos",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:17:05.951Z"
+      },
+      {
+        "name": "dispatchCommerceOutboxTaskGen2",
+        "status": "verified",
+        "revision": "dispatchcommerceoutboxtaskgen2-00003-yur",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:17:37.391Z"
+      },
+      {
+        "name": "dispatchCommerceReservationExpiryTaskGen2",
+        "status": "verified",
+        "revision": "dispatchcommercereservationexpirytaskgen2-00003-lih",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:18:12.751Z"
+      },
+      {
+        "name": "drawNewsletterRewardGen2",
+        "status": "verified",
+        "revision": "drawnewsletterrewardgen2-00002-fiv",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:18:42.881Z"
+      },
+      {
+        "name": "ensureAdminAccessRegistryGen2",
+        "status": "verified",
+        "revision": "ensureadminaccessregistrygen2-00002-win",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:19:14.191Z"
+      },
+      {
+        "name": "expireAdminPaymentLinksGen2",
+        "status": "verified",
+        "revision": "expireadminpaymentlinksgen2-00003-jiq",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:19:49.331Z"
+      },
+      {
+        "name": "extendAdminPaymentLinkGen2",
+        "status": "verified",
+        "revision": "extendadminpaymentlinkgen2-00003-boh",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:20:19.620Z"
+      },
+      {
+        "name": "finalizeQuoteRequestGen2",
+        "status": "verified",
+        "revision": "finalizequoterequestgen2-00002-mid",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:20:50.635Z"
+      },
+      {
+        "name": "generatePasskeyAuthenticationOptionsGen2",
+        "status": "verified",
+        "revision": "generatepasskeyauthenticationoptionsgen2-00002-vej",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:21:25.973Z"
+      },
+      {
+        "name": "generatePasskeyRegistrationOptionsGen2",
+        "status": "verified",
+        "revision": "generatepasskeyregistrationoptionsgen2-00002-yaf",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:21:56.879Z"
+      },
+      {
+        "name": "getCatalogPublicationStatusGen2",
+        "status": "verified",
+        "revision": "getcatalogpublicationstatusgen2-00005-vuk",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:21:58.435Z"
+      },
+      {
+        "name": "getAdminPaymentLinkPublicGen2",
+        "status": "verified",
+        "revision": "getadminpaymentlinkpublicgen2-00003-yoq",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:22:27.728Z"
+      },
+      {
+        "name": "getAnalyticsAdminGen2",
+        "status": "verified",
+        "revision": "getanalyticsadmingen2-00003-xuv",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:23:03.774Z"
+      },
+      {
+        "name": "getCommerceOperationsStatusAdminGen2",
+        "status": "verified",
+        "revision": "getcommerceoperationsstatusadmingen2-00004-qon",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:23:35.275Z"
+      },
+      {
+        "name": "getDiagnosticTimelineAdminGen2",
+        "status": "verified",
+        "revision": "getdiagnostictimelineadmingen2-00004-cey",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:24:04.836Z"
+      },
+      {
+        "name": "getInstagramConnectionStatusAdminGen2",
+        "status": "verified",
+        "revision": "getinstagramconnectionstatusadmingen2-00002-hit",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:24:41.838Z"
+      },
+      {
+        "name": "getManualInvoiceWorkspaceAdminGen2",
+        "status": "verified",
+        "revision": "getmanualinvoiceworkspaceadmingen2-00004-mip",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:25:12.156Z"
+      },
+      {
+        "name": "getMetaConnectionStatusAdminGen2",
+        "status": "verified",
+        "revision": "getmetaconnectionstatusadmingen2-00002-xuv",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:25:41.663Z"
+      },
+      {
+        "name": "getOrderStatusClientGen2",
+        "status": "verified",
+        "revision": "getorderstatusclientgen2-00002-vas",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:26:18.736Z"
+      },
+      {
+        "name": "getOrderTimelineAdminV2Gen2",
+        "status": "verified",
+        "revision": "getordertimelineadminv2gen2-00004-kud",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:26:49.034Z"
+      },
+      {
+        "name": "getQuoteRequestAdminGen2",
+        "status": "verified",
+        "revision": "getquoterequestadmingen2-00005-gul",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:27:18.501Z"
+      },
+      {
+        "name": "getSocialPublicationStatusAdminGen2",
+        "status": "verified",
+        "revision": "getsocialpublicationstatusadmingen2-00002-pip",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:27:55.648Z"
+      },
+      {
+        "name": "getUserStatsGen2",
+        "status": "verified",
+        "revision": "getuserstatsgen2-00002-civ",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:28:26.154Z"
+      },
+      {
+        "name": "initLiveSessionGen2",
+        "status": "verified",
+        "revision": "initlivesessiongen2-00004-yij",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:28:55.627Z"
+      },
+      {
+        "name": "instagramOAuthCallbackGen2",
+        "status": "verified",
+        "revision": "instagramoauthcallbackgen2-00003-bex",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:29:32.826Z"
+      },
+      {
+        "name": "journalCommerceIncidentGen2",
+        "status": "verified",
+        "revision": "journalcommerceincidentgen2-00005-gab",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:30:04.081Z"
+      },
+      {
+        "name": "journalInventoryMovementGen2",
+        "status": "verified",
+        "revision": "journalinventorymovementgen2-00002-xup",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:31:10.599Z"
+      },
+      {
+        "name": "journalFinancialFactGen2",
+        "status": "verified",
+        "revision": "journalfinancialfactgen2-00004-xab",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:33:19.357Z"
+      },
+      {
+        "name": "journalOrderEventGen2",
+        "status": "verified",
+        "revision": "journalordereventgen2-00002-gis",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:33:19.365Z"
+      },
+      {
+        "name": "journalOutboxStatusGen2",
+        "status": "verified",
+        "revision": "journaloutboxstatusgen2-00003-xey",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:34:26.052Z"
+      },
+      {
+        "name": "journalWebhookStatusGen2",
+        "status": "verified",
+        "revision": "journalwebhookstatusgen2-00003-nix",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:34:32.465Z"
+      },
+      {
+        "name": "listAdminPaymentLinksGen2",
+        "status": "verified",
+        "revision": "listadminpaymentlinksgen2-00004-vap",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:35:02.098Z"
+      },
+      {
+        "name": "listCustomerReturnRequestsAdminV2Gen2",
+        "status": "verified",
+        "revision": "listcustomerreturnrequestsadminv2gen2-00006-woq",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:35:37.788Z"
+      },
+      {
+        "name": "listMyNewsletterRewardsGen2",
+        "status": "verified",
+        "revision": "listmynewsletterrewardsgen2-00002-rax",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:36:14.000Z"
+      },
+      {
+        "name": "listMyOrdersV2Gen2",
+        "status": "verified",
+        "revision": "listmyordersv2gen2-00005-vug",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:36:44.340Z"
+      },
+      {
+        "name": "listOrdersAdminV2Gen2",
+        "status": "verified",
+        "revision": "listordersadminv2gen2-00006-ved",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:37:21.267Z"
+      },
+      {
+        "name": "listReturnsAdminV2Gen2",
+        "status": "verified",
+        "revision": "listreturnsadminv2gen2-00004-len",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:37:56.613Z"
+      },
+      {
+        "name": "listQuoteRequestsAdminGen2",
+        "status": "verified",
+        "revision": "listquoterequestsadmingen2-00004-yul",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:37:59.045Z"
+      },
+      {
+        "name": "logUserConnectionGen2",
+        "status": "verified",
+        "revision": "loguserconnectiongen2-00002-goh",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:39:02.643Z"
+      },
+      {
+        "name": "maintainAnalyticsGen2",
+        "status": "verified",
+        "revision": "maintainanalyticsgen2-00005-yev",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:39:36.552Z"
+      },
+      {
+        "name": "markReturnReceivedAdminGen2",
+        "status": "verified",
+        "revision": "markreturnreceivedadmingen2-00002-vik",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:39:38.800Z"
+      },
+      {
+        "name": "metaOAuthCallbackGen2",
+        "status": "verified",
+        "revision": "metaoauthcallbackgen2-00003-kif",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:40:39.667Z"
+      },
+      {
+        "name": "onArtifactDeleted",
+        "status": "verified",
+        "revision": "onartifactdeleted-00025-wok",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:41:14.278Z"
+      },
+      {
+        "name": "onArtifactUpdated",
+        "status": "verified",
+        "revision": "onartifactupdated-00025-wew",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:41:16.642Z"
+      },
+      {
+        "name": "onCatalogSourceWrite",
+        "status": "verified",
+        "revision": "oncatalogsourcewrite-00013-jos",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:42:17.261Z"
+      },
+      {
+        "name": "onCommerceOutboxWrittenGen2",
+        "status": "verified",
+        "revision": "oncommerceoutboxwrittengen2-00004-kuj",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": false,
+        "verifiedAt": "2026-09-08T12:37:06.945Z",
+        "onlyConfigurationChange": "FUNCTION_SIGNATURE_TYPE=cloudevent"
+      },
+      {
+        "name": "onCommerceReservationWrittenGen2",
+        "status": "verified",
+        "revision": "oncommercereservationwrittengen2-00003-weg",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:42:54.353Z"
+      },
+      {
+        "name": "onQuoteRequestSubmittedGen2",
+        "status": "verified",
+        "revision": "onquoterequestsubmittedgen2-00003-hap",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:43:54.871Z"
+      },
+      {
+        "name": "openReturnAdminGen2",
+        "status": "verified",
+        "revision": "openreturnadmingen2-00002-cex",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:44:28.869Z"
+      },
+      {
+        "name": "prepareAdminPaymentLinkPaymentGen2",
+        "status": "verified",
+        "revision": "prepareadminpaymentlinkpaymentgen2-00003-lif",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:44:31.001Z"
+      },
+      {
+        "name": "prepareCommerceDocumentDeliveryGen2",
+        "status": "verified",
+        "revision": "preparecommercedocumentdeliverygen2-00005-kuf",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:45:31.753Z"
+      },
+      {
+        "name": "prepareManualInvoicePdfAdminGen2",
+        "status": "verified",
+        "revision": "preparemanualinvoicepdfadmingen2-00002-fah",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:46:06.198Z"
+      },
+      {
+        "name": "prepareSocialPublicationAdminGen2",
+        "status": "verified",
+        "revision": "preparesocialpublicationadmingen2-00002-woc",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:46:07.709Z"
+      },
+      {
+        "name": "projectCommerceFinancialHistoryGen2",
+        "status": "verified",
+        "revision": "projectcommercefinancialhistorygen2-00002-rej",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:47:43.834Z"
+      },
+      {
+        "name": "projectLegacyFinancialHistoryGen2",
+        "status": "verified",
+        "revision": "projectlegacyfinancialhistorygen2-00002-kaf",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:47:45.106Z"
+      },
+      {
+        "name": "processProductPublicationImage",
+        "status": "verified",
+        "revision": "processproductpublicationimage-00005-yac",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:47:46.715Z"
+      },
+      {
+        "name": "rebuildCatalogSnapshotGen2",
+        "status": "verified",
+        "revision": "rebuildcatalogsnapshotgen2-00003-sig",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:48:49.882Z"
+      },
+      {
+        "name": "rebuildCommerceOperationsAdminGen2",
+        "status": "verified",
+        "revision": "rebuildcommerceoperationsadmingen2-00003-ven",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:49:22.296Z"
+      },
+      {
+        "name": "reconcileProductPublicationSessions",
+        "status": "verified",
+        "revision": "reconcileproductpublicationsessions-00005-waw",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:49:23.985Z"
+      },
+      {
+        "name": "recreateAdminPaymentLinkGen2",
+        "status": "verified",
+        "revision": "recreateadminpaymentlinkgen2-00004-vax",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:50:26.903Z"
+      },
+      {
+        "name": "regenerateAdminPaymentLinkGen2",
+        "status": "verified",
+        "revision": "regenerateadminpaymentlinkgen2-00003-dec",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:50:59.373Z"
+      },
+      {
+        "name": "removeAdminUserGen2",
+        "status": "verified",
+        "revision": "removeadminusergen2-00002-zoq",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:51:00.505Z"
+      },
+      {
+        "name": "requestCustomerReturnGen2",
+        "status": "verified",
+        "revision": "requestcustomerreturngen2-00002-don",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:52:03.649Z"
+      },
+      {
+        "name": "requestOrderCancellationGen2",
+        "status": "verified",
+        "revision": "requestordercancellationgen2-00003-hef",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:52:36.197Z"
+      },
+      {
+        "name": "requestRefundAdminGen2",
+        "status": "verified",
+        "revision": "requestrefundadmingen2-00003-tur",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:52:37.374Z"
+      },
+      {
+        "name": "resolveReturnAdminGen2",
+        "status": "verified",
+        "revision": "resolvereturnadmingen2-00002-kud",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:53:40.484Z"
+      },
+      {
+        "name": "restockReturnLinesAdminGen2",
+        "status": "verified",
+        "revision": "restockreturnlinesadmingen2-00002-fov",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:54:13.154Z"
+      },
+      {
+        "name": "resumeAdminPaymentLinkPaymentGen2",
+        "status": "verified",
+        "revision": "resumeadminpaymentlinkpaymentgen2-00003-kos",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:54:14.324Z"
+      },
+      {
+        "name": "resumeCheckoutV2Gen2",
+        "status": "verified",
+        "revision": "resumecheckoutv2gen2-00004-zas",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:55:17.706Z"
+      },
+      {
+        "name": "rollbackCatalogSnapshotGen2",
+        "status": "verified",
+        "revision": "rollbackcatalogsnapshotgen2-00003-rub",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:55:50.501Z"
+      },
+      {
+        "name": "runSocialPublicationAdminGen2",
+        "status": "verified",
+        "revision": "runsocialpublicationadmingen2-00002-tox",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:55:51.428Z"
+      },
+      {
+        "name": "saveManualInvoiceDraftAdminGen2",
+        "status": "verified",
+        "revision": "savemanualinvoicedraftadmingen2-00002-gun",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:56:54.675Z"
+      },
+      {
+        "name": "selectMetaAssetAdminGen2",
+        "status": "verified",
+        "revision": "selectmetaassetadmingen2-00002-tuz",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:57:27.313Z"
+      },
+      {
+        "name": "sendCustomerLoginOtpGen2",
+        "status": "verified",
+        "revision": "sendcustomerloginotpgen2-00004-vam",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:57:28.317Z"
+      },
+      {
+        "name": "sendGuestCheckoutOtpGen2",
+        "status": "verified",
+        "revision": "sendguestcheckoutotpgen2-00003-cec",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:58:32.007Z"
+      },
+      {
+        "name": "sendManualInvoiceAdminGen2",
+        "status": "verified",
+        "revision": "sendmanualinvoiceadmingen2-00003-tiw",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:59:04.344Z"
+      },
+      {
+        "name": "startInstagramOAuthAdminGen2",
+        "status": "verified",
+        "revision": "startinstagramoauthadmingen2-00003-hex",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T11:59:05.027Z"
+      },
+      {
+        "name": "startMetaOAuthAdminGen2",
+        "status": "verified",
+        "revision": "startmetaoauthadmingen2-00003-gik",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T12:00:08.911Z"
+      },
+      {
+        "name": "stripeConnectWebhookV2Gen2",
+        "status": "verified",
+        "revision": "stripeconnectwebhookv2gen2-00004-gux",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T12:00:41.298Z"
+      },
+      {
+        "name": "stripeWebhookV2Gen2",
+        "status": "verified",
+        "revision": "stripewebhookv2gen2-00005-lis",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T12:00:42.100Z"
+      },
+      {
+        "name": "syncSessionBeaconGen2",
+        "status": "verified",
+        "revision": "syncsessionbeacongen2-00006-xac",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T12:01:46.445Z"
+      },
+      {
+        "name": "syncSessionGen2",
+        "status": "verified",
+        "revision": "syncsessiongen2-00004-foh",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T12:02:18.271Z"
+      },
+      {
+        "name": "syncSuperAdminClaimGen2",
+        "status": "verified",
+        "revision": "syncsuperadminclaimgen2-00002-cov",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T12:02:18.947Z"
+      },
+      {
+        "name": "updateQuoteRequestAdminGen2",
+        "status": "verified",
+        "revision": "updatequoterequestadmingen2-00002-wej",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T12:03:23.390Z"
+      },
+      {
+        "name": "updateUserSessionsGen2",
+        "status": "verified",
+        "revision": "updateusersessionsgen2-00004-har",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T12:03:55.189Z"
+      },
+      {
+        "name": "uploadQuoteRequestPhotoGen2",
+        "status": "verified",
+        "revision": "uploadquoterequestphotogen2-00003-fen",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T12:03:55.605Z"
+      },
+      {
+        "name": "verifyCustomerLoginOtpGen2",
+        "status": "verified",
+        "revision": "verifycustomerloginotpgen2-00002-gez",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T12:05:00.560Z"
+      },
+      {
+        "name": "verifyGuestCheckoutOtpGen2",
+        "status": "verified",
+        "revision": "verifyguestcheckoutotpgen2-00002-tul",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T12:05:32.355Z"
+      },
+      {
+        "name": "verifyInstagramConnectionAdminGen2",
+        "status": "verified",
+        "revision": "verifyinstagramconnectionadmingen2-00002-seg",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T12:05:32.453Z"
+      },
+      {
+        "name": "verifyMetaConnectionAdminGen2",
+        "status": "verified",
+        "revision": "verifymetaconnectionadmingen2-00002-liy",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T12:06:37.902Z"
+      },
+      {
+        "name": "verifyPasskeyAuthenticationGen2",
+        "status": "verified",
+        "revision": "verifypasskeyauthenticationgen2-00002-xem",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T12:07:12.151Z"
+      },
+      {
+        "name": "verifyPasskeyRegistrationGen2",
+        "status": "verified",
+        "revision": "verifypasskeyregistrationgen2-00002-lat",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T12:07:12.196Z"
+      },
+      {
+        "name": "writeOffReturnLinesAdminGen2",
+        "status": "verified",
+        "revision": "writeoffreturnlinesadmingen2-00002-sit",
+        "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "configurationPreserved": true,
+        "verifiedAt": "2026-09-08T12:08:15.759Z"
+      }
+    ],
+    "gen1": {
+      "name": "grantAdminOnAuth",
+      "resource": "projects/secondevienextjsssr/locations/us-central1/functions/grantAdminOnAuth",
+      "versionId": "29",
+      "state": "ACTIVE",
+      "configurationPreserved": true,
+      "sourceSha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+      "verifiedAt": "2026-09-08T11:27:18.749Z"
+    },
+    "excluded": [
+      {
+        "name": "onOrderCreated",
+        "unchanged": true,
+        "revision": "onordercreated-00030-nuc"
+      },
+      {
+        "name": "projectAdminActionSummaryGen2",
+        "unchanged": true,
+        "revision": "projectadminactionsummarygen2-00007-dim"
+      },
+      {
+        "name": "projectSystemIncidentGen2",
+        "unchanged": true,
+        "revision": "projectsystemincidentgen2-00001-daz"
+      },
+      {
+        "name": "trackAdminIPGen2",
+        "unchanged": true,
+        "revision": "trackadminipgen2-00002-vus"
+      },
+      {
+        "name": "setPromotionCodeStatusAdminGen2",
+        "unchanged": true,
+        "revision": "setpromotioncodestatusadmingen2-00001-vuh"
+      },
+      {
+        "name": "archiveOrderAdminGen2",
+        "unchanged": true,
+        "revision": "archiveorderadmingen2-00003-rig"
+      },
+      {
+        "name": "requestStripeConnectReconnectGen2",
+        "unchanged": true,
+        "revision": "requeststripeconnectreconnectgen2-00001-vid"
+      },
+      {
+        "name": "markOrderReadyForPickupAdminGen2",
+        "unchanged": true,
+        "revision": "markorderreadyforpickupadmingen2-00001-vah"
+      },
+      {
+        "name": "listPromotionCodesAdminGen2",
+        "unchanged": true,
+        "revision": "listpromotioncodesadmingen2-00001-doq"
+      },
+      {
+        "name": "startStripeConnectOnboardingGen2",
+        "unchanged": true,
+        "revision": "startstripeconnectonboardinggen2-00001-bof"
+      },
+      {
+        "name": "confirmStripeConnectReconnectGen2",
+        "unchanged": true,
+        "revision": "confirmstripeconnectreconnectgen2-00001-rut"
+      },
+      {
+        "name": "createProductAdminGen2",
+        "unchanged": true,
+        "revision": "createproductadmingen2-00001-wir"
+      },
+      {
+        "name": "previewPromotionCodeV2Gen2",
+        "unchanged": true,
+        "revision": "previewpromotioncodev2gen2-00001-diz"
+      },
+      {
+        "name": "markOrderShippedAdminGen2",
+        "unchanged": true,
+        "revision": "markordershippedadmingen2-00001-gen"
+      },
+      {
+        "name": "publishProductAdminGen2",
+        "unchanged": true,
+        "revision": "publishproductadmingen2-00001-zok"
+      },
+      {
+        "name": "markOrderPreparingAdminGen2",
+        "unchanged": true,
+        "revision": "markorderpreparingadmingen2-00001-qod"
+      },
+      {
+        "name": "saveDeliveryPolicyAdminGen2",
+        "unchanged": true,
+        "revision": "savedeliverypolicyadmingen2-00001-wow"
+      },
+      {
+        "name": "completeBillingGuideAdminGen2",
+        "unchanged": true,
+        "revision": "completebillingguideadmingen2-00001-roz"
+      },
+      {
+        "name": "updateProductOfferAdminGen2",
+        "unchanged": true,
+        "revision": "updateproductofferadmingen2-00001-jex"
+      },
+      {
+        "name": "getBillingGuideStatusGen2",
+        "unchanged": true,
+        "revision": "getbillingguidestatusgen2-00003-dam"
+      },
+      {
+        "name": "preflightProductMutationAdminGen2",
+        "unchanged": true,
+        "revision": "preflightproductmutationadmingen2-00001-non"
+      },
+      {
+        "name": "getBillingGuideOperatorStatusGen2",
+        "unchanged": true,
+        "revision": "getbillingguideoperatorstatusgen2-00001-vox"
+      },
+      {
+        "name": "createPublishedProductAdminGen2",
+        "unchanged": true,
+        "revision": "createpublishedproductadmingen2-00001-vef"
+      },
+      {
+        "name": "syncStripeConnectAccountGen2",
+        "unchanged": true,
+        "revision": "syncstripeconnectaccountgen2-00001-wov"
+      },
+      {
+        "name": "onOrderUpdated",
+        "unchanged": true,
+        "revision": "onorderupdated-00030-hez"
+      },
+      {
+        "name": "saveBillingGuideProgressGen2",
+        "unchanged": true,
+        "revision": "savebillingguideprogressgen2-00001-taf"
+      },
+      {
+        "name": "markOrderDeliveredAdminGen2",
+        "unchanged": true,
+        "revision": "markorderdeliveredadmingen2-00001-jop"
+      },
+      {
+        "name": "markOrderPickedUpAdminGen2",
+        "unchanged": true,
+        "revision": "markorderpickedupadmingen2-00001-mov"
+      },
+      {
+        "name": "getDeliveryPolicyAdminGen2",
+        "unchanged": true,
+        "revision": "getdeliverypolicyadmingen2-00001-yaj"
+      },
+      {
+        "name": "onOrderStatsWrite",
+        "unchanged": true,
+        "revision": "onorderstatswrite-00028-sed"
+      },
+      {
+        "name": "getStripeConnectStatusGen2",
+        "unchanged": true,
+        "revision": "getstripeconnectstatusgen2-00001-qiv"
+      },
+      {
+        "name": "createPromotionCodeAdminGen2",
+        "unchanged": true,
+        "revision": "createpromotioncodeadmingen2-00001-dal"
+      },
+      {
+        "name": "adjustInventoryAdminGen2",
+        "unchanged": true,
+        "revision": "adjustinventoryadmingen2-00001-jay"
+      },
+      {
+        "name": "sendTestEmailGen2",
+        "unchanged": true,
+        "revision": "sendtestemailgen2-00001-xoq"
+      },
+      {
+        "name": "updateOrderTrackingAdminGen2",
+        "unchanged": true,
+        "revision": "updateordertrackingadmingen2-00001-kug"
+      },
+      {
+        "name": "getSystemIncidentsAdminGen2",
+        "unchanged": true,
+        "revision": "getsystemincidentsadmingen2-00001-soz"
+      },
+      {
+        "name": "sendRefundStatusEmailAdminGen2",
+        "unchanged": true,
+        "revision": "sendrefundstatusemailadmingen2-00002-num"
+      },
+      {
+        "name": "projectNewsletterSubscriberGen2",
+        "unchanged": true,
+        "revision": "projectnewslettersubscribergen2-00002-guj"
+      },
+      {
+        "name": "deleteProductAdminGen2",
+        "unchanged": true,
+        "revision": "deleteproductadmingen2-00001-fub"
+      },
+      {
+        "name": "resetBillingGuideTestGen2",
+        "unchanged": true,
+        "revision": "resetbillingguidetestgen2-00001-lef"
+      },
+      {
+        "name": "onRegisteredUserDeleted",
+        "unchanged": true,
+        "revision": "6"
+      },
+      {
+        "name": "onRegisteredUserCreated",
+        "unchanged": true,
+        "revision": "6"
+      }
+    ]
+  },
+  "recipe": {
+    "run": "run_v2all_20260908_interactions",
+    "createdOrders": 1,
+    "maxOrders": 2,
+    "reference": "C145",
+    "stripe": {
+      "checkedAt": "2026-09-08T12:27:20.536Z",
+      "orderId": "ord_ff71557b-7014-4de6-9a07-7b8b41b7adae",
+      "reference": "C145",
+      "livemode": false,
+      "paymentStatus": "succeeded",
+      "amount": 200,
+      "received": 200,
+      "currency": "eur",
+      "refunds": [
+        {
+          "id": "re_3UDNvkRnGkmlBCey1ueZUjbs",
+          "status": "succeeded",
+          "amount": 200,
+          "currency": "eur",
+          "paymentIntentMatches": true
+        }
+      ]
+    },
+    "clientStatus": "refunded",
+    "clientAmountEUR": 2,
+    "documents": 2,
+    "restockedQuantity": 0,
+    "foreignOrdersMutated": 0,
+    "favoritesAddedThenRemoved": true,
+    "baselineFavoritesPreserved": 4,
+    "adminGoogleStrongSessionVerified": true,
+    "clientNotAdmin": true,
+    "mail": {
+      "entries": [
+        {
+          "outboxId": "23a61e38dc8de333d9684ac50d0e2a1e8d1f0167bd9aa9373c665f688885276c",
+          "template": "order-paid",
+          "recipientRole": "customer",
+          "status": "sent",
+          "attemptCount": 1,
+          "sentAt": "2026-09-08T12:31:09.494Z"
+        },
+        {
+          "outboxId": "55ff54458705cee96cf395c6fd8bfc14cb26c26509e9adad8dde2c63409e5640",
+          "template": "commerce-document-copy",
+          "recipientRole": "customer",
+          "status": "sent",
+          "attemptCount": 1,
+          "sentAt": "2026-09-08T12:45:48.788Z"
+        },
+        {
+          "outboxId": "7572c4ed26e80faf1e63011e4e790c501b1b3a69d7284d4f6a7878263d43913c",
+          "template": "order-paid-admin",
+          "recipientRole": "admin",
+          "status": "sent",
+          "attemptCount": 1,
+          "sentAt": "2026-09-08T12:31:10.464Z"
+        },
+        {
+          "outboxId": "8fd22a891fddc48cacf6db4688b0508d221dc93c91757e96bc049e635b68280d",
+          "template": "commerce-document-copy",
+          "recipientRole": "customer",
+          "status": "sent",
+          "attemptCount": 1,
+          "sentAt": "2026-09-08T12:31:12.761Z"
+        },
+        {
+          "outboxId": "9e1ae3d1b2ac163a59dce8413414f7cc211dd314fd01934df3342c2704cedf0b",
+          "template": "order-refunded-admin",
+          "recipientRole": "admin",
+          "status": "sent",
+          "attemptCount": 1,
+          "sentAt": "2026-09-08T12:38:53.807Z"
+        },
+        {
+          "outboxId": "afad4be6b0af5ceaf74edaaefa7045e68af6691fa5ddbec29c8667922e1800b8",
+          "template": "order-refunded",
+          "recipientRole": "customer",
+          "status": "sent",
+          "attemptCount": 1,
+          "sentAt": "2026-09-08T12:38:55.059Z"
+        },
+        {
+          "outboxId": "bc8fdec499710607a2bfac848d0e096c12500943841b92c73cda91e170ab24e3",
+          "template": "customer-return-requested-admin",
+          "recipientRole": "admin",
+          "status": "sent",
+          "attemptCount": 1,
+          "sentAt": "2026-09-08T12:31:13.656Z"
+        }
+      ],
+      "customer": {
+        "identity": "pvml7008@gmail.com",
+        "payment": "received_spam",
+        "refund": "received_spam",
+        "receiptCopy": "received_inbox",
+        "refundDocumentCopy": "received_inbox",
+        "amountAndSandboxLinkVerified": true
+      },
+      "admin": {
+        "identity": "loa.gto15@gmail.com",
+        "payment": "received_inbox",
+        "returnRequest": "received_inbox",
+        "refund": "received_inbox",
+        "verifiedVia": "Chrome Gmail account Loa A, scoped C145 search"
+      },
+      "freshAutomaticEvent": {
+        "outboxId": "55ff54458705cee96cf395c6fd8bfc14cb26c26509e9adad8dde2c63409e5640",
+        "revision": "oncommerceoutboxwrittengen2-00004-kuj",
+        "taskScheduledAt": "2026-09-08T12:45:45.819468Z",
+        "sentAt": "2026-09-08T12:45:48.788Z",
+        "manualEnqueue": false
+      },
+      "initialRecovery": {
+        "hourlyFallbackSent": 4,
+        "boundedPendingRefundMessagesEnqueued": 2,
+        "noReplayOfSentMessages": true
+      }
+    }
+  },
+  "catalog": {
+    "checkedAt": "2026-09-08T12:50:53.325Z",
+    "control": {
+      "buildState": "published",
+      "desiredRevision": "342",
+      "publishedRevision": "342",
+      "revalidatedRevision": "342",
+      "servedRevision": "342",
+      "integrityState": "valid",
+      "sourceLagState": "current",
+      "invalidationState": "accepted",
+      "servedState": "observed",
+      "revalidationFailureCount": "0",
+      "lastError": null,
+      "lastRevalidatedAt": "2026-09-08T12:50:38.982Z",
+      "lastVerifiedAt": "2026-09-08T12:50:38.982Z"
+    },
+    "version": {
+      "revision": 342,
+      "aggregateSha256": "68e05bc7ccf0dfd28ba100a018b60799e4854d2c61d0f55da8a5d5fbe5dfeed5",
+      "publishedAt": "2026-09-08T12:18:37.965Z"
+    },
+    "routes": [
+      {
+        "path": "/",
+        "status": 200,
+        "versions": [
+          "68e05bc7ccf0dfd28ba100a018b60799e4854d2c61d0f55da8a5d5fbe5dfeed5"
+        ]
+      }
+    ]
+  },
+  "runtimeErrors": {
+    "checkedAt": "2026-09-08T12:47:49.126Z",
+    "revisionsChecked": 116,
+    "errorCount": 2,
+    "truncated": false,
+    "entries": [
+      {
+        "logName": "projects/secondevienextjsssr/logs/run.googleapis.com%2Fstderr",
+        "resource": {
+          "labels": {
+            "revision_name": "dispatchcatalogrevalidation-00015-pos",
+            "service_name": "dispatchcatalogrevalidation"
+          }
+        },
+        "severity": "ERROR",
+        "timestamp": "2026-09-08T12:18:46.725020Z"
+      },
+      {
+        "logName": "projects/secondevienextjsssr/logs/run.googleapis.com%2Frequests",
+        "resource": {
+          "labels": {
+            "revision_name": "dispatchcatalogrevalidation-00015-pos",
+            "service_name": "dispatchcatalogrevalidation"
+          }
+        },
+        "severity": "ERROR",
+        "timestamp": "2026-09-08T12:18:44.176595Z"
+      }
+    ],
+    "interpretation": "Two historical ERROR entries for one CATALOG_SERVED_ROUTE_STALE failure after payment; bounded retry a1 succeeded, revision 342 observed. No error entries removed."
+  },
+  "qualification": {
+    "auditSelectionPassed": 591,
+    "lintErrors": 0,
+    "applicationLintWarnings": 121,
+    "functionsLintWarnings": 0,
+    "build": "passed",
+    "emulators": "passed; detailed counts in qualification.json and README.md",
+    "dependencyGate": "passed without exception",
+    "cliCompatibilityTestsPassed": 6,
+    "mailRegressionAndPaymentTestsPassed": 11,
+    "mailG0TestsPassed": 22
+  },
+  "rollback": {
+    "frontendBuild": "build-2026-09-06-002",
+    "frontendValidateOnlyPassed": true,
+    "functionsArchivesCapturedAndHashed": 116,
+    "executed": false
+  },
+  "openChecks": [
+    "Client transaction emails classified as spam",
+    "Visual PDF inspection blocked by browser blob URL policy; user check remains",
+    "Real phone browser recipe",
+    "Second hosted order abandonment/resumption and simultaneous profiles",
+    "Admin content editing/publication not exercised",
+    "Rollback execution not exercised"
+  ],
+  "preservation": {
+    "applicationCommitDeletedFiles": 0,
+    "foreignSkillDeletionsExcluded": 230,
+    "foreignDocumentationPreserved": true,
+    "localSeptember8BeforeAfterDesignExcluded": true,
+    "mainMerged": false,
+    "productionDeployed": false,
+    "globalFunctionsDeploy": false
+  },
+  "evidenceHashes": {
+    "hosting-rollout-after.json": "afe4590e0da77ed171613bd7063aa0dabfb16d6176a1ef2ee9bf16813270cf19",
+    "outbox-transport-proof.json": "8894473819f0df1b14ae795aacd1046b7d44a07a0c228cb3bd41033e2ae0f57b",
+    "outbox-a-proof.json": "b76149f948d232f17f40819bdf6bb8af8e4397b45489a00bb081cf3a369ee797",
+    "stripe-a-proof.json": "d2833a582194e634f2e801ab82ecaaf28ccb5d74fbe7fa87d8766dbb63d11dd9",
+    "catalog-final-proof.json": "c0372680acf34c32e01198888b9797bb551b640e02ac6a64fa3425ebf984128d",
+    "runtime-errors-final.json": "e4513009d79b919b492ebd59afd9d84314aeadb59284cf7c785adb3d144cf069",
+    "excluded-functions-proof.json": "226cd69b10d0c54109ab537ffd0be3ff7a8fc482ed317b955d763968140ea4f2",
+    "rollback-manifest.json": "a68fb7f3e5c126ed34387ade5e5bd6719d3e1fa09dbee03abdea813b0683a524"
+  }
+}
