@@ -1,8 +1,8 @@
 # Préparation de livraison — interactions du 7 septembre 2026
 
-**Verdict : BLOQUÉ avant déploiement. La version auditée n'est pas encore prête pour la recette utilisateur sur sandbox.**
+**État au 8 septembre : gate de dépendances corrigée et validée ; livraison sandbox à reprendre. La nouvelle version n'est pas encore déployée.**
 
-La préparation, les corrections de qualification et l'enregistrement Git ont été réalisés. La gate obligatoire `security:audit` reste rouge sur une dépendance de la CLI Firebase. Aucune règle, aucun index, aucune Function et aucun frontend n'ont été déployés pendant cette campagne.
+La préparation, les corrections de qualification et l'enregistrement Git ont été réalisés. Le blocage initial de `security:audit` décrit ci-dessous a été corrigé le 8 septembre par un patch compatible de Firebase CLI, sans exception d'audit. Aucune règle, aucun index, aucune Function et aucun frontend n'ont encore été déployés pendant cette campagne.
 
 ## Version et périmètre
 
@@ -36,7 +36,7 @@ Environnement : Node `22.23.2`, pnpm `11.7.0`, Next `16.3.0`, React `19.2.7`, Ja
 | Surface SEO, origine compilée, classification des routes, contrat mobile, App Check, cache de déploiement et audits infra locaux | Réussis |
 | Recherche de secrets dans le bundle | Réussie |
 | Audit dépendances Functions au seuil modéré | Réussi ; un avis de sévérité faible SimpleWebAuthn reste déclaré |
-| Gate globale `security:audit` | **ÉCHEC : `stream-json` transitif de `firebase-tools`** |
+| Gate globale `security:audit` | Échec initial conservé ; **réussie le 8 septembre après adaptation de Firebase CLI à `stream-json` 3.6.0** |
 | Git / liens documentaires | `git diff --check` et liens locaux vérifiés |
 
 Les échecs initiaux n'ont pas été supprimés des preuves locales. Corrections de qualification :
@@ -48,7 +48,7 @@ Les échecs initiaux n'ont pas été supprimés des preuves locales. Corrections
 5. La fixture d'échec outbox est datée après les événements de commande pour appartenir à la fenêtre des 100 événements les plus récents ; le contrôle de troncature et du compteur reste actif.
 6. `fast-uri` passe de 3.1.5 à 3.1.6 et `qs` de 6.15.3 à 6.16.0, avec lockfiles racine et Functions mis à jour. Aucun autre paquet applicatif n'a été mis à niveau.
 
-## Blocage concret
+## Blocage initial et résolution
 
 La [gate de qualité](../../quality/QUALITE_TESTS.md) et `.github/workflows/quality.yml` exigent `pnpm audit --audit-level=moderate`, y compris les dépendances de développement. La gate échoue encore sur [GHSA-528h-pc64-c93x](https://github.com/advisories/GHSA-528h-pc64-c93x), concernant les filtres de `stream-json` et leur coût excessif sur un JSON profondément imbriqué.
 
@@ -57,6 +57,8 @@ La [gate de qualité](../../quality/QUALITE_TESTS.md) et `.github/workflows/qual
 La dépendance concernée appartient à l'outillage CLI, pas au bundle public. Cela ne rend pas la gate actuelle verte. Aucun avis n'a été ignoré, aucun seuil modifié, aucune protection désactivée. La reprise du déploiement exige un correctif CLI compatible ou une décision explicite du propriétaire sur cette gate d'outillage ; aucune exception n'est présumée ici.
 
 ### Reprise du 8 septembre 2026
+
+Après demande explicite de correction de l'outillage, un [patch versionné de Firebase CLI](../../../patches/README.md) adapte ses trois usages de `stream-json` aux flux Node de la version 3.6.0 corrigée. La gate `security:audit` complète passe : zéro vulnérabilité racine connue, seul l'avis faible Functions précédemment déclaré demeure, sous le seuil inchangé. Six tests de compatibilité passent, dont les lots Auth, le filtrage Database, l'analyse Next et le refus des imbrications excessives avant envoi. Les sept tests de l'émulateur temps réel passent avec la CLI corrigée. L'installation frozen, le lint du test, les commandes d'aide Auth/Database/deploy et la lecture réelle du backend App Hosting sandbox passent. Preuves locales : `logs/livraison/2026-09-08-reprise/`. Aucun déploiement n'est déduit de ces contrôles.
 
 Le push des commits `6326dab` (sources) et `8d65c1b` (documentation) sur `codex/livraison-interactions-20260907` a été confirmé. L'audit des dépendances relancé échoue toujours sur un unique avis modéré, `GHSA-528h-pc64-c93x`. La dernière CLI publiée, 15.29.0, dépend encore de `stream-json ^1.7.3`. Le paquet publié `stream-json` 3.6.0 a été inspecté sans modifier l'installation : ses exports ESM dirigent les quatre anciens imports Firebase vers des fichiers absents. Cette nouvelle version ne permet donc pas davantage une substitution compatible.
 

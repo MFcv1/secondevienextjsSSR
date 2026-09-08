@@ -63,7 +63,7 @@
     "commerce:incident:triage:g1": "node scripts/with-env.mjs .env.sandbox node scripts/triage-commerce-incident-g1.mjs --project=secondevienextjsssr --env=sandbox",
     "commerce:incident:resolve:g1": "node scripts/with-env.mjs .env.sandbox node scripts/resolve-commerce-incident-g1.mjs --project=secondevienextjsssr --env=sandbox",
     "infra:env": "node scripts/audit-infra-env.cjs",
-    "security:audit:static": "node --test tests/security-hardening.test.mjs tests/security-client-ip.test.cjs tests/security-output-encoding.test.cjs && node scripts/audit-infra-env.cjs",
+    "security:audit:static": "node --test tests/security-hardening.test.mjs tests/security-client-ip.test.cjs tests/security-output-encoding.test.cjs tests/firebase-cli-stream-json.test.cjs && node scripts/audit-infra-env.cjs",
     "security:audit:bundle": "node scripts/audit-client-bundle-secrets.mjs",
     "security:audit": "pnpm run security:audit:static && pnpm audit --audit-level=moderate && npm audit --omit=dev --prefix functions --audit-level=moderate",
     "auth:phase0:audit": "node scripts/audit-auth-phase0.cjs",

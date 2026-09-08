@@ -11,6 +11,7 @@ overrides:
   brace-expansion@>=2 <3: 2.1.4
   fast-xml-parser: 5.10.1
   fast-uri: 3.1.6
+  firebase-tools>stream-json: 3.6.0
   hono: 4.12.34
   ip-address: 10.3.1
   js-yaml: 4.3.1
@@ -22,6 +23,9 @@ overrides:
   undici@<7: 6.28.0
   undici@>=8 <9: 8.9.0
   uuid: 11.1.1
+
+patchedDependencies:
+  firebase-tools@15.26.0: 5e48ef04cbd9ec37a5c1f639e68fcfb9b323f0cd148c35678472be64d90e867a
 
 importers:
 
@@ -114,7 +118,7 @@ importers:
         version: 7.2.5(firebase-admin@13.10.0(supports-color@7.2.0))(supports-color@7.2.0)
       firebase-tools:
         specifier: 15.26.0
-        version: 15.26.0(@types/node@26.1.0)(supports-color@7.2.0)
+        version: 15.26.0(patch_hash=5e48ef04cbd9ec37a5c1f639e68fcfb9b323f0cd148c35678472be64d90e867a)(@types/node@26.1.0)(supports-color@7.2.0)
       globals:
         specifier: ^14.0.0
         version: 14.0.0
@@ -3888,11 +3892,15 @@ packages:
   stream-chain@2.2.5:
     resolution: {integrity: sha512-1TJmBx6aSWqZ4tx7aTpBDXK0/e2hhcNSTV8+CbFJtDjbb+I1mZ8lHit0Grw9GRT+6JbIrrDd8esncgBi8aBXGA==}
 
+  stream-chain@4.2.5:
+    resolution: {integrity: sha512-Wtyq3bNE3ggLR0v2vftqvuhltym3WbZAkZpfIrkr5F/6vpeUmWmwTgXa16zD87gpahwJ/Qulq3zVfUlgIc0J2A==}
+    engines: {node: '>=22'}
+
   stream-events@1.0.5:
     resolution: {integrity: sha512-E1GUzBSgvct8Jsb3v2X15pjzN1tYebtbLaMg+eBOUOAxgbLoSbT2NS91ckc5lJD1KfLjId+jXJRgo0qnV5Nerg==}
 
-  stream-json@1.9.1:
-    resolution: {integrity: sha512-uWkjJ+2Nt/LO9Z/JyKZbMusL8Dkh97uUBTv3AJQ74y07lVahLY4eEFsPsE97pxYBwr8nnjMAIch5eqI0gPShyw==}
+  stream-json@3.6.0:
+    resolution: {integrity: sha512-NiJdqxKyau579z/E8vfqcjWfSDWxW/AT99javFXdPXF147Z5za85LRXSHEmSX9TKOakB7gaIccfD0fOIctb7KQ==}
 
   stream-shift@1.0.3:
     resolution: {integrity: sha512-76ORR0DO1o1hlKwTbi/DM3EXWGf3ZJYO8cXX5RJwnul2DEg2oyoZyjLNoQM8WsvZiFKCRfC1O0J7iCvie3RZmQ==}
@@ -6717,7 +6725,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  firebase-tools@15.26.0(@types/node@26.1.0)(supports-color@7.2.0):
+  firebase-tools@15.26.0(patch_hash=5e48ef04cbd9ec37a5c1f639e68fcfb9b323f0cd148c35678472be64d90e867a)(@types/node@26.1.0)(supports-color@7.2.0):
     dependencies:
       '@apphosting/common': 0.0.8
       '@electric-sql/pglite': 0.3.16
@@ -6775,7 +6783,7 @@ snapshots:
       semver: 7.8.5
       sql-formatter: 15.8.2
       stream-chain: 2.2.5
-      stream-json: 1.9.1
+      stream-json: 3.6.0
       superstatic: 10.0.0(supports-color@7.2.0)
       tar: 7.5.21
       tcp-port-used: 1.0.3(supports-color@7.2.0)
@@ -8701,13 +8709,15 @@ snapshots:
 
   stream-chain@2.2.5: {}
 
+  stream-chain@4.2.5: {}
+
   stream-events@1.0.5:
     dependencies:
       stubs: 3.0.0
 
-  stream-json@1.9.1:
+  stream-json@3.6.0:
     dependencies:
-      stream-chain: 2.2.5
+      stream-chain: 4.2.5
 
   stream-shift@1.0.3: {}
 
