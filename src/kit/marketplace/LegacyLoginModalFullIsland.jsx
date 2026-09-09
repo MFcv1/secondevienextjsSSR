@@ -4,12 +4,12 @@ import { useEffect, useRef, useState } from 'react';
 import { KeyRound, Loader2, Mail, RotateCcw, ShieldCheck, X } from 'lucide-react';
 import { httpsCallable } from 'firebase/functions';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
-import { functions } from '../config/firebase';
 import { getFunctionTarget } from '../config/functionTargets';
-import { getFirebaseAuth, loadAuthModule } from '../config/firebaseLazy';
+import { getFirebaseAuth, getFunctionsInstance, loadAuthModule } from '../config/firebaseLazy';
 import { getGoogleAuthErrorMessage } from '../auth/googleAuthDiagnostics';
+import { singleFlightPreparation } from '../auth/passkeyPreparation';
 import { LoginBackgroundVideo } from '../auth/LoginBackgroundVideo';
-import { logClientPerf, startClientPerf } from '../shared/clientPerf';
+import { logClientPerf, measureClientPerf, startClientPerf } from '../shared/clientPerf';
 import { ToastProvider, useToast } from '../ui/Toast';
 import KIT_CONFIG from '../config/constants';
 
@@ -117,7 +117,7 @@ const preparePasskeyRegistration = async () => {
   const supportMessage = await getPasskeySupportMessage({ registration: true });
   if (supportMessage) throw new Error(supportMessage);
 
-  const generateOptions = httpsCallable(functions, getFunctionTarget('generatePasskeyRegistrationOptions'));
+  const generateOptions = httpsCallable(await getFunctionsInstance(), getFunctionTarget('generatePasskeyRegistrationOptions'));
   const generateStartedAt = startClientPerf();
   const [{ startRegistration }, optionsResult] = await Promise.all([
     import('@simplewebauthn/browser'),
@@ -128,6 +128,7 @@ const preparePasskeyRegistration = async () => {
     createdAt: Date.now(),
     options: optionsResult.data.options,
     startRegistration,
+    verifyRegistration: httpsCallable(await getFunctionsInstance(), getFunctionTarget('verifyPasskeyRegistration')),
   };
 };
 
@@ -139,7 +140,7 @@ const registerPasskey = async (preparedRegistration = null, onStepChange = null)
     onStepChange?.('preparing');
     return preparePasskeyRegistration();
   })();
-  const verifyRegistration = httpsCallable(functions, getFunctionTarget('verifyPasskeyRegistration'));
+  const verifyRegistration = registration.verifyRegistration;
 
   onStepChange?.('confirming');
   const response = await registration.startRegistration({ optionsJSON: registration.options });
@@ -150,7 +151,7 @@ const registerPasskey = async (preparedRegistration = null, onStepChange = null)
   if (!result.data?.success) throw new Error('Passkey non valide.');
 };
 
-const preparePasskeyAuthentication = async (email) => {
+const preparePasskeyAuthentication = singleFlightPreparation(async (email) => {
   const supportMessage = await getPasskeySupportMessage();
   if (supportMessage) throw new Error(supportMessage);
 
@@ -159,14 +160,14 @@ const preparePasskeyAuthentication = async (email) => {
     throw new Error('Saisissez votre email avant la connexion rapide.');
   }
 
-  const generateOptions = httpsCallable(functions, getFunctionTarget('generatePasskeyAuthenticationOptions'));
+  const generateOptions = httpsCallable(await getFunctionsInstance(), getFunctionTarget('generatePasskeyAuthenticationOptions'));
   const generateStartedAt = startClientPerf();
   const [{ startAuthentication }, optionsResult] = await Promise.all([
     import('@simplewebauthn/browser'),
-    generateOptions({
+    measureClientPerf('passkey.authentication.optionsRequest', () => generateOptions({
       email: normalizedEmail,
       origin: window.location.origin,
-    }),
+    })),
     getFirebaseAuth(),
     loadAuthModule(),
   ]);
@@ -176,8 +177,9 @@ const preparePasskeyAuthentication = async (email) => {
     email: normalizedEmail,
     options: optionsResult.data.options,
     startAuthentication,
+    verifyAuthentication: httpsCallable(await getFunctionsInstance(), getFunctionTarget('verifyPasskeyAuthentication')),
   };
-};
+});
 
 const loginWithPasskey = async (email, preparedAuthentication = null, onStepChange = null) => {
   const normalizedEmail = normalizeEmailValue(email);
@@ -186,16 +188,15 @@ const loginWithPasskey = async (email, preparedAuthentication = null, onStepChan
     ? preparedAuthentication
     : await preparePasskeyAuthentication(normalizedEmail);
 
-  const verifyAuthentication = httpsCallable(functions, getFunctionTarget('verifyPasskeyAuthentication'));
+  const verifyAuthentication = prepared.verifyAuthentication;
   onStepChange?.('biometric');
-  const response = await prepared.startAuthentication({ optionsJSON: prepared.options });
+  const response = await measureClientPerf('passkey.authentication.biometric', () =>
+    prepared.startAuthentication({ optionsJSON: prepared.options }));
   onStepChange?.('verifying');
-  const verifyStartedAt = startClientPerf();
-  const result = await verifyAuthentication({
+  const result = await measureClientPerf('passkey.authentication.verify', () => verifyAuthentication({
     challenge: prepared.options.challenge,
     response,
-  });
-  logClientPerf('passkey.authentication.verify', verifyStartedAt, { phase: 'success' });
+  }));
   if (!result.data?.token) throw new Error('Token passkey manquant.');
 
   return {
@@ -562,11 +563,11 @@ export function LegacyLoginModalContent({ open, onOpenChange, onAuthenticated })
     try {
       const result = await loginWithPasskey(emailValue, preparedPasskeyAuth, setPasskeyLoginStep);
       if (!activeRef.current) return;
+      setPreparedPasskeyAuth(null);
       setPasskeyLoginStep('signing-in');
-      const signInStartedAt = startClientPerf();
-      const userCredential = await loginWithCustomToken(result.token, 'passkey');
+      const userCredential = await measureClientPerf('passkey.authentication.signInWithCustomToken', () =>
+        loginWithCustomToken(result.token, 'passkey'));
       if (!activeRef.current) return;
-      logClientPerf('passkey.authentication.signInWithCustomToken', signInStartedAt, { phase: 'success' });
       onAuthenticated?.(userCredential?.user || null);
       saveLocalPasskeyState(result?.email || emailValue);
       setLocalPasskeyEmails(readLocalPasskeyState().emails);
@@ -614,7 +615,7 @@ export function LegacyLoginModalContent({ open, onOpenChange, onAuthenticated })
     }, 320);
     const startedAt = startClientPerf();
     try {
-      const sendOtp = httpsCallable(functions, getFunctionTarget('sendCustomerLoginOtp'));
+      const sendOtp = httpsCallable(await getFunctionsInstance(), getFunctionTarget('sendCustomerLoginOtp'));
       const result = await sendOtp({ email });
       if (!activeRef.current) return;
       logClientPerf('auth.email.sendCustomerLoginOtp', startedAt, { phase: 'success' });
@@ -657,7 +658,7 @@ export function LegacyLoginModalContent({ open, onOpenChange, onAuthenticated })
       const cached = otpCustomTokenRef.current;
       let customToken = cached?.email === email && cached?.code === code ? cached.token : null;
       if (!customToken) {
-        const verifyOtp = httpsCallable(functions, getFunctionTarget('verifyCustomerLoginOtp'));
+        const verifyOtp = httpsCallable(await getFunctionsInstance(), getFunctionTarget('verifyCustomerLoginOtp'));
         const result = await verifyOtp({ email, code });
         if (!activeRef.current) return;
         logClientPerf('auth.email.verifyCustomerLoginOtp', verifyStartedAt, { phase: 'success' });

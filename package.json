@@ -138,7 +138,7 @@
     "test:passkey-portability": "node --test tests/passkey-portability-contract.test.cjs",
     "test:passkey-server": "node --test tests/passkey-server-hardening.test.cjs",
     "test:auth-unified-otp": "node --test tests/auth-unified-otp-contract.test.cjs",
-    "test:auth": "node --test tests/auth-claims.test.cjs tests/auth-store-contract.test.cjs tests/auth-custom-token-sign-in.test.mjs tests/auth-google-diagnostics.test.mjs tests/auth-unified-otp-contract.test.cjs tests/auth-backend-transitions.test.cjs tests/auth-admin-revocation.test.cjs tests/auth-assurance.test.cjs tests/auth-region-convergence.test.cjs tests/auth-email-provider-adapter.test.cjs tests/passkey-portability-contract.test.cjs tests/passkey-server-hardening.test.cjs tests/admin-token-retry.test.mjs",
+    "test:auth": "node --test tests/auth-claims.test.cjs tests/auth-store-contract.test.cjs tests/auth-custom-token-sign-in.test.mjs tests/auth-google-diagnostics.test.mjs tests/auth-unified-otp-contract.test.cjs tests/auth-backend-transitions.test.cjs tests/auth-admin-revocation.test.cjs tests/auth-assurance.test.cjs tests/auth-region-convergence.test.cjs tests/auth-email-provider-adapter.test.cjs tests/passkey-portability-contract.test.cjs tests/passkey-server-hardening.test.cjs tests/passkey-performance.test.cjs tests/passkey-preparation.test.mjs tests/passkey-transaction-audit.test.cjs tests/passkey-registration-audit.test.cjs tests/admin-token-retry.test.mjs",
     "test:support-privacy": "node --test tests/support-chat-privacy.test.mjs",
     "test:release-contract": "node --test tests/public-release-contract.test.mjs",
     "test:a11y": "node --test tests/public-keyboard-accessibility.test.mjs",

@@ -33,3 +33,15 @@ export const logClientPerf = (name, startedAt, extra = {}) => {
 
   return elapsedMs;
 };
+
+export const measureClientPerf = async (name, operation) => {
+  const startedAt = startClientPerf();
+  try {
+    const result = await operation();
+    logClientPerf(name, startedAt, { phase: 'success' });
+    return result;
+  } catch (error) {
+    logClientPerf(name, startedAt, { phase: 'error' });
+    throw error;
+  }
+};

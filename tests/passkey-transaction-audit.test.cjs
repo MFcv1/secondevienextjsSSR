@@ -39,3 +39,33 @@ test('authentication rejects a credential changed after cryptographic verificati
     check(verified, { data: () => verified });
     check({ publicKey: 'synced-key', counter: 0 }, { data: () => ({ publicKey: 'synced-key', counter: 0 }) });
 });
+
+test('challenge attempt uses one atomic read and keeps missing, exhausted and concurrent states distinct', async () => {
+    const start = source.indexOf('async function recordChallengeAttempt(');
+    const end = source.indexOf('const generatePasskeyRegistrationOptionsHandler', start);
+    let current = { exists: true, data: () => ({ status: 'active', challenge: 'expected', attemptCount: 0, expiresAtMillis: Date.now() + 60000 }) };
+    let reads = 0;
+    let writes = 0;
+    let deletes = 0;
+    const run = vm.runInNewContext(`${source.slice(start, end)}; recordChallengeAttempt`, {
+        db: { runTransaction: async callback => callback({
+            get: async () => { reads++; return current; },
+            update: () => { writes++; }, delete: () => { deletes++; }
+        }) },
+        MAX_CHALLENGE_ATTEMPTS: 5,
+        admin: { firestore: { FieldValue: { serverTimestamp: () => 'time' } } },
+        functions: { https: { HttpsError: class extends Error { constructor(code, message) { super(message); this.code = code; } } } }
+    });
+    assert.equal((await run({}, 'expected', true)).challenge, 'expected');
+    assert.equal(reads, 1);
+    assert.equal(writes, 1);
+    current = { exists: false };
+    assert.equal(await run({}, 'expected', true), null);
+    await assert.rejects(run({}, 'expected'), { code: 'failed-precondition' });
+    current = { exists: true, data: () => ({ status: 'active', challenge: 'expected', attemptCount: 5, expiresAtMillis: Date.now() + 60000 }) };
+    await assert.rejects(run({}, 'expected', true), { code: 'resource-exhausted' });
+    assert.equal(deletes, 1);
+    current = { exists: true, data: () => ({ status: 'active', challenge: 'replaced', expiresAtMillis: Date.now() + 60000 }) };
+    await assert.rejects(run({}, 'expected', true), { code: 'failed-precondition' });
+    assert.equal(writes, 1);
+});

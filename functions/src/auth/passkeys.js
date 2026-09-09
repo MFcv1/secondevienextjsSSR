@@ -11,6 +11,7 @@ const {
 } = require('@simplewebauthn/server');
 const { getSiteUrl } = require('../../helpers/config');
 const { authorizePasskeyRegistration } = require('./passkeyRegistration');
+const { createPasskeyTimer } = require('./passkeyPerformance');
 
 const db = admin.firestore();
 
@@ -20,10 +21,10 @@ const MAX_PASSKEYS_PER_USER = 10;
 const USER_VERIFICATION_REQUIRED_MESSAGE = 'Confirmez votre identite avec Windows Hello, Face ID ou le code de votre appareil.';
 const PASSKEY_AUTH_GEN2_RUNTIME = Object.freeze({
     region: 'europe-west1',
-    cpu: 'gcf_gen1',
-    concurrency: 1,
-    minInstances: 0,
-    maxInstances: 1,
+    cpu: 1,
+    concurrency: 8,
+    minInstances: 1,
+    maxInstances: 2,
     memory: '256MiB',
     timeoutSeconds: 60,
     serviceAccount: 'auth-login-runtime@secondevienextjsssr.iam.gserviceaccount.com',
@@ -236,9 +237,10 @@ async function consumeRateLimit(key, limit, windowMs = RATE_LIMIT_WINDOW_MS) {
     });
 }
 
-async function recordChallengeAttempt(challengeRef, expectedChallenge = null) {
+async function recordChallengeAttempt(challengeRef, expectedChallenge = null, allowMissing = false) {
     const challenge = await db.runTransaction(async (transaction) => {
         const snap = await transaction.get(challengeRef);
+        if (!snap.exists && allowMissing) return undefined;
         const current = assertActiveChallenge(snap, expectedChallenge);
         const attemptCount = Number(current.attemptCount || 0) + 1;
         if (attemptCount > MAX_CHALLENGE_ATTEMPTS) {
@@ -251,6 +253,7 @@ async function recordChallengeAttempt(challengeRef, expectedChallenge = null) {
         });
         return current;
     });
+    if (challenge === undefined && allowMissing) return null;
     if (!challenge) {
         throw new functions.https.HttpsError('resource-exhausted', 'Trop de tentatives passkey.');
     }
@@ -393,12 +396,14 @@ exports.verifyPasskeyRegistrationGen2 = onCall(
 
 const generatePasskeyAuthenticationOptionsHandler = async (data, context) => {
     const startedAt = Date.now();
+    const timer = createPasskeyTimer('options');
     const email = normalizeEmail(data?.email);
     const emailHash = hash(email);
     await Promise.all([
         consumeRateLimit(`authentication-ip:${getClientIp(context)}`, 20),
         consumeRateLimit(`authentication-email:${emailHash}`, 10),
     ]);
+    timer('rate-limit');
     const origin = getExpectedOrigin(data?.origin);
     const rpID = getRpIdFromOrigin(origin);
     let userRecord = null;
@@ -414,7 +419,9 @@ const generatePasskeyAuthenticationOptionsHandler = async (data, context) => {
         throw new functions.https.HttpsError('unavailable', 'Connexion passkey indisponible pour le moment.');
         }
     }
+    timer('user-lookup');
     const passkeys = userRecord ? await listUserPasskeys(userRecord.uid) : [];
+    timer('credentials-read');
     const publicCredentials = passkeys.length > 0 ? passkeys : [{
         credentialId: crypto.randomBytes(32).toString('base64url'),
         transports: [],
@@ -430,6 +437,7 @@ const generatePasskeyAuthenticationOptionsHandler = async (data, context) => {
     });
 
     const expiresAtMillis = Date.now() + CHALLENGE_TTL_MS;
+    timer('options-create');
     await db.doc(`sys_ratelimit/passkey_auth_${hash(options.challenge)}`).set({
         uid: userRecord?.uid || null,
         challenge: options.challenge,
@@ -441,6 +449,7 @@ const generatePasskeyAuthenticationOptionsHandler = async (data, context) => {
         expiresAtMillis,
         expireAt: admin.firestore.Timestamp.fromMillis(expiresAtMillis),
     });
+    timer('challenge-write');
 
     logFunctionPerf('generatePasskeyAuthenticationOptions', startedAt, {
         phase: 'success',
@@ -457,14 +466,17 @@ exports.generatePasskeyAuthenticationOptionsGen2 = onCall(
 
 const verifyPasskeyAuthenticationHandler = async (data, context) => {
     const startedAt = Date.now();
+    const timer = createPasskeyTimer('verify');
     const challenge = assertBase64Url(data?.challenge, 'Challenge passkey', 1024);
     const challengeRef = db.doc(`sys_ratelimit/passkey_auth_${hash(challenge)}`);
     const operationRef = db.doc(`sys_ratelimit/passkey_operation_${hash(challenge)}`);
     const response = assertCredentialResponse(data?.response);
     const responseHash = hashJson(response);
     await consumeRateLimit(`verification-ip:${getClientIp(context)}`, 30);
-    const challengeSnap = await challengeRef.get();
-    if (!challengeSnap.exists) {
+    timer('rate-limit');
+    const challengeData = await recordChallengeAttempt(challengeRef, challenge, true);
+    timer('challenge-attempt');
+    if (!challengeData) {
         try {
             const resumedToken = await resumeFailedTokenMint(operationRef, responseHash);
             if (resumedToken) return { success: true, token: resumedToken, resumed: true };
@@ -474,7 +486,6 @@ const verifyPasskeyAuthenticationHandler = async (data, context) => {
         throw new functions.https.HttpsError('failed-precondition', 'Challenge passkey expire.');
     }
 
-    const challengeData = await recordChallengeAttempt(challengeRef, challenge);
     if (challengeData.status !== 'active' || !challengeData.uid) {
         throw new functions.https.HttpsError('permission-denied', 'Connexion passkey refusee.');
     }
@@ -486,6 +497,7 @@ const verifyPasskeyAuthenticationHandler = async (data, context) => {
     const credentialId = response.id;
     const passkeyRef = db.doc(`users/${challengeData.uid}/passkeys/${credentialId}`);
     const passkeySnap = await passkeyRef.get();
+    timer('credentials-read');
     if (!passkeySnap.exists) {
         throw new functions.https.HttpsError('permission-denied', 'Connexion passkey refusee.');
     }
@@ -509,6 +521,7 @@ const verifyPasskeyAuthenticationHandler = async (data, context) => {
         throw new functions.https.HttpsError('permission-denied', 'Passkey refusee.');
     }
     assertUserVerification(verification, 'authentication');
+    timer('signature-verify');
 
     await db.runTransaction(async (transaction) => {
         const [freshChallengeSnap, freshPasskeySnap] = await Promise.all([
@@ -540,14 +553,17 @@ const verifyPasskeyAuthenticationHandler = async (data, context) => {
         });
         transaction.delete(challengeRef);
     });
+    timer('challenge-consume');
 
     let token;
     try {
         token = await mintPasskeyCustomToken(challengeData.uid);
+        timer('token-mint');
         await operationRef.update({
             status: 'token_issued',
             tokenIssuedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
+        timer('operation-write');
     } catch (error) {
         await operationRef.update({
             status: 'failed_retryable',

@@ -317,9 +317,10 @@ test('G5-A8-A9 preparent les deux endpoints passkey de connexion avec handler pa
     assert.equal(classificationFor(name), 'MIGRATION_PARALLEL');
     const target = GCLOUD_GEN2_TARGETS[name];
     assert.equal(target.runtimeServiceAccount, 'auth-login-runtime@secondevienextjsssr.iam.gserviceaccount.com');
-    assert.equal(target.cpu, '167m');
-    assert.equal(target.concurrency, '1');
-    assert.equal(target.maxInstances, '1');
+    assert.equal(target.cpu, '1');
+    assert.equal(target.concurrency, '8');
+    assert.equal(target.minInstances, '1');
+    assert.equal(target.maxInstances, '2');
   }
   assert.match(source, /const generatePasskeyAuthenticationOptionsHandler = async \(data, context\) =>/);
   assert.match(source, /const verifyPasskeyAuthenticationHandler = async \(data, context\) =>/);

@@ -8,6 +8,8 @@ const ORDER_READERS = {
     getOrderTimelineAdminV2Gen2: 'createGetOrderTimelineAdminHandler'
 };
 const MODULE_READERS = {
+    generatePasskeyAuthenticationOptionsGen2: '../auth/passkeys',
+    verifyPasskeyAuthenticationGen2: '../auth/passkeys',
     getBillingGuideStatusGen2: '../onboarding/billingGuide',
     getManualInvoiceWorkspaceAdminGen2: '../invoicing/manualInvoices',
     listQuoteRequestsAdminGen2: '../quotes/quoteRequests',

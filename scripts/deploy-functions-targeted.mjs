@@ -616,11 +616,11 @@ export const GCLOUD_GEN2_TARGETS = Object.freeze({
     runtimeServiceAccount: 'auth-login-runtime@secondevienextjsssr.iam.gserviceaccount.com',
     buildServiceAccount: 'projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com',
     memory: '256Mi',
-    cpu: '167m',
+    cpu: '1',
     timeout: '60s',
-    concurrency: '1',
-    minInstances: '0',
-    maxInstances: '1',
+    concurrency: '8',
+    minInstances: '1',
+    maxInstances: '2',
     ingressSettings: 'all'
   }),
   generatePasskeyAuthenticationOptionsGen2: Object.freeze({
@@ -632,11 +632,11 @@ export const GCLOUD_GEN2_TARGETS = Object.freeze({
     runtimeServiceAccount: 'auth-login-runtime@secondevienextjsssr.iam.gserviceaccount.com',
     buildServiceAccount: 'projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com',
     memory: '256Mi',
-    cpu: '167m',
+    cpu: '1',
     timeout: '60s',
-    concurrency: '1',
-    minInstances: '0',
-    maxInstances: '1',
+    concurrency: '8',
+    minInstances: '1',
+    maxInstances: '2',
     ingressSettings: 'all',
     environmentVariables: [
       'SITE_URL=https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app'
