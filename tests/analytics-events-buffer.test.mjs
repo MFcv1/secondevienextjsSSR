@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { CONSENT_KEY, saveConsent } from '../src/kit/shared/cookieConsent.js';
 
 import {
   ANALYTICS_EVENT_NAME,
@@ -21,9 +22,15 @@ test('analytics events emitted before the deferred runtime are buffered once', (
   }
 
   globalThis.window = eventTarget;
+  const storage = new Map();
+  eventTarget.localStorage = { getItem: (key) => storage.get(key), setItem: (key, value) => storage.set(key, value), removeItem: (key) => storage.delete(key) };
+  eventTarget.sessionStorage = eventTarget.localStorage;
   globalThis.CustomEvent = AnalyticsCustomEvent;
 
   try {
+    emitAnalyticsEvent('before_consent');
+    assert.deepEqual(drainBufferedAnalyticsEvents(), []);
+    saveConsent({ analytics: true });
     emitAnalyticsEvent('quote_start', null, null, { form: 'restoration' });
     const buffered = drainBufferedAnalyticsEvents();
     assert.equal(buffered.length, 1);
@@ -48,6 +55,11 @@ test('analytics events emitted before the deferred runtime are buffered once', (
     assert.equal(boundedBuffer.length, 32);
     assert.equal(boundedBuffer[0].action, 'buffered_3');
     assert.equal(boundedBuffer.at(-1).action, 'buffered_34');
+    emitAnalyticsEvent('pending_before_withdrawal');
+    saveConsent({});
+    emitAnalyticsEvent('after_withdrawal');
+    assert.deepEqual(drainBufferedAnalyticsEvents(), []);
+    assert.equal(JSON.parse(storage.get(CONSENT_KEY)).analytics, false);
   } finally {
     if (previousWindow === undefined) delete globalThis.window;
     else globalThis.window = previousWindow;

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { usePathname } from 'next/navigation';
+import useCookieConsent from '../src/kit/shared/useCookieConsent';
 
 const ANALYTICS_RUNTIME_IDLE_TIMEOUT_MS = 1000;
 let analyticsRuntimeRequest = null;
@@ -39,8 +40,9 @@ const resolveTrackedPage = (pathname) => {
 
 export default function AnalyticsCollectorIsland() {
   const pathname = usePathname();
+  const consent = useCookieConsent();
   const trackedPage = useMemo(() => resolveTrackedPage(pathname), [pathname]);
-  const shouldLoadAnalytics = Boolean(trackedPage);
+  const shouldLoadAnalytics = Boolean(trackedPage) && consent?.analytics === true;
   const [AnalyticsRuntime, setAnalyticsRuntime] = useState(null);
 
   useEffect(() => {
@@ -70,7 +72,7 @@ export default function AnalyticsCollectorIsland() {
     };
   }, [AnalyticsRuntime, shouldLoadAnalytics]);
 
-  if (!trackedPage || !AnalyticsRuntime) return null;
+  if (!shouldLoadAnalytics || !AnalyticsRuntime) return null;
 
   return <AnalyticsRuntime trackedPage={trackedPage} />;
 }

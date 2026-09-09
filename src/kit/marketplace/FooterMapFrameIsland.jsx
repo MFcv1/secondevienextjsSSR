@@ -1,8 +1,12 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import useCookieConsent from '../shared/useCookieConsent';
+import { openCookiePreferences } from '../shared/cookieConsent';
 
 export default function FooterMapFrameIsland({ darkMode = false, address = 'Marseille, France' } = {}) {
+  const consent = useCookieConsent();
+  const allowed = consent?.external === true;
   const rootRef = useRef(null);
   const mapFrameRef = useRef(null);
   const [shouldLoadMap, setShouldLoadMap] = useState(false);
@@ -13,7 +17,7 @@ export default function FooterMapFrameIsland({ darkMode = false, address = 'Mars
   }, [address]);
 
   useEffect(() => {
-    if (shouldLoadMap) return undefined;
+    if (!allowed || shouldLoadMap) return undefined;
     const root = rootRef.current;
     if (!root || typeof window === 'undefined') return undefined;
 
@@ -73,16 +77,16 @@ export default function FooterMapFrameIsland({ darkMode = false, address = 'Mars
 
     observer.observe(root);
     return () => observer.disconnect();
-  }, [shouldLoadMap]);
+  }, [shouldLoadMap, allowed]);
 
   useEffect(() => {
     const frame = mapFrameRef.current;
-    if (!shouldLoadMap || !frame) return undefined;
+    if (!allowed || !shouldLoadMap || !frame) return undefined;
 
     const markMapAsLoaded = () => setIsMapLoaded(true);
     frame.addEventListener('load', markMapAsLoaded);
     return () => frame.removeEventListener('load', markMapAsLoaded);
-  }, [shouldLoadMap]);
+  }, [shouldLoadMap, allowed]);
 
   return (
     <div ref={rootRef} className={`relative h-full w-full overflow-hidden rounded-xl border ${darkMode ? 'border-[#d5b58d]/12 bg-[#151515]' : 'border-[#eee6dd] bg-white dark:border-[#d5b58d]/12 dark:bg-[#151515]'}`}>
@@ -99,7 +103,12 @@ export default function FooterMapFrameIsland({ darkMode = false, address = 'Mars
           Chargement de la carte
         </span>
       </div>
-      {shouldLoadMap ? (
+      {!allowed ? <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#f7f1ea] p-5 text-center text-sm text-stone-700 dark:bg-[#151515] dark:text-stone-200">
+        <p>La carte Google Maps est désactivée pour respecter vos préférences.</p>
+        <button type="button" className="min-h-11 rounded-full border border-current px-4 font-semibold focus-visible:outline-2 focus-visible:outline-offset-4" onClick={openCookiePreferences}>Gérer mes cookies</button>
+        <a className="underline underline-offset-4" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`} target="_blank" rel="noopener noreferrer">Ouvrir l’itinéraire sur Google Maps ↗</a>
+      </div> : null}
+      {allowed && shouldLoadMap ? (
         <iframe
           ref={mapFrameRef}
           src={mapUrl}

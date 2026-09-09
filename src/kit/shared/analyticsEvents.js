@@ -1,3 +1,5 @@
+import { hasConsent } from './cookieConsent.js';
+
 export const ANALYTICS_EVENT_NAME = 'secondevie:analytics-event';
 const ANALYTICS_EVENT_RUNTIME_KEY = '__svAnalyticsEventRuntimeV1';
 const MAX_BUFFERED_ANALYTICS_EVENTS = 32;
@@ -32,7 +34,7 @@ export const drainBufferedAnalyticsEvents = () => {
 };
 
 export const emitAnalyticsEvent = (action, itemId = null, itemName = null, metadata = {}) => {
-    if (typeof window === 'undefined' || !action) return;
+    if (typeof window === 'undefined' || !action || !hasConsent('analytics')) return;
     const detail = {
         action,
         itemId,

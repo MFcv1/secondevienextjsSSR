@@ -8,6 +8,7 @@ import RouteTransitionIsland from './RouteTransitionIsland';
 import ViewportHeightSyncIsland from './ViewportHeightSyncIsland';
 import SupportChatLauncherIsland from '../src/kit/marketplace/SupportChatLauncherIsland';
 import AnalyticsCollectorIsland from './AnalyticsCollectorIsland';
+import CookieConsentIsland from './CookieConsentIsland';
 import PerformanceMonitoringIsland from './PerformanceMonitoringIsland';
 import { publicEnv } from '../src/lib/server/env';
 
@@ -149,6 +150,7 @@ export default function RootLayout({ children }) {
         <RouteTransitionIsland />
         <SupportChatLauncherIsland />
         <AnalyticsCollectorIsland />
+        <CookieConsentIsland />
         <PerformanceMonitoringIsland />
       </body>
     </html>

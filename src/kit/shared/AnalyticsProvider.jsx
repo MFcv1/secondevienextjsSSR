@@ -3,6 +3,7 @@ import { httpsCallable } from 'firebase/functions';
 import { functions, functionsRegion } from '../config/firebase';
 import { getFunctionTarget } from '../config/functionTargets';
 import { useAuth } from '../contexts/AuthContext';
+import { hasConsent } from './cookieConsent';
 import {
     ANALYTICS_EVENT_NAME,
     drainBufferedAnalyticsEvents,
@@ -130,7 +131,7 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
 
     useEffect(() => {
         const recordAnalyticsEvent = (detail) => {
-            if (isAdmin || !detail?.action) return;
+            if (!hasConsent('analytics') || isAdmin || !detail?.action) return;
             eventPreviewRef.current = [...eventPreviewRef.current, detail].slice(-16);
             const action = String(detail.action).slice(0, 80);
             actionCountsRef.current[action] = (actionCountsRef.current[action] || 0) + 1;
@@ -165,7 +166,7 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
     };
 
     const recordCurrentView = useCallback(({ allowPartialDetail = false } = {}) => {
-        if (!sessionIdRef.current || isAdmin) return false;
+        if (!hasConsent('analytics') || !sessionIdRef.current || isAdmin) return false;
 
         const current = latestViewRef.current;
         if (current.view === 'detail' && current.selectedItemId && !current.selectedItemName && !allowPartialDetail) return false;
@@ -221,7 +222,7 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
 
     armHeartbeatRef.current = () => {
         clearHeartbeatTimer();
-        if (!mountedRef.current || !sessionIdRef.current || isAdmin || document.visibilityState !== 'visible') return;
+        if (!hasConsent('analytics') || !mountedRef.current || !sessionIdRef.current || isAdmin || document.visibilityState !== 'visible') return;
 
         const elapsedSinceLastSync = Math.max(0, Date.now() - lastSyncAtRef.current);
         const delay = Math.max(250, ANALYTICS_SYNC_INTERVAL_MS - elapsedSinceLastSync);
@@ -236,7 +237,7 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
     };
 
     flushSessionRef.current = async ({ sessionActive = true, ensureView = false, reason = 'manual' } = {}) => {
-        if (!mountedRef.current || !sessionIdRef.current || isAdmin) return false;
+        if (!hasConsent('analytics') || !mountedRef.current || !sessionIdRef.current || isAdmin) return false;
         if (syncInFlightRef.current) {
             // A heartbeat never needs a second write immediately after an
             // already-running route/visibility synchronization.
@@ -274,7 +275,7 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
                 sessionActive,
                 reason
             });
-            if (!mountedRef.current || requestSessionId !== sessionIdRef.current || requestGeneration !== syncGenerationRef.current) return false;
+            if (!hasConsent('analytics') || !mountedRef.current || requestSessionId !== sessionIdRef.current || requestGeneration !== syncGenerationRef.current) return false;
             if (!result.data?.success || result.data?.missing) {
                 if (result.data?.missing || result.data?.invalidToken || result.data?.generationMismatch) {
                     sessionIdRef.current = null;
@@ -315,7 +316,7 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
 
         const initSession = async () => {
             const currentView = latestViewRef.current.view;
-            if (sessionIdRef.current || initCalledRef.current || !isMounted || isAdmin || !currentView || currentView === 'admin') return;
+            if (!hasConsent('analytics') || sessionIdRef.current || initCalledRef.current || !isMounted || isAdmin || !currentView || currentView === 'admin') return;
             if (!user) return;
             if (isLikelyBot()) return;
 
@@ -334,7 +335,7 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
 
             try {
                 const initRes = await httpsCallable(functions, getFunctionTarget('initLiveSession'))({ ...userInfo, syncProtocolVersion: 1 });
-                if (initRes.data.success && isMounted) {
+                if (initRes.data.success && isMounted && hasConsent('analytics')) {
                     sessionIdRef.current = initRes.data.sessionId;
                     syncTokenRef.current = initRes.data.syncToken || null;
                     syncGenerationRef.current = initRes.data.syncGeneration || null;
@@ -403,7 +404,7 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
 
     useEffect(() => {
         const handleAffiliateClick = (event) => {
-            if (!sessionIdRef.current || isAdmin) return;
+            if (!hasConsent('analytics') || !sessionIdRef.current || isAdmin) return;
 
             const { productId, productName, productPrice, source, parentFurnitureName } = event.detail;
             const actionTime = Date.now();
@@ -440,7 +441,7 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
 
     useEffect(() => {
         const sendSessionUpdate = (isActive = true, reason = 'manual') => {
-            if (!sessionIdRef.current || isAdmin) return;
+            if (!hasConsent('analytics') || !sessionIdRef.current || isAdmin) return;
             const now = Date.now();
             if (!isActive && now - lastBeaconAtRef.current < MIN_BEACON_GAP_MS) return;
             if (!isActive) persistStorageValue('sessionStorage', ANALYTICS_SESSION_CLOSED_AT_KEY, String(now));

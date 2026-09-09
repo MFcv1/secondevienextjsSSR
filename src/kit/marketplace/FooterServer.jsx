@@ -17,6 +17,7 @@ import KIT_CONFIG from '../config/constants';
 import { getCategoryUrl } from '../../utils/slug';
 import FooterBackToTopButtonIsland from './FooterBackToTopButtonIsland';
 import FooterMapFrameIsland from './FooterMapFrameIsland';
+import FooterCookiePreferencesIsland from './FooterCookiePreferencesIsland';
 
 const DEFAULT_CONTACT = {
   email: KIT_CONFIG.contact.email,
@@ -137,7 +138,7 @@ export default function FooterServer({ darkMode = false, contactInfo: contactInf
     ['Mentions legales', KIT_CONFIG.legalLinks.notice],
     ['CGV', KIT_CONFIG.legalLinks.terms],
     ['Politique de confidentialite', KIT_CONFIG.legalLinks.privacy],
-    ['Cookies', KIT_CONFIG.legalLinks.cookies],
+    ...(isLegalHref(KIT_CONFIG.legalLinks.cookies) ? [['Politique de cookies', KIT_CONFIG.legalLinks.cookies]] : []),
   ];
 
   return (
@@ -191,6 +192,9 @@ export default function FooterServer({ darkMode = false, contactInfo: contactInf
         </div>
 
         <FooterBackToTopButtonIsland darkMode={darkMode} />
+        <div className={`text-center ${darkMode ? 'text-stone-400' : 'text-stone-600 dark:text-stone-400'}`}>
+          <FooterCookiePreferencesIsland />
+        </div>
       </div>
 
       <div className={`mx-auto hidden w-full max-w-[1760px] overflow-hidden rounded-[18px] border md:block ${darkMode ? 'border-[#d5b58d]/8 bg-[#111110] shadow-[0_24px_70px_-62px_rgba(0,0,0,0.8)]' : 'border-[#eee6dd] bg-[#fdfbf8] shadow-sm shadow-stone-200/50 dark:border-[#d5b58d]/8 dark:bg-[#111110] dark:shadow-[0_24px_70px_-62px_rgba(0,0,0,0.8)]'}`}>
@@ -294,7 +298,8 @@ export default function FooterServer({ darkMode = false, contactInfo: contactInf
         <div className={`border-t px-7 py-6 md:px-12 xl:px-14 ${darkMode ? 'border-[#d5b58d]/8 bg-[#121110]' : 'border-[#eee6dd] bg-[#fbfaf8] dark:border-[#d5b58d]/8 dark:bg-[#121110]'}`}>
           <div className="flex flex-col gap-6 text-sm lg:flex-row lg:items-center lg:justify-between">
             <p className={darkMode ? 'text-stone-500' : 'text-stone-600'}>© {copyright}</p>
-            <div className={`flex flex-wrap gap-x-7 gap-y-3 ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>
+            <div className={`flex flex-wrap items-center gap-x-7 gap-y-3 ${darkMode ? 'text-stone-400' : 'text-stone-600'}`}>
+              <FooterCookiePreferencesIsland />
               {legalLinks.map(([label, href]) => (
                 isLegalHref(href) ? (
                   <a key={label} href={href} className="hover:text-orange-500">{label}</a>
