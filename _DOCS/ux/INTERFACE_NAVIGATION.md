@@ -21,6 +21,27 @@ Le shell est compose de:
 
 Les donnees personnalisees ne doivent jamais bloquer l'affichage du header, l'ouverture du menu ou un lien public.
 
+Les boutons « À propos » des menus mobile et desktop demandent le même rideau
+« L'atelier » que les liens via `sv:route-transition-request`. La demande est
+annulable : si `RouteTransitionIsland` la prend en charge, lui seul navigue et
+le menu se ferme ; sinon la navigation Next habituelle reste disponible.
+Le rideau conserve le préchargement vidéo et attend le signal de première image,
+avec les délais bornés existants. Aucun breakpoint ne désactive ce parcours.
+
+Dans « L'art de la matière » sur `/a-propos`, la section et les cartes suivent
+la hauteur de leur contenu, sans hauteur minimale d'écran ni étirement des
+rangées. La grille conserve une, deux puis quatre colonnes ; les cartes ont
+16 px entre titre et description, puis 24 px avant « Découvrir l'étape ».
+Les espacements reposent sur des gaps pour résister au reset des marges du shell.
+Chaque carte révèle titre, description et libellé au scroll à son propre point
+d'entrée, une seule fois. Le mode de mouvement réduit conserve le texte visible.
+
+L'interlude « Préserver l'héritage / transmettre l'histoire » utilise le même
+padding en haut et en bas (`clamp(4rem, 8vw, 10rem)`), sans translation verticale.
+Lorsque la FAQ suit directement cet interlude, sa marge négative est neutralisée
+pour qu'elle ne recouvre pas l'espace sous le texte. Le défilement horizontal
+des deux lignes reste indépendant de ce centrage.
+
 Correctif livré sur sandbox le 6 septembre : `/checkout` ne monte ni header,
 bandeau catalogue, catégories ni footer de navigation. Les sorties proposées
 restent celles du checkout, avec confirmation d'annulation après réservation.
@@ -77,16 +98,25 @@ Le contrat statique est verifie par `npm run mobile:contract`; le comportement v
 Sous 768 px, le hero utilise `clamp(408px, calc(57svh + 28px), 478px)` pour équilibrer
 l'image et son contenu avec les catégories suivantes. La hauteur utilise
 le petit viewport stable afin de ne pas grandir au repli des barres du navigateur.
-Le titre « Des meubles à faire revivre chez vous » précède les quatre catégories
-Buffets, Armoires, Miroirs et Commodes, en grille 2 × 2 avec photos au ratio 4/5,
-sans chevauchement avec le hero. La grille est plafonnée à 360 px avec des
-marges internes latérales de 36 px et un cadre de 6 px autour des photos.
+Le titre « Des meubles à faire revivre chez vous » précède six catégories
+en deux rangées de trois : Buffets, Tables, Armoires, puis Miroirs, Chaises,
+Commodes. Les photos arrondies sont au ratio 2/3, sans chevauchement avec le
+hero. La grille est plafonnée à 420 px avec des marges latérales de 32 px,
+un espacement horizontal de 12 px et un cadre blanc de 5 px autour des photos.
+Tables et Chaises utilisent les photos du catalogue copiées dans
+`public/images/categories/{tables,chaises}-catalog-rail.webp` (produits
+`BfVsRJC01QMNDvx9Tldf` et `5ZBinIKs3IIj9ugh6ar9`). Chaises mène à Assises,
+catégorie actuelle de cette pièce ; Tables mène à Tables.
 Le titre mobile mesure 28,5 px, le descriptif 14,3 px et les boutons 33 px
 de hauteur. Les espacements sont agrandis avec le contenu ; la marge sous
 le descriptif est de 44 px et les boutons restent côte à côte.
 Ce sont des liens de catégories, pas une
 sélection de produits. À partir de 768 px, le hero et le rail conservent
 leur présentation existante. Le scroll interne et son propriétaire restent inchangés.
+Les indicateurs du hero ont une piste et un remplissage de même largeur,
+28 px sur mobile et 48 px à partir de 768 px, dans une zone cliquable de
+24 px de haut. Le remplissage reste borné à la piste et repart à chaque image.
+En mouvement réduit, seul l'indicateur actif est rempli, sans animation.
 
 ### Section avant / après
 
@@ -137,6 +167,19 @@ ses gains, le consentement et l’envoi du code gardent leurs contrats existants
 ```text
 home/galerie -> categorie ou recherche -> produit -> wishlist/panier/devis
 ```
+
+L'entrée du formulaire `/devis` conserve l'ordre rail → panneau → textes →
+cartes, avec un facteur temporel de 0,6 pour le rail, le panneau et les textes,
+et de 0,8 pour une cascade de cartes plus douce. Chaque facteur s'applique aux
+transitions CSS, décalages et timers, sur toutes les largeurs. Le rail est libéré
+à 940 ms, soit 110 ms après le début du CTA, sous réserve d'être dans le viewport.
+Ce relais est distinct de la fin du hero (1 550 ms) : aucune transition du hero
+n'est interrompue. Les groupes suivants passent le relais à la fin de
+leur dernière transition, sans marge d'attente supplémentaire. Les textes
+et cartes se déclenchent près du bas du viewport (marge de 4 %). Le module du
+formulaire se précharge pendant l'introduction mais ne monte qu'au signal du
+rail ou au filet de sécurité existant. Le hero, le bloc « Le parcours », les
+transitions entre étapes et le mode sans mouvement gardent leur comportement.
 
 Le parcours `/devis` est un assistant à colonne unique en sept étapes. L'estimation
 indicative constitue la dernière étape, après la saisie et la validation des

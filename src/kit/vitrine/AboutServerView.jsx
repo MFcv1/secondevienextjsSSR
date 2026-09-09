@@ -55,23 +55,6 @@ function ArchSection() {
           </div>
 
           <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden bg-[#F9F6F0]">
-            <div 
-              className="absolute inset-0 z-0 pointer-events-none" 
-              style={{ 
-                WebkitMaskImage: 'linear-gradient(to right, transparent 5%, black 25%, black 75%, transparent 95%)', 
-                maskImage: 'linear-gradient(to right, transparent 5%, black 25%, black 75%, transparent 95%)' 
-              }}
-            >
-              <div
-                className="arch-grid absolute inset-0 mix-blend-multiply opacity-[0.05] pointer-events-none"
-                style={{
-                  backgroundImage: 'linear-gradient(black 1px, transparent 1px), linear-gradient(90deg, black 1px, transparent 1px)',
-                  backgroundSize: '4rem 4rem',
-                  WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)',
-                  maskImage: 'linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)',
-                }}
-              />
-            </div>
             <div
               className="arch-map absolute inset-0 z-[1] bg-cover bg-center bg-fixed mix-blend-multiply opacity-100 pointer-events-none"
               style={{
@@ -181,13 +164,6 @@ function ArchSection() {
 function ShowcaseSection({ items }) {
   return (
     <section id="vitrine-showcase" className="relative z-20 w-full">
-      <div
-        className="pointer-events-none absolute inset-0 z-0 rounded-t-[3rem] opacity-[0.04] mix-blend-multiply md:rounded-t-[4rem]"
-        style={{
-          backgroundImage: 'linear-gradient(#1A1A1A 1px, transparent 1px), linear-gradient(90deg, #1A1A1A 1px, transparent 1px)',
-          backgroundSize: '4rem 4rem',
-        }}
-      />
       <div className="relative z-20 mx-auto -mt-[8vh] max-w-[1600px] rounded-t-[3rem] bg-[#F9F6F0] px-6 pb-12 pt-[15vh] shadow-[0_-20px_60px_rgba(0,0,0,0.1)] md:rounded-t-[4rem] md:px-12 md:pb-[25vh] lg:px-20">
         <div className="relative z-10 flex flex-col gap-[10vh] md:gap-[25vh]">
           {items.map((item, index) => (
@@ -268,39 +244,41 @@ function TransitionToServicesSection() {
 
 function ServicesSection({ steps }) {
   return (
-    <section id="atelier" className="relative z-[30] flex min-h-[100svh] w-full flex-col bg-transparent p-3 md:p-5 lg:p-6">
-      <div className="relative flex w-full flex-grow flex-col overflow-hidden rounded-b-2xl rounded-t-3xl border-t border-black/5 bg-[#F9F6F0] px-8 py-16 shadow-[0_-30px_60px_rgba(0,0,0,0.15)] md:rounded-b-[2.5rem] md:rounded-t-[3rem] md:px-16 md:py-24 lg:px-24">
+    <section id="atelier" className="relative z-[30] w-full bg-transparent p-3 md:p-5 lg:p-6">
+      <div className="relative flex w-full flex-col overflow-hidden rounded-b-2xl rounded-t-3xl border-t border-black/5 bg-[#F9F6F0] px-5 py-12 shadow-[0_-30px_60px_rgba(0,0,0,0.15)] sm:px-8 md:rounded-b-[2.5rem] md:rounded-t-[3rem] md:px-10 md:py-16 lg:px-12 xl:px-20">
         <div className="pointer-events-none absolute inset-0 opacity-[0.04] mix-blend-overlay" style={textureStyle} />
-        <div className="relative z-10 mb-12 max-w-4xl md:mb-24">
-          <div className="sur-titre-service mb-6 flex items-center gap-3">
+        <div className="relative z-10 mb-8 flex max-w-4xl flex-col gap-6 md:mb-10 md:gap-7">
+          <div className="sur-titre-service flex items-center gap-3">
             <div className="h-px w-8 bg-[#A68A64]" />
             <span className="font-mono text-[10px] font-bold uppercase tracking-[0.3em] text-[#A68A64] md:text-xs">Le Savoir-Faire</span>
           </div>
-          <h2 className="about-services-title mb-10 pb-8 font-serif text-5xl uppercase leading-[0.9] tracking-tighter text-[#1A1A1A] md:mb-8 md:pb-0 md:text-7xl lg:text-[6rem]">
+          <h2 className="about-services-title font-serif text-[clamp(2.125rem,10vw,3rem)] uppercase leading-[0.9] tracking-tighter text-[#1A1A1A] md:text-7xl lg:text-[6rem]">
             L’ART <br className="md:hidden" />
             <span className="whitespace-nowrap"><span className="font-light lowercase italic text-[#A68A64]">de la</span> MATIÈRE.</span>
           </h2>
-          <p className="about-services-copy max-w-2xl text-sm font-light leading-relaxed text-[#5A5550] md:text-lg lg:relative lg:top-10">
+          <p className="about-services-copy max-w-2xl text-sm font-light leading-relaxed text-[#5A5550] md:text-lg">
             De la chine passionnee au geste technique precis, decouvrez les etapes minutieuses qui transforment un objet oublie en une piece d'exception.
           </p>
         </div>
-        <div className="relative z-10 grid flex-grow grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="relative z-10 grid grid-cols-1 items-start gap-5 md:grid-cols-2 lg:grid-cols-4 lg:gap-6">
           {steps.map((step) => {
             const Icon = iconMap[step.icon] || Search;
             return (
-              <article key={step.id} className="about-service-card group relative flex flex-col justify-between overflow-hidden rounded-[2rem] border border-black/5 bg-[#F9F6F0]/80 p-8 shadow-sm transition-all duration-[600ms] hover:-translate-y-2 hover:shadow-[0_40px_80px_rgba(0,0,0,0.08)]">
+              <article key={step.id} className="about-service-card group relative flex flex-col gap-6 overflow-hidden rounded-[2rem] border border-black/5 bg-[#F9F6F0]/80 p-6 shadow-sm transition-[box-shadow,background-color] duration-[600ms] hover:shadow-[0_40px_80px_rgba(0,0,0,0.08)] xl:p-7">
                 <div className="absolute inset-0 z-0 translate-y-full bg-white transition-transform duration-700 group-hover:translate-y-0" />
                 <div className="relative z-10">
-                  <div className="mb-10 flex items-start justify-between">
+                  <div className="mb-6 flex items-start justify-between">
                     <div className="flex h-12 w-12 items-center justify-center rounded-[1rem] text-white shadow-[0_10px_20px_rgba(0,0,0,0.1)] transition-transform duration-500 group-hover:scale-110" style={{ backgroundColor: step.color }}>
                       <Icon size={22} strokeWidth={1.5} />
                     </div>
                     <span className="font-serif text-2xl italic text-[#1A1A1A]/20 transition-colors duration-500 group-hover:text-[#1A1A1A]/40">{step.id}</span>
                   </div>
-                  <h3 className="mb-4 font-serif text-xl text-[#1A1A1A] md:text-2xl">{step.title}</h3>
-                  <p className="text-xs font-light leading-relaxed text-[#5A5550] duration-500 group-hover:text-[#1A1A1A] md:text-sm">{step.desc}</p>
+                  <div className="flex flex-col gap-4">
+                    <h3 className="about-service-text font-serif text-2xl leading-tight text-[#1A1A1A]">{step.title}</h3>
+                    <p className="about-service-text text-[13px] font-light leading-[1.7] text-[#5A5550] duration-500 group-hover:text-[#1A1A1A] md:text-sm">{step.desc}</p>
+                  </div>
                 </div>
-                <div className="relative z-10 mt-10 overflow-hidden">
+                <div className="about-service-text relative z-10 overflow-hidden">
                   <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-[#A68A64]">
                     <span className="about-service-card__cta-label" data-text="Decouvrir l'etape"><span>Decouvrir l'etape</span></span>
                     <ArrowRight size={15} className="transition-transform duration-500 ease-out group-hover:translate-x-1" />
@@ -321,7 +299,7 @@ function ServicesSection({ steps }) {
 function InterludeSection() {
   const dash = <span className="mx-[3vw] inline-block align-middle opacity-80">-</span>;
   return (
-    <section id="valeurs" className="about-interlude relative z-0 flex w-full flex-col items-center justify-center overflow-hidden bg-[#F9F6F0] pb-32 pt-16 md:py-40">
+    <section id="valeurs" className="about-interlude relative z-0 flex w-full flex-col items-center justify-center overflow-hidden bg-[#F9F6F0] py-[clamp(4rem,8vw,10rem)]">
       <div className="flex w-full justify-center">
         <div className="about-marquee-scroll-1 w-max will-change-transform">
           <div className="about-marquee-track-1 flex w-max items-center will-change-transform">

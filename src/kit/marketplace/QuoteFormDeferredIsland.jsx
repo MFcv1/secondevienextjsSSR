@@ -15,6 +15,9 @@ export default function QuoteFormDeferredIsland({ initialDarkMode = false }) {
 
   useEffect(() => {
     let disposed = false;
+    // Prepare le module pendant le hero, sans monter ni rejouer le formulaire.
+    // En cas d'echec, le rendu dynamic conserve sa gestion normale de l'erreur.
+    void import('./QuoteFormIsland').catch(() => {});
 
     const reveal = () => {
       if (disposed) return;

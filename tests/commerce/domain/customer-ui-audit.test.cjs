@@ -192,6 +192,41 @@ test('a failed route navigation cannot leave the decorative curtain blocking the
     state.reset(); assert.equal(component.default(), null);
 });
 
+test('menu navigation requests use the video curtain and leave unsupported destinations to Next', async () => {
+    const state = hooks();
+    const listeners = new Map(), timers = [], navigations = [], warmups = [];
+    const component = await loadComponent('app/RouteTransitionIsland.jsx', {
+        react: state.react,
+        'next/navigation': { useRouter: () => ({ push: href => navigations.push(href), prefetch() {} }), usePathname: () => '/' },
+        './route-transition.config': await import('../../../app/route-transition.config.js'),
+    }, {
+        URL, CustomEvent: class {},
+        window: { location: { href: 'https://site.example/', origin: 'https://site.example' }, performance: { now: () => 0 }, matchMedia: () => ({ matches: false }), dispatchEvent() {},
+            setTimeout: (fn, ms) => { timers.push({ fn, ms }); return timers.length; }, clearTimeout() {} },
+        document: { addEventListener: (name, fn) => listeners.set(name, fn), removeEventListener: name => listeners.delete(name),
+            createElement: () => ({ load() { warmups.push(this.src); } }) },
+    });
+    component.default();
+    const cleanup = state.effects[0]();
+    const request = href => {
+        const event = { detail: { href }, defaultPrevented: false, preventDefault() { this.defaultPrevented = true; } };
+        listeners.get('sv:route-transition-request')(event);
+        return event;
+    };
+    for (const href of ['/', '/devis', 'https://other.example/a-propos']) {
+        assert.equal(request(href).defaultPrevented, false);
+    }
+    assert.equal(request('/a-propos').defaultPrevented, true);
+    assert.deepEqual(navigations, []);
+    assert.deepEqual(warmups, ['/video/hero/1-wood-buffet.mp4']);
+    state.reset();
+    assert.ok(component.default());
+    timers.find(timer => timer.ms === 900).fn();
+    assert.deepEqual(navigations, ['/a-propos']);
+    cleanup();
+    assert.equal(listeners.has('sv:route-transition-request'), false);
+});
+
 test('a private payment link keeps verification visible after its bounded poll ends', async () => {
     const state = hooks();
     const component = await loadComponent('app/payer/[orderId]/[token]/PaymentLinkPageIsland.jsx', {

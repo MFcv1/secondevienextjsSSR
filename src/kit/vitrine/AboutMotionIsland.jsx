@@ -198,7 +198,6 @@ function animateArch(gsap, ScrollTrigger, SplitType, registerSplit, root) {
       { y: '0%', rotationZ: 0, opacity: 1, filter: 'blur(0px)', stagger: introMobile ? 0.8 : 1, ease: 'power3.out', duration: introMobile ? 3 : 4 },
       wordsStart
     );
-    tl.fromTo(select(section, '.arch-grid'), { scale: 1, opacity: 0.05 }, { scale: 1.1, opacity: 0, duration: d, ease: 'power2.inOut' }, expandStart);
     tl.fromTo(selectAll(section, '.arch-ui-marker'), { opacity: 1, y: 0 }, { opacity: 0, y: -20, duration: d * 0.5, stagger: d * 0.1, ease: 'power2.inOut' }, expandStart);
     tl.to(select(section, '.arch-mask-border'), { opacity: 0, duration: d * 0.5, ease: 'power2.inOut' }, expandStart);
     tl.fromTo(select(section, '.arch-mask-container'), { clipPath: startClipInner }, { clipPath: endClip, duration: d, ease: 'power2.inOut' }, expandStart);
@@ -463,20 +462,28 @@ function animateServices(gsap, SplitType, registerSplit, root) {
     },
   });
 
-  gsap.fromTo(selectAll(root, '.about-service-card'),
-    { y: 50, filter: 'blur(5px)' },
-    {
-      y: 0,
-      filter: 'blur(0px)',
-      duration: 1,
-      stagger: 0.1,
-      ease: 'power3.out',
+  selectAll(section, '.about-service-card').forEach((card) => {
+    const timeline = gsap.timeline({
       scrollTrigger: {
-        trigger: section,
-        start: 'top 82%',
+        trigger: card,
+        start: 'top 90%',
+        once: true,
       },
-    }
-  );
+    });
+    timeline.fromTo(card,
+      { y: 24 },
+      { y: 0, duration: 0.75, ease: 'power3.out' },
+      0
+    );
+    timeline.from(selectAll(card, '.about-service-text'), {
+      y: 14,
+      opacity: 0,
+      filter: 'blur(3px)',
+      duration: 0.65,
+      stagger: 0.12,
+      ease: 'power3.out',
+    }, 0.08);
+  });
 }
 
 function animateInterlude(gsap, root) {

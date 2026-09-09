@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ROUTE_TRANSITION_CONFIG } from './route-transition.config';
 
 const TRANSITION_EVENT = 'sv:route-transition-start';
+const TRANSITION_REQUEST_EVENT = 'sv:route-transition-request';
 const ROUTE_TRANSITION_TITLE = 'L\u2019ATELIER';
 const ROUTE_TRANSITION_CHARACTERS = Array.from(ROUTE_TRANSITION_TITLE);
 const ROUTE_TRANSITION_CENTER_INDEX = (ROUTE_TRANSITION_CHARACTERS.length - 1) / 2;
@@ -198,10 +199,24 @@ export default function RouteTransitionIsland() {
       startTransition(href, targetConfig);
     };
 
+    // Les boutons des menus doivent suivre le meme rideau que les liens Next.
+    const onRequest = (event) => {
+      if (event.defaultPrevented || typeof event.detail?.href !== 'string') return;
+      const href = normalizePath(event.detail.href);
+      if (!href) return;
+      const targetPath = pathKey(href);
+      const targetConfig = ROUTE_TRANSITION_CONFIG.targets[targetPath];
+      if (!targetConfig || targetPath === pathname) return;
+      event.preventDefault();
+      startTransition(href, targetConfig);
+    };
+
+    document.addEventListener(TRANSITION_REQUEST_EVENT, onRequest);
     document.addEventListener('pointerover', maybeWarmup, true);
     document.addEventListener('focusin', maybeWarmup, true);
     document.addEventListener('click', onClick, true);
     return () => {
+      document.removeEventListener(TRANSITION_REQUEST_EVENT, onRequest);
       document.removeEventListener('pointerover', maybeWarmup, true);
       document.removeEventListener('focusin', maybeWarmup, true);
       document.removeEventListener('click', onClick, true);

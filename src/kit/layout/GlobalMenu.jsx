@@ -374,6 +374,17 @@ const GlobalMenu = ({
     };
 
     const navigateToPath = (path) => {
+        if (path.split(/[?#]/)[0] === '/a-propos') {
+            const request = new CustomEvent('sv:route-transition-request', {
+                detail: { href: path },
+                cancelable: true,
+            });
+            // Sans orchestrateur actif, conserver la navigation Next habituelle.
+            if (!document.dispatchEvent(request)) {
+                closeMenu();
+                return;
+            }
+        }
         if (onNavigate) {
             onNavigate(path);
             return;

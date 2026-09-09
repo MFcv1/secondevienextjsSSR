@@ -25,6 +25,8 @@ const ABOUT_CRITICAL_CSS = `
 .sv4-about-shell h2,
 .sv4-about-shell h3,
 .sv4-about-shell p { margin: 0; }
+/* Sans les sections optionnelles, la FAQ ne doit pas recouvrir le texte defilant. */
+.sv4-about-shell .about-interlude + .about-faq { margin-top: 0; }
 .sv4-about-shell .sv4-nav {
   position: fixed;
   top: 24px;

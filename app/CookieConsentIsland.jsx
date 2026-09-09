@@ -31,8 +31,8 @@ export default function CookieConsentIsland() {
     return () => window.removeEventListener(OPEN_COOKIE_PREFERENCES, edit);
   }, [consent?.analytics, consent?.external]);
   useEffect(() => {
-    if (editing) title.current?.focus();
-  }, [editing]);
+    if (editing || details) title.current?.focus({ preventScroll: true });
+  }, [editing, details]);
 
   const choose = (choices) => {
     const persisted = saveConsent(choices);
@@ -64,27 +64,56 @@ export default function CookieConsentIsland() {
       <div className={styles.srOnly} role="status">{notice}</div>
       {open ? (
         <section ref={panel} className={styles.panel} aria-labelledby="cookie-title">
-          <div className={styles.eyebrow}>Seconde Vie · Votre vie privée</div>
-          <h2 id="cookie-title" ref={title} tabIndex={-1}>Une visite à votre goût.</h2>
-          <p>Avec votre accord, nous mesurons les visites et la performance du site pour améliorer votre expérience. Vous pouvez aussi autoriser la carte Google Maps. Refuser ne vous empêche ni de chiner, ni de commander.</p>
-          <p className={styles.note}>Votre choix vaut 6 mois sur ce navigateur. Modifiez-le à tout moment via « Gérer mes cookies » en pied de page de la galerie.</p>
-          {details ? <div id="cookie-details" className={styles.details}>
-            <div className={styles.category}><strong>Strictement nécessaires</strong><span>Toujours actifs</span></div>
-            <p>Connexion, sécurité, panier et mémorisation de vos choix. Ils permettent de fournir les services que vous demandez.</p>
-            <label className={styles.category}><strong>Audience et performance</strong><input type="checkbox" checked={analytics} onChange={(event) => setAnalytics(event.target.checked)} /></label>
-            <p>Seconde Vie utilise Firebase (Google) pour mesurer les pages et produits consultés, les interactions, la durée des visites et les performances techniques. Les sessions utilisent des identifiants pseudonymes ; leurs détails sont conservés jusqu’à 90 jours.</p>
-            <label className={styles.category}><strong>Carte externe · Google Maps</strong><input type="checkbox" checked={external} onChange={(event) => setExternal(event.target.checked)} /></label>
-            <p>Affiche la carte de l’atelier. Google reçoit des informations de connexion et peut utiliser ses propres traceurs. Sans accord, un lien d’itinéraire reste disponible.</p>
-            <p>Le choix est conservé localement, sans être rattaché à votre compte. Retirer votre accord arrête les nouvelles mesures ; cela n’efface pas les données déjà transmises.</p>
-            <a href="https://policies.google.com/privacy?hl=fr" target="_blank" rel="noopener noreferrer">Confidentialité des services Google ↗</a>
-          </div> : null}
-          <div className={styles.actions}>
-            <button type="button" onClick={() => choose({})}>Tout refuser</button>
-            <button type="button" onClick={() => choose({ analytics: true, external: true })}>Tout accepter</button>
+          <div className={styles.content}>
+            <h2 id="cookie-title" ref={title} tabIndex={-1}>{details ? 'Personnaliser les cookies' : 'Vos préférences cookies'}</h2>
+            <p className={styles.intro}>{details
+              ? 'Vous choisissez ce que vous autorisez.'
+              : 'Avec votre accord, nous mesurons les visites et activons Google Maps. Vous pouvez refuser et profiter du site.'}</p>
+            {details ? <div id="cookie-details" className={styles.details}>
+              <section className={styles.category} aria-labelledby="cookie-essential-title">
+                <div className={styles.categoryHeading}><h3 id="cookie-essential-title">Essentiels</h3><span className={styles.badge}>Toujours actifs</span></div>
+                <p>Connexion, sécurité, panier et mémorisation de vos choix.</p>
+              </section>
+              <section className={styles.category} aria-labelledby="cookie-analytics-title">
+                <div className={styles.categoryHeading}>
+                  <h3 id="cookie-analytics-title"><label htmlFor="cookie-analytics">Audience et performance</label></h3>
+                  <input id="cookie-analytics" className={styles.switch} type="checkbox" role="switch" aria-describedby="cookie-analytics-description" checked={analytics} onChange={(event) => setAnalytics(event.target.checked)} />
+                </div>
+                <p id="cookie-analytics-description">Comprendre les visites et améliorer le site.</p>
+                <details className={styles.disclosure}>
+                  <summary>Données utilisées</summary>
+                  <p>Seconde Vie utilise Firebase (Google) : pages et produits consultés, interactions, durée des visites et performances techniques.</p>
+                  <p>Les sessions utilisent des identifiants pseudonymes. Leurs détails sont conservés jusqu’à 90 jours.</p>
+                </details>
+              </section>
+              <section className={styles.category} aria-labelledby="cookie-maps-title">
+                <div className={styles.categoryHeading}>
+                  <h3 id="cookie-maps-title"><label htmlFor="cookie-maps">Google Maps</label></h3>
+                  <input id="cookie-maps" className={styles.switch} type="checkbox" role="switch" aria-describedby="cookie-maps-description" checked={external} onChange={(event) => setExternal(event.target.checked)} />
+                </div>
+                <p id="cookie-maps-description">Afficher la carte de l’atelier.</p>
+                <details className={styles.disclosure}>
+                  <summary>Données partagées</summary>
+                  <p>Google reçoit des informations de connexion et peut utiliser ses propres traceurs. Sans accord, un lien d’itinéraire reste disponible.</p>
+                  <a href="https://policies.google.com/privacy?hl=fr" target="_blank" rel="noopener noreferrer">Confidentialité Google ↗</a>
+                </details>
+              </section>
+              <details className={styles.disclosure}>
+                <summary>Durée et modification du choix</summary>
+                <p>Votre choix est conservé 6 mois sur ce navigateur, sans lien avec votre compte. Modifiez-le via « Gérer mes cookies » en pied de page de la galerie.</p>
+                <p>Retirer votre accord arrête les nouvelles mesures, sans effacer les données déjà transmises.</p>
+              </details>
+            </div> : null}
           </div>
-          {details
-            ? <button className={styles.customize} type="button" onClick={() => choose({ analytics, external })}>Enregistrer mes choix</button>
-            : <button className={styles.customize} type="button" aria-expanded={details} aria-controls="cookie-details" onClick={() => { setAnalytics(false); setExternal(false); setDetails(true); }}>En savoir plus et personnaliser</button>}
+          <div className={styles.footer}>
+            <div className={styles.actions}>
+              <button className={styles.refuse} type="button" onClick={() => choose({})}>Refuser</button>
+              <button type="button" onClick={() => choose({ analytics: true, external: true })}>Accepter</button>
+            </div>
+            {details
+              ? <button className={styles.customize} type="button" onClick={() => choose({ analytics, external })}>Enregistrer mes choix</button>
+              : <button className={styles.customize} type="button" aria-expanded={details} aria-controls="cookie-details" onClick={() => { setAnalytics(false); setExternal(false); setDetails(true); }}>En savoir plus et personnaliser</button>}
+          </div>
         </section>
       ) : null}
     </>

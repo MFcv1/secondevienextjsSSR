@@ -9,6 +9,14 @@ export default function CategoryRailServer({
   darkMode = false,
 } = {}) {
   const safeCategories = Array.isArray(categories) ? categories : [];
+  const mobileCategories = [
+    safeCategories.find((cat) => cat.id === 'buffets'),
+    { id: 'tables', label: 'TABLES', image: '/images/categories/tables-catalog-rail.webp' },
+    safeCategories.find((cat) => cat.id === 'armoires'),
+    safeCategories.find((cat) => cat.id === 'miroirs'),
+    { id: 'assises', label: 'CHAISES', image: '/images/categories/chaises-catalog-rail.webp' },
+    safeCategories.find((cat) => cat.id === 'commodes'),
+  ].filter(Boolean);
 
   return (
     <section className="relative z-20 isolate w-full pt-6 md:-mt-[135px] md:pt-0">
@@ -20,13 +28,13 @@ export default function CategoryRailServer({
       <h2 className="relative z-10 mx-auto mb-5 w-full max-w-[380px] px-8 font-serif text-[25px] font-medium leading-[1.18] tracking-[-0.025em] md:hidden">
         Des meubles à faire revivre chez vous
       </h2>
-      <div className="relative z-10 mx-auto grid w-full max-w-[360px] grid-cols-2 gap-x-4 gap-y-5 px-9 pb-5 md:hidden">
-        {safeCategories.slice(0, 4).map((cat, index) => (
+      <div className="relative z-10 mx-auto grid w-full max-w-[420px] grid-cols-3 gap-x-3 gap-y-5 px-8 pb-5 md:hidden">
+        {mobileCategories.map((cat, index) => (
           <Link key={cat.id} href={getCategoryUrl(cat.id)} prefetch={false} className="group flex min-w-0 cursor-pointer flex-col items-center text-inherit no-underline">
-            <div className={`mb-3 aspect-[4/5] w-[95%] overflow-hidden rounded-[18px] border-[6px] shadow-[0_6px_18px_rgba(0,0,0,0.06)] ${darkMode ? 'border-[#1A1A1A] bg-[#1A1A1A]' : 'border-white bg-white dark:border-[#191511] dark:bg-[#191511]'}`}>
+            <div className={`mb-2 aspect-[2/3] w-full overflow-hidden rounded-[18px] border-[5px] shadow-[0_6px_18px_rgba(0,0,0,0.06)] ${darkMode ? 'border-[#1A1A1A] bg-[#1A1A1A]' : 'border-white bg-white dark:border-[#191511] dark:bg-[#191511]'}`}>
               <img
-                src={getImageSrc(cat.id)}
-                sizes="(max-width: 359px) calc((100vw - 112px) / 2), (max-width: 767px) 124px, 86px"
+                src={cat.image || getImageSrc(cat.id)}
+                sizes="(max-width: 420px) calc((100vw - 118px) / 3), 101px"
                 alt={cat.label}
                 loading="eager"
                 decoding="async"
@@ -34,7 +42,7 @@ export default function CategoryRailServer({
                 className="h-full w-full rounded-[12px] object-cover transition-transform duration-[1.5s] ease-[cubic-bezier(0.25,1,0.5,1)] group-active:scale-[1.04]"
               />
             </div>
-            <h3 className="w-full truncate text-center font-serif text-[18px] font-medium leading-[1.18] tracking-[-0.025em]">
+            <h3 className="w-full text-center font-serif text-[16px] font-medium leading-[1.18] tracking-[-0.025em]">
               {cat.label.charAt(0) + cat.label.slice(1).toLocaleLowerCase('fr-FR')}
             </h3>
           </Link>

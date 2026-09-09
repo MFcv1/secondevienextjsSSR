@@ -158,18 +158,16 @@ export default function MarketplaceHeroServer({
               data-hero-step={index}
               aria-label={`Slide ${index + 1}`}
               aria-current={index === 0 ? 'true' : 'false'}
-              className="relative h-[2px] w-[34px] overflow-hidden rounded-full md:h-[3px]"
+              className="relative h-6 w-7 rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white md:w-12"
             >
-              <span
-                aria-hidden="true"
-                className="hero-step-track absolute inset-y-0 left-0 w-full origin-center rounded-full bg-white/30"
-                style={{ transform: index === 0 ? 'scaleX(1)' : 'scaleX(0.53)' }}
-              />
-              <span
-                data-hero-progress-fill
-                className="absolute inset-y-0 left-0 w-full origin-left rounded-full bg-white"
-                style={index === 0 ? { animation: `hero-segment-progress ${HERO_DURATION}ms linear forwards` } : { transform: 'scaleX(0)' }}
-              />
+              <span aria-hidden="true" className="absolute inset-x-0 top-1/2 h-[2px] -translate-y-1/2 overflow-hidden rounded-full md:h-[3px]">
+                <span className="hero-step-track absolute inset-0 rounded-full bg-white/30" />
+                <span
+                  data-hero-progress-fill
+                  className="absolute inset-y-0 left-0 w-full origin-left rounded-full bg-white"
+                  style={index === 0 ? { animation: `hero-segment-progress ${HERO_DURATION}ms linear forwards` } : { transform: 'scaleX(0)' }}
+                />
+              </span>
             </button>
           ))}
         </div>

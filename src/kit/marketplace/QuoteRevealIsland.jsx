@@ -8,18 +8,24 @@ const FORM_MOUNT_EVENT = 'quote:form-mount-ready';
 const RUNTIME_KEY = '__secondeVieQuoteMotionRuntime';
 const CLEANUP_KEY = '__secondeVieQuoteMotionCleanup';
 const RETURN_KEY = '__secondeVieQuoteHasUnmounted';
+// Meme facteur pour les transitions CSS, leurs delais et l'orchestration.
+const FORM_REVEAL_TEMPO = 0.6;
+const CARDS_REVEAL_TEMPO = 0.8;
 
 const SEQUENCES = {
-    hero: { after: null, duration: 1700 },
-    progress: { after: 'hero', duration: 1050 },
-    'step-shell': { after: 'progress', duration: 720 },
-    'step-copy': { after: 'step-shell', duration: 850 },
-    'step-cards': { after: 'step-copy', duration: 1250 },
+    // Le rail suit le CTA (830 ms) de 110 ms, sans couper sa transition.
+    hero: { after: null, duration: 1550, handoff: 940 },
+    // Chaque groupe passe le relais a la fin de sa derniere transition CSS.
+    progress: { after: 'hero', duration: 1035, tempo: FORM_REVEAL_TEMPO },
+    'step-shell': { after: 'progress', duration: 620, tempo: FORM_REVEAL_TEMPO },
+    'step-copy': { after: 'step-shell', duration: 840, tempo: FORM_REVEAL_TEMPO },
+    'step-cards': { after: 'step-copy', duration: 1170, tempo: CARDS_REVEAL_TEMPO },
     process: { after: null, duration: 1400 },
 };
 
 const createRuntime = () => ({
     completed: new Set(),
+    released: new Set(),
     elements: new Map(),
     started: new Set(),
     timers: new Set(),
@@ -75,13 +81,15 @@ export default function QuoteRevealIsland() {
 
         root.dataset.quoteMotion = 'active';
         const runtime = window[RUNTIME_KEY] || createRuntime();
+        // Une session locale deja ouverte peut conserver le runtime via Fast Refresh.
+        runtime.released ??= new Set(runtime.completed);
         const observedThisPass = new WeakSet();
         let observeElement = () => {};
         window[RUNTIME_KEY] = runtime;
 
-        const settleKey = (key) => {
-            runtime.elements.get(key)?.forEach(element => element.classList.add('is-settled'));
-            runtime.completed.add(key);
+        const releaseKey = (key) => {
+            if (runtime.released.has(key)) return;
+            runtime.released.add(key);
 
             // Le vrai formulaire prend la place du gabarit SSR des la fin du
             // rail. Le panneau "Etape 1" serveur n'est jamais anime : seul son
@@ -91,8 +99,7 @@ export default function QuoteRevealIsland() {
             }
 
             const observeDependents = () => {
-                // Une sequence dependante n'est observee qu'une fois son parent
-                // termine. Elle ne peut donc pas etre consommee hors ecran trop tot.
+                // Le relais autorise l'observation, jamais un demarrage hors ecran.
                 Object.entries(SEQUENCES).forEach(([dependentKey, sequence]) => {
                     if (sequence.after !== key || runtime.started.has(dependentKey)) return;
                     runtime.visible.delete(dependentKey);
@@ -112,19 +119,34 @@ export default function QuoteRevealIsland() {
             }
         };
 
+        const settleKey = (key) => {
+            runtime.elements.get(key)?.forEach(element => element.classList.add('is-settled'));
+            runtime.completed.add(key);
+            releaseKey(key);
+        };
+
         const flush = () => {
             Object.entries(SEQUENCES).forEach(([key, sequence]) => {
                 if (runtime.started.has(key) || !runtime.visible.has(key)) return;
-                if (sequence.after && !runtime.completed.has(sequence.after)) return;
+                if (sequence.after && !runtime.released.has(sequence.after)) return;
 
                 runtime.started.add(key);
                 runtime.elements.get(key)?.forEach(element => element.classList.add('is-in'));
+
+                if (sequence.handoff !== undefined) {
+                    const handoffTimer = window.setTimeout(() => {
+                        releaseKey(key);
+                        runtime.timers.delete(handoffTimer);
+                        flush();
+                    }, sequence.handoff * (sequence.tempo ?? 1));
+                    runtime.timers.add(handoffTimer);
+                }
 
                 const timer = window.setTimeout(() => {
                     settleKey(key);
                     runtime.timers.delete(timer);
                     flush();
-                }, sequence.duration);
+                }, sequence.duration * (sequence.tempo ?? 1));
                 runtime.timers.add(timer);
             });
         };
@@ -136,7 +158,7 @@ export default function QuoteRevealIsland() {
                 if (!key) return;
 
                 const sequence = SEQUENCES[key];
-                if (sequence.after && !runtime.completed.has(sequence.after)) {
+                if (sequence.after && !runtime.released.has(sequence.after)) {
                     observer.unobserve(entry.target);
                     return;
                 }
@@ -157,7 +179,11 @@ export default function QuoteRevealIsland() {
         );
         const cardsObserver = new IntersectionObserver(
             (entries, observer) => onIntersect(entries, observer),
-            { threshold: 0, rootMargin: '0px 0px -12% 0px' }
+            { threshold: 0, rootMargin: '0px 0px -4% 0px' }
+        );
+        const formCopyObserver = new IntersectionObserver(
+            (entries, observer) => onIntersect(entries, observer),
+            { threshold: 0, rootMargin: '0px 0px -4% 0px' }
         );
 
         observeElement = (element) => {
@@ -166,7 +192,9 @@ export default function QuoteRevealIsland() {
                 ? eagerObserver
                 : mode === 'cards'
                     ? cardsObserver
-                    : scrollObserver;
+                    : element.dataset.quoteReveal === 'step-copy'
+                        ? formCopyObserver
+                        : scrollObserver;
             observer.observe(element);
         };
 
@@ -174,6 +202,7 @@ export default function QuoteRevealIsland() {
             page.querySelectorAll(REVEAL_SELECTOR).forEach((element) => {
                 const key = element.dataset.quoteReveal;
                 if (!key || !SEQUENCES[key]) return;
+                element.style.setProperty('--quote-reveal-tempo', SEQUENCES[key].tempo ?? 1);
 
                 if (!runtime.elements.has(key)) runtime.elements.set(key, new Set());
                 const elements = runtime.elements.get(key);
@@ -206,6 +235,7 @@ export default function QuoteRevealIsland() {
             eagerObserver.disconnect();
             scrollObserver.disconnect();
             cardsObserver.disconnect();
+            formCopyObserver.disconnect();
 
             // Le tour suivant annule ce timer en Strict Mode. Un vrai depart
             // de la route le laisse courir et rearme la prochaine visite.

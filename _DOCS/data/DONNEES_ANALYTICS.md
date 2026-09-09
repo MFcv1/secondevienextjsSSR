@@ -267,8 +267,14 @@ newsletter la recherche simple `code`.
 ### Consentement navigateur
 
 Le code local du 9 septembre 2026 ajoute `app/CookieConsentIsland.jsx` et
-`src/kit/shared/cookieConsent.js`. Le panneau reprend la palette ivoire/brun,
-le thème sombre et les polices du site. Il est non modal : la navigation reste
+`src/kit/shared/cookieConsent.js`. Le panneau utilise une palette neutre claire
+ou sombre et une police système. Le premier niveau présente un titre court,
+deux phrases et les actions Refuser / Accepter de mêmes dimensions, dans deux
+nuances chaudes : ivoire pour Refuser, sable pour Accepter, avec texte brun.
+La personnalisation sépare les finalités avec interrupteurs ; les informations
+sur les données, la durée et le retrait sont dépliables. Les actions restent
+visibles sous le contenu défilant, avec prise en compte des safe areas mobiles.
+Il est non modal : la navigation reste
 possible ; Échap refuse lors du premier choix, ou ferme les réglages sans
 modifier un choix existant. « Gérer mes cookies », dans le pied de page mobile
 et desktop (`FooterCookiePreferencesIsland`), ouvre les réglages et récupère

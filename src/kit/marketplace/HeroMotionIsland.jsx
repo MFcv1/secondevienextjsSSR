@@ -109,6 +109,7 @@ export default function HeroMotionIsland() {
 
     const applyActive = (nextIndex) => {
       if (disposed) return;
+      const activation = pendingActivation;
       const leavingIndex = activeIndex;
       activeIndex = (nextIndex + slides.length) % slides.length;
       slides.forEach((slide, index) => {
@@ -150,8 +151,10 @@ export default function HeroMotionIsland() {
         fill.style.transform = 'scaleX(0)';
         if (isActive && !reducedMotion) {
           window.requestAnimationFrame(() => {
-            if (disposed) return;
+            if (disposed || activation !== pendingActivation || index !== activeIndex) return;
             fill.style.animation = `hero-segment-progress ${HERO_DURATION}ms linear forwards`;
+            if (!heroVisible || document.hidden) getActiveAnimation()?.pause?.();
+            scheduleFallback();
           });
         }
       });
@@ -218,7 +221,7 @@ export default function HeroMotionIsland() {
     const handleProgressEnd = (event) => {
       const button = event.target?.closest?.('[data-hero-step]');
       const index = buttons.indexOf(button);
-      if (index === activeIndex && heroVisible) requestActive(activeIndex + 1);
+      if (event.animationName === 'hero-segment-progress' && index === activeIndex && heroVisible && !document.hidden && !reducedMotion) requestActive(activeIndex + 1);
     };
 
     const markInput = () => {
