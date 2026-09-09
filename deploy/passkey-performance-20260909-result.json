@@ -1,0 +1,60 @@
+{
+  "project": "secondevienextjsssr",
+  "observedAt": "2026-09-09T11:40:10Z",
+  "deploymentCommit": "acae5d154ab3f1b0f3cdb6ccb3604ecfb740366d",
+  "targets": [
+    {
+      "name": "generatePasskeyAuthenticationOptionsGen2",
+      "state": "ACTIVE",
+      "revision": "generatepasskeyauthenticationoptionsgen2-00003-kos",
+      "capacity": {
+        "availableCpu": "1",
+        "availableMemory": "256Mi",
+        "maxInstanceRequestConcurrency": 8,
+        "minInstanceCount": 1,
+        "maxInstanceCount": 2,
+        "timeoutSeconds": 60
+      },
+      "trafficPercent": 100,
+      "iamAndEnvironmentPreserved": true,
+      "sourceFilesVerified": [
+        "index.js",
+        "src/auth/passkeys.js",
+        "src/auth/passkeyPerformance.js",
+        "src/admin/readerEntrypoint.js"
+      ],
+      "missingAppCheckHttpStatus": 401,
+      "sourceSha256": "1e291bec46f7859098465cfc374bdc54d92df774eae1ab7f3c3a5e329c8adc6f"
+    },
+    {
+      "name": "verifyPasskeyAuthenticationGen2",
+      "state": "ACTIVE",
+      "revision": "verifypasskeyauthenticationgen2-00003-xoq",
+      "capacity": {
+        "availableCpu": "1",
+        "availableMemory": "256Mi",
+        "maxInstanceRequestConcurrency": 8,
+        "minInstanceCount": 1,
+        "maxInstanceCount": 2,
+        "timeoutSeconds": 60
+      },
+      "trafficPercent": 100,
+      "iamAndEnvironmentPreserved": true,
+      "sourceFilesVerified": [
+        "index.js",
+        "src/auth/passkeys.js",
+        "src/auth/passkeyPerformance.js",
+        "src/admin/readerEntrypoint.js"
+      ],
+      "missingAppCheckHttpStatus": 401,
+      "sourceSha256": "1e291bec46f7859098465cfc374bdc54d92df774eae1ab7f3c3a5e329c8adc6f"
+    }
+  ],
+  "validation": {
+    "testsPassed": 61,
+    "lintErrors": 0,
+    "lintWarnings": 1,
+    "humanWebAuthnCeremonyExecuted": false,
+    "phoneLatencyMeasured": false
+  }
+}

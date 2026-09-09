@@ -53,8 +53,8 @@ Les annonces par défaut restent factuelles : livraison selon l'adresse,
 newsletter et moyens affichés par Stripe. Les promesses de gratuité, de
 fidélité et de paiement fractionné ne sont pas confirmées dans cette livraison.
 
-Limites : aucune nouvelle livraison Functions, rules ou indexes ; le client
-passkey est livré, ses optimisations serveur ci-dessous restent à déployer.
+Limites de cette première livraison hosting : aucune nouvelle livraison Functions,
+rules ou indexes ; le complément serveur passkey est livré séparément ci-dessous.
 Aucune connexion passkey humaine, commande ou opération Stripe test exécutée.
 La CI GitHub [34344923891](https://github.com/MFcv1/secondevienextjsSSR/actions/runs/34344923891)
 reste **rouge** sur l'audit des dépendances : neuf alertes, dont deux critiques
@@ -65,9 +65,36 @@ sécurité ni un GO production. Références des alertes critiques :
 [Windows](https://github.com/advisories/GHSA-p293-qw3h-jr36) et
 [optimisation AVIF](https://github.com/advisories/GHSA-2xp9-vwfh-vxw4).
 
-## Rapidité passkey — correctif du 9 septembre
+## Rapidité passkey — correctif et livraison serveur du 9 septembre
 
-Correctif committé dans `d7b7ae4` ; **partie serveur non déployée** : entrée isolée pour les deux
+Après clarification de la demande de livraison complète, les deux Functions
+ont été déployées depuis le commit de déploiement `acae5d1`, en `europe-west1` :
+
+- `generatePasskeyAuthenticationOptionsGen2` : `generatepasskeyauthenticationoptionsgen2-00003-kos` ;
+- `verifyPasskeyAuthenticationGen2` : `verifypasskeyauthenticationgen2-00003-xoq`.
+
+Les deux sont `ACTIVE`, chacune reçoit 100 % du trafic de son service, avec
+1 CPU, 256 MiB, concurrence 8, minimum 1 / maximum 2 instances et timeout 60 s.
+Les identités d'exécution/build, politiques IAM et variables d'environnement
+ont été comparées avant/après et sont conservées. Le script emploie désormais
+`--update-env-vars` pour préserver `LOG_EXECUTION_ID` à la mise à jour de SITE_URL.
+Les deux appels sans App Check sont refusés HTTP 401.
+
+L'archive déployée a été relue dans Storage : `index.js`, `passkeys.js`,
+`passkeyPerformance.js` et `readerEntrypoint.js` correspondent exactement aux
+sources committées. Les archives précédentes sont copiées et protégées par
+temporary hold ; configurations et révisions de retour arrière sont dans le
+[manifeste ciblé](../deploy/passkey-performance-20260909.json), vérifié par son
+[digest](../deploy/passkey-performance-20260909-digest.json).
+[Résultats de vérification](../deploy/passkey-performance-20260909-result.json).
+
+Validation complémentaire : 61 tests ciblés réussis, lint ciblé zéro erreur
+(un avertissement préexistant), `git diff --check` réussi. Aucun déploiement
+global Functions, aucune mutation commerce ni lecture de boîte mail.
+La connexion biométrique humaine et la latence réelle sur téléphone restent
+à mesurer ; des révisions actives ne prouvent pas un délai de 1–2 secondes.
+
+Correctif committé dans `d7b7ae4`, **client et serveur désormais déployés** : entrée isolée pour les deux
 fonctions de reconnexion, CPU 1, concurrence 8, minimum 1 / maximum 2 instances,
 mesures par étape sans identité. Contrat dans [Auth](security/AUTHENTIFICATION.md#capacité-et-mesures-de-la-reconnexion-passkey).
 Seconde passe locale : import Firebase général retiré de la modale, préparation
@@ -89,8 +116,8 @@ ESLint ciblé : aucune erreur ; cinq avertissements préexistants dans la modale
 et un sur l'argument `name` du script de déploiement empêchent le passage strict.
 Pas de build Next, navigateur ni connexion humaine exécutés.
 
-La livraison serveur exige encore une autorisation Functions ciblée, une archive
-immuable vérifiée et un manifeste via `scripts/deploy-functions-targeted.mjs`.
+La livraison serveur a utilisé l'autorisation Functions ciblée, une archive
+immuable vérifiée et le manifeste via `scripts/deploy-functions-targeted.mjs`.
 Le déploiement source seul doit également appliquer les nouveaux paramètres
 de capacité : ne pas annoncer ceux-ci actifs après une simple mise à jour du code.
 Les observations cloud avant livraison sont conservées localement dans
