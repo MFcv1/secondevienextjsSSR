@@ -1,8 +1,34 @@
 # Back-office
 
+## Contrats locaux de la relecture du 7 septembre 2026
+
+Ces modifications sont locales, non déployées ; preuves dans la
+[relecture intégrale](../audits/RELECTURE_INTEGRALE_INTERACTIONS_2026-09-07.md).
+
+- Les réponses de listes/détails ne remplacent pas une version de commande
+  plus récente. Un export Auth est borné à 20 pages de 500 comptes et refuse
+  une pagination incohérente ; aucun fichier partiel n'est annoncé complet.
+- Les sauvegardes d'accueil comparent les champs modifiés à leur version
+  chargée dans une transaction. Les éditeurs attendent leur callback de
+  sauvegarde et conservent le dialogue en cas d'échec. Les commandes sans
+  consommateur public sont non modifiables.
+- Le reclassement normal d'un produit écrit une position intermédiaire ;
+  une normalisation exigeant plus de 400 écritures est refusée avant effet.
+  Le lecteur catalogue admin pagine jusqu'à 6 000 pièces sans mélanger les releases.
+- Le fallback Data utilise lui aussi le cache mémoire lié aux droits ; il
+  ne consulte plus l'ancien IndexedDB. Aucun effacement distant de ce stockage
+  historique n'est supposé. Le panneau local Boutique sans appelant est retiré.
+- La génération PDF reprend l'artefact immuable existant contrôlé, sans le
+  réécrire. La génération d'un brouillon attend sa sauvegarde effective.
+- Une chronologie ayant atteint une limite de source affiche un diagnostic
+  partiel ; un ancien événement ne peut pas rouvrir un incident plus récent.
+
+## Références des livraisons antérieures
+
 Contrat du 2026-09-05 (frontend et backend livrés) : voir le
 [suivi I0–I6](../audits/SUIVI_IMPLEMENTATION_BACKOFFICE_2026-09-05.md).
-Les constats cités ci-dessous restent ouverts pour la qualification hébergée.
+La [clôture du périmètre d’optimisation](../audits/CLOTURE_BACKEND_2026-09-05.md)
+distingue les corrections validées des limites de qualification hébergée.
 La [livraison backend](../audits/LIVRAISON_BACKEND_2026-09-05.md) précise les
 révisions et la migration des compteurs ; activation archive/shard en attente.
 
@@ -14,7 +40,7 @@ d'autorisation. Les tendances écoutent leur document après apparition du panne
 Le catalogue est différé aux produits à illustrer / au parcours Data ouvert.
 Aucun nouveau writer ni polling.
 
-Correctif local post-qualification du 5 septembre (non livré) : périodes des
+Correctif post-qualification du 5 septembre (livré, preuves dans le suivi Stats/Data) : périodes des
 intentions Stats, du graphique financier et de Data conservées en mémoire
 jusqu'à la purge de la session autorisée, sans TTL ni stockage navigateur.
 Un changement de propriétaire/révocation les efface. La sélection Data est
@@ -39,7 +65,12 @@ annoncée séparément. Aucun historique complet n'est déduit de sa seule prés
   invalide les réponses en vol ; les vues montées sont recréées à la génération
   suivante. Fraîcheur : Devis/listes/détails/photos 30 s ; workspace Factures
   et premières pages commerce 120 s ; produits du sélecteur Factures 30 s.
-  Une réponse périmée n'est pas retournée par `getAdminCachedData`. Ces durées
+  Une réponse périmée n'est pas retournée par défaut par `getAdminCachedData`.
+  Le correctif livré sur sandbox le 6 septembre permet aux seules listes Ventes/Devis/
+  Factures/Retours d'opter pour `allowStale`: dernière page autorisée visible
+  pendant une actualisation bornée, indication de chargement et erreurs visibles.
+  La fraîcheur décide toujours de la relecture, la purge UID/droits demeure.
+  Aucun polling ni chargement global de l'historique n'est ajouté. Ces durées
   n'affirment pas une fraîcheur entre deux administrateurs.
 - La ligne Devis amorce immédiatement le suivi ; sans photo, aucun détail
   supplémentaire. Avec photos, cache par ID/version/propriétaire, expiration
@@ -560,8 +591,9 @@ remboursement et garde physique:
 - `En attente`: paiement, retrait client ou transport en attente d'un tiers;
 - `Cloturees`: dossier logistique termine, annule ou rembourse avec piece
   sortie de la garde boutique;
-- `Toutes`: commandes chargees, ordonnees `A traiter`, puis `En attente`, puis
-  `Cloturees`, avec ordre chronologique stable dans chaque groupe.
+- `Toutes`: commandes chargées par création décroissante, avec ordre stable
+  à date égale, indépendamment des segments (correctif local du 6 septembre,
+  livré sur sandbox). Les filtres métier et les curseurs restent conservés.
 
 La premiere page reste bornee a 50 commandes. Les compteurs, la recherche et
 l'export CSV portent explicitement sur les commandes chargees; l'interface

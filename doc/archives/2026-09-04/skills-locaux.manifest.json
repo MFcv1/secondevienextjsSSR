@@ -1,0 +1,1195 @@
+{
+  "purpose": "Archive explicite des 33 skills locaux retires de la decouverte Codex. Ne pas extraire ou restaurer sans demande utilisateur.",
+  "date": "2026-09-04",
+  "archive": "skills-locaux.tar.gz",
+  "sha256": "a5f5b8cb2e18129df0fc2bbfeffe0177f839e475a7122b6993ba3425eaf9c65b",
+  "filesCount": 230,
+  "markdownCount": 228,
+  "skills": [
+    "clean-saas",
+    "client-admin-test",
+    "cyber-neon",
+    "dark-ui",
+    "design-taste-frontend",
+    "editorial-minimal",
+    "editorial-type",
+    "experimental-type",
+    "expressive-brand",
+    "frontsymmetry",
+    "geometric-modern",
+    "glossy-modern",
+    "gpt-taste",
+    "high-contrast",
+    "high-end-design",
+    "high-end-visual-design",
+    "industrial-brutalist-ui",
+    "light-ui",
+    "minimal-design",
+    "minimalist-ui",
+    "monochrome-ui",
+    "motion",
+    "pastel",
+    "playful-design",
+    "redesign-existing-projects",
+    "serif-display",
+    "soft-gradients",
+    "technical-sans",
+    "technical-ui",
+    "utilitarian",
+    "vibrant-accents",
+    "viewport-fit",
+    "visual-annotation-tuning"
+  ],
+  "files": [
+    {
+      "path": ".agents/skills/clean-saas/references/design-use-cases.md",
+      "bytes": 3194,
+      "sha256": "c93ba588024450e24483827dcbe044ef58aeac34b74faa0716e3c71152f71624"
+    },
+    {
+      "path": ".agents/skills/clean-saas/references/lastskill.md",
+      "bytes": 40149,
+      "sha256": "ebb12e768c15743a85e9776b7febbdeae85cf800e0e9281ba6cba956c2c4d88f"
+    },
+    {
+      "path": ".agents/skills/clean-saas/references/refero-style-database.md",
+      "bytes": 86125,
+      "sha256": "5a7b3353ac1f98d7978a1d78f353615a12ae6d065d430d77efd78298e4550392"
+    },
+    {
+      "path": ".agents/skills/clean-saas/references/sources/01-autosend.md",
+      "bytes": 8518,
+      "sha256": "5d431bfc39c06418018b08bd1f70969cf4ede44e1b68efcc5e39615f1e143eed"
+    },
+    {
+      "path": ".agents/skills/clean-saas/references/sources/02-fresha.md",
+      "bytes": 6986,
+      "sha256": "7b8e476db600690b0665da8a99b13d295893b360c2c9afda10fdb5422166efec"
+    },
+    {
+      "path": ".agents/skills/clean-saas/references/sources/03-workable.md",
+      "bytes": 6789,
+      "sha256": "787fc1f9fc58423c27d7c5c977c9f5bd27fe89a1c4e8076ccb80b3d72cd63862"
+    },
+    {
+      "path": ".agents/skills/clean-saas/references/sources/04-all-in-one-salon.md",
+      "bytes": 21434,
+      "sha256": "af3da31d5a76fc0214a67d9a0d73befafdbb8e4eaf642ca6316ae5c0be619296"
+    },
+    {
+      "path": ".agents/skills/clean-saas/references/sources/05-slack.md",
+      "bytes": 19178,
+      "sha256": "5b7d24da2698251a5f94002e72386ca4ee72f8573e73045684d599cd4da6bb99"
+    },
+    {
+      "path": ".agents/skills/clean-saas/SKILL.md",
+      "bytes": 44350,
+      "sha256": "0b82635f610e03af060f365a621b893c8dcb542ac8de1d30e432b40036824a66"
+    },
+    {
+      "path": ".agents/skills/client-admin-test/agents/openai.yaml",
+      "bytes": 913,
+      "sha256": "eff89a5078054482792739add26be65ddecc2e1148260d7b891996e38be4dc6f"
+    },
+    {
+      "path": ".agents/skills/client-admin-test/SKILL.md",
+      "bytes": 3650,
+      "sha256": "e7098500fe159e6e94192df69a8e7f048f096ddb9d30d4143ebda50440748f2c"
+    },
+    {
+      "path": ".agents/skills/cyber-neon/references/design-use-cases.md",
+      "bytes": 3030,
+      "sha256": "f98a422ed5ae147d63130a20bafa3bf5d91d1b34fd7797b1e7e26b9fddbc75ed"
+    },
+    {
+      "path": ".agents/skills/cyber-neon/references/lastskill.md",
+      "bytes": 39678,
+      "sha256": "1c57e87c5c4e6f23b64c82ccc8991170bd7d97187f2cc707428810136a00ce3d"
+    },
+    {
+      "path": ".agents/skills/cyber-neon/references/refero-style-database.md",
+      "bytes": 64895,
+      "sha256": "d898bae8772ae66e8b9d2f1578ea368315442b8e44db7c589044d2655f0000e5"
+    },
+    {
+      "path": ".agents/skills/cyber-neon/references/sources/01-chainzoku.md",
+      "bytes": 5118,
+      "sha256": "899f35a42622e84fdc2416a47ba4f81262505c3a4d8ddb77c8a405466f251e04"
+    },
+    {
+      "path": ".agents/skills/cyber-neon/references/sources/02-sbs-town.md",
+      "bytes": 3810,
+      "sha256": "5ec08c127d9e606816226bb390e783679c7dfead0c74b5ee332cf024e8b55ca8"
+    },
+    {
+      "path": ".agents/skills/cyber-neon/references/sources/03-neon.md",
+      "bytes": 5015,
+      "sha256": "5e4d37e5f27140f273f9f64cc1adf787490e97fd826e43c6c569df1ffb1a5dd7"
+    },
+    {
+      "path": ".agents/skills/cyber-neon/references/sources/04-jetbrains.md",
+      "bytes": 7970,
+      "sha256": "3f4eca1ee24221933af1ae034d32c7ee0c5dfff63b9333a1dd37dd97734b3ed2"
+    },
+    {
+      "path": ".agents/skills/cyber-neon/references/sources/05-off-white.md",
+      "bytes": 4770,
+      "sha256": "5bbaa60def5790d527477f92a81004e75ca9552a53ac259c5caf0a0c3ae02f96"
+    },
+    {
+      "path": ".agents/skills/cyber-neon/SKILL.md",
+      "bytes": 42239,
+      "sha256": "d29d705091090a7b3f764d2412332d9166c2bf7e499cc7a02cb40b86400042af"
+    },
+    {
+      "path": ".agents/skills/dark-ui/references/design-use-cases.md",
+      "bytes": 2806,
+      "sha256": "c9f2e28c3d6eeaa1334caef840acac9ded71cff5992025c2c20be7d427ec78ca"
+    },
+    {
+      "path": ".agents/skills/dark-ui/references/lastskill.md",
+      "bytes": 39550,
+      "sha256": "7a77c87a3aa57235c18316080e5af73dc88ead2c4a4847d47203f83a83bfc577"
+    },
+    {
+      "path": ".agents/skills/dark-ui/references/refero-style-database.md",
+      "bytes": 65511,
+      "sha256": "bde012af48ba1b2cb25bd36d2b39cf279a68bb6c1b980582fa651c2feb3f48fe"
+    },
+    {
+      "path": ".agents/skills/dark-ui/references/sources/01-beehiiv.md",
+      "bytes": 2958,
+      "sha256": "c699333207783dacb77ca017a51e1eedf483be6db783d3ed1552e470433825ae"
+    },
+    {
+      "path": ".agents/skills/dark-ui/references/sources/02-fey.md",
+      "bytes": 4264,
+      "sha256": "9e80f81478cef6f62ddb8dc4d6b2eec58c0d151a8c1976318df87505196fd94b"
+    },
+    {
+      "path": ".agents/skills/dark-ui/references/sources/03-bun.md",
+      "bytes": 5284,
+      "sha256": "84e722794319fe571a0499d437879decdf97198834f8c78d520730a7ad823a64"
+    },
+    {
+      "path": ".agents/skills/dark-ui/references/sources/04-circle.md",
+      "bytes": 5035,
+      "sha256": "13a19b528c7c2f200bc34549188b003b4d2204a63e52f7e2b79cbf991acdc638"
+    },
+    {
+      "path": ".agents/skills/dark-ui/references/sources/05-superwhisper.md",
+      "bytes": 6160,
+      "sha256": "bc07131f3c17df7d8ff097264ed163ba1e38b050a51a806e86154b9b69e395c7"
+    },
+    {
+      "path": ".agents/skills/dark-ui/SKILL.md",
+      "bytes": 42237,
+      "sha256": "c9860ef2ac08b20aa39870179bad8aeea8c1f4eed4f6021ebf39bcad32c11e90"
+    },
+    {
+      "path": ".agents/skills/design-taste-frontend/SKILL.md",
+      "bytes": 21140,
+      "sha256": "a23a9e4e74a87e3f458d53cbff60adbc666e7a1e8633d43f9e213111e48f69b0"
+    },
+    {
+      "path": ".agents/skills/editorial-minimal/references/advanced-implementation-notes.md",
+      "bytes": 2650,
+      "sha256": "159a487be0c44cf7018fc021abb3c063a19ee3cb4b736729e65ba91cdd238a33"
+    },
+    {
+      "path": ".agents/skills/editorial-minimal/references/design-use-cases.md",
+      "bytes": 2815,
+      "sha256": "0c81e1cfd1101f7d10da1f3eaeb0f9ee374f316a84a40757f3974b0b771d2158"
+    },
+    {
+      "path": ".agents/skills/editorial-minimal/references/lastskill.md",
+      "bytes": 37798,
+      "sha256": "81980846a6d2ac267ee705092074f4db5e0ac4f91d34a56a902c099c0de9fc26"
+    },
+    {
+      "path": ".agents/skills/editorial-minimal/references/refero-style-database.md",
+      "bytes": 65422,
+      "sha256": "635a1fcd9230d78fcb2e50346db10567038d6414da4cb079784e126dd47284b1"
+    },
+    {
+      "path": ".agents/skills/editorial-minimal/references/sources/01-openai.md",
+      "bytes": 3384,
+      "sha256": "83ddd2357f0e8800fb9d0d26564e728d9a045cf6511e22cb3dd37ac49c9aceec"
+    },
+    {
+      "path": ".agents/skills/editorial-minimal/references/sources/02-anthropic.md",
+      "bytes": 3600,
+      "sha256": "d4a9c0649f62af8f40d980e4e092a20815ee766b9e127dd1b3913efc225911c9"
+    },
+    {
+      "path": ".agents/skills/editorial-minimal/references/sources/03-legend.md",
+      "bytes": 3353,
+      "sha256": "18c208d177245da4d8d23581917927aae6a961f4cbc126dffdb6514a9d21d7b1"
+    },
+    {
+      "path": ".agents/skills/editorial-minimal/references/sources/04-intercom.md",
+      "bytes": 3535,
+      "sha256": "7a7edd9bd932212979a706596762afd6ef2280b7df65d2b8a88907bcdd2682bc"
+    },
+    {
+      "path": ".agents/skills/editorial-minimal/references/sources/05-limitless.md",
+      "bytes": 3033,
+      "sha256": "569229b41efdc7cc77c6eabfc5e3b70e324748f41747c3003a49df926c57fa05"
+    },
+    {
+      "path": ".agents/skills/editorial-minimal/SKILL.md",
+      "bytes": 41213,
+      "sha256": "eb92d6b852f7582f00cdba02a1b4c423734c88403cc5376cf05ac1e17e414616"
+    },
+    {
+      "path": ".agents/skills/editorial-type/references/design-use-cases.md",
+      "bytes": 2904,
+      "sha256": "c04b551c4335409c40777d2b9b78e78ae3a9331024a2e1d21a505fd9ca5fee5b"
+    },
+    {
+      "path": ".agents/skills/editorial-type/references/lastskill.md",
+      "bytes": 38052,
+      "sha256": "88bfc70ecba8f77823f6b59579d37da99683fb2a47208b1ea5da1f71f4ed77d2"
+    },
+    {
+      "path": ".agents/skills/editorial-type/references/refero-style-database.md",
+      "bytes": 61434,
+      "sha256": "0f0971226416dcc175a09a5e380ef3058d911ab86226e804e673e25d127054af"
+    },
+    {
+      "path": ".agents/skills/editorial-type/references/sources/01-volume.md",
+      "bytes": 6946,
+      "sha256": "32c43fcc1fbf271b337aa28af1fa98492c3caeb4c5b53194b3bb331bab2510a0"
+    },
+    {
+      "path": ".agents/skills/editorial-type/references/sources/02-victor-cango.md",
+      "bytes": 5765,
+      "sha256": "d08d81f259b6a1c542e2d93b2cad8d04542c084d50097f4101f5f0bb1b16f9c0"
+    },
+    {
+      "path": ".agents/skills/editorial-type/references/sources/03-no-ideas.md",
+      "bytes": 5257,
+      "sha256": "3ed5d76f3263e63e5047d402652d43d20d79c04aa774bdb96b619201349491a5"
+    },
+    {
+      "path": ".agents/skills/editorial-type/references/sources/04-sociotype.md",
+      "bytes": 7209,
+      "sha256": "def5d5b0248a6ed41e6cc08b6f019fc898c6cf8c251d99c28a73ce584aaa93ec"
+    },
+    {
+      "path": ".agents/skills/editorial-type/references/sources/05-christopherdoyle.md",
+      "bytes": 4904,
+      "sha256": "3f86f2cd39cf301bf27139af0806385a6a7243ded571c5f69173ec02a4b76dee"
+    },
+    {
+      "path": ".agents/skills/editorial-type/SKILL.md",
+      "bytes": 40996,
+      "sha256": "21003ea1bc4cee6bc138cc884962e4dcb089e233a4a8785e41f0830a85810c11"
+    },
+    {
+      "path": ".agents/skills/experimental-type/references/design-use-cases.md",
+      "bytes": 2884,
+      "sha256": "5ebeeb75157f5621ed6262c0b4c71878fce0f58bd7dd77733374f79c74804342"
+    },
+    {
+      "path": ".agents/skills/experimental-type/references/lastskill.md",
+      "bytes": 41201,
+      "sha256": "744f847a21f0f6ee00a9900f6eab8164dc9d62495fa4ef4e1eed40d25d71b715"
+    },
+    {
+      "path": ".agents/skills/experimental-type/references/refero-style-database.md",
+      "bytes": 63441,
+      "sha256": "acef4b274854174002eb1f8308e6d1edd5f48b45aa41aee609e4301a7c7df219"
+    },
+    {
+      "path": ".agents/skills/experimental-type/references/sources/01-teenage-engineering.md",
+      "bytes": 2959,
+      "sha256": "724fdcab86b271c4f966be73e95fbef74f992f671a292a17d90661d64ed40075"
+    },
+    {
+      "path": ".agents/skills/experimental-type/references/sources/02-charlie.md",
+      "bytes": 2519,
+      "sha256": "50a781efcec157c78baec7436db843aa26e289e3195f3399a6768201403395cf"
+    },
+    {
+      "path": ".agents/skills/experimental-type/references/sources/03-typelist.md",
+      "bytes": 2603,
+      "sha256": "713db6f11186344e477f83ffe9b3cf552e4d57b5f9adc0c18aa35141c9a44068"
+    },
+    {
+      "path": ".agents/skills/experimental-type/references/sources/04-egstad.md",
+      "bytes": 2410,
+      "sha256": "7f4a75d21e7850c2197617c20d6ddc92cd32823798811d0c37b3af79b1daeafa"
+    },
+    {
+      "path": ".agents/skills/experimental-type/references/sources/05-sociotype.md",
+      "bytes": 2333,
+      "sha256": "1d2feb4f8e67d1aa19fc7cbf75498519fd3a18100b3075ecef204e1801fe72c9"
+    },
+    {
+      "path": ".agents/skills/experimental-type/SKILL.md",
+      "bytes": 43996,
+      "sha256": "3c345684fef0df29a0dee5c42ba8413021ca83124c29d9a34e89bf6e95b13361"
+    },
+    {
+      "path": ".agents/skills/expressive-brand/references/design-use-cases.md",
+      "bytes": 2805,
+      "sha256": "d1b9f8f97b0c3032ad3d5cff1c32b43db3a2ca7341d0846ca75a1315973680b8"
+    },
+    {
+      "path": ".agents/skills/expressive-brand/references/lastskill.md",
+      "bytes": 43901,
+      "sha256": "0d1a9e886ceee8ad943ac2d894881db1d727dc78ccc4aa6fb1789930a86a6f99"
+    },
+    {
+      "path": ".agents/skills/expressive-brand/references/refero-style-database.md",
+      "bytes": 61411,
+      "sha256": "9eae194304563bfdcc9b3d2735a610e06834ebbaef632e8d2bb4db4939403471"
+    },
+    {
+      "path": ".agents/skills/expressive-brand/references/sources/01-family.md",
+      "bytes": 3325,
+      "sha256": "92ce1b6dc0afbd9f67f02752a41b78ea18740aab05c9c82bf4d05c8a77cb94c3"
+    },
+    {
+      "path": ".agents/skills/expressive-brand/references/sources/02-mymind.md",
+      "bytes": 3285,
+      "sha256": "5e417a3438b4a516b4d31b92458dd0206e234050241d94fa4e36b987bf515626"
+    },
+    {
+      "path": ".agents/skills/expressive-brand/references/sources/03-antimetal.md",
+      "bytes": 2992,
+      "sha256": "650edeae3a376665d07cec5d9272ba1f454263efa92c35e75ab498b80fa7dbf0"
+    },
+    {
+      "path": ".agents/skills/expressive-brand/references/sources/04-empower.md",
+      "bytes": 2668,
+      "sha256": "d5f8b06a29cdadc10a8cdbf1c31bebdba01426fa2e64a175a8153d14ce4641cf"
+    },
+    {
+      "path": ".agents/skills/expressive-brand/references/sources/05-retool.md",
+      "bytes": 2929,
+      "sha256": "08650993f1647dc707f7f704c1cbf478def4c64417d9116b5355175378459d00"
+    },
+    {
+      "path": ".agents/skills/expressive-brand/SKILL.md",
+      "bytes": 46372,
+      "sha256": "5aab12b47f35e31c25dd16e2f4f4811cec4f0840e2a67945cd5b01aa45183c3a"
+    },
+    {
+      "path": ".agents/skills/frontsymmetry/SKILL.md",
+      "bytes": 18265,
+      "sha256": "89be746779381c805323944a792a85cb85623f35d9bea8094c77d5e334f7857d"
+    },
+    {
+      "path": ".agents/skills/geometric-modern/references/design-use-cases.md",
+      "bytes": 2795,
+      "sha256": "58c08f3d6b544e895b076ec1e85f418594c14ac0eb15a70cab178c36207fb327"
+    },
+    {
+      "path": ".agents/skills/geometric-modern/references/lastskill.md",
+      "bytes": 42180,
+      "sha256": "85a17c1827e403de12fe669b7a5614495cf59b4f0c17a8958e081c9e0ca579d0"
+    },
+    {
+      "path": ".agents/skills/geometric-modern/references/refero-style-database.md",
+      "bytes": 62878,
+      "sha256": "9dbdac52302bfc254914491c72d82cb78fdd1211a0f68d2f2a5072c512650350"
+    },
+    {
+      "path": ".agents/skills/geometric-modern/references/sources/01-greenspace.md",
+      "bytes": 4991,
+      "sha256": "0d5a84eb033e7f88544c2eef6da8f36307f4375f20e3c262a32600d0f71cceb8"
+    },
+    {
+      "path": ".agents/skills/geometric-modern/references/sources/02-artem-militonian.md",
+      "bytes": 5265,
+      "sha256": "443ac8a55abbac9d771ff948b1f8ba96a56b858f7bc1b0ff7d513d92e18e6090"
+    },
+    {
+      "path": ".agents/skills/geometric-modern/references/sources/03-vac.md",
+      "bytes": 5341,
+      "sha256": "d517380bf130eca64e7e6781f54ab64a130cc5870b601f6861cef99a7d9105fd"
+    },
+    {
+      "path": ".agents/skills/geometric-modern/references/sources/04-theodore-ellison-designs.md",
+      "bytes": 6934,
+      "sha256": "62c7196fcfb55e0a5177ad3767d430aaa9fcf7f9bb24d11f9e2d20f3034d7ff7"
+    },
+    {
+      "path": ".agents/skills/geometric-modern/references/sources/05-eindhoven-design-district.md",
+      "bytes": 6981,
+      "sha256": "6a34039da27db68d92e97d6db57ada8f93135a91cfe6560d2f16c0d1646cafd7"
+    },
+    {
+      "path": ".agents/skills/geometric-modern/SKILL.md",
+      "bytes": 44749,
+      "sha256": "aa4de8fabb70216c9492fac6255174ea2e2222ba2a64ac88c34c6e82c3f7bdda"
+    },
+    {
+      "path": ".agents/skills/glossy-modern/references/design-use-cases.md",
+      "bytes": 2716,
+      "sha256": "5cd1b9c2a0698b9e60c27992015e909eafe0fd830961ebc9e4d2d9928c5bf8e9"
+    },
+    {
+      "path": ".agents/skills/glossy-modern/references/lastskill.md",
+      "bytes": 39674,
+      "sha256": "ad78b67eda1dcc1ef6a84d2ad80450c235f44f1afa3be6c8dbb4f0ad65e67021"
+    },
+    {
+      "path": ".agents/skills/glossy-modern/references/refero-style-database.md",
+      "bytes": 69340,
+      "sha256": "a3532a86e75c088f2ac01bb6e90161d935c504547bf9eb2765930d583c217ec6"
+    },
+    {
+      "path": ".agents/skills/glossy-modern/references/sources/01-changelog.md",
+      "bytes": 2993,
+      "sha256": "5b86169b965d6a31dc1a3a25ef42f782d692c64131b085dd6a72e9bf0a29e378"
+    },
+    {
+      "path": ".agents/skills/glossy-modern/references/sources/02-raycast.md",
+      "bytes": 3088,
+      "sha256": "602e518ccd186bb791a21541015e48e9244b3cfe7ed45dd1445312edc09ff4a0"
+    },
+    {
+      "path": ".agents/skills/glossy-modern/references/sources/03-dia-browser.md",
+      "bytes": 2877,
+      "sha256": "7ccafb632a77334ba1c0ede24c837fce7456bf613548e79ec0c73ff2095e258c"
+    },
+    {
+      "path": ".agents/skills/glossy-modern/references/sources/04-ayo-lava.md",
+      "bytes": 2634,
+      "sha256": "3c81c47ba6109f017ddb68449174ccb44e8f34b0e9019dbda29dd45bf5fccfd7"
+    },
+    {
+      "path": ".agents/skills/glossy-modern/references/sources/05-monopo-saigon.md",
+      "bytes": 2697,
+      "sha256": "0adf166d3f4fbaf6248225cccb53461bb7a9b8de06dbfcd706a46fef72fdde50"
+    },
+    {
+      "path": ".agents/skills/glossy-modern/SKILL.md",
+      "bytes": 42226,
+      "sha256": "a408a8669bc7ec79d50ac6f8b45e54be976bf3f7a399a0c851b92b6dd94641f7"
+    },
+    {
+      "path": ".agents/skills/gpt-taste/SKILL.md",
+      "bytes": 8725,
+      "sha256": "d266fc675df2d8319686e2fb750da88820b5c683c34182618eb41716127adf32"
+    },
+    {
+      "path": ".agents/skills/high-contrast/references/design-use-cases.md",
+      "bytes": 2714,
+      "sha256": "add107a2f676f08173a021c817311a2ac51ce9f5cf8c8282326e1857a094f2de"
+    },
+    {
+      "path": ".agents/skills/high-contrast/references/lastskill.md",
+      "bytes": 38974,
+      "sha256": "d4edae896917a3db48537ec70597d7f7c0f5f8e63a5a8704cd0683a023c6c1aa"
+    },
+    {
+      "path": ".agents/skills/high-contrast/references/refero-style-database.md",
+      "bytes": 62088,
+      "sha256": "65ea5563589b45c5d5e773177a6d0013bae5f0c5f32f2f869191411096e5550f"
+    },
+    {
+      "path": ".agents/skills/high-contrast/references/sources/01-colab.md",
+      "bytes": 2093,
+      "sha256": "5fbaf5e2e69964fb099d5f9958dca1eac2e294713085e2fdfe45d7f194fbd735"
+    },
+    {
+      "path": ".agents/skills/high-contrast/references/sources/02-holographik.md",
+      "bytes": 1972,
+      "sha256": "e8a9c0349eec948220251d1a7550f387ec7cb3f62338d6c96fe1c1a65f25d8bb"
+    },
+    {
+      "path": ".agents/skills/high-contrast/references/sources/03-hardclo.md",
+      "bytes": 1902,
+      "sha256": "72d1602977ad5f0d603000336f6dd4129fdf7716c468902ce9de6a5c97e27a07"
+    },
+    {
+      "path": ".agents/skills/high-contrast/references/sources/04-hyperaktiv.md",
+      "bytes": 2095,
+      "sha256": "07c39468742f2f569bc83fc9b71f77267b8085ea121197fe2b516f1e039bc23c"
+    },
+    {
+      "path": ".agents/skills/high-contrast/references/sources/05-hugging-face.md",
+      "bytes": 2363,
+      "sha256": "066858de4e1da5449d0fba1591ec87c20347439d0e53959093e3e1817fbb8469"
+    },
+    {
+      "path": ".agents/skills/high-contrast/SKILL.md",
+      "bytes": 41022,
+      "sha256": "932ce5d5c0c3e67cda1887c1854f7b5afadec47bd2625d2b67313477756010bb"
+    },
+    {
+      "path": ".agents/skills/high-end-design/references/design-use-cases.md",
+      "bytes": 2971,
+      "sha256": "26fd8e229b47ab0a02db0f30e8bf22cbf02a39ac3f9a36956f5ec8f90345acc0"
+    },
+    {
+      "path": ".agents/skills/high-end-design/references/lastskill.md",
+      "bytes": 44994,
+      "sha256": "883651fa5010a0e21eb85ac83dbbc53cc7e1f47070c7adf6ba9c93cf6db2b322"
+    },
+    {
+      "path": ".agents/skills/high-end-design/references/refero-style-database.md",
+      "bytes": 95432,
+      "sha256": "07d02961ccaecff5da1f3d3c2443522823542aabef4080a88921846b66cac1f3"
+    },
+    {
+      "path": ".agents/skills/high-end-design/references/sources/01-bang-olufsen.md",
+      "bytes": 15528,
+      "sha256": "33f9fd0ab4c308025ab2d3a6541fddfd985325a963ed8e6f021ca3f90dc59ffa"
+    },
+    {
+      "path": ".agents/skills/high-end-design/references/sources/02-bmwcom.md",
+      "bytes": 13658,
+      "sha256": "3deeafbe40f59aa5e65c6212be401508ab938550e4eae75f09e2063457a20942"
+    },
+    {
+      "path": ".agents/skills/high-end-design/references/sources/03-ferrari.md",
+      "bytes": 13540,
+      "sha256": "4afa27928dba48c4836d7070c4d32a1941f3d01dd0518a8f59d4caaee38a7d64"
+    },
+    {
+      "path": ".agents/skills/high-end-design/references/sources/04-true-staging.md",
+      "bytes": 5640,
+      "sha256": "fc728e9d8047d655c04eb7824c7878d4de6c7cad5f49b31f8768ebedd0319044"
+    },
+    {
+      "path": ".agents/skills/high-end-design/references/sources/05-peak-design.md",
+      "bytes": 22172,
+      "sha256": "3d8850734e322585f178cc70cd355cfd4b973e225fb6fca9a591e7b8b0feeaf0"
+    },
+    {
+      "path": ".agents/skills/high-end-design/SKILL.md",
+      "bytes": 47582,
+      "sha256": "def201651a0b167ec56157d4fc2aacc02c349e55a6b5b434e944fecf7ad1198e"
+    },
+    {
+      "path": ".agents/skills/high-end-visual-design/SKILL.md",
+      "bytes": 10561,
+      "sha256": "e1e32f5e2d420872c6c7332b53d5ff7721946766b78c4822b424c2d512c8fdbc"
+    },
+    {
+      "path": ".agents/skills/industrial-brutalist-ui/SKILL.md",
+      "bytes": 8456,
+      "sha256": "fffbaac8597f07679e9d87145533567658aedba3b5eca6f16a7075a333048caa"
+    },
+    {
+      "path": ".agents/skills/light-ui/references/design-use-cases.md",
+      "bytes": 2685,
+      "sha256": "a3af727473bda531b19fb286c4fae7d67136c97f7fadfbc5ba55fe8bac1bed83"
+    },
+    {
+      "path": ".agents/skills/light-ui/references/lastskill.md",
+      "bytes": 35951,
+      "sha256": "0257346a04fc8245d70a5fa992d2f67c960623b441b43857681a3d52666476da"
+    },
+    {
+      "path": ".agents/skills/light-ui/references/refero-style-database.md",
+      "bytes": 60055,
+      "sha256": "4d065d7ab6a9f0e468950eddd88e72e7f49eca3da4fb9cc3970af21e9d2539c8"
+    },
+    {
+      "path": ".agents/skills/light-ui/references/sources/01-luma.md",
+      "bytes": 2485,
+      "sha256": "0ed24a5a6295518f3e4a0537404ff8b70fee66927cd1e1e70f3584af188221d0"
+    },
+    {
+      "path": ".agents/skills/light-ui/references/sources/02-lightdash.md",
+      "bytes": 2694,
+      "sha256": "774aefa2d0e9f4c8b19bad3c0b1dc804784778344f6180bc035623d34fb24f31"
+    },
+    {
+      "path": ".agents/skills/light-ui/references/sources/03-circle.md",
+      "bytes": 2479,
+      "sha256": "6377ef7aa35d59a7819ef5121f0b0dc503904a79714521640585d2c933d09ddf"
+    },
+    {
+      "path": ".agents/skills/light-ui/references/sources/04-lift-off-challenge.md",
+      "bytes": 2654,
+      "sha256": "c8dfa08fe465fd59eff983debf1cb97436e2f83f2ca3bf61931836cfd3e11fe9"
+    },
+    {
+      "path": ".agents/skills/light-ui/references/sources/05-tailark-pro.md",
+      "bytes": 2626,
+      "sha256": "ee4a241bec2f35ff44dc6c91077573d03263becc2a7e5b890050ac95935d159f"
+    },
+    {
+      "path": ".agents/skills/light-ui/SKILL.md",
+      "bytes": 38950,
+      "sha256": "1a194bcb6425bcdd35f11e1e439200cb4ecc390b1d2f55a994da90a6debe4cac"
+    },
+    {
+      "path": ".agents/skills/minimal-design/references/advanced-implementation-notes.md",
+      "bytes": 2592,
+      "sha256": "81ce061a4c1998009a7effd00db849472b63b42575c866b6221d15fbd0018da7"
+    },
+    {
+      "path": ".agents/skills/minimal-design/references/design-use-cases.md",
+      "bytes": 2671,
+      "sha256": "d9835151c190da68d1dd4967819c5bc8fd5fb6933d4f097fe1e5ae1ecd3ab9a5"
+    },
+    {
+      "path": ".agents/skills/minimal-design/references/lastskill.md",
+      "bytes": 34420,
+      "sha256": "3fe18c76c0936d10e493dd12e9eb102edbb4f2c0ca490dbbd87c4647ea47a1f6"
+    },
+    {
+      "path": ".agents/skills/minimal-design/references/refero-style-database.md",
+      "bytes": 64075,
+      "sha256": "d01643b0f568270821d1877ea193b503e0dd5181d133abe5e4692a3b81abbb5b"
+    },
+    {
+      "path": ".agents/skills/minimal-design/references/sources/01-general-intelligence-company.md",
+      "bytes": 2723,
+      "sha256": "41dc183e10d5b9360637e56aa8f12aaa0700cdb07d0f062da5fd4c9509c70115"
+    },
+    {
+      "path": ".agents/skills/minimal-design/references/sources/02-sprig.md",
+      "bytes": 2628,
+      "sha256": "1a21668771a5bc7b5efd4a859a44afd507ac81fe81956259b28c9929fb4404f5"
+    },
+    {
+      "path": ".agents/skills/minimal-design/references/sources/03-standards.md",
+      "bytes": 2300,
+      "sha256": "5aa4361981d8c3974d744a16bae3a5d12f3c6f065321c348f85cc7bb5b5b28d9"
+    },
+    {
+      "path": ".agents/skills/minimal-design/references/sources/04-rox.md",
+      "bytes": 2589,
+      "sha256": "c0e8aa7c6e14ac59c9c7f46ddf7edc4cd3b288f8aa721b8ce3e180dbed138aeb"
+    },
+    {
+      "path": ".agents/skills/minimal-design/references/sources/05-copy.md",
+      "bytes": 2531,
+      "sha256": "4768aa37e33ea54c03539156423cd977da7e3c5307154a1ac118a4f336fb065b"
+    },
+    {
+      "path": ".agents/skills/minimal-design/SKILL.md",
+      "bytes": 37514,
+      "sha256": "1ee99bd22851a8557a5260bae65ef4e58a63707d43bc029da6701b375f434c91"
+    },
+    {
+      "path": ".agents/skills/minimalist-ui/SKILL.md",
+      "bytes": 7901,
+      "sha256": "36bc7328f085405f43b476938e62460fa573bf7e984e949e072bcf014831a44c"
+    },
+    {
+      "path": ".agents/skills/monochrome-ui/references/advanced-implementation-notes.md",
+      "bytes": 2327,
+      "sha256": "8330cf76a1b3602c84df49c5cba0877e186090349c73ca6f2e2a5c63c3a5b32e"
+    },
+    {
+      "path": ".agents/skills/monochrome-ui/references/design-use-cases.md",
+      "bytes": 2670,
+      "sha256": "7ce46576afacfc9747b7edd264a6f52702bfbf37a505c056c12797e8fb9c3074"
+    },
+    {
+      "path": ".agents/skills/monochrome-ui/references/lastskill.md",
+      "bytes": 35638,
+      "sha256": "cf201a3f81eb4810653ee40b1195255df49d5764f180ba56730d1f87bbeec7d7"
+    },
+    {
+      "path": ".agents/skills/monochrome-ui/references/refero-style-database.md",
+      "bytes": 63028,
+      "sha256": "263b676784f2ea8e2bb95bfcb8374533419e4fdff32fc018590d8349e4455dc7"
+    },
+    {
+      "path": ".agents/skills/monochrome-ui/references/sources/01-figma-config.md",
+      "bytes": 5712,
+      "sha256": "3d53e6452702fedefcef5bc0c8951469387f321e3589ac21e8f74278d4e138e6"
+    },
+    {
+      "path": ".agents/skills/monochrome-ui/references/sources/02-mono.md",
+      "bytes": 6387,
+      "sha256": "003a9cc948422cb60dad0d6a41775e8d51ae8b1a6bed6466f5338aadcd99194f"
+    },
+    {
+      "path": ".agents/skills/monochrome-ui/references/sources/03-yung-studio.md",
+      "bytes": 14080,
+      "sha256": "d2e326d5fa30f7eca97afed2d489364b166f147ce4281328fd47cfb9b56f1998"
+    },
+    {
+      "path": ".agents/skills/monochrome-ui/references/sources/04-kaisermann.md",
+      "bytes": 5373,
+      "sha256": "5457691da133995779404d1b0510acea9948fbc8a8f434ace256b2d2f0fcfc3a"
+    },
+    {
+      "path": ".agents/skills/monochrome-ui/references/sources/05-ui.md",
+      "bytes": 7238,
+      "sha256": "7ce03d96f25c865dd748aaa5130eb800cc305aa18dc19d9c0e47ebf41f9c8a73"
+    },
+    {
+      "path": ".agents/skills/monochrome-ui/SKILL.md",
+      "bytes": 38317,
+      "sha256": "70d8005c9d2dfe5962eb203f75ff02e5df31528a7098b1a3919200ae45586903"
+    },
+    {
+      "path": ".agents/skills/motion/references/advanced-implementation-notes.md",
+      "bytes": 2267,
+      "sha256": "4418819c39c070d3495fef6946c12094c5094596d45f4b7838b3629a00f48360"
+    },
+    {
+      "path": ".agents/skills/motion/references/design-use-cases.md",
+      "bytes": 2782,
+      "sha256": "c41c59f6250844dc5aa692f0a0c63087bad302091c82765f96937dd7ecfb5406"
+    },
+    {
+      "path": ".agents/skills/motion/references/lastskill.md",
+      "bytes": 45896,
+      "sha256": "1ad607f2dec46a5d16337cc24e7071675d868ed9a644d869fb79734811289045"
+    },
+    {
+      "path": ".agents/skills/motion/references/refero-style-database.md",
+      "bytes": 84288,
+      "sha256": "b7ea2319a46da24599ed85698ac33466c90a2390711a7aacf060b40d2e79a33f"
+    },
+    {
+      "path": ".agents/skills/motion/references/sources/01-liquid-death.md",
+      "bytes": 8304,
+      "sha256": "c2141c2116ff0831970dc348f3bb582545e921f6b5e4a2de4fbdf7289dd41f98"
+    },
+    {
+      "path": ".agents/skills/motion/references/sources/02-heavyweight.md",
+      "bytes": 4801,
+      "sha256": "953ba7268ba6925ebc22c88264e2ffb7a9b17885d920b7fd53ebb163c3b5c61f"
+    },
+    {
+      "path": ".agents/skills/motion/references/sources/03-handshake.md",
+      "bytes": 5436,
+      "sha256": "1426bcfeeec907bad2b732850324e75cc5b488a4db628d7a5ba712c610d82400"
+    },
+    {
+      "path": ".agents/skills/motion/references/sources/04-cthdrl.md",
+      "bytes": 3870,
+      "sha256": "d7789b4e65b09b755f286479e3a65a5fc44e8640741b210a5e00c1bd9c0a2fcf"
+    },
+    {
+      "path": ".agents/skills/motion/references/sources/05-superlative.md",
+      "bytes": 4067,
+      "sha256": "e3e6dadaafd009c2e70b25fc1ba58e5e24dc1801ac500344ab5e0c86bb6483a6"
+    },
+    {
+      "path": ".agents/skills/motion/references/sources/06-mekaverse.md",
+      "bytes": 4807,
+      "sha256": "7092661c6dad438b2ff6aa7857ee92bb12ea408f3fb357fd20af7ac18f50b6b6"
+    },
+    {
+      "path": ".agents/skills/motion/references/sources/07-hape-prime.md",
+      "bytes": 4234,
+      "sha256": "65fdc5127c4749f020463d45bd4c0d6a6cdbb60e1a29894545dcb96263a91d70"
+    },
+    {
+      "path": ".agents/skills/motion/references/sources/08-moving-parts.md",
+      "bytes": 6543,
+      "sha256": "55b6100a9817e9070d9460126501d1caea9ef8662d659774053f8bd490fcb62c"
+    },
+    {
+      "path": ".agents/skills/motion/references/sources/09-homunculus.md",
+      "bytes": 4349,
+      "sha256": "2d98e14580430705d5641518f5ce1da6ce1c49170c7fc1f5280341b1ead8b733"
+    },
+    {
+      "path": ".agents/skills/motion/SKILL.md",
+      "bytes": 48451,
+      "sha256": "a743b855d6b317480a55ddb87bc8a1af66b3764563d73bb30036ffb4df0bbd9c"
+    },
+    {
+      "path": ".agents/skills/pastel/references/design-use-cases.md",
+      "bytes": 2663,
+      "sha256": "bc9b207339c30071ea30f95ae318c6ce5356f8920b3f200fcfcc15912494cbd5"
+    },
+    {
+      "path": ".agents/skills/pastel/references/lastskill.md",
+      "bytes": 41162,
+      "sha256": "b93b40e0892a357ffd762edd6413066615d4c69442f60ea739109d17337d94d1"
+    },
+    {
+      "path": ".agents/skills/pastel/references/refero-style-database.md",
+      "bytes": 66573,
+      "sha256": "bf16ebff21e070432f368017bdd0873d4bf2e9a00782a124efe218de7c8ed9bf"
+    },
+    {
+      "path": ".agents/skills/pastel/references/sources/01-pastel.md",
+      "bytes": 3802,
+      "sha256": "8fa2e12dfc65efd4bd6e6d275bb8cdcfbc43464235c4fff6123d5ff80bba5881"
+    },
+    {
+      "path": ".agents/skills/pastel/references/sources/02-palette-supply.md",
+      "bytes": 4359,
+      "sha256": "ffb16a568a077b13dad5b592b311b3228cbd13e1fc695d17a4997dbc1ad5cec2"
+    },
+    {
+      "path": ".agents/skills/pastel/references/sources/03-recess.md",
+      "bytes": 4457,
+      "sha256": "736b90489c2ded78f4cb5756f958074b14ae813a15f2ded036d79798ff24e8af"
+    },
+    {
+      "path": ".agents/skills/pastel/references/sources/04-graza.md",
+      "bytes": 4974,
+      "sha256": "9f6b19da9fbcc97987a22aab65b35e778f626425282f69c6c10d63e7a96e28b9"
+    },
+    {
+      "path": ".agents/skills/pastel/references/sources/05-podcorn.md",
+      "bytes": 4211,
+      "sha256": "95b4b54a3d646da427243c1a7d158f062c56594db135f51ddfe434a340bfe870"
+    },
+    {
+      "path": ".agents/skills/pastel/references/sources/06-podia.md",
+      "bytes": 4634,
+      "sha256": "1254514996b4885102a870e928f815b1b8ec7be8356187402f105e6a6a01c19a"
+    },
+    {
+      "path": ".agents/skills/pastel/SKILL.md",
+      "bytes": 43899,
+      "sha256": "191e4c13ca9d52450320ede6e4a8232d54137306b40081f5ff21f9675e133705"
+    },
+    {
+      "path": ".agents/skills/playful-design/references/design-use-cases.md",
+      "bytes": 2742,
+      "sha256": "cbbd99b9e95c6554822c31e54afc72acc466cfd481df7a6e0ad8bb6402d9a468"
+    },
+    {
+      "path": ".agents/skills/playful-design/references/lastskill.md",
+      "bytes": 42016,
+      "sha256": "7e8452079d381efa7d29180d2093dd5d2898969ac28451119c9af09dcf68fc3c"
+    },
+    {
+      "path": ".agents/skills/playful-design/references/refero-style-database.md",
+      "bytes": 67164,
+      "sha256": "a1b5896434876d38027dee432877d6c09bf51a20ac5ae0d55b350f076d72683f"
+    },
+    {
+      "path": ".agents/skills/playful-design/references/sources/01-playful-software.md",
+      "bytes": 2416,
+      "sha256": "c6884d9e401bc0413feb1964c08597a0d02ffcc82b901ea0754cac8630acc08f"
+    },
+    {
+      "path": ".agents/skills/playful-design/references/sources/02-maxima-therapy.md",
+      "bytes": 2524,
+      "sha256": "513ff753bdbebd146e4e1ba7c2183581df4b0ddd42c3980145709c05d446a651"
+    },
+    {
+      "path": ".agents/skills/playful-design/references/sources/03-playdate.md",
+      "bytes": 2251,
+      "sha256": "3c5b1adb323aea51b731f2876e8b8183164628db4ce0613c8054dc149d2dc84d"
+    },
+    {
+      "path": ".agents/skills/playful-design/references/sources/04-duolingo.md",
+      "bytes": 2444,
+      "sha256": "c44427417b7e6e278e71dca3ba93e1d337b5ae5693419d187cab2df568d637e1"
+    },
+    {
+      "path": ".agents/skills/playful-design/references/sources/05-clay.md",
+      "bytes": 2451,
+      "sha256": "04f4cfb5572ef5b19462ca87a3907158bc6c425727ffd357a062c4178055a82f"
+    },
+    {
+      "path": ".agents/skills/playful-design/SKILL.md",
+      "bytes": 44126,
+      "sha256": "342571d89f9f969ecff14eeed9aa654e0a484de53b4956286aa92e934e23606a"
+    },
+    {
+      "path": ".agents/skills/redesign-existing-projects/SKILL.md",
+      "bytes": 15060,
+      "sha256": "98ad3e5b051bfb71b2795f7e8a6aa0d32b51ee095606c098a4b2822ac07926c9"
+    },
+    {
+      "path": ".agents/skills/serif-display/references/advanced-implementation-notes.md",
+      "bytes": 4535,
+      "sha256": "64d6d8f1299f954f2d9860e8bd981a96e5628fb6bd10191d15bd7bba9364878c"
+    },
+    {
+      "path": ".agents/skills/serif-display/references/design-use-cases.md",
+      "bytes": 2663,
+      "sha256": "c5d109cae42545c49f9787ef3c5b0e35495b5ae9d72a5c69f0d453ac849eeae0"
+    },
+    {
+      "path": ".agents/skills/serif-display/references/lastskill.md",
+      "bytes": 35558,
+      "sha256": "5ca0e2158d3e9830cfe45502466a11922c456fea199b64ae6c7dcec850a11297"
+    },
+    {
+      "path": ".agents/skills/serif-display/references/refero-style-database.md",
+      "bytes": 64921,
+      "sha256": "e69694167de3542549a864d6d392b581d37ec70a48b67c922428097e11749f5f"
+    },
+    {
+      "path": ".agents/skills/serif-display/references/sources/01-sociotype.md",
+      "bytes": 3385,
+      "sha256": "96fb9321487a109c68a2fc324dc5b3ad8c6f1ceb108810ee98919886d063a531"
+    },
+    {
+      "path": ".agents/skills/serif-display/references/sources/02-fidele-editions.md",
+      "bytes": 4563,
+      "sha256": "64857e3100b56ac4ddff5823c4cca68f082e77cdf63ac1e69e786612732d23a3"
+    },
+    {
+      "path": ".agents/skills/serif-display/references/sources/03-pangram-pangram.md",
+      "bytes": 4720,
+      "sha256": "fbce1dcae395c76d7d3ed9dfebd6f274df102d83e6609a8fad80c4234a406e18"
+    },
+    {
+      "path": ".agents/skills/serif-display/references/sources/04-standards.md",
+      "bytes": 3669,
+      "sha256": "e49ca4bc45819bf3d20eae02f7684e97b25377ed72842b495cf719978f6c6204"
+    },
+    {
+      "path": ".agents/skills/serif-display/references/sources/05-unveil.md",
+      "bytes": 2985,
+      "sha256": "a95ff679824ac784ab5203646d2c934a16a22b7f2fa96010925227317922df5e"
+    },
+    {
+      "path": ".agents/skills/serif-display/SKILL.md",
+      "bytes": 38245,
+      "sha256": "3837786d9b56bfbd721a956a634e112a95a6785d7b378adc526b33b1335361f7"
+    },
+    {
+      "path": ".agents/skills/soft-gradients/references/design-use-cases.md",
+      "bytes": 2736,
+      "sha256": "0905f6854b6246f4a8ef96b7ea74d0cd11cd540c01610263de2aad986fb6394e"
+    },
+    {
+      "path": ".agents/skills/soft-gradients/references/lastskill.md",
+      "bytes": 40478,
+      "sha256": "e4b18900b8306f5b36ca5c7ed7e5b95705b89f55f418470de8f5c6a26d279d7d"
+    },
+    {
+      "path": ".agents/skills/soft-gradients/references/refero-style-database.md",
+      "bytes": 79534,
+      "sha256": "1e6f7925273b9536e7f8d963ce17abfa9697b166cd6d4f38107ad3f9494ffe96"
+    },
+    {
+      "path": ".agents/skills/soft-gradients/references/sources/01-base44.md",
+      "bytes": 3925,
+      "sha256": "968de82f006b69dbf4aed5656d6f8781397ff50bbc330411715a5c037a0dfaf6"
+    },
+    {
+      "path": ".agents/skills/soft-gradients/references/sources/02-dia-browser.md",
+      "bytes": 3333,
+      "sha256": "fa795978769d466e6a99e68f622be9717cf3b0e49d41dc76e0402338236e3d80"
+    },
+    {
+      "path": ".agents/skills/soft-gradients/references/sources/03-sprig.md",
+      "bytes": 3370,
+      "sha256": "eae7344f0fb6d10086df30a7e8c5fe6c96cd271fa3496d926c4fecf47d2cfbff"
+    },
+    {
+      "path": ".agents/skills/soft-gradients/references/sources/04-superhuman.md",
+      "bytes": 3268,
+      "sha256": "c2cb4351ccb8147468aaaeeefbd6fad28996d0b874aa65b5699b8710736a7066"
+    },
+    {
+      "path": ".agents/skills/soft-gradients/references/sources/05-retool.md",
+      "bytes": 3393,
+      "sha256": "8a14159ebf11e3ab4ebcb44a76844c09d9db0021474c41ebbb921751cce780a6"
+    },
+    {
+      "path": ".agents/skills/soft-gradients/SKILL.md",
+      "bytes": 43336,
+      "sha256": "b995ab8fa95eeb4cbf8a2e2c955e953085544c4099b336e362e4bdcff74510e6"
+    },
+    {
+      "path": ".agents/skills/technical-sans/references/design-use-cases.md",
+      "bytes": 2695,
+      "sha256": "bfe6c93600ec9a0b2272255f9209b1ff8ea899f3bb079642b5bdecf90d1988c5"
+    },
+    {
+      "path": ".agents/skills/technical-sans/references/lastskill.md",
+      "bytes": 35553,
+      "sha256": "9549c56ce8aa349ad28b7596d8c722fe46a69b4c5b8f4500a0469a7546409835"
+    },
+    {
+      "path": ".agents/skills/technical-sans/references/refero-style-database.md",
+      "bytes": 69003,
+      "sha256": "9891d6523636a8539d7c4f20ed6e2ddbea72e434ba7240a0373115ee3bfbcae4"
+    },
+    {
+      "path": ".agents/skills/technical-sans/references/sources/01-antimetal.md",
+      "bytes": 4213,
+      "sha256": "81ee0ae3b13a47ea67473f2460d2742e2c5fe0f877f2543a70010552d42a3f32"
+    },
+    {
+      "path": ".agents/skills/technical-sans/references/sources/02-plain.md",
+      "bytes": 3820,
+      "sha256": "2840eafcd8cbdf2d0b415d5cd66a9e9c798bed6c5185c2b883d0875cd8f78e63"
+    },
+    {
+      "path": ".agents/skills/technical-sans/references/sources/03-cursor.md",
+      "bytes": 3718,
+      "sha256": "f087191c16a132d1ac97dee5323e1b5e63cdd7f8a5036a0eebb275cdf221876c"
+    },
+    {
+      "path": ".agents/skills/technical-sans/references/sources/04-linear.md",
+      "bytes": 3526,
+      "sha256": "8e146f4d7fb8651eec97d90d217b19404b35e3adb150c351f4c8b55bb06ab178"
+    },
+    {
+      "path": ".agents/skills/technical-sans/references/sources/05-mercury.md",
+      "bytes": 3317,
+      "sha256": "d8fc0888779f14580b9d59789bd3042cd470aeb483e055854eec21b6fee3bcba"
+    },
+    {
+      "path": ".agents/skills/technical-sans/SKILL.md",
+      "bytes": 38724,
+      "sha256": "01f7f6c9daf7e5e4febdb04d24e64ccd6a18e978ed685e5d7a4034d65b5d0a4f"
+    },
+    {
+      "path": ".agents/skills/technical-ui/references/design-use-cases.md",
+      "bytes": 2730,
+      "sha256": "15287112ba01eaa11e0ecf894f393e1a1f77a92397f9e60656f6e43b4792e9da"
+    },
+    {
+      "path": ".agents/skills/technical-ui/references/lastskill.md",
+      "bytes": 35913,
+      "sha256": "6d5d13e6a42536e505f3d9023a686a8ad71acb38ddb11ddea3a3dca00bdcbd70"
+    },
+    {
+      "path": ".agents/skills/technical-ui/references/refero-style-database.md",
+      "bytes": 60461,
+      "sha256": "15e9e5bfb67b9876477d7751ef95e285277b650184ca6eeb0248d8bab050093a"
+    },
+    {
+      "path": ".agents/skills/technical-ui/references/sources/01-user-interviews.md",
+      "bytes": 2731,
+      "sha256": "5d884471ad6fe511008880a8960b90bc01a8561bb87cbb99ee6328ad98680407"
+    },
+    {
+      "path": ".agents/skills/technical-ui/references/sources/02-chatgpt.md",
+      "bytes": 2199,
+      "sha256": "f06efeab9dc590769ab686d470748a8a14577765ffd7b9bff036e64c1e6546f0"
+    },
+    {
+      "path": ".agents/skills/technical-ui/references/sources/03-attio.md",
+      "bytes": 2391,
+      "sha256": "a7b98f08b2c771ddd551f99b68ec07ce8c9a74c78f7b9e000ac2033b4ab9a1ce"
+    },
+    {
+      "path": ".agents/skills/technical-ui/references/sources/04-telepathic-instruments.md",
+      "bytes": 2366,
+      "sha256": "f81579a7171a3aafe4b25c0a7d1c68ed6a7a0b124137636501b26b0a72bff09c"
+    },
+    {
+      "path": ".agents/skills/technical-ui/references/sources/05-todesktop.md",
+      "bytes": 2543,
+      "sha256": "c53079c9b7b3d4110c4afa19260fdd566cc73b009f71f4b215d6e4c8792af347"
+    },
+    {
+      "path": ".agents/skills/technical-ui/SKILL.md",
+      "bytes": 39010,
+      "sha256": "177f5e6ff87022f1581ad59c086c7554cda05d78fcacaae41882ca32ea837093"
+    },
+    {
+      "path": ".agents/skills/utilitarian/references/design-use-cases.md",
+      "bytes": 2696,
+      "sha256": "8206c839c7090799cb7ee3fe652a00539074f8ec6f35ab2b06c8f25301f43e62"
+    },
+    {
+      "path": ".agents/skills/utilitarian/references/lastskill.md",
+      "bytes": 35937,
+      "sha256": "7a33152732caa87825ed263adb3a06a0e0ee4fa294eaf1ea6340b7b3c239d81b"
+    },
+    {
+      "path": ".agents/skills/utilitarian/references/refero-style-database.md",
+      "bytes": 79005,
+      "sha256": "a5a4a2930e98ee3c82798603de024939204004037f65065ee4b4097926856015"
+    },
+    {
+      "path": ".agents/skills/utilitarian/references/sources/01-office-chair-finder.md",
+      "bytes": 5433,
+      "sha256": "4adcf68ac21ecf32a8a8f6a6172abb9924e96e54210e20a126b077cb1f2b4ce4"
+    },
+    {
+      "path": ".agents/skills/utilitarian/references/sources/02-makr.md",
+      "bytes": 4952,
+      "sha256": "11446317dcc381f33473b51fa716d62f317e38f7df5f0ed0f6257e54fb3f2cbb"
+    },
+    {
+      "path": ".agents/skills/utilitarian/references/sources/03-norm.md",
+      "bytes": 5622,
+      "sha256": "f1789c097310c8b8d88ae522b315ad4baf9f49af87859deac9255d654f67a76a"
+    },
+    {
+      "path": ".agents/skills/utilitarian/references/sources/04-superpower.md",
+      "bytes": 31239,
+      "sha256": "c0efb66bfc52aa945b7f8dcaf53812b5f65f4dd0cc7025181ffc45fa0ca26605"
+    },
+    {
+      "path": ".agents/skills/utilitarian/references/sources/05-ordinal.md",
+      "bytes": 7564,
+      "sha256": "e6b659535fd1cc5f9233663f1d4c760c26c5b513d14cfd805da8754c87175639"
+    },
+    {
+      "path": ".agents/skills/utilitarian/SKILL.md",
+      "bytes": 38926,
+      "sha256": "5f232f0f176579bf9f3c9c9a74c592972e01261fdf0ab76642448a941818a0d3"
+    },
+    {
+      "path": ".agents/skills/vibrant-accents/references/advanced-implementation-notes.md",
+      "bytes": 11626,
+      "sha256": "e08c4ddf58322eab0fa55d668d1017cea84c985bb1509df389b385d104f28bac"
+    },
+    {
+      "path": ".agents/skills/vibrant-accents/references/design-use-cases.md",
+      "bytes": 2740,
+      "sha256": "5ffa5c60daa5b72dfeff3f8e740bf4f86e520c148a6a7629091df09d21c9f51c"
+    },
+    {
+      "path": ".agents/skills/vibrant-accents/references/lastskill.md",
+      "bytes": 33561,
+      "sha256": "53863067ddf9e4563faaa230ee3875700b9eaa7927f04304ab106b7b3fe4eb0f"
+    },
+    {
+      "path": ".agents/skills/vibrant-accents/references/refero-style-database.md",
+      "bytes": 60413,
+      "sha256": "89189176721174ca0d22481ecc35d65953b3a3e8990b026ad67b1b58f8ee28d3"
+    },
+    {
+      "path": ".agents/skills/vibrant-accents/references/sources/01-stripe.md",
+      "bytes": 3563,
+      "sha256": "3605f23c3a096319008108f17672b90d5372e67f7992a58fcae6f36f211ee08e"
+    },
+    {
+      "path": ".agents/skills/vibrant-accents/references/sources/02-squadeasy.md",
+      "bytes": 3253,
+      "sha256": "82b08bd711f6b6b131bb5962d19a541ab7665b7a53090ff667c3d7ce6ab107a8"
+    },
+    {
+      "path": ".agents/skills/vibrant-accents/references/sources/03-base44.md",
+      "bytes": 3434,
+      "sha256": "224ee8202b5e7bb632081246a4626fb96e342341dce41d8e8237939cb8c49e06"
+    },
+    {
+      "path": ".agents/skills/vibrant-accents/references/sources/04-empower.md",
+      "bytes": 3087,
+      "sha256": "3ed188219a4d9790fa11d887c7ac575fbdb0ecbcb68918870c919ff9bb42e3cb"
+    },
+    {
+      "path": ".agents/skills/vibrant-accents/references/sources/05-copy.md",
+      "bytes": 3043,
+      "sha256": "fa1923707c0126bc3ddbc52381ccc6b9436ef008095c97f8b9ded222a55fabf7"
+    },
+    {
+      "path": ".agents/skills/vibrant-accents/SKILL.md",
+      "bytes": 36145,
+      "sha256": "f902aefe4caf754ca6284ab1630591f1138230c7302b334c31974bacbcba3a41"
+    },
+    {
+      "path": ".agents/skills/viewport-fit/SKILL.md",
+      "bytes": 6622,
+      "sha256": "81198f1216b69ad2c7e23242f67af414940750970ef848cf76b7186280f3f8cc"
+    },
+    {
+      "path": ".agents/skills/visual-annotation-tuning/agents/openai.yaml",
+      "bytes": 231,
+      "sha256": "1b17b159a03f7bf1d65892f0b2c571e64be4448421a26b251a8d06826616440a"
+    },
+    {
+      "path": ".agents/skills/visual-annotation-tuning/SKILL.md",
+      "bytes": 8960,
+      "sha256": "d285e0cbf0328d5d0d509ac6f5d9147257a5df34be0eb0c025506b3f101beaa2"
+    }
+  ]
+}

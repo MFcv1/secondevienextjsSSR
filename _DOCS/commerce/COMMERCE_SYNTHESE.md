@@ -6,6 +6,12 @@ Qualification : `PREPROD_TRANSACTIONAL_READY`, sandbox uniquement.
 
 ## État utile
 
+Le [correctif du parcours paiement du 6 septembre](RECONSTRUCTION_PARCOURS_PAIEMENT_2026-09-06.md)
+est livré sur sandbox (preuves et limites en §9 du suivi). Il fixe les nouvelles réservations ordinaires à quinze
+minutes, protège la confirmation bancaire et distingue réservation, vente,
+expiration et vérification. La qualification historique ci-dessous ne prouve
+ni son transport Eventarc réel ni sa nouvelle recette Stripe/3DS.
+
 Le noyau v2 est qualifié sur fixtures puis sur des meubles sandbox réels :
 checkout/reprise, stock quantitatif, Stripe/Connect test, webhooks, annulations,
 livraison/retrait, retours/remboursements, documents et e-mails.

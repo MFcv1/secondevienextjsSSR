@@ -21,7 +21,7 @@ références design ni une requalification cloud.
 | Chemin initial | Lignes | Décision |
 | --- | ---: | --- |
 | [AGENTS.md](AGENTS-avant-rangement.md) | 613 | Remplacé : règles conservées, journal et état mouvant sortis du fichier automatique. |
-| [TEST_CLIENT_ADMIN_LUNA.md](TEST_CLIENT_ADMIN_LUNA.md) | 77 | Remplacé : lanceur lié à un modèle ; procédure unique et skill conservés. |
+| [TEST_CLIENT_ADMIN_LUNA.md](TEST_CLIENT_ADMIN_LUNA.md) | 77 | Remplacé : procédure documentaire conservée ; skill ensuite retiré sur demande. |
 | [TEST_COMMERCE_SANDBOX.md](TEST_COMMERCE_SANDBOX.md) | 433 | Remplacé : ancienne fenêtre commerce et lanceur de recette devenus trompeurs. |
 | [TODO.md](TODO.md) | 62 | Fusionné : doublon du suivi commerce ; décisions ouvertes conservées. |
 | [_DOCS/README.md](../../../_DOCS/README.md) | 80 | Maintenu et corrigé dans son domaine ; pas de doublon créé. |
@@ -65,241 +65,242 @@ références design ni une requalification cloud.
 
 ## Skills de projet — inventaire exhaustif
 
-Aucun doublon de contenu byte-à-byte repéré. Les styles proches ne sont pas
-des fichiers obsolètes par définition. Les descriptions constituent la surface
-de découverte ; les instructions/références ne sont à lire que si pertinentes.
-Seul `client-admin-test` a été réécrit ; les autres fichiers sont conservés.
+Décision ultérieure explicite : les 33 skills sont tous retirés du projet
+actif, y compris `client-admin-test`. Les chemins ci-dessous sont historiques ;
+les liens donnent désormais accès à l'archive compressée contenant les fichiers,
+pas à un skill actif. Aucune extraction ou restauration automatique.
+Le [manifeste SHA-256](skills-locaux.manifest.json) permet de vérifier la conservation.
 
 | Chemin | Lignes | Octets | Décision |
 | --- | ---: | ---: | --- |
-| [.agents/skills/clean-saas/SKILL.md](../../../.agents/skills/clean-saas/SKILL.md) | 746 | 44350 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/clean-saas/references/design-use-cases.md](../../../.agents/skills/clean-saas/references/design-use-cases.md) | 67 | 3194 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/clean-saas/references/lastskill.md](../../../.agents/skills/clean-saas/references/lastskill.md) | 716 | 40149 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/clean-saas/references/refero-style-database.md](../../../.agents/skills/clean-saas/references/refero-style-database.md) | 1141 | 86125 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/clean-saas/references/sources/01-autosend.md](../../../.agents/skills/clean-saas/references/sources/01-autosend.md) | 125 | 8518 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/clean-saas/references/sources/02-fresha.md](../../../.agents/skills/clean-saas/references/sources/02-fresha.md) | 83 | 6986 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/clean-saas/references/sources/03-workable.md](../../../.agents/skills/clean-saas/references/sources/03-workable.md) | 98 | 6789 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/clean-saas/references/sources/04-all-in-one-salon.md](../../../.agents/skills/clean-saas/references/sources/04-all-in-one-salon.md) | 94 | 21434 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/clean-saas/references/sources/05-slack.md](../../../.agents/skills/clean-saas/references/sources/05-slack.md) | 101 | 19178 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/client-admin-test/SKILL.md](../../../.agents/skills/client-admin-test/SKILL.md) | 171 | 14362 | Simplifié, procédure dédupliquée. |
-| [.agents/skills/cyber-neon/SKILL.md](../../../.agents/skills/cyber-neon/SKILL.md) | 917 | 42239 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/cyber-neon/references/design-use-cases.md](../../../.agents/skills/cyber-neon/references/design-use-cases.md) | 66 | 3030 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/cyber-neon/references/lastskill.md](../../../.agents/skills/cyber-neon/references/lastskill.md) | 892 | 39678 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/cyber-neon/references/refero-style-database.md](../../../.agents/skills/cyber-neon/references/refero-style-database.md) | 2423 | 64895 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/cyber-neon/references/sources/01-chainzoku.md](../../../.agents/skills/cyber-neon/references/sources/01-chainzoku.md) | 123 | 5118 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/cyber-neon/references/sources/02-sbs-town.md](../../../.agents/skills/cyber-neon/references/sources/02-sbs-town.md) | 88 | 3810 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/cyber-neon/references/sources/03-neon.md](../../../.agents/skills/cyber-neon/references/sources/03-neon.md) | 121 | 5015 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/cyber-neon/references/sources/04-jetbrains.md](../../../.agents/skills/cyber-neon/references/sources/04-jetbrains.md) | 150 | 7970 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/cyber-neon/references/sources/05-off-white.md](../../../.agents/skills/cyber-neon/references/sources/05-off-white.md) | 107 | 4770 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/dark-ui/SKILL.md](../../../.agents/skills/dark-ui/SKILL.md) | 925 | 42237 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/dark-ui/references/design-use-cases.md](../../../.agents/skills/dark-ui/references/design-use-cases.md) | 66 | 2806 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/dark-ui/references/lastskill.md](../../../.agents/skills/dark-ui/references/lastskill.md) | 900 | 39550 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/dark-ui/references/refero-style-database.md](../../../.agents/skills/dark-ui/references/refero-style-database.md) | 2546 | 65511 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/dark-ui/references/sources/01-beehiiv.md](../../../.agents/skills/dark-ui/references/sources/01-beehiiv.md) | 77 | 2958 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/dark-ui/references/sources/02-fey.md](../../../.agents/skills/dark-ui/references/sources/02-fey.md) | 98 | 4264 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/dark-ui/references/sources/03-bun.md](../../../.agents/skills/dark-ui/references/sources/03-bun.md) | 123 | 5284 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/dark-ui/references/sources/04-circle.md](../../../.agents/skills/dark-ui/references/sources/04-circle.md) | 120 | 5035 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/dark-ui/references/sources/05-superwhisper.md](../../../.agents/skills/dark-ui/references/sources/05-superwhisper.md) | 134 | 6160 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/design-taste-frontend/SKILL.md](../../../.agents/skills/design-taste-frontend/SKILL.md) | 226 | 21140 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/editorial-minimal/SKILL.md](../../../.agents/skills/editorial-minimal/SKILL.md) | 1022 | 41213 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/editorial-minimal/references/advanced-implementation-notes.md](../../../.agents/skills/editorial-minimal/references/advanced-implementation-notes.md) | 108 | 2650 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/editorial-minimal/references/design-use-cases.md](../../../.agents/skills/editorial-minimal/references/design-use-cases.md) | 66 | 2815 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/editorial-minimal/references/lastskill.md](../../../.agents/skills/editorial-minimal/references/lastskill.md) | 988 | 37798 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/editorial-minimal/references/refero-style-database.md](../../../.agents/skills/editorial-minimal/references/refero-style-database.md) | 3029 | 65422 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/editorial-minimal/references/sources/01-openai.md](../../../.agents/skills/editorial-minimal/references/sources/01-openai.md) | 103 | 3384 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/editorial-minimal/references/sources/02-anthropic.md](../../../.agents/skills/editorial-minimal/references/sources/02-anthropic.md) | 105 | 3600 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/editorial-minimal/references/sources/03-legend.md](../../../.agents/skills/editorial-minimal/references/sources/03-legend.md) | 103 | 3353 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/editorial-minimal/references/sources/04-intercom.md](../../../.agents/skills/editorial-minimal/references/sources/04-intercom.md) | 106 | 3535 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/editorial-minimal/references/sources/05-limitless.md](../../../.agents/skills/editorial-minimal/references/sources/05-limitless.md) | 98 | 3033 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/editorial-type/SKILL.md](../../../.agents/skills/editorial-type/SKILL.md) | 1087 | 40996 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/editorial-type/references/design-use-cases.md](../../../.agents/skills/editorial-type/references/design-use-cases.md) | 66 | 2904 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/editorial-type/references/lastskill.md](../../../.agents/skills/editorial-type/references/lastskill.md) | 1053 | 38052 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/editorial-type/references/refero-style-database.md](../../../.agents/skills/editorial-type/references/refero-style-database.md) | 1270 | 61434 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/editorial-type/references/sources/01-volume.md](../../../.agents/skills/editorial-type/references/sources/01-volume.md) | 84 | 6946 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/editorial-type/references/sources/02-victor-cango.md](../../../.agents/skills/editorial-type/references/sources/02-victor-cango.md) | 83 | 5765 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/editorial-type/references/sources/03-no-ideas.md](../../../.agents/skills/editorial-type/references/sources/03-no-ideas.md) | 81 | 5257 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/editorial-type/references/sources/04-sociotype.md](../../../.agents/skills/editorial-type/references/sources/04-sociotype.md) | 130 | 7209 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/editorial-type/references/sources/05-christopherdoyle.md](../../../.agents/skills/editorial-type/references/sources/05-christopherdoyle.md) | 80 | 4904 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/experimental-type/SKILL.md](../../../.agents/skills/experimental-type/SKILL.md) | 1005 | 43996 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/experimental-type/references/design-use-cases.md](../../../.agents/skills/experimental-type/references/design-use-cases.md) | 66 | 2884 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/experimental-type/references/lastskill.md](../../../.agents/skills/experimental-type/references/lastskill.md) | 974 | 41201 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/experimental-type/references/refero-style-database.md](../../../.agents/skills/experimental-type/references/refero-style-database.md) | 2938 | 63441 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/experimental-type/references/sources/01-teenage-engineering.md](../../../.agents/skills/experimental-type/references/sources/01-teenage-engineering.md) | 72 | 2959 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/experimental-type/references/sources/02-charlie.md](../../../.agents/skills/experimental-type/references/sources/02-charlie.md) | 67 | 2519 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/experimental-type/references/sources/03-typelist.md](../../../.agents/skills/experimental-type/references/sources/03-typelist.md) | 73 | 2603 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/experimental-type/references/sources/04-egstad.md](../../../.agents/skills/experimental-type/references/sources/04-egstad.md) | 67 | 2410 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/experimental-type/references/sources/05-sociotype.md](../../../.agents/skills/experimental-type/references/sources/05-sociotype.md) | 68 | 2333 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/expressive-brand/SKILL.md](../../../.agents/skills/expressive-brand/SKILL.md) | 1105 | 46372 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/expressive-brand/references/design-use-cases.md](../../../.agents/skills/expressive-brand/references/design-use-cases.md) | 66 | 2805 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/expressive-brand/references/lastskill.md](../../../.agents/skills/expressive-brand/references/lastskill.md) | 1080 | 43901 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/expressive-brand/references/refero-style-database.md](../../../.agents/skills/expressive-brand/references/refero-style-database.md) | 2699 | 61411 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/expressive-brand/references/sources/01-family.md](../../../.agents/skills/expressive-brand/references/sources/01-family.md) | 99 | 3325 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/expressive-brand/references/sources/02-mymind.md](../../../.agents/skills/expressive-brand/references/sources/02-mymind.md) | 91 | 3285 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/expressive-brand/references/sources/03-antimetal.md](../../../.agents/skills/expressive-brand/references/sources/03-antimetal.md) | 92 | 2992 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/expressive-brand/references/sources/04-empower.md](../../../.agents/skills/expressive-brand/references/sources/04-empower.md) | 85 | 2668 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/expressive-brand/references/sources/05-retool.md](../../../.agents/skills/expressive-brand/references/sources/05-retool.md) | 93 | 2929 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/frontsymmetry/SKILL.md](../../../.agents/skills/frontsymmetry/SKILL.md) | 361 | 18265 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/geometric-modern/SKILL.md](../../../.agents/skills/geometric-modern/SKILL.md) | 1033 | 44749 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/geometric-modern/references/design-use-cases.md](../../../.agents/skills/geometric-modern/references/design-use-cases.md) | 66 | 2795 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/geometric-modern/references/lastskill.md](../../../.agents/skills/geometric-modern/references/lastskill.md) | 1001 | 42180 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/geometric-modern/references/refero-style-database.md](../../../.agents/skills/geometric-modern/references/refero-style-database.md) | 1274 | 62878 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/geometric-modern/references/sources/01-greenspace.md](../../../.agents/skills/geometric-modern/references/sources/01-greenspace.md) | 74 | 4991 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/geometric-modern/references/sources/02-artem-militonian.md](../../../.agents/skills/geometric-modern/references/sources/02-artem-militonian.md) | 81 | 5265 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/geometric-modern/references/sources/03-vac.md](../../../.agents/skills/geometric-modern/references/sources/03-vac.md) | 83 | 5341 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/geometric-modern/references/sources/04-theodore-ellison-designs.md](../../../.agents/skills/geometric-modern/references/sources/04-theodore-ellison-designs.md) | 101 | 6934 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/geometric-modern/references/sources/05-eindhoven-design-district.md](../../../.agents/skills/geometric-modern/references/sources/05-eindhoven-design-district.md) | 80 | 6981 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/glossy-modern/SKILL.md](../../../.agents/skills/glossy-modern/SKILL.md) | 941 | 42226 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/glossy-modern/references/design-use-cases.md](../../../.agents/skills/glossy-modern/references/design-use-cases.md) | 66 | 2716 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/glossy-modern/references/lastskill.md](../../../.agents/skills/glossy-modern/references/lastskill.md) | 916 | 39674 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/glossy-modern/references/refero-style-database.md](../../../.agents/skills/glossy-modern/references/refero-style-database.md) | 3186 | 69340 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/glossy-modern/references/sources/01-changelog.md](../../../.agents/skills/glossy-modern/references/sources/01-changelog.md) | 92 | 2993 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/glossy-modern/references/sources/02-raycast.md](../../../.agents/skills/glossy-modern/references/sources/02-raycast.md) | 95 | 3088 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/glossy-modern/references/sources/03-dia-browser.md](../../../.agents/skills/glossy-modern/references/sources/03-dia-browser.md) | 92 | 2877 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/glossy-modern/references/sources/04-ayo-lava.md](../../../.agents/skills/glossy-modern/references/sources/04-ayo-lava.md) | 77 | 2634 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/glossy-modern/references/sources/05-monopo-saigon.md](../../../.agents/skills/glossy-modern/references/sources/05-monopo-saigon.md) | 82 | 2697 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/gpt-taste/SKILL.md](../../../.agents/skills/gpt-taste/SKILL.md) | 76 | 8725 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/high-contrast/SKILL.md](../../../.agents/skills/high-contrast/SKILL.md) | 1033 | 41022 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/high-contrast/references/design-use-cases.md](../../../.agents/skills/high-contrast/references/design-use-cases.md) | 66 | 2714 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/high-contrast/references/lastskill.md](../../../.agents/skills/high-contrast/references/lastskill.md) | 1009 | 38974 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/high-contrast/references/refero-style-database.md](../../../.agents/skills/high-contrast/references/refero-style-database.md) | 2708 | 62088 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/high-contrast/references/sources/01-colab.md](../../../.agents/skills/high-contrast/references/sources/01-colab.md) | 52 | 2093 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/high-contrast/references/sources/02-holographik.md](../../../.agents/skills/high-contrast/references/sources/02-holographik.md) | 49 | 1972 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/high-contrast/references/sources/03-hardclo.md](../../../.agents/skills/high-contrast/references/sources/03-hardclo.md) | 50 | 1902 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/high-contrast/references/sources/04-hyperaktiv.md](../../../.agents/skills/high-contrast/references/sources/04-hyperaktiv.md) | 54 | 2095 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/high-contrast/references/sources/05-hugging-face.md](../../../.agents/skills/high-contrast/references/sources/05-hugging-face.md) | 57 | 2363 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/high-end-design/SKILL.md](../../../.agents/skills/high-end-design/SKILL.md) | 1048 | 47582 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/high-end-design/references/design-use-cases.md](../../../.agents/skills/high-end-design/references/design-use-cases.md) | 66 | 2971 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/high-end-design/references/lastskill.md](../../../.agents/skills/high-end-design/references/lastskill.md) | 1020 | 44994 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/high-end-design/references/refero-style-database.md](../../../.agents/skills/high-end-design/references/refero-style-database.md) | 1085 | 95432 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/high-end-design/references/sources/01-bang-olufsen.md](../../../.agents/skills/high-end-design/references/sources/01-bang-olufsen.md) | 83 | 15528 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/high-end-design/references/sources/02-bmwcom.md](../../../.agents/skills/high-end-design/references/sources/02-bmwcom.md) | 85 | 13658 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/high-end-design/references/sources/03-ferrari.md](../../../.agents/skills/high-end-design/references/sources/03-ferrari.md) | 80 | 13540 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/high-end-design/references/sources/04-true-staging.md](../../../.agents/skills/high-end-design/references/sources/04-true-staging.md) | 84 | 5640 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/high-end-design/references/sources/05-peak-design.md](../../../.agents/skills/high-end-design/references/sources/05-peak-design.md) | 113 | 22172 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/high-end-visual-design/SKILL.md](../../../.agents/skills/high-end-visual-design/SKILL.md) | 98 | 10561 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/industrial-brutalist-ui/SKILL.md](../../../.agents/skills/industrial-brutalist-ui/SKILL.md) | 92 | 8456 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/light-ui/SKILL.md](../../../.agents/skills/light-ui/SKILL.md) | 714 | 38950 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/light-ui/references/design-use-cases.md](../../../.agents/skills/light-ui/references/design-use-cases.md) | 66 | 2685 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/light-ui/references/lastskill.md](../../../.agents/skills/light-ui/references/lastskill.md) | 687 | 35951 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/light-ui/references/refero-style-database.md](../../../.agents/skills/light-ui/references/refero-style-database.md) | 2870 | 60055 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/light-ui/references/sources/01-luma.md](../../../.agents/skills/light-ui/references/sources/01-luma.md) | 66 | 2485 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/light-ui/references/sources/02-lightdash.md](../../../.agents/skills/light-ui/references/sources/02-lightdash.md) | 71 | 2694 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/light-ui/references/sources/03-circle.md](../../../.agents/skills/light-ui/references/sources/03-circle.md) | 70 | 2479 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/light-ui/references/sources/04-lift-off-challenge.md](../../../.agents/skills/light-ui/references/sources/04-lift-off-challenge.md) | 71 | 2654 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/light-ui/references/sources/05-tailark-pro.md](../../../.agents/skills/light-ui/references/sources/05-tailark-pro.md) | 71 | 2626 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/minimal-design/SKILL.md](../../../.agents/skills/minimal-design/SKILL.md) | 1015 | 37514 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/minimal-design/references/advanced-implementation-notes.md](../../../.agents/skills/minimal-design/references/advanced-implementation-notes.md) | 114 | 2592 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/minimal-design/references/design-use-cases.md](../../../.agents/skills/minimal-design/references/design-use-cases.md) | 66 | 2671 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/minimal-design/references/lastskill.md](../../../.agents/skills/minimal-design/references/lastskill.md) | 982 | 34420 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/minimal-design/references/refero-style-database.md](../../../.agents/skills/minimal-design/references/refero-style-database.md) | 2915 | 64075 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/minimal-design/references/sources/01-general-intelligence-company.md](../../../.agents/skills/minimal-design/references/sources/01-general-intelligence-company.md) | 82 | 2723 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/minimal-design/references/sources/02-sprig.md](../../../.agents/skills/minimal-design/references/sources/02-sprig.md) | 83 | 2628 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/minimal-design/references/sources/03-standards.md](../../../.agents/skills/minimal-design/references/sources/03-standards.md) | 86 | 2300 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/minimal-design/references/sources/04-rox.md](../../../.agents/skills/minimal-design/references/sources/04-rox.md) | 89 | 2589 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/minimal-design/references/sources/05-copy.md](../../../.agents/skills/minimal-design/references/sources/05-copy.md) | 86 | 2531 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/minimalist-ui/SKILL.md](../../../.agents/skills/minimalist-ui/SKILL.md) | 85 | 7901 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/monochrome-ui/SKILL.md](../../../.agents/skills/monochrome-ui/SKILL.md) | 1003 | 38317 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/monochrome-ui/references/advanced-implementation-notes.md](../../../.agents/skills/monochrome-ui/references/advanced-implementation-notes.md) | 102 | 2327 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/monochrome-ui/references/design-use-cases.md](../../../.agents/skills/monochrome-ui/references/design-use-cases.md) | 66 | 2670 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/monochrome-ui/references/lastskill.md](../../../.agents/skills/monochrome-ui/references/lastskill.md) | 971 | 35638 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/monochrome-ui/references/refero-style-database.md](../../../.agents/skills/monochrome-ui/references/refero-style-database.md) | 1086 | 63028 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/monochrome-ui/references/sources/01-figma-config.md](../../../.agents/skills/monochrome-ui/references/sources/01-figma-config.md) | 84 | 5712 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/monochrome-ui/references/sources/02-mono.md](../../../.agents/skills/monochrome-ui/references/sources/02-mono.md) | 101 | 6387 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/monochrome-ui/references/sources/03-yung-studio.md](../../../.agents/skills/monochrome-ui/references/sources/03-yung-studio.md) | 93 | 14080 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/monochrome-ui/references/sources/04-kaisermann.md](../../../.agents/skills/monochrome-ui/references/sources/04-kaisermann.md) | 76 | 5373 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/monochrome-ui/references/sources/05-ui.md](../../../.agents/skills/monochrome-ui/references/sources/05-ui.md) | 92 | 7238 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/motion/SKILL.md](../../../.agents/skills/motion/SKILL.md) | 1018 | 48451 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/motion/references/advanced-implementation-notes.md](../../../.agents/skills/motion/references/advanced-implementation-notes.md) | 44 | 2267 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/motion/references/design-use-cases.md](../../../.agents/skills/motion/references/design-use-cases.md) | 66 | 2782 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/motion/references/lastskill.md](../../../.agents/skills/motion/references/lastskill.md) | 993 | 45896 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/motion/references/refero-style-database.md](../../../.agents/skills/motion/references/refero-style-database.md) | 3085 | 84288 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/motion/references/sources/01-liquid-death.md](../../../.agents/skills/motion/references/sources/01-liquid-death.md) | 177 | 8304 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/motion/references/sources/02-heavyweight.md](../../../.agents/skills/motion/references/sources/02-heavyweight.md) | 118 | 4801 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/motion/references/sources/03-handshake.md](../../../.agents/skills/motion/references/sources/03-handshake.md) | 149 | 5436 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/motion/references/sources/04-cthdrl.md](../../../.agents/skills/motion/references/sources/04-cthdrl.md) | 110 | 3870 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/motion/references/sources/05-superlative.md](../../../.agents/skills/motion/references/sources/05-superlative.md) | 114 | 4067 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/motion/references/sources/06-mekaverse.md](../../../.agents/skills/motion/references/sources/06-mekaverse.md) | 134 | 4807 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/motion/references/sources/07-hape-prime.md](../../../.agents/skills/motion/references/sources/07-hape-prime.md) | 107 | 4234 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/motion/references/sources/08-moving-parts.md](../../../.agents/skills/motion/references/sources/08-moving-parts.md) | 165 | 6543 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/motion/references/sources/09-homunculus.md](../../../.agents/skills/motion/references/sources/09-homunculus.md) | 111 | 4349 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/pastel/SKILL.md](../../../.agents/skills/pastel/SKILL.md) | 1097 | 43899 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/pastel/references/design-use-cases.md](../../../.agents/skills/pastel/references/design-use-cases.md) | 66 | 2663 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/pastel/references/lastskill.md](../../../.agents/skills/pastel/references/lastskill.md) | 1067 | 41162 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/pastel/references/refero-style-database.md](../../../.agents/skills/pastel/references/refero-style-database.md) | 2318 | 66573 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/pastel/references/sources/01-pastel.md](../../../.agents/skills/pastel/references/sources/01-pastel.md) | 99 | 3802 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/pastel/references/sources/02-palette-supply.md](../../../.agents/skills/pastel/references/sources/02-palette-supply.md) | 113 | 4359 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/pastel/references/sources/03-recess.md](../../../.agents/skills/pastel/references/sources/03-recess.md) | 96 | 4457 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/pastel/references/sources/04-graza.md](../../../.agents/skills/pastel/references/sources/04-graza.md) | 106 | 4974 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/pastel/references/sources/05-podcorn.md](../../../.agents/skills/pastel/references/sources/05-podcorn.md) | 105 | 4211 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/pastel/references/sources/06-podia.md](../../../.agents/skills/pastel/references/sources/06-podia.md) | 104 | 4634 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/playful-design/SKILL.md](../../../.agents/skills/playful-design/SKILL.md) | 1206 | 44126 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/playful-design/references/design-use-cases.md](../../../.agents/skills/playful-design/references/design-use-cases.md) | 66 | 2742 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/playful-design/references/lastskill.md](../../../.agents/skills/playful-design/references/lastskill.md) | 1182 | 42016 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/playful-design/references/refero-style-database.md](../../../.agents/skills/playful-design/references/refero-style-database.md) | 3088 | 67164 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/playful-design/references/sources/01-playful-software.md](../../../.agents/skills/playful-design/references/sources/01-playful-software.md) | 69 | 2416 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/playful-design/references/sources/02-maxima-therapy.md](../../../.agents/skills/playful-design/references/sources/02-maxima-therapy.md) | 71 | 2524 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/playful-design/references/sources/03-playdate.md](../../../.agents/skills/playful-design/references/sources/03-playdate.md) | 69 | 2251 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/playful-design/references/sources/04-duolingo.md](../../../.agents/skills/playful-design/references/sources/04-duolingo.md) | 70 | 2444 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/playful-design/references/sources/05-clay.md](../../../.agents/skills/playful-design/references/sources/05-clay.md) | 70 | 2451 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/redesign-existing-projects/SKILL.md](../../../.agents/skills/redesign-existing-projects/SKILL.md) | 178 | 15060 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/serif-display/SKILL.md](../../../.agents/skills/serif-display/SKILL.md) | 1015 | 38245 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/serif-display/references/advanced-implementation-notes.md](../../../.agents/skills/serif-display/references/advanced-implementation-notes.md) | 181 | 4535 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/serif-display/references/design-use-cases.md](../../../.agents/skills/serif-display/references/design-use-cases.md) | 66 | 2663 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/serif-display/references/lastskill.md](../../../.agents/skills/serif-display/references/lastskill.md) | 986 | 35558 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/serif-display/references/refero-style-database.md](../../../.agents/skills/serif-display/references/refero-style-database.md) | 2318 | 64921 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/serif-display/references/sources/01-sociotype.md](../../../.agents/skills/serif-display/references/sources/01-sociotype.md) | 91 | 3385 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/serif-display/references/sources/02-fidele-editions.md](../../../.agents/skills/serif-display/references/sources/02-fidele-editions.md) | 113 | 4563 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/serif-display/references/sources/03-pangram-pangram.md](../../../.agents/skills/serif-display/references/sources/03-pangram-pangram.md) | 125 | 4720 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/serif-display/references/sources/04-standards.md](../../../.agents/skills/serif-display/references/sources/04-standards.md) | 101 | 3669 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/serif-display/references/sources/05-unveil.md](../../../.agents/skills/serif-display/references/sources/05-unveil.md) | 81 | 2985 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/soft-gradients/SKILL.md](../../../.agents/skills/soft-gradients/SKILL.md) | 1006 | 43336 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/soft-gradients/references/design-use-cases.md](../../../.agents/skills/soft-gradients/references/design-use-cases.md) | 66 | 2736 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/soft-gradients/references/lastskill.md](../../../.agents/skills/soft-gradients/references/lastskill.md) | 980 | 40478 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/soft-gradients/references/refero-style-database.md](../../../.agents/skills/soft-gradients/references/refero-style-database.md) | 3362 | 79534 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/soft-gradients/references/sources/01-base44.md](../../../.agents/skills/soft-gradients/references/sources/01-base44.md) | 106 | 3925 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/soft-gradients/references/sources/02-dia-browser.md](../../../.agents/skills/soft-gradients/references/sources/02-dia-browser.md) | 105 | 3333 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/soft-gradients/references/sources/03-sprig.md](../../../.agents/skills/soft-gradients/references/sources/03-sprig.md) | 98 | 3370 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/soft-gradients/references/sources/04-superhuman.md](../../../.agents/skills/soft-gradients/references/sources/04-superhuman.md) | 106 | 3268 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/soft-gradients/references/sources/05-retool.md](../../../.agents/skills/soft-gradients/references/sources/05-retool.md) | 101 | 3393 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/technical-sans/SKILL.md](../../../.agents/skills/technical-sans/SKILL.md) | 695 | 38724 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/technical-sans/references/design-use-cases.md](../../../.agents/skills/technical-sans/references/design-use-cases.md) | 66 | 2695 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/technical-sans/references/lastskill.md](../../../.agents/skills/technical-sans/references/lastskill.md) | 666 | 35553 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/technical-sans/references/refero-style-database.md](../../../.agents/skills/technical-sans/references/refero-style-database.md) | 2963 | 69003 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/technical-sans/references/sources/01-antimetal.md](../../../.agents/skills/technical-sans/references/sources/01-antimetal.md) | 113 | 4213 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/technical-sans/references/sources/02-plain.md](../../../.agents/skills/technical-sans/references/sources/02-plain.md) | 109 | 3820 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/technical-sans/references/sources/03-cursor.md](../../../.agents/skills/technical-sans/references/sources/03-cursor.md) | 107 | 3718 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/technical-sans/references/sources/04-linear.md](../../../.agents/skills/technical-sans/references/sources/04-linear.md) | 110 | 3526 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/technical-sans/references/sources/05-mercury.md](../../../.agents/skills/technical-sans/references/sources/05-mercury.md) | 108 | 3317 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/technical-ui/SKILL.md](../../../.agents/skills/technical-ui/SKILL.md) | 705 | 39010 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/technical-ui/references/design-use-cases.md](../../../.agents/skills/technical-ui/references/design-use-cases.md) | 66 | 2730 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/technical-ui/references/lastskill.md](../../../.agents/skills/technical-ui/references/lastskill.md) | 677 | 35913 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/technical-ui/references/refero-style-database.md](../../../.agents/skills/technical-ui/references/refero-style-database.md) | 3162 | 60461 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/technical-ui/references/sources/01-user-interviews.md](../../../.agents/skills/technical-ui/references/sources/01-user-interviews.md) | 73 | 2731 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/technical-ui/references/sources/02-chatgpt.md](../../../.agents/skills/technical-ui/references/sources/02-chatgpt.md) | 67 | 2199 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/technical-ui/references/sources/03-attio.md](../../../.agents/skills/technical-ui/references/sources/03-attio.md) | 71 | 2391 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/technical-ui/references/sources/04-telepathic-instruments.md](../../../.agents/skills/technical-ui/references/sources/04-telepathic-instruments.md) | 68 | 2366 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/technical-ui/references/sources/05-todesktop.md](../../../.agents/skills/technical-ui/references/sources/05-todesktop.md) | 71 | 2543 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/utilitarian/SKILL.md](../../../.agents/skills/utilitarian/SKILL.md) | 720 | 38926 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/utilitarian/references/design-use-cases.md](../../../.agents/skills/utilitarian/references/design-use-cases.md) | 66 | 2696 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/utilitarian/references/lastskill.md](../../../.agents/skills/utilitarian/references/lastskill.md) | 691 | 35937 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/utilitarian/references/refero-style-database.md](../../../.agents/skills/utilitarian/references/refero-style-database.md) | 1088 | 79005 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/utilitarian/references/sources/01-office-chair-finder.md](../../../.agents/skills/utilitarian/references/sources/01-office-chair-finder.md) | 86 | 5433 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/utilitarian/references/sources/02-makr.md](../../../.agents/skills/utilitarian/references/sources/02-makr.md) | 83 | 4952 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/utilitarian/references/sources/03-norm.md](../../../.agents/skills/utilitarian/references/sources/03-norm.md) | 92 | 5622 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/utilitarian/references/sources/04-superpower.md](../../../.agents/skills/utilitarian/references/sources/04-superpower.md) | 97 | 31239 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/utilitarian/references/sources/05-ordinal.md](../../../.agents/skills/utilitarian/references/sources/05-ordinal.md) | 90 | 7564 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/vibrant-accents/SKILL.md](../../../.agents/skills/vibrant-accents/SKILL.md) | 827 | 36145 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/vibrant-accents/references/advanced-implementation-notes.md](../../../.agents/skills/vibrant-accents/references/advanced-implementation-notes.md) | 469 | 11626 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/vibrant-accents/references/design-use-cases.md](../../../.agents/skills/vibrant-accents/references/design-use-cases.md) | 66 | 2740 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/vibrant-accents/references/lastskill.md](../../../.agents/skills/vibrant-accents/references/lastskill.md) | 801 | 33561 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/vibrant-accents/references/refero-style-database.md](../../../.agents/skills/vibrant-accents/references/refero-style-database.md) | 2718 | 60413 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/vibrant-accents/references/sources/01-stripe.md](../../../.agents/skills/vibrant-accents/references/sources/01-stripe.md) | 109 | 3563 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/vibrant-accents/references/sources/02-squadeasy.md](../../../.agents/skills/vibrant-accents/references/sources/02-squadeasy.md) | 102 | 3253 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/vibrant-accents/references/sources/03-base44.md](../../../.agents/skills/vibrant-accents/references/sources/03-base44.md) | 104 | 3434 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/vibrant-accents/references/sources/04-empower.md](../../../.agents/skills/vibrant-accents/references/sources/04-empower.md) | 102 | 3087 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/vibrant-accents/references/sources/05-copy.md](../../../.agents/skills/vibrant-accents/references/sources/05-copy.md) | 102 | 3043 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/viewport-fit/SKILL.md](../../../.agents/skills/viewport-fit/SKILL.md) | 132 | 6622 | Bibliothèque spécialisée conservée. |
-| [.agents/skills/visual-annotation-tuning/SKILL.md](../../../.agents/skills/visual-annotation-tuning/SKILL.md) | 181 | 8960 | Bibliothèque spécialisée conservée. |
+| [.agents/skills/clean-saas/SKILL.md](skills-locaux.tar.gz) | 746 | 44350 | Archivé sur demande, non actif. |
+| [.agents/skills/clean-saas/references/design-use-cases.md](skills-locaux.tar.gz) | 67 | 3194 | Archivé sur demande, non actif. |
+| [.agents/skills/clean-saas/references/lastskill.md](skills-locaux.tar.gz) | 716 | 40149 | Archivé sur demande, non actif. |
+| [.agents/skills/clean-saas/references/refero-style-database.md](skills-locaux.tar.gz) | 1141 | 86125 | Archivé sur demande, non actif. |
+| [.agents/skills/clean-saas/references/sources/01-autosend.md](skills-locaux.tar.gz) | 125 | 8518 | Archivé sur demande, non actif. |
+| [.agents/skills/clean-saas/references/sources/02-fresha.md](skills-locaux.tar.gz) | 83 | 6986 | Archivé sur demande, non actif. |
+| [.agents/skills/clean-saas/references/sources/03-workable.md](skills-locaux.tar.gz) | 98 | 6789 | Archivé sur demande, non actif. |
+| [.agents/skills/clean-saas/references/sources/04-all-in-one-salon.md](skills-locaux.tar.gz) | 94 | 21434 | Archivé sur demande, non actif. |
+| [.agents/skills/clean-saas/references/sources/05-slack.md](skills-locaux.tar.gz) | 101 | 19178 | Archivé sur demande, non actif. |
+| [.agents/skills/client-admin-test/SKILL.md](skills-locaux.tar.gz) | 171 | 14362 | Archivé sur demande, non actif. |
+| [.agents/skills/cyber-neon/SKILL.md](skills-locaux.tar.gz) | 917 | 42239 | Archivé sur demande, non actif. |
+| [.agents/skills/cyber-neon/references/design-use-cases.md](skills-locaux.tar.gz) | 66 | 3030 | Archivé sur demande, non actif. |
+| [.agents/skills/cyber-neon/references/lastskill.md](skills-locaux.tar.gz) | 892 | 39678 | Archivé sur demande, non actif. |
+| [.agents/skills/cyber-neon/references/refero-style-database.md](skills-locaux.tar.gz) | 2423 | 64895 | Archivé sur demande, non actif. |
+| [.agents/skills/cyber-neon/references/sources/01-chainzoku.md](skills-locaux.tar.gz) | 123 | 5118 | Archivé sur demande, non actif. |
+| [.agents/skills/cyber-neon/references/sources/02-sbs-town.md](skills-locaux.tar.gz) | 88 | 3810 | Archivé sur demande, non actif. |
+| [.agents/skills/cyber-neon/references/sources/03-neon.md](skills-locaux.tar.gz) | 121 | 5015 | Archivé sur demande, non actif. |
+| [.agents/skills/cyber-neon/references/sources/04-jetbrains.md](skills-locaux.tar.gz) | 150 | 7970 | Archivé sur demande, non actif. |
+| [.agents/skills/cyber-neon/references/sources/05-off-white.md](skills-locaux.tar.gz) | 107 | 4770 | Archivé sur demande, non actif. |
+| [.agents/skills/dark-ui/SKILL.md](skills-locaux.tar.gz) | 925 | 42237 | Archivé sur demande, non actif. |
+| [.agents/skills/dark-ui/references/design-use-cases.md](skills-locaux.tar.gz) | 66 | 2806 | Archivé sur demande, non actif. |
+| [.agents/skills/dark-ui/references/lastskill.md](skills-locaux.tar.gz) | 900 | 39550 | Archivé sur demande, non actif. |
+| [.agents/skills/dark-ui/references/refero-style-database.md](skills-locaux.tar.gz) | 2546 | 65511 | Archivé sur demande, non actif. |
+| [.agents/skills/dark-ui/references/sources/01-beehiiv.md](skills-locaux.tar.gz) | 77 | 2958 | Archivé sur demande, non actif. |
+| [.agents/skills/dark-ui/references/sources/02-fey.md](skills-locaux.tar.gz) | 98 | 4264 | Archivé sur demande, non actif. |
+| [.agents/skills/dark-ui/references/sources/03-bun.md](skills-locaux.tar.gz) | 123 | 5284 | Archivé sur demande, non actif. |
+| [.agents/skills/dark-ui/references/sources/04-circle.md](skills-locaux.tar.gz) | 120 | 5035 | Archivé sur demande, non actif. |
+| [.agents/skills/dark-ui/references/sources/05-superwhisper.md](skills-locaux.tar.gz) | 134 | 6160 | Archivé sur demande, non actif. |
+| [.agents/skills/design-taste-frontend/SKILL.md](skills-locaux.tar.gz) | 226 | 21140 | Archivé sur demande, non actif. |
+| [.agents/skills/editorial-minimal/SKILL.md](skills-locaux.tar.gz) | 1022 | 41213 | Archivé sur demande, non actif. |
+| [.agents/skills/editorial-minimal/references/advanced-implementation-notes.md](skills-locaux.tar.gz) | 108 | 2650 | Archivé sur demande, non actif. |
+| [.agents/skills/editorial-minimal/references/design-use-cases.md](skills-locaux.tar.gz) | 66 | 2815 | Archivé sur demande, non actif. |
+| [.agents/skills/editorial-minimal/references/lastskill.md](skills-locaux.tar.gz) | 988 | 37798 | Archivé sur demande, non actif. |
+| [.agents/skills/editorial-minimal/references/refero-style-database.md](skills-locaux.tar.gz) | 3029 | 65422 | Archivé sur demande, non actif. |
+| [.agents/skills/editorial-minimal/references/sources/01-openai.md](skills-locaux.tar.gz) | 103 | 3384 | Archivé sur demande, non actif. |
+| [.agents/skills/editorial-minimal/references/sources/02-anthropic.md](skills-locaux.tar.gz) | 105 | 3600 | Archivé sur demande, non actif. |
+| [.agents/skills/editorial-minimal/references/sources/03-legend.md](skills-locaux.tar.gz) | 103 | 3353 | Archivé sur demande, non actif. |
+| [.agents/skills/editorial-minimal/references/sources/04-intercom.md](skills-locaux.tar.gz) | 106 | 3535 | Archivé sur demande, non actif. |
+| [.agents/skills/editorial-minimal/references/sources/05-limitless.md](skills-locaux.tar.gz) | 98 | 3033 | Archivé sur demande, non actif. |
+| [.agents/skills/editorial-type/SKILL.md](skills-locaux.tar.gz) | 1087 | 40996 | Archivé sur demande, non actif. |
+| [.agents/skills/editorial-type/references/design-use-cases.md](skills-locaux.tar.gz) | 66 | 2904 | Archivé sur demande, non actif. |
+| [.agents/skills/editorial-type/references/lastskill.md](skills-locaux.tar.gz) | 1053 | 38052 | Archivé sur demande, non actif. |
+| [.agents/skills/editorial-type/references/refero-style-database.md](skills-locaux.tar.gz) | 1270 | 61434 | Archivé sur demande, non actif. |
+| [.agents/skills/editorial-type/references/sources/01-volume.md](skills-locaux.tar.gz) | 84 | 6946 | Archivé sur demande, non actif. |
+| [.agents/skills/editorial-type/references/sources/02-victor-cango.md](skills-locaux.tar.gz) | 83 | 5765 | Archivé sur demande, non actif. |
+| [.agents/skills/editorial-type/references/sources/03-no-ideas.md](skills-locaux.tar.gz) | 81 | 5257 | Archivé sur demande, non actif. |
+| [.agents/skills/editorial-type/references/sources/04-sociotype.md](skills-locaux.tar.gz) | 130 | 7209 | Archivé sur demande, non actif. |
+| [.agents/skills/editorial-type/references/sources/05-christopherdoyle.md](skills-locaux.tar.gz) | 80 | 4904 | Archivé sur demande, non actif. |
+| [.agents/skills/experimental-type/SKILL.md](skills-locaux.tar.gz) | 1005 | 43996 | Archivé sur demande, non actif. |
+| [.agents/skills/experimental-type/references/design-use-cases.md](skills-locaux.tar.gz) | 66 | 2884 | Archivé sur demande, non actif. |
+| [.agents/skills/experimental-type/references/lastskill.md](skills-locaux.tar.gz) | 974 | 41201 | Archivé sur demande, non actif. |
+| [.agents/skills/experimental-type/references/refero-style-database.md](skills-locaux.tar.gz) | 2938 | 63441 | Archivé sur demande, non actif. |
+| [.agents/skills/experimental-type/references/sources/01-teenage-engineering.md](skills-locaux.tar.gz) | 72 | 2959 | Archivé sur demande, non actif. |
+| [.agents/skills/experimental-type/references/sources/02-charlie.md](skills-locaux.tar.gz) | 67 | 2519 | Archivé sur demande, non actif. |
+| [.agents/skills/experimental-type/references/sources/03-typelist.md](skills-locaux.tar.gz) | 73 | 2603 | Archivé sur demande, non actif. |
+| [.agents/skills/experimental-type/references/sources/04-egstad.md](skills-locaux.tar.gz) | 67 | 2410 | Archivé sur demande, non actif. |
+| [.agents/skills/experimental-type/references/sources/05-sociotype.md](skills-locaux.tar.gz) | 68 | 2333 | Archivé sur demande, non actif. |
+| [.agents/skills/expressive-brand/SKILL.md](skills-locaux.tar.gz) | 1105 | 46372 | Archivé sur demande, non actif. |
+| [.agents/skills/expressive-brand/references/design-use-cases.md](skills-locaux.tar.gz) | 66 | 2805 | Archivé sur demande, non actif. |
+| [.agents/skills/expressive-brand/references/lastskill.md](skills-locaux.tar.gz) | 1080 | 43901 | Archivé sur demande, non actif. |
+| [.agents/skills/expressive-brand/references/refero-style-database.md](skills-locaux.tar.gz) | 2699 | 61411 | Archivé sur demande, non actif. |
+| [.agents/skills/expressive-brand/references/sources/01-family.md](skills-locaux.tar.gz) | 99 | 3325 | Archivé sur demande, non actif. |
+| [.agents/skills/expressive-brand/references/sources/02-mymind.md](skills-locaux.tar.gz) | 91 | 3285 | Archivé sur demande, non actif. |
+| [.agents/skills/expressive-brand/references/sources/03-antimetal.md](skills-locaux.tar.gz) | 92 | 2992 | Archivé sur demande, non actif. |
+| [.agents/skills/expressive-brand/references/sources/04-empower.md](skills-locaux.tar.gz) | 85 | 2668 | Archivé sur demande, non actif. |
+| [.agents/skills/expressive-brand/references/sources/05-retool.md](skills-locaux.tar.gz) | 93 | 2929 | Archivé sur demande, non actif. |
+| [.agents/skills/frontsymmetry/SKILL.md](skills-locaux.tar.gz) | 361 | 18265 | Archivé sur demande, non actif. |
+| [.agents/skills/geometric-modern/SKILL.md](skills-locaux.tar.gz) | 1033 | 44749 | Archivé sur demande, non actif. |
+| [.agents/skills/geometric-modern/references/design-use-cases.md](skills-locaux.tar.gz) | 66 | 2795 | Archivé sur demande, non actif. |
+| [.agents/skills/geometric-modern/references/lastskill.md](skills-locaux.tar.gz) | 1001 | 42180 | Archivé sur demande, non actif. |
+| [.agents/skills/geometric-modern/references/refero-style-database.md](skills-locaux.tar.gz) | 1274 | 62878 | Archivé sur demande, non actif. |
+| [.agents/skills/geometric-modern/references/sources/01-greenspace.md](skills-locaux.tar.gz) | 74 | 4991 | Archivé sur demande, non actif. |
+| [.agents/skills/geometric-modern/references/sources/02-artem-militonian.md](skills-locaux.tar.gz) | 81 | 5265 | Archivé sur demande, non actif. |
+| [.agents/skills/geometric-modern/references/sources/03-vac.md](skills-locaux.tar.gz) | 83 | 5341 | Archivé sur demande, non actif. |
+| [.agents/skills/geometric-modern/references/sources/04-theodore-ellison-designs.md](skills-locaux.tar.gz) | 101 | 6934 | Archivé sur demande, non actif. |
+| [.agents/skills/geometric-modern/references/sources/05-eindhoven-design-district.md](skills-locaux.tar.gz) | 80 | 6981 | Archivé sur demande, non actif. |
+| [.agents/skills/glossy-modern/SKILL.md](skills-locaux.tar.gz) | 941 | 42226 | Archivé sur demande, non actif. |
+| [.agents/skills/glossy-modern/references/design-use-cases.md](skills-locaux.tar.gz) | 66 | 2716 | Archivé sur demande, non actif. |
+| [.agents/skills/glossy-modern/references/lastskill.md](skills-locaux.tar.gz) | 916 | 39674 | Archivé sur demande, non actif. |
+| [.agents/skills/glossy-modern/references/refero-style-database.md](skills-locaux.tar.gz) | 3186 | 69340 | Archivé sur demande, non actif. |
+| [.agents/skills/glossy-modern/references/sources/01-changelog.md](skills-locaux.tar.gz) | 92 | 2993 | Archivé sur demande, non actif. |
+| [.agents/skills/glossy-modern/references/sources/02-raycast.md](skills-locaux.tar.gz) | 95 | 3088 | Archivé sur demande, non actif. |
+| [.agents/skills/glossy-modern/references/sources/03-dia-browser.md](skills-locaux.tar.gz) | 92 | 2877 | Archivé sur demande, non actif. |
+| [.agents/skills/glossy-modern/references/sources/04-ayo-lava.md](skills-locaux.tar.gz) | 77 | 2634 | Archivé sur demande, non actif. |
+| [.agents/skills/glossy-modern/references/sources/05-monopo-saigon.md](skills-locaux.tar.gz) | 82 | 2697 | Archivé sur demande, non actif. |
+| [.agents/skills/gpt-taste/SKILL.md](skills-locaux.tar.gz) | 76 | 8725 | Archivé sur demande, non actif. |
+| [.agents/skills/high-contrast/SKILL.md](skills-locaux.tar.gz) | 1033 | 41022 | Archivé sur demande, non actif. |
+| [.agents/skills/high-contrast/references/design-use-cases.md](skills-locaux.tar.gz) | 66 | 2714 | Archivé sur demande, non actif. |
+| [.agents/skills/high-contrast/references/lastskill.md](skills-locaux.tar.gz) | 1009 | 38974 | Archivé sur demande, non actif. |
+| [.agents/skills/high-contrast/references/refero-style-database.md](skills-locaux.tar.gz) | 2708 | 62088 | Archivé sur demande, non actif. |
+| [.agents/skills/high-contrast/references/sources/01-colab.md](skills-locaux.tar.gz) | 52 | 2093 | Archivé sur demande, non actif. |
+| [.agents/skills/high-contrast/references/sources/02-holographik.md](skills-locaux.tar.gz) | 49 | 1972 | Archivé sur demande, non actif. |
+| [.agents/skills/high-contrast/references/sources/03-hardclo.md](skills-locaux.tar.gz) | 50 | 1902 | Archivé sur demande, non actif. |
+| [.agents/skills/high-contrast/references/sources/04-hyperaktiv.md](skills-locaux.tar.gz) | 54 | 2095 | Archivé sur demande, non actif. |
+| [.agents/skills/high-contrast/references/sources/05-hugging-face.md](skills-locaux.tar.gz) | 57 | 2363 | Archivé sur demande, non actif. |
+| [.agents/skills/high-end-design/SKILL.md](skills-locaux.tar.gz) | 1048 | 47582 | Archivé sur demande, non actif. |
+| [.agents/skills/high-end-design/references/design-use-cases.md](skills-locaux.tar.gz) | 66 | 2971 | Archivé sur demande, non actif. |
+| [.agents/skills/high-end-design/references/lastskill.md](skills-locaux.tar.gz) | 1020 | 44994 | Archivé sur demande, non actif. |
+| [.agents/skills/high-end-design/references/refero-style-database.md](skills-locaux.tar.gz) | 1085 | 95432 | Archivé sur demande, non actif. |
+| [.agents/skills/high-end-design/references/sources/01-bang-olufsen.md](skills-locaux.tar.gz) | 83 | 15528 | Archivé sur demande, non actif. |
+| [.agents/skills/high-end-design/references/sources/02-bmwcom.md](skills-locaux.tar.gz) | 85 | 13658 | Archivé sur demande, non actif. |
+| [.agents/skills/high-end-design/references/sources/03-ferrari.md](skills-locaux.tar.gz) | 80 | 13540 | Archivé sur demande, non actif. |
+| [.agents/skills/high-end-design/references/sources/04-true-staging.md](skills-locaux.tar.gz) | 84 | 5640 | Archivé sur demande, non actif. |
+| [.agents/skills/high-end-design/references/sources/05-peak-design.md](skills-locaux.tar.gz) | 113 | 22172 | Archivé sur demande, non actif. |
+| [.agents/skills/high-end-visual-design/SKILL.md](skills-locaux.tar.gz) | 98 | 10561 | Archivé sur demande, non actif. |
+| [.agents/skills/industrial-brutalist-ui/SKILL.md](skills-locaux.tar.gz) | 92 | 8456 | Archivé sur demande, non actif. |
+| [.agents/skills/light-ui/SKILL.md](skills-locaux.tar.gz) | 714 | 38950 | Archivé sur demande, non actif. |
+| [.agents/skills/light-ui/references/design-use-cases.md](skills-locaux.tar.gz) | 66 | 2685 | Archivé sur demande, non actif. |
+| [.agents/skills/light-ui/references/lastskill.md](skills-locaux.tar.gz) | 687 | 35951 | Archivé sur demande, non actif. |
+| [.agents/skills/light-ui/references/refero-style-database.md](skills-locaux.tar.gz) | 2870 | 60055 | Archivé sur demande, non actif. |
+| [.agents/skills/light-ui/references/sources/01-luma.md](skills-locaux.tar.gz) | 66 | 2485 | Archivé sur demande, non actif. |
+| [.agents/skills/light-ui/references/sources/02-lightdash.md](skills-locaux.tar.gz) | 71 | 2694 | Archivé sur demande, non actif. |
+| [.agents/skills/light-ui/references/sources/03-circle.md](skills-locaux.tar.gz) | 70 | 2479 | Archivé sur demande, non actif. |
+| [.agents/skills/light-ui/references/sources/04-lift-off-challenge.md](skills-locaux.tar.gz) | 71 | 2654 | Archivé sur demande, non actif. |
+| [.agents/skills/light-ui/references/sources/05-tailark-pro.md](skills-locaux.tar.gz) | 71 | 2626 | Archivé sur demande, non actif. |
+| [.agents/skills/minimal-design/SKILL.md](skills-locaux.tar.gz) | 1015 | 37514 | Archivé sur demande, non actif. |
+| [.agents/skills/minimal-design/references/advanced-implementation-notes.md](skills-locaux.tar.gz) | 114 | 2592 | Archivé sur demande, non actif. |
+| [.agents/skills/minimal-design/references/design-use-cases.md](skills-locaux.tar.gz) | 66 | 2671 | Archivé sur demande, non actif. |
+| [.agents/skills/minimal-design/references/lastskill.md](skills-locaux.tar.gz) | 982 | 34420 | Archivé sur demande, non actif. |
+| [.agents/skills/minimal-design/references/refero-style-database.md](skills-locaux.tar.gz) | 2915 | 64075 | Archivé sur demande, non actif. |
+| [.agents/skills/minimal-design/references/sources/01-general-intelligence-company.md](skills-locaux.tar.gz) | 82 | 2723 | Archivé sur demande, non actif. |
+| [.agents/skills/minimal-design/references/sources/02-sprig.md](skills-locaux.tar.gz) | 83 | 2628 | Archivé sur demande, non actif. |
+| [.agents/skills/minimal-design/references/sources/03-standards.md](skills-locaux.tar.gz) | 86 | 2300 | Archivé sur demande, non actif. |
+| [.agents/skills/minimal-design/references/sources/04-rox.md](skills-locaux.tar.gz) | 89 | 2589 | Archivé sur demande, non actif. |
+| [.agents/skills/minimal-design/references/sources/05-copy.md](skills-locaux.tar.gz) | 86 | 2531 | Archivé sur demande, non actif. |
+| [.agents/skills/minimalist-ui/SKILL.md](skills-locaux.tar.gz) | 85 | 7901 | Archivé sur demande, non actif. |
+| [.agents/skills/monochrome-ui/SKILL.md](skills-locaux.tar.gz) | 1003 | 38317 | Archivé sur demande, non actif. |
+| [.agents/skills/monochrome-ui/references/advanced-implementation-notes.md](skills-locaux.tar.gz) | 102 | 2327 | Archivé sur demande, non actif. |
+| [.agents/skills/monochrome-ui/references/design-use-cases.md](skills-locaux.tar.gz) | 66 | 2670 | Archivé sur demande, non actif. |
+| [.agents/skills/monochrome-ui/references/lastskill.md](skills-locaux.tar.gz) | 971 | 35638 | Archivé sur demande, non actif. |
+| [.agents/skills/monochrome-ui/references/refero-style-database.md](skills-locaux.tar.gz) | 1086 | 63028 | Archivé sur demande, non actif. |
+| [.agents/skills/monochrome-ui/references/sources/01-figma-config.md](skills-locaux.tar.gz) | 84 | 5712 | Archivé sur demande, non actif. |
+| [.agents/skills/monochrome-ui/references/sources/02-mono.md](skills-locaux.tar.gz) | 101 | 6387 | Archivé sur demande, non actif. |
+| [.agents/skills/monochrome-ui/references/sources/03-yung-studio.md](skills-locaux.tar.gz) | 93 | 14080 | Archivé sur demande, non actif. |
+| [.agents/skills/monochrome-ui/references/sources/04-kaisermann.md](skills-locaux.tar.gz) | 76 | 5373 | Archivé sur demande, non actif. |
+| [.agents/skills/monochrome-ui/references/sources/05-ui.md](skills-locaux.tar.gz) | 92 | 7238 | Archivé sur demande, non actif. |
+| [.agents/skills/motion/SKILL.md](skills-locaux.tar.gz) | 1018 | 48451 | Archivé sur demande, non actif. |
+| [.agents/skills/motion/references/advanced-implementation-notes.md](skills-locaux.tar.gz) | 44 | 2267 | Archivé sur demande, non actif. |
+| [.agents/skills/motion/references/design-use-cases.md](skills-locaux.tar.gz) | 66 | 2782 | Archivé sur demande, non actif. |
+| [.agents/skills/motion/references/lastskill.md](skills-locaux.tar.gz) | 993 | 45896 | Archivé sur demande, non actif. |
+| [.agents/skills/motion/references/refero-style-database.md](skills-locaux.tar.gz) | 3085 | 84288 | Archivé sur demande, non actif. |
+| [.agents/skills/motion/references/sources/01-liquid-death.md](skills-locaux.tar.gz) | 177 | 8304 | Archivé sur demande, non actif. |
+| [.agents/skills/motion/references/sources/02-heavyweight.md](skills-locaux.tar.gz) | 118 | 4801 | Archivé sur demande, non actif. |
+| [.agents/skills/motion/references/sources/03-handshake.md](skills-locaux.tar.gz) | 149 | 5436 | Archivé sur demande, non actif. |
+| [.agents/skills/motion/references/sources/04-cthdrl.md](skills-locaux.tar.gz) | 110 | 3870 | Archivé sur demande, non actif. |
+| [.agents/skills/motion/references/sources/05-superlative.md](skills-locaux.tar.gz) | 114 | 4067 | Archivé sur demande, non actif. |
+| [.agents/skills/motion/references/sources/06-mekaverse.md](skills-locaux.tar.gz) | 134 | 4807 | Archivé sur demande, non actif. |
+| [.agents/skills/motion/references/sources/07-hape-prime.md](skills-locaux.tar.gz) | 107 | 4234 | Archivé sur demande, non actif. |
+| [.agents/skills/motion/references/sources/08-moving-parts.md](skills-locaux.tar.gz) | 165 | 6543 | Archivé sur demande, non actif. |
+| [.agents/skills/motion/references/sources/09-homunculus.md](skills-locaux.tar.gz) | 111 | 4349 | Archivé sur demande, non actif. |
+| [.agents/skills/pastel/SKILL.md](skills-locaux.tar.gz) | 1097 | 43899 | Archivé sur demande, non actif. |
+| [.agents/skills/pastel/references/design-use-cases.md](skills-locaux.tar.gz) | 66 | 2663 | Archivé sur demande, non actif. |
+| [.agents/skills/pastel/references/lastskill.md](skills-locaux.tar.gz) | 1067 | 41162 | Archivé sur demande, non actif. |
+| [.agents/skills/pastel/references/refero-style-database.md](skills-locaux.tar.gz) | 2318 | 66573 | Archivé sur demande, non actif. |
+| [.agents/skills/pastel/references/sources/01-pastel.md](skills-locaux.tar.gz) | 99 | 3802 | Archivé sur demande, non actif. |
+| [.agents/skills/pastel/references/sources/02-palette-supply.md](skills-locaux.tar.gz) | 113 | 4359 | Archivé sur demande, non actif. |
+| [.agents/skills/pastel/references/sources/03-recess.md](skills-locaux.tar.gz) | 96 | 4457 | Archivé sur demande, non actif. |
+| [.agents/skills/pastel/references/sources/04-graza.md](skills-locaux.tar.gz) | 106 | 4974 | Archivé sur demande, non actif. |
+| [.agents/skills/pastel/references/sources/05-podcorn.md](skills-locaux.tar.gz) | 105 | 4211 | Archivé sur demande, non actif. |
+| [.agents/skills/pastel/references/sources/06-podia.md](skills-locaux.tar.gz) | 104 | 4634 | Archivé sur demande, non actif. |
+| [.agents/skills/playful-design/SKILL.md](skills-locaux.tar.gz) | 1206 | 44126 | Archivé sur demande, non actif. |
+| [.agents/skills/playful-design/references/design-use-cases.md](skills-locaux.tar.gz) | 66 | 2742 | Archivé sur demande, non actif. |
+| [.agents/skills/playful-design/references/lastskill.md](skills-locaux.tar.gz) | 1182 | 42016 | Archivé sur demande, non actif. |
+| [.agents/skills/playful-design/references/refero-style-database.md](skills-locaux.tar.gz) | 3088 | 67164 | Archivé sur demande, non actif. |
+| [.agents/skills/playful-design/references/sources/01-playful-software.md](skills-locaux.tar.gz) | 69 | 2416 | Archivé sur demande, non actif. |
+| [.agents/skills/playful-design/references/sources/02-maxima-therapy.md](skills-locaux.tar.gz) | 71 | 2524 | Archivé sur demande, non actif. |
+| [.agents/skills/playful-design/references/sources/03-playdate.md](skills-locaux.tar.gz) | 69 | 2251 | Archivé sur demande, non actif. |
+| [.agents/skills/playful-design/references/sources/04-duolingo.md](skills-locaux.tar.gz) | 70 | 2444 | Archivé sur demande, non actif. |
+| [.agents/skills/playful-design/references/sources/05-clay.md](skills-locaux.tar.gz) | 70 | 2451 | Archivé sur demande, non actif. |
+| [.agents/skills/redesign-existing-projects/SKILL.md](skills-locaux.tar.gz) | 178 | 15060 | Archivé sur demande, non actif. |
+| [.agents/skills/serif-display/SKILL.md](skills-locaux.tar.gz) | 1015 | 38245 | Archivé sur demande, non actif. |
+| [.agents/skills/serif-display/references/advanced-implementation-notes.md](skills-locaux.tar.gz) | 181 | 4535 | Archivé sur demande, non actif. |
+| [.agents/skills/serif-display/references/design-use-cases.md](skills-locaux.tar.gz) | 66 | 2663 | Archivé sur demande, non actif. |
+| [.agents/skills/serif-display/references/lastskill.md](skills-locaux.tar.gz) | 986 | 35558 | Archivé sur demande, non actif. |
+| [.agents/skills/serif-display/references/refero-style-database.md](skills-locaux.tar.gz) | 2318 | 64921 | Archivé sur demande, non actif. |
+| [.agents/skills/serif-display/references/sources/01-sociotype.md](skills-locaux.tar.gz) | 91 | 3385 | Archivé sur demande, non actif. |
+| [.agents/skills/serif-display/references/sources/02-fidele-editions.md](skills-locaux.tar.gz) | 113 | 4563 | Archivé sur demande, non actif. |
+| [.agents/skills/serif-display/references/sources/03-pangram-pangram.md](skills-locaux.tar.gz) | 125 | 4720 | Archivé sur demande, non actif. |
+| [.agents/skills/serif-display/references/sources/04-standards.md](skills-locaux.tar.gz) | 101 | 3669 | Archivé sur demande, non actif. |
+| [.agents/skills/serif-display/references/sources/05-unveil.md](skills-locaux.tar.gz) | 81 | 2985 | Archivé sur demande, non actif. |
+| [.agents/skills/soft-gradients/SKILL.md](skills-locaux.tar.gz) | 1006 | 43336 | Archivé sur demande, non actif. |
+| [.agents/skills/soft-gradients/references/design-use-cases.md](skills-locaux.tar.gz) | 66 | 2736 | Archivé sur demande, non actif. |
+| [.agents/skills/soft-gradients/references/lastskill.md](skills-locaux.tar.gz) | 980 | 40478 | Archivé sur demande, non actif. |
+| [.agents/skills/soft-gradients/references/refero-style-database.md](skills-locaux.tar.gz) | 3362 | 79534 | Archivé sur demande, non actif. |
+| [.agents/skills/soft-gradients/references/sources/01-base44.md](skills-locaux.tar.gz) | 106 | 3925 | Archivé sur demande, non actif. |
+| [.agents/skills/soft-gradients/references/sources/02-dia-browser.md](skills-locaux.tar.gz) | 105 | 3333 | Archivé sur demande, non actif. |
+| [.agents/skills/soft-gradients/references/sources/03-sprig.md](skills-locaux.tar.gz) | 98 | 3370 | Archivé sur demande, non actif. |
+| [.agents/skills/soft-gradients/references/sources/04-superhuman.md](skills-locaux.tar.gz) | 106 | 3268 | Archivé sur demande, non actif. |
+| [.agents/skills/soft-gradients/references/sources/05-retool.md](skills-locaux.tar.gz) | 101 | 3393 | Archivé sur demande, non actif. |
+| [.agents/skills/technical-sans/SKILL.md](skills-locaux.tar.gz) | 695 | 38724 | Archivé sur demande, non actif. |
+| [.agents/skills/technical-sans/references/design-use-cases.md](skills-locaux.tar.gz) | 66 | 2695 | Archivé sur demande, non actif. |
+| [.agents/skills/technical-sans/references/lastskill.md](skills-locaux.tar.gz) | 666 | 35553 | Archivé sur demande, non actif. |
+| [.agents/skills/technical-sans/references/refero-style-database.md](skills-locaux.tar.gz) | 2963 | 69003 | Archivé sur demande, non actif. |
+| [.agents/skills/technical-sans/references/sources/01-antimetal.md](skills-locaux.tar.gz) | 113 | 4213 | Archivé sur demande, non actif. |
+| [.agents/skills/technical-sans/references/sources/02-plain.md](skills-locaux.tar.gz) | 109 | 3820 | Archivé sur demande, non actif. |
+| [.agents/skills/technical-sans/references/sources/03-cursor.md](skills-locaux.tar.gz) | 107 | 3718 | Archivé sur demande, non actif. |
+| [.agents/skills/technical-sans/references/sources/04-linear.md](skills-locaux.tar.gz) | 110 | 3526 | Archivé sur demande, non actif. |
+| [.agents/skills/technical-sans/references/sources/05-mercury.md](skills-locaux.tar.gz) | 108 | 3317 | Archivé sur demande, non actif. |
+| [.agents/skills/technical-ui/SKILL.md](skills-locaux.tar.gz) | 705 | 39010 | Archivé sur demande, non actif. |
+| [.agents/skills/technical-ui/references/design-use-cases.md](skills-locaux.tar.gz) | 66 | 2730 | Archivé sur demande, non actif. |
+| [.agents/skills/technical-ui/references/lastskill.md](skills-locaux.tar.gz) | 677 | 35913 | Archivé sur demande, non actif. |
+| [.agents/skills/technical-ui/references/refero-style-database.md](skills-locaux.tar.gz) | 3162 | 60461 | Archivé sur demande, non actif. |
+| [.agents/skills/technical-ui/references/sources/01-user-interviews.md](skills-locaux.tar.gz) | 73 | 2731 | Archivé sur demande, non actif. |
+| [.agents/skills/technical-ui/references/sources/02-chatgpt.md](skills-locaux.tar.gz) | 67 | 2199 | Archivé sur demande, non actif. |
+| [.agents/skills/technical-ui/references/sources/03-attio.md](skills-locaux.tar.gz) | 71 | 2391 | Archivé sur demande, non actif. |
+| [.agents/skills/technical-ui/references/sources/04-telepathic-instruments.md](skills-locaux.tar.gz) | 68 | 2366 | Archivé sur demande, non actif. |
+| [.agents/skills/technical-ui/references/sources/05-todesktop.md](skills-locaux.tar.gz) | 71 | 2543 | Archivé sur demande, non actif. |
+| [.agents/skills/utilitarian/SKILL.md](skills-locaux.tar.gz) | 720 | 38926 | Archivé sur demande, non actif. |
+| [.agents/skills/utilitarian/references/design-use-cases.md](skills-locaux.tar.gz) | 66 | 2696 | Archivé sur demande, non actif. |
+| [.agents/skills/utilitarian/references/lastskill.md](skills-locaux.tar.gz) | 691 | 35937 | Archivé sur demande, non actif. |
+| [.agents/skills/utilitarian/references/refero-style-database.md](skills-locaux.tar.gz) | 1088 | 79005 | Archivé sur demande, non actif. |
+| [.agents/skills/utilitarian/references/sources/01-office-chair-finder.md](skills-locaux.tar.gz) | 86 | 5433 | Archivé sur demande, non actif. |
+| [.agents/skills/utilitarian/references/sources/02-makr.md](skills-locaux.tar.gz) | 83 | 4952 | Archivé sur demande, non actif. |
+| [.agents/skills/utilitarian/references/sources/03-norm.md](skills-locaux.tar.gz) | 92 | 5622 | Archivé sur demande, non actif. |
+| [.agents/skills/utilitarian/references/sources/04-superpower.md](skills-locaux.tar.gz) | 97 | 31239 | Archivé sur demande, non actif. |
+| [.agents/skills/utilitarian/references/sources/05-ordinal.md](skills-locaux.tar.gz) | 90 | 7564 | Archivé sur demande, non actif. |
+| [.agents/skills/vibrant-accents/SKILL.md](skills-locaux.tar.gz) | 827 | 36145 | Archivé sur demande, non actif. |
+| [.agents/skills/vibrant-accents/references/advanced-implementation-notes.md](skills-locaux.tar.gz) | 469 | 11626 | Archivé sur demande, non actif. |
+| [.agents/skills/vibrant-accents/references/design-use-cases.md](skills-locaux.tar.gz) | 66 | 2740 | Archivé sur demande, non actif. |
+| [.agents/skills/vibrant-accents/references/lastskill.md](skills-locaux.tar.gz) | 801 | 33561 | Archivé sur demande, non actif. |
+| [.agents/skills/vibrant-accents/references/refero-style-database.md](skills-locaux.tar.gz) | 2718 | 60413 | Archivé sur demande, non actif. |
+| [.agents/skills/vibrant-accents/references/sources/01-stripe.md](skills-locaux.tar.gz) | 109 | 3563 | Archivé sur demande, non actif. |
+| [.agents/skills/vibrant-accents/references/sources/02-squadeasy.md](skills-locaux.tar.gz) | 102 | 3253 | Archivé sur demande, non actif. |
+| [.agents/skills/vibrant-accents/references/sources/03-base44.md](skills-locaux.tar.gz) | 104 | 3434 | Archivé sur demande, non actif. |
+| [.agents/skills/vibrant-accents/references/sources/04-empower.md](skills-locaux.tar.gz) | 102 | 3087 | Archivé sur demande, non actif. |
+| [.agents/skills/vibrant-accents/references/sources/05-copy.md](skills-locaux.tar.gz) | 102 | 3043 | Archivé sur demande, non actif. |
+| [.agents/skills/viewport-fit/SKILL.md](skills-locaux.tar.gz) | 132 | 6622 | Archivé sur demande, non actif. |
+| [.agents/skills/visual-annotation-tuning/SKILL.md](skills-locaux.tar.gz) | 181 | 8960 | Archivé sur demande, non actif. |
 
 ## Hors corpus actif
 

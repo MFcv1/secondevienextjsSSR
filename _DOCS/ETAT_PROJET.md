@@ -18,6 +18,39 @@ La gate CLI est corrigée sans dérogation. Les états d'audit ci-dessous sont h
 le design local ultérieur reste hors livraison. Preuves, périmètre et recette dans le
 [dossier de livraison](audits/2026-09-07-livraison-interactions/README.md).
 
+## Rapidité passkey — correctif local du 9 septembre
+
+Correctif préparé, **non committé et non déployé** : entrée isolée pour les deux
+fonctions de reconnexion, CPU 1, concurrence 8, minimum 1 / maximum 2 instances,
+mesures par étape sans identité. Contrat dans [Auth](security/AUTHENTIFICATION.md#capacité-et-mesures-de-la-reconnexion-passkey).
+Seconde passe locale : import Firebase général retiré de la modale, préparation
+en cours dédoublonnée, callable de vérification prêt avant biométrie, mesures
+client des succès/échecs. Lecture préalable du challenge supprimée au profit
+de sa transaction de tentative ; reprise de token et contrôles concurrents
+conservés. Aucune connexion réelle ni mutation cloud.
+
+Validation Node 22.23.2 : 70 tests ciblés (dont le garde de déploiement) et
+80 tests Auth passent (150 tests distincts au total). Les 11 tests passkey de
+préparation, performance et transactions/inscription sont ensuite intégrés à
+`test:auth` pour la CI : agrégat relancé, 91/91 réussis. `git diff --check` passe.
+Chargement
+local sur trois processus frais par mode : découverte complète 666–946 ms,
+1 743 modules, RSS 155–156 MiB ; entrée options 340–358 ms et vérification
+232–271 ms, 746 modules, RSS 85–86 MiB. Cette comparaison de chargement local
+n'est ni une latence cloud ni une preuve de l'objectif de 1–2 s sur téléphone.
+ESLint ciblé : aucune erreur ; cinq avertissements préexistants dans la modale
+et un sur l'argument `name` du script de déploiement empêchent le passage strict.
+Pas de build Next, navigateur ni connexion humaine exécutés.
+
+La livraison exige un commit explicitement autorisé, puis une archive immuable
+vérifiée et un manifeste ciblé via `scripts/deploy-functions-targeted.mjs`.
+Le déploiement source seul doit également appliquer les nouveaux paramètres
+de capacité : ne pas annoncer ceux-ci actifs après une simple mise à jour du code.
+Les observations cloud avant livraison sont conservées localement dans
+`logs/passkey-performance-20260909/` ; relire les révisions avant mutation et
+conserver leurs sources de rollback. La seconde passe modifie aussi le client :
+elle nécessitera une livraison App Hosting distincte avec les gates associées.
+
 ## Avant / après et newsletter — livraison des designs du 8 septembre
 
 Les deux designs retenus sont intégrés : relief ivoire/champagne pour
@@ -44,6 +77,46 @@ débordement. Preuves : `logs/designs-20260908-ovale/`. Retour arrière :
 `build-2026-09-08-001`.
 Contrats : [Interface](ux/INTERFACE_NAVIGATION.md#section-avant--après).
 
+## Audit des interactions — correctifs locaux du 7 septembre
+
+Après la première passe ciblée, les 442 sources de l'inventaire ont été relues
+intégralement, ainsi que six modules ajoutés : **448 fichiers couverts**.
+La relecture a modifié/ajouté 109 sources : transactions de retours, OTP et
+passkeys, concurrence paiement/publication, reprises email, panier/favoris,
+exports et listes bornés, PDF, édition, navigation et cleanup des animations.
+Le code analytics a également été lu ; aucune analyse de logs cloud.
+Validation locale : **591 tests réussis sous Node 22**, ESLint sans erreur
+sur 446 fichiers exécutables, 121 avertissements conservés.
+**Aucun déploiement.** Rules et indexes `orders(userId ASC, updatedAt DESC)` et
+`business_events(aggregateId ASC, occurredAt DESC)` restent locaux.
+Le [rapport détaillé de relecture](audits/RELECTURE_INTEGRALE_INTERACTIONS_2026-09-07.md)
+porte l'inventaire individuel, le patch de cette passe, les preuves et les limites.
+Il ne certifie ni l'absence de toute faille ni les parcours réellement hébergés.
+
+## Parcours paiement — livré sur sandbox le 6 septembre
+
+Complément UI livré ensuite : App Hosting **`build-2026-09-06-002`**, 100 % du
+trafic, deployment ID `sv-mtp4ho36-474b1fdfaa07`. Livraison locale grisée hors
+code postal `13xxx` ou avant saisie complète ; sélection devenue invalide retirée
+sans choisir le retrait gratuit. Dialogues de reprise/annulation harmonisés avec
+l'espace client, boutons hiérarchisés et focus conservé. Validation : 7 tests Node,
+8 scénarios navigateur simulés desktop/mobile, lint sans erreur, trois routes
+hébergées 200. Functions, tarifs et paiements inchangés. Preuves locales dans
+`logs/recette/checkout_ux_20260906/` ; rollback avant ce complément :
+`build-2026-09-05-003`. La livraison initiale ci-dessous reste une preuve datée.
+
+Réservation standard 15 minutes, reprise par propriétaire, soumission bancaire et
+annulation synchronisées, transport CloudEvent préparé, disponibilité/statuts
+client et actualisation admin corrigés localement. Validation : 206 tests Node
+ciblés, 20 tests navigateur simulés desktop/mobile, 20 scénarios Firestore demo
+(114 assertions) et build fixture réussis. Déploiement ensuite autorisé : hosting
+`build-2026-09-05-003`, 100 % du trafic, deployment ID `sv-mtp14jn2-5a4f788bc171` ;
+13 Functions ACTIVE, incluant le reader client préexistant ; catalogue 338 publié,
+revalidé et servi. Routes 200, accès anonymes refusés, capacités conservées.
+Le [suivi de livraison](commerce/RECONSTRUCTION_PARCOURS_PAIEMENT_2026-09-06.md#9-livraison-sandbox-autorisée-le-6-septembre-2026)
+décrit les preuves et le rollback. Aucun paiement de recette ; vrais Stripe/3DS et
+événement d'expiration non exercés. Les statuts ci-dessous restent historiques.
+
 ## Socle et fonctionnalités
 
 | Domaine | État documenté | Référence |
@@ -63,6 +136,13 @@ Contrats : [Interface](ux/INTERFACE_NAVIGATION.md#section-avant--après).
 
 ## Travaux récents et preuves restantes
 
+**Optimisation backend terminée pour le périmètre de préproduction examiné** :
+[verdict, corrections et validations finales](audits/CLOTURE_BACKEND_2026-09-05.md).
+Dernier correctif livré : `listMyOrdersV2Gen2` (curseur lu une seule
+fois, entrée légère), révision `00002-rab` ACTIVE et 100 % du trafic relu,
+contrôle client réussi. Aucun blocage fonctionnel connu dans ce périmètre ; les
+gates longues et production ci-dessous restent distinctes.
+
 Stats/Data : retours rapides sans recréation d'écoutes, suspension au masquage
 ou après 30 s hors page, catalogue différé et actualisation des tendances.
 [Implémentation, tests et livraison](audits/SUIVI_STATS_DATA_2026-09-05.md).
@@ -71,11 +151,13 @@ Implémentation locale I0–I6 du 2026-09-05 : affichage/insights, cache autoris
 brouillons Devis, séquences sessions et projections, lectures/pagination,
 imports ciblés et outbox ont reçu des corrections et validations locales.
 [Suivi par lot, résultats, migrations et limites](audits/SUIVI_IMPLEMENTATION_BACKOFFICE_2026-09-05.md).
-Frontend livré sur `build-2026-09-05-001` avec l'extension Stats/Data ;
+Frontend livré sur `build-2026-09-05-002` avec les correctifs Stats/Data ;
 [23 Functions livrées, compteurs initialisés](audits/LIVRAISON_BACKEND_2026-09-05.md).
-Le complément de champs archive/shard,
-le premier handler autorisé avec services réels, la comparaison hébergée I7 et QBO-06
-restent explicitement ouverts. Les paragraphes d'audit suivants décrivent leurs
+Les lecteurs Commandes/Retours ont ensuite reçu `eccd278` ; leurs révisions et
+la convergence Data sur mutation/reconnexion sont prouvées dans le suivi Stats/Data.
+Le complément de champs archive/shard reste exclu ; p95/Billing, multi-admin et
+attribution QBO-06 restent des limites distinctes, sans blocage démontré pour
+cette clôture. Les paragraphes d'audit suivants décrivent leurs
 campagnes historiques et ne sont pas une preuve contre les nouveaux tests métier.
 
 L’[audit backend du 5 septembre](audits/AUDIT_BACKEND_2026-09-05.md) confronte

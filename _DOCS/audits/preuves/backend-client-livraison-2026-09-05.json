@@ -1,0 +1,33 @@
+{
+  "project": "secondevienextjsssr",
+  "region": "europe-west1",
+  "target": "listMyOrdersV2Gen2",
+  "revision": "listmyordersv2gen2-00002-rab",
+  "previousRevision": "listmyordersv2gen2-00001-wug",
+  "state": "ACTIVE",
+  "trafficPercent": 100,
+  "verifiedAt": "2026-09-05T18:34:02.544Z",
+  "updateMask": "buildConfig.source",
+  "sourceSha256": "d46ec2b9adca60bca90510c3bca47b22e4ecdfd413dc9b5fbf68735f7bd9e7fa",
+  "rollbackSha256": "81b055b246a0fc88a5bc258c2e6376c7cf05b023d7e6c0a099e7cac2f7132f15",
+  "serviceConfigurationUnchangedExcludingRevision": true,
+  "triggerUnchanged": true,
+  "commerceControlUnchanged": true,
+  "anonymousHttpStatus": 401,
+  "authenticatedHttpStatus": 200,
+  "authenticatedRequestAt": "2026-09-05T18:34:18.353457Z",
+  "authenticatedServerSeconds": 9.763549382,
+  "clientBrowser": {
+    "login": "existing customer via Google",
+    "orders": 24,
+    "uniqueOrders": 24,
+    "documents": 37,
+    "readError": false,
+    "pagination": "not applicable: 24 orders fit in the first page of 25"
+  },
+  "hostingDeployment": false,
+  "commitOrPush": false,
+  "businessDataMutation": false,
+  "performanceGainClaimed": false,
+  "localEvidenceDirectory": "logs/recette/livraison_client_20260905/"
+}

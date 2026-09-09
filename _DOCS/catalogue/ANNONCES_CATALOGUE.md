@@ -285,6 +285,18 @@ Regles:
 
 ## 6. Disponibilite commerciale
 
+Contrat livré sur sandbox le 6 septembre : stock zéro ne prouve aucune vente.
+Le snapshot expose `availability` (`available`, `reserved`, `sold`, `unavailable`).
+Pour les seuls produits publiés à stock nul sans `sold=true`, le builder lit
+au plus 51 réservations par `productId` : hold présent → réservé ; engagement
+non restocké → vendu ; preuve absente ou plus de 50 lignes → indisponible.
+Cette jointure bornée préserve les ventes V2 historiques sans migration des
+commandes/faits ni lecture Firestore publique. Elle est une lecture métier
+supplémentaire du builder, pas une optimisation de latence ; son coût reste à
+mesurer. Le commit payé actualise le produit dans la transaction existante pour
+déclencher la publication même si le stock ne change plus. L'overview ne compte
+pas les holds comme ventes. Le prix et le droit d'achat restent autoritaires.
+
 La regle unique est `isPurchasable` dans `src/kit/commerce/purchasability.js`:
 
 ```text

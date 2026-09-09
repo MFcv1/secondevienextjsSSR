@@ -2347,3 +2347,27 @@ Statut courant: `FERMEE_APRES_REQUALIFICATION_STRIPE_SANDBOX`.
   consomme uniquement apres paiement durable et ne reste pas reserve apres le
   succes. Aucun Stripe live, environnement production, nouvelle Function,
   nouveau deploiement ou seconde commande supplementaire n'a ete touche.
+
+## Qualification back-office — 2026-09-05
+
+Run : `run_qualification_bo_20260905_01`. Résultats et preuves expurgées dans le
+[rapport de qualification](_DOCS/audits/QUALIFICATION_BACKOFFICE_2026-09-05.md).
+Aucun correctif applicatif ni déploiement ; BA-01 à BA-13 restent ouverts.
+
+- **QBO-01 / BA-12 — OUVERT, reproduit hébergé.** Stats présente C142 « En
+  attente », alors que la source `status=refunded`, net nul et le détail
+  Ventes/Retours confirment le remboursement. La traduction de statut dans
+  `AdminDashboard.jsx:824` retourne l'attente pour les statuts non gérés.
+- **QBO-02 / BA-12 — OUVERT, état transitoire reproduit.** Factures annonce
+  l'absence de facture pendant la synchronisation initiale. La collection est
+  effectivement vide à la fin de cette recette ; cela ne rend pas l'état
+  initial correct pour un autre jeu de données.
+- **QBO-03 — PREUVE_PARTIELLE.** Marqueurs de chargement des insights Stats
+  observés à plusieurs visites, y compris après contrôle de visibilité.
+  Metadata source présente ; cause et fin de chargement non établies.
+- **QBO-06 — INCIDENT_RECETTE_RESTAURE.** Le devis de recette Q1 a reçu A puis
+  B. La troisième sauvegarde a conservé B (`notesChanged=false`) ; quatrième
+  sauvegarde de restauration autorisée séparément. Source finale version 5,
+  notes vides identiques à l'origine, statut inchangé ; quatre audits conservés.
+  Attribution au code ou à l'interaction automatisée non démontrée. Aucun
+  marqueur résiduel ; contrôle commerce révision 77 inchangé.

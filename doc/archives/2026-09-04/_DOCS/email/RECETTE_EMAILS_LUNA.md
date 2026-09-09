@@ -12,7 +12,7 @@ Echeance: 2026-08-06
 Cloture: fusion des preuves utiles dans `EMAILS_TRANSACTIONNELS.md` et
 `COMMERCE_STRIPE.md`, puis suppression de ce plan
 Lanceur de nouveau chat: `$client-admin-test` via
-[.agents/skills/client-admin-test/SKILL.md](../../../../../.agents/skills/client-admin-test/SKILL.md)
+[.agents/skills/client-admin-test/SKILL.md](../../skills-locaux.tar.gz)
 (guide: [TEST_CLIENT_ADMIN_LUNA.md](../../TEST_CLIENT_ADMIN_LUNA.md))
 
 ## 1. Mission

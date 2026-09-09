@@ -8,8 +8,9 @@ recette de juillet ; les preuves anciennes restent archivées.
 
 Cette recette s'exécute seulement à la demande de l'utilisateur, dans les
 limites du prompt de campagne. Le lire comme documentation n'autorise ni Gmail,
-ni paiement, ni mutation. Le lanceur [$client-admin-test](../../.agents/skills/client-admin-test/SKILL.md)
-prépare un prompt explicite pour Chrome/Gmail et les opérations Stripe test.
+ni paiement, ni mutation. Le lanceur sous forme de skill a été retiré à la
+demande de l'utilisateur. Cette procédure reste consultable pour une recette
+explicitement demandée, avec un mandat précis pour Chrome/Gmail et Stripe test.
 Une autorisation déjà explicite ne doit pas être redemandée par principe.
 
 L'agent du chat réalise la campagne ; un seul agent contrôle Chrome. Le rôle de

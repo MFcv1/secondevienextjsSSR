@@ -33,6 +33,23 @@ en base. Une absence de `orderNumber` se degrade en `Référence indisponible`.
 
 ## 2. Flux d'achat
 
+Contrats supplémentaires du code local relu le 2026-09-07, non déployés :
+
+- Une ligne de panier possède un identifiant unique dans une création de
+  commande. L'import invité conserve une ligne distante déjà présente ; le
+  nettoyage après paiement cible UID, commande et révisions attendus.
+- Une expiration revalide l'échéance dans la transaction précédant toute
+  annulation Stripe. Une prolongation refuse une tentative déjà en annulation.
+- La décision financière d'un retour client et ses écritures associées sont
+  atomiques. Les montants en remboursement et les montants confirmés restent
+  distincts ; aucun total initial ne remplace un montant financier inconnu.
+- L'interface verrouille le snapshot du checkout dès sa préparation. Un
+  retour Stripe explicite a priorité sur une reprise d'un autre onglet ;
+  seule la confirmation durable autorise le succès.
+
+Les scénarios locaux et leurs limites sont dans la
+[relecture intégrale](../audits/RELECTURE_INTEGRALE_INTERACTIONS_2026-09-07.md).
+
 ```text
 produit achetable
   -> panier local/Firestore
@@ -54,6 +71,59 @@ legacy reste confine avant Stripe, rate limit, commande ou reservation. Hors
 fenetre explicitement autorisee, le flag UI fixture reste ferme.
 
 ## 3. Panier et checkout
+
+Contrat local du 7 septembre 2026, non déployé : `createCheckoutV2` transporte
+`customerEmail` et `checkoutOtpToken` hors du contrat `input` sans prix.
+`resolveCheckoutEmail` n'accepte l'adresse Auth que si elle correspond au contact
+normalisé et porte `email_verified: true`; sinon la preuve OTP serveur est
+exigée. Le client demande également l'OTP lorsque `emailVerified` est faux.
+Le contact vérifié est conservé dans le snapshot de commande, y compris pour
+l'UID anonyme. Cette adresse ne donne aucun droit sur les commandes d'un autre
+UID. Les commandes historiques sans contact ne sont pas réécrites.
+
+Contrat du 6 septembre 2026, **déployé sur sandbox** : le panier et les coordonnées
+ne réservent rien. Le clic de paiement prend un hold atomique de 900 secondes
+pour les nouvelles commandes ordinaires. La branche de rejeu conserve
+`checkout.expiresAt` ; les échéances historiques et explicites des liens admin
+restent inchangées. Le serveur refuse un nouveau secret après l'échéance avec
+`COMMERCE_CHECKOUT_DEADLINE_REACHED`, sans annoncer une annulation ni libérer
+le stock. Cette règle de checkout standard prime sur l'ancienne durée de policy ;
+aucune version de policy cloud n'a été modifiée.
+
+La sélection de livraison locale est grisée tant que le code postal n'a pas cinq
+chiffres ou ne commence pas par `13`, conformément à la politique sandbox active.
+Le motif est affiché sous l'option. Une adresse modifiée retire une sélection
+devenue inéligible avant réservation, sans choisir automatiquement le retrait
+gratuit. Le serveur reste autoritaire ; son refus de zone a un message spécifique.
+
+Carte et Express Checkout partagent un verrou synchrone pendant tout
+`confirmPayment`, authentification bancaire comprise. Une erreur de carte/saisie
+certaine permet de réessayer ; résultat absent, transport incertain ou traitement
+fournisseur conduisent à la vérification durable. Après 45 s, la lecture se ferme
+et propose une nouvelle vérification ou le dossier, sans annoncer un échec financier.
+Le récapitulatif conserve les données réservées et leur montant serveur ; seule
+la sortie explicite « Annuler et retourner à la galerie », confirmée, appelle
+`requestOrderCancellation`. Son résultat `paid` conserve la vente et affiche une
+confirmation. Fermeture, réseau et logout ne déclenchent aucune annulation.
+
+Le retour identifié consulte au plus les 25 commandes récentes via le reader
+existant, avant de proposer une reprise. Le même dossier reste accessible par
+la pagination du compte s'il est plus ancien. Aucun paiement ne démarre depuis
+la galerie. Les identités de requête sont persistées sans secret avant l'appel
+réseau, partagées entre onglets via Web Locks lorsqu'il est disponible ; les
+transactions serveur restent l'arbitre sur les autres navigateurs. Les brouillons
+de coordonnées sont limités au `sessionStorage` de l'UID, sans OTP.
+
+L'expiration conserve la saga provider-first : `requires_payment_method` et
+`requires_confirmation` sont annulables ; `requires_action`, `processing` et
+`requires_capture` conservent le hold avec résultat inconnu. Les trois tentatives
+de tâche existantes, puis le secours horaire et les incidents existants assurent
+la reprise bornée. Cette rétention de sécurité n'accorde pas un nouveau délai
+de paiement. `succeeded` est rapproché en paiement durable, sans release.
+Le déclencheur d'expiration exige un CloudEvent valide et sa cible locale fixe
+explicitement `FUNCTION_SIGNATURE_TYPE=cloudevent`.
+
+Spécification, matrice et limites : [reconstruction ciblée](RECONSTRUCTION_PARCOURS_PAIEMENT_2026-09-06.md).
 
 Composants principaux:
 
@@ -89,7 +159,7 @@ achetees dont `cartLineId` et `cartRevision` correspondent, puis reconstruit un
 checkout neuf pour les autres lignes. Un nouveau panier ne peut donc jamais
 heriter du `clientSecret` ni du montant d'une commande payee.
 
-Une commande encore impayee reste reprenable, mais le recapitulatif est alors
+Une commande encore impayee et dans son délai reste reprenable après contrôle serveur, mais le recapitulatif est alors
 reconstruit exclusivement depuis son snapshot immuable renvoye par le serveur.
 Les lignes ajoutees ensuite au panier ne remplacent jamais visuellement les
 lignes associees au PaymentIntent repris; elles restent preservees pour le
@@ -126,6 +196,19 @@ la commande est `paid`, le recu client est disponible et les compteurs passent
 de `reserved=1, committed=0` a `reserved=0, committed=1`.
 
 ## 4. Stock et idempotence
+
+Durcissement local du 7 septembre 2026, non déployé : une tentative sans
+identifiant fournisseur ne peut appeler une création Stripe qu'avant 23 heures
+depuis son `createdAt` immuable. Une date absente/invalide/future bloque également
+la création. Cette borne couvre paiement, récupération avant annulation et
+remboursement. Elle garde une marge sur les clés que Stripe peut supprimer après
+24 heures : [contrat Stripe](https://docs.stripe.com/api/idempotent_requests?lang=node).
+`updatedAt` ne renouvelle pas cette fenêtre. Un identifiant déjà connu reste
+consultable ; un remboursement identifié mais introuvable n'est jamais recréé.
+`COMMERCE_PROVIDER_RECONCILIATION_REQUIRED` exige un rapprochement par l'atelier,
+sans libération de stock ni compensation automatique. Cette protection peut
+laisser un ancien hold à résoudre manuellement ; elle n'invente pas un résultat
+financier pour débloquer le dossier.
 
 Le runtime v2 agrege les lignes par `inventoryKey`, reserve les quantites dans
 une transaction et conserve un mouvement deterministe par effet. La creation

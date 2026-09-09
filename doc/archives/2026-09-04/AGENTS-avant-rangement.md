@@ -232,7 +232,7 @@ Plans temporaires de reprise encore actifs:
   humaine des 13 e-mails sur sandbox par Luna; diagnostic et preuves
   uniquement, aucune correction de code; anomalies remises a GPT-5.6-sol;
   execution et fusion au plus tard le 2026-08-06, puis suppression.
-- [.agents/skills/client-admin-test/SKILL.md](../../../.agents/skills/client-admin-test/SKILL.md):
+- [.agents/skills/client-admin-test/SKILL.md](skills-locaux.tar.gz):
   skill de projet invoque par `$client-admin-test`; lance automatiquement la
   recette humaine client/admin dans Chrome avec une autorisation sensible
   explicite integree au prompt par defaut; l'agent du chat execute lui-meme la

@@ -11,7 +11,7 @@ Environnement exclusif: `secondevienextjsssr` / App Hosting sandbox / Stripe tes
 Echeance de cloture: 2026-08-06
 Registre associe: [anomalies.md](../../../anomalies.md)
 Lanceur Luna: `$client-admin-test` via
-[.agents/skills/client-admin-test/SKILL.md](../../../.agents/skills/client-admin-test/SKILL.md)
+[.agents/skills/client-admin-test/SKILL.md](skills-locaux.tar.gz)
 (guide: [TEST_CLIENT_ADMIN_LUNA.md](TEST_CLIENT_ADMIN_LUNA.md))
 
 ## 1. Objectif ferme

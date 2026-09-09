@@ -64,6 +64,16 @@ Ces preuves sont des gates distinctes dans
 
 ## 2. CI
 
+Relecture intégrale des interactions du 2026-09-07 : sélection locale de
+591 tests réussis sous Node 22.23.2, avec le garde
+`tests/commerce/helpers/no-network.cjs`. La liste exacte des fichiers, leurs
+empreintes et les arguments reproductibles sont dans les
+[preuves de validation](../audits/preuves/interactions-2026-09-07-relecture-validations.json).
+Le nouveau `tests/manual-audit-completion.test.cjs` couvre notamment
+finalisation d'inactivité concurrente, incident réordonné, conversion de
+session, sauvegarde de contenu et recadrage asynchrone. Ce résultat local
+n'implique ni lancement de CI distante, ni build, ni émulateur, ni E2E hébergé.
+
 Qualification Performance Functions du 2026-09-04:
 `node --test tests/function-metrics.test.mjs` couvre les moyennes ponderees,
 refus/erreurs separes, valeurs absentes, faible echantillon, pagination et
@@ -811,6 +821,14 @@ La recette de cutover du 2026-07-18 a inclus plus de 20 builds de comparaison al
 
 Data Access est une preuve separee: fenetre courte, onglets parasites fermes, configuration avant/apres capturee et desactivation immediate. Ne jamais l'activer implicitement pour lancer les suites locales.
 Le build CI utilise `CATALOG_BUILD_FIXTURE=true` avec une fixture publique minimale versionnee. Cette option est limitee au workflow de qualite: elle permet de compiler sans identifiants Google et ne doit jamais etre configuree dans App Hosting ou dans un environnement deploye.
+
+Complement local du parcours paiement : avec Node 22 selectionne, lancer
+`pnpm test:checkout-reconstruction`. Les tests Node utilisent `no-network.cjs` ;
+`tests/commerce/browser/payment-ui.spec.mjs` monte les vrais composants de
+paiement/dialogue avec Stripe et Firestore simules, sur loopback, en bloquant les
+requetes externes. Le harness n'est pas une page de production et ne prouve pas
+un vrai 3DS. Pour la matrice et les preuves observees, consulter le
+[suivi paiement](../commerce/RECONSTRUCTION_PARCOURS_PAIEMENT_2026-09-06.md#81-preuves-locales-et-limites).
 
 Cloture du chantier catalogue le 2026-07-19:
 

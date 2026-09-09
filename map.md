@@ -3,6 +3,7 @@
 Revue : 2026-09-04. Propriétaire : équipe Seconde Vie.
 Carte des points d'entrée du code local, **pas inventaire du cloud déployé**.
 Règles : [AGENTS.md](AGENTS.md). Statuts : [État du projet](_DOCS/ETAT_PROJET.md).
+Derniers audits et dossiers datés : [index des audits](_DOCS/audits/README.md).
 
 ## Routes
 
@@ -58,6 +59,8 @@ l'ID opaque reste technique.
 - **Collecte** : `AnalyticsCollectorIsland` / `AnalyticsProvider` →
   `functions/src/analytics/sessions.js` → `analytics_sessions`.
   Claims admin exclus ; IP brute non collectée ; parcours borné.
+- **Cookies** : `app/CookieConsentIsland.jsx` → `src/kit/shared/cookieConsent.js` ;
+  contrôle audience/performance et carte Google Maps, choix révocable six mois.
 - **Historique/KPI** : `rollups.js` / `realtime.js` → faits/ledgers/buckets →
   `admin_analytics_realtime/recent|history` →
   `adminAnalyticsRealtime.js` / `adminAnalyticsRealtimeStore.js` → `AdminAnalytics`.
@@ -113,7 +116,8 @@ Inventaires/probes et manifestes : `scripts/functions-gen2-inventory.mjs`,
 - [AGENTS.md](AGENTS.md) : règles transverses.
 - [_DOCS/README.md](_DOCS/README.md) : contrats et suivis à ouvrir à la demande.
 - [doc/README.md](doc/README.md) : audit documentaire et archives hors lecture courante.
-- `.agents/skills/` : outils spécialisés, pas description de l'état du produit.
+- Aucun skill local actif : les 33 anciens dossiers ont été archivés à la
+  demande de l'utilisateur, sans réactivation ni lecture automatique.
 - `node_modules/`, `.next/`, `.firebase/`, `logs/`, `test-results/`,
   `playwright-report/`, `dist/` : dépendances/preuves/générés, pas sources métier.
 - Les dossiers de travail image/vidéo ne sont pas jetables sans audit d'usage.

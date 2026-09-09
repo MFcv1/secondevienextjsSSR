@@ -1,12 +1,21 @@
 # Documentation de Seconde Vie
 
-Révision : 2026-09-04. Propriétaire : équipe Seconde Vie.
+Révision : 2026-09-05. Propriétaire : équipe Seconde Vie.
 Ouvrir le chapitre du sujet traité, pas toute cette bibliothèque.
+
+Les 33 anciens skills locaux ont été archivés sur demande explicite : aucun
+skill de design ou de recette n'est requis depuis `.agents/skills`.
+Ne pas les restaurer ni lire leurs archives par défaut.
 
 - [Projet et intentions](../README.md)
 - [Consignes agents](../AGENTS.md)
 - [État des fonctionnalités et suivis ouverts](ETAT_PROJET.md)
 - [Carte des points d'entrée](../map.md)
+- [Audits d’architecture et de fiabilité](audits/README.md) — rapport backend du
+  5 septembre et suites ; [clôture de l’optimisation](audits/CLOTURE_BACKEND_2026-09-05.md),
+  preuves de livraison, y compris le dernier correctif client.
+- [Dernier audit : 7 septembre 2026, interactions et fiabilité](audits/2026-09-07-audit-interactions/README.md)
+  — synthèse accessible, rapports, preuves et photographie du code à la clôture ; correctifs non déployés.
 
 ## Références durables
 
@@ -49,6 +58,7 @@ Les fichiers ci-dessous portent les preuves et conditions de fermeture :
 - [OPTIMISATION_DASHBOARD_INCIDENTS.md](admin/OPTIMISATION_DASHBOARD_INCIDENTS.md)
 - [RECETTE_HUMAINE_SANDBOX.md](quality/RECETTE_HUMAINE_SANDBOX.md)
 - [COMMERCE_REPRISE.md](commerce/COMMERCE_REPRISE.md)
+- [Reconstruction ciblée du parcours paiement](commerce/RECONSTRUCTION_PARCOURS_PAIEMENT_2026-09-06.md) — livrée sur sandbox : hosting, 13 Functions et catalogue ; recette Stripe/3DS réelle non exécutée.
 - [FINALISATION_MIGRATION_GEN2.md](../apphostingaudit/FINALISATION_MIGRATION_GEN2.md)
 - [anomalies.md](../anomalies.md)
 

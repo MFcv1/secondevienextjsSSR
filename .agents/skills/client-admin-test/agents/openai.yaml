@@ -1,7 +1,0 @@
-interface:
-  display_name: "Test client / admin"
-  short_description: "Recette sandbox autonome client et admin"
-  default_prompt: "Utilise $client-admin-test pour exécuter toi-même la recette complète M01–M13 sans corriger le code. Pour cette campagne sandbox uniquement, j’autorise Chrome externe, la sélection des comptes Google déjà connectés, la lecture des boîtes pvml7008@gmail.com et loa.gto15@gmail.com, la saisie non exposée des OTP, les données fictives, les deux commandes Stripe test et leurs remboursements, ainsi qu’un smoke publié puis archivé selon la procédure canonique. Préserve le contrôle sandbox durable ; aucune ouverture ou fermeture globale hors mandat. Poursuis les scénarios indépendants, consigne les anomalies et n’interromps que pour une protection humaine réelle, une autorisation manquante ou un état ambigu."
-
-policy:
-  allow_implicit_invocation: true

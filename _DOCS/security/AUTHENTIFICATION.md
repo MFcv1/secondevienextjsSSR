@@ -19,6 +19,18 @@ Les anciens documents restent recuperables dans l'historique Git, notamment dans
 
 ## 2. Resume executif
 
+Complément de code local du 2026-09-07, non déployé : les transitions OTP
+comparent le challenge attendu dans une transaction ; un callback d'envoi ou
+d'émission de token devenu ancien ne modifie pas le challenge suivant. Le
+token OTP conservé côté client pour une reprise réseau est lié au couple
+email/code. La vérification finale passkey relit propriétaire et compteur
+du credential. Les migrations administrateur relisent registre/invitation
+avant écriture ; `sys_metadata/admin_users` n'est plus directement modifiable
+par les règles de métadonnées. Preuves et limites :
+[relecture intégrale](../audits/RELECTURE_INTEGRALE_INTERACTIONS_2026-09-07.md).
+
+Les paragraphes suivants décrivent la qualification historique du sandbox.
+
 La passe Auth de demonstration est terminee. Les parcours suivants sont implementes et valides sur le sandbox:
 
 - connexion client par code OTP Gmail;
@@ -144,6 +156,61 @@ connexion suivante
 ```
 
 Le serveur refuse une inscription ou une assertion dont le flag User Verification est absent. Le texte UI peut parler de connexion rapide, mais le contrat serveur reste WebAuthn.
+
+#### Capacité et mesures de la reconnexion passkey
+
+Les deux cibles `generatePasskeyAuthenticationOptionsGen2` et
+`verifyPasskeyAuthenticationGen2` disposent d'une entrée isolée via
+`readerEntrypoint.js`. Elles chargent le module passkey sans importer le
+commerce, la facturation ni le transport e-mail. La découverte Firebase sans
+cible explicite conserve tous les exports.
+
+Le contrat de capacité de ces deux cibles est : 1 CPU, 256 MiB, concurrence 8,
+minimum 1 instance et maximum 2, timeout 60 s, région `europe-west1`.
+Le minimum maintient une capacité prête avec un coût récurrent ; il ne garantit
+pas l'absence de tout démarrage lors d'un remplacement ou d'une montée en charge.
+Les fonctions d'inscription conservent leur capacité antérieure. App Check,
+identité de service, vérification locale obligatoire, limites d'abus et
+transactions sur challenge/compteur restent inchangés.
+
+La modale utilise `getFunctionsInstance()` et ne dépend plus du module Firebase
+général qui initialise Firestore. Les options sont préparées à l'ouverture pour
+un compte reconnu localement ; les demandes identiques déjà en cours partagent
+leur promesse. Une réponse terminée n'est pas mise en cache globalement.
+L'état de la modale conserve seulement son challenge préparé pendant quatre
+minutes au maximum et le retire après vérification réussie. Le callable de
+vérification est prêt avant la cérémonie biométrique, sans import intermédiaire
+au clic. Google reste préparé à l'ouverture ; la synchronisation des sessions
+après connexion reste non bloquante.
+
+La vérification serveur lit et incrémente le challenge dans une seule
+transaction, sans lecture préalable redondante. Un challenge absent conserve
+la reprise bornée d'une émission de token échouée ; un challenge épuisé,
+remplacé ou expiré reste refusé. La transaction finale relit toujours le
+challenge et le compteur : elle ne peut pas être supprimée pour gagner du temps.
+
+`passkey_stage_perf` mesure des intervalles monotones propres à chaque requête :
+limites d'abus, recherche du compte, lecture des credentials, préparation ou
+lecture du challenge, transaction de tentative, vérification de signature,
+consommation atomique, émission du token et écriture finale. Les champs sont
+bornés à `event`, `ceremony`, `stage`, `elapsedMs`, sans identité ni token.
+Une étape qui échoue n'émet pas son intervalle de succès ; ces mesures ne
+couvrent ni App Check avant le handler, ni le réseau téléphone, ni l'échange
+Firebase Auth final. Les chronomètres client distinguent `optionsRequest`,
+`biometric`, `verify` et `signInWithCustomToken` et leur issue succès/erreur,
+sans message brut ni identité. Ils restent dans la console locale ; aucune
+collecte distante ni lecture du téléphone n'est implicite.
+Comparer les journaux HTTP et les chronomètres client
+pour la durée complète. L'état de livraison est dans
+[ETAT_PROJET.md](../ETAT_PROJET.md#rapidité-passkey--correctif-local-du-9-septembre).
+
+Durcissement local du 7 septembre 2026, non déployé : les deux étapes
+d'enrôlement passent par `authorizePasskeyRegistration`. Un compte portant une
+claim admin/superAdmin, ou présent dans le registre admin actif même avec un
+ancien token, doit déjà satisfaire `checkActiveStrongAdmin`. Une session OTP
+faible ne peut donc pas créer son propre moyen d'élévation. Un client ordinaire
+peut toujours enregistrer une passkey après connexion OTP. Les credentials
+antérieurs ne sont ni supprimés ni requalifiés par ce correctif.
 
 ### 5.4 Flux Google
 

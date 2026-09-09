@@ -7,12 +7,23 @@ Le dossier d'audit reste une photographie historique antérieure à cette livrai
 
 Créé le 5 septembre 2026 à la demande du propriétaire du projet.
 
+**Dernier audit enregistré : [7 septembre 2026 — interactions et fiabilité](2026-09-07-audit-interactions/README.md).**
+Le dossier daté contient la synthèse accessible, les deux rapports, les preuves,
+le patch et une photographie du code et des tests à la clôture.
+
 Ce dossier contient les nouvelles campagnes d’audit. Les contrats applicables
 restent dans les chapitres de [_DOCS](../README.md) ; les conclusions d’un audit
 ne deviennent pas automatiquement des décisions d’implémentation.
 
+État ultérieur aux deux campagnes initiales du tableau :
+[optimisation clôturée pour la préproduction examinée](CLOTURE_BACKEND_2026-09-05.md).
+Corrections admin/Stats/Data et dernier correctif lecteur client livrés.
+Le tableau conserve les résultats historiques, pas le statut courant
+de chaque défaut après correction.
+
 | Campagne | Périmètre | Livrables | Statut |
 | --- | --- | --- | --- |
+| Interactions, 2026-09-07 | Navigation, panier/favoris, checkout/Stripe, emails, espace client, back-office et sources analytics | [Relecture intégrale et correctifs](RELECTURE_INTEGRALE_INTERACTIONS_2026-09-07.md), [448 fichiers](preuves/interactions-2026-09-07-relecture-integrale.json), [validations](preuves/interactions-2026-09-07-relecture-validations.json), [première passe](AUDIT_INTERACTIONS_2026-09-07.md) | 448 fichiers relus intégralement ; 109 sources modifiées/ajoutées dans la relecture ; 591 tests réussis ; zéro erreur ESLint ; non déployé |
 | Backend, 2026-09-05 | Firebase/Next, données admin, coût, capacité, fiabilité | [Rapport](AUDIT_BACKEND_2026-09-05.md), [lots proposés](PLAN_BACKEND_2026-09-05.md), [inventaire](preuves/backend-2026-09-05-inventaire.json), [reproductions](preuves/backend-2026-09-05-reproductions.cjs) | Audit livré ; défauts ouverts ; aucun correctif déployé |
 | Qualification back-office, 2026-09-05 | Parcours réels admin cliente, concordance, cache/reconnexion et suivi devis borné | [Rapport et preuves locales](QUALIFICATION_BACKOFFICE_2026-09-05.md) | Qualification partielle ; réserves de présentation ; BA-01 à BA-13 non clos ; aucun correctif ni déploiement |
 

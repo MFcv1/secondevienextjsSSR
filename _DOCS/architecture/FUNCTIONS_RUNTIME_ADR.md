@@ -15,8 +15,11 @@ qualifier plusieurs admins simultanés.
 
 ## Decision
 
-Évolution locale I5 du 2026-09-05, non livrée : `readerEntrypoint.js` sélectionne
-huit lecteurs connus lorsque `FUNCTION_TARGET` les désigne. Sans cible ou pour
+Évolution I5 du 2026-09-05, huit lecteurs livrés : `readerEntrypoint.js` sélectionne
+les lecteurs connus via `FUNCTION_TARGET`, `GOOGLE_FUNCTION_TARGET` ou le nom
+`K_SERVICE` exact. Une neuvième cible, `listMyOrdersV2Gen2`, est désormais
+livrée selon la [clôture backend](../audits/CLOTURE_BACKEND_2026-09-05.md).
+Sans cible ou pour
 une autre cible, l'entrée conserve la découverte complète. Les callables
 Commandes/Retours/timeline appellent les factories métier directement ;
 Factures/Devis/Facturation réutilisent leurs exports, en différant Sharp, PDF et
@@ -25,7 +28,10 @@ La comparaison locale vérifie l'égalité des huit metadata d'endpoints et les
 refus Auth, et compte les modules/temps/RSS sur trois processus frais. Les
 limites de mesure et cibles sont dans le
 [suivi I0–I6](../audits/SUIVI_IMPLEMENTATION_BACKOFFICE_2026-09-05.md).
-Le handler autorisé avec services réels et le gain cloud attendent I7.
+Les échantillons hébergés de lecteurs admin et leurs limites sont désormais
+dans le [suivi Stats/Data](../audits/SUIVI_STATS_DATA_2026-09-05.md).
+Aucun gain cloud n’est affirmé pour le lecteur client livré : son contrôle
+fonctionnel réussi ne constitue pas une comparaison de latence.
 
 Le sandbox conserve un seul codebase Firebase Functions `main`. Une scission
 par domaine ajouterait maintenant des deploiements, IAM et archives sans gain

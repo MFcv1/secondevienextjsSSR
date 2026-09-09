@@ -1,5 +1,11 @@
 # Livraison backend après I0–I6 et Stats/Data
 
+Dernière passe : [optimisation clôturée localement](CLOTURE_BACKEND_2026-09-05.md).
+Le correctif de lecture/imports `listMyOrdersV2Gen2` a ensuite été livré sous
+nouvel accord utilisateur (`00002-rab`), sans changement de capacité. Les limites
+de qualification initiale ci-dessous sont à lire avec les preuves ultérieures
+du suivi Stats/Data, sans confondre les versions historiques avec l’état final.
+
 Complément après qualification : les lecteurs Commandes et demandes Retours
 ont reçu le correctif `eccd278` (révisions `00005-feg` et `00005-lex`), sans
 changement de configuration. Hosting est désormais `build-2026-09-05-002`.

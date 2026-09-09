@@ -20,7 +20,7 @@ Inventaire exhaustif de départ : [INVENTAIRE.md](2026-09-04/INVENTAIRE.md).
 | `jean.md` | [Photographie](2026-09-04/jean.md) | Fusionné : note brute de besoin back-office intégrée aux contrats existants. [Référence](../../_DOCS/admin/BACKOFFICE.md). |
 | `facture.md` | [Photographie](2026-09-04/facture.md) | Fusionné : cahier de conception factures ; contrat actif dans le back-office. [Référence](../../_DOCS/admin/BACKOFFICE.md). |
 | `TEST_COMMERCE_SANDBOX.md` | [Photographie](2026-09-04/TEST_COMMERCE_SANDBOX.md) | Remplacé : ancienne fenêtre commerce et lanceur de recette devenus trompeurs. [Référence](../../_DOCS/quality/RECETTE_CLIENT_ADMIN.md). |
-| `TEST_CLIENT_ADMIN_LUNA.md` | [Photographie](2026-09-04/TEST_CLIENT_ADMIN_LUNA.md) | Remplacé : lanceur lié à un modèle ; procédure unique et skill conservés. [Référence](../../_DOCS/quality/RECETTE_CLIENT_ADMIN.md). |
+| `TEST_CLIENT_ADMIN_LUNA.md` | [Photographie](2026-09-04/TEST_CLIENT_ADMIN_LUNA.md) | Remplacé : procédure documentaire conservée ; skill ensuite retiré sur demande. [Référence](../../_DOCS/quality/RECETTE_CLIENT_ADMIN.md). |
 | `audit/2026-08-09_AUDIT_CHATGPT_ULTRA.md` | [Photographie](2026-09-04/audit/2026-08-09_AUDIT_CHATGPT_ULTRA.md) | Obsolète comme état courant : photographie de modèle/runtime et de limites anciennes. [Référence](2026-09-04/audit/2026-08-09_AUDIT_CHATGPT_ULTRA.md). |
 | `_DOCS/email/RECETTE_EMAILS_LUNA.md` | [Photographie](2026-09-04/_DOCS/email/RECETTE_EMAILS_LUNA.md) | Remplacé : matrice M01–M13 et règles utiles transférées dans la recette unique. [Référence](../../_DOCS/quality/RECETTE_CLIENT_ADMIN.md). |
 | `_DOCS/admin/META_OAUTH_PUBLICATION_PRD.md` | [Photographie](2026-09-04/_DOCS/admin/META_OAUTH_PUBLICATION_PRD.md) | Fusionné : conception dans le runbook ; publication réelle reste à requalifier. [Référence](../../_DOCS/admin/INSTAGRAM_OAUTH_RUNBOOK.md). |
@@ -29,6 +29,18 @@ Inventaire exhaustif de départ : [INVENTAIRE.md](2026-09-04/INVENTAIRE.md).
 | `_DOCS/commerce/COMMERCE_REPRISE.md` | [Photographie](2026-09-04/_DOCS/commerce/COMMERCE_REPRISE.md) | Remplacé : décisions ouvertes et gates conservées sans anciens scripts opérateur. [Référence](../../_DOCS/commerce/COMMERCE_REPRISE.md). |
 
 ## Conservation
+
+### Retrait complémentaire des 33 skills locaux
+
+Sur demande explicite, tous les anciens dossiers `.agents/skills` ont été
+retirés, y compris le lanceur de recette. Leurs **230 fichiers, dont 228
+Markdown**, sont conservés dans [skills-locaux.tar.gz](2026-09-04/skills-locaux.tar.gz).
+Le [manifeste](2026-09-04/skills-locaux.manifest.json) liste les 33 dossiers
+et les empreintes SHA-256 des 230 fichiers ; leur contenu a été vérifié avant retrait.
+L'archive conserve les chemins originaux, mais n'expose plus de skill actif.
+Ne pas extraire ou réinstaller ces consignes sans nouvelle demande explicite.
+
+### Photographies du premier rangement
 
 Neuf anciens emplacements ont été retirés ; leur contenu est récupérable ici.
 Quatre documents maintenus ont une photographie avant réécriture.

@@ -21,6 +21,13 @@ Le shell est compose de:
 
 Les donnees personnalisees ne doivent jamais bloquer l'affichage du header, l'ouverture du menu ou un lien public.
 
+Correctif livré sur sandbox le 6 septembre : `/checkout` ne monte ni header,
+bandeau catalogue, catégories ni footer de navigation. Les sorties proposées
+restent celles du checkout, avec confirmation d'annulation après réservation.
+Le retour au récapitulatif est bloqué pendant la soumission bancaire. La galerie
+consomme `focusProduct` après révélation du meuble, conserve les autres paramètres
+et le scroll, retire le liseré après cinq secondes et nettoie le timer au démontage.
+
 Le panier utilise une seule frontiere asynchrone: `LazyCartPanelIsland` charge
 `CartPanelIsland`, qui embarque directement son `CartSidebar`. Le shell
 instantane reste visible pendant ce chargement puis cede la place a un panneau
@@ -54,6 +61,7 @@ Invariants:
 - premier frame du drawer disponible sans attendre l'auth;
 - scroll de page verrouille seulement quand le panneau est visible;
 - focus piege dans le panneau et restaure a la fermeture;
+- a l'ouverture mobile, focus sur une action de navigation, jamais sur le champ de recherche; la recherche s'active au toucher du champ ou par navigation clavier explicite;
 - safe areas iOS respectees;
 - aucun double drawer shell/enrichi visible;
 - aucun saut de galerie lors de l'ouverture d'un produit;
@@ -63,6 +71,22 @@ Invariants:
 - test sur largeur mobile reelle apres changement du shell, du header ou du detail produit.
 
 Le contrat statique est verifie par `npm run mobile:contract`; le comportement visuel demande le gate menu mobile si la zone est modifiee.
+
+### Hero et catégories de la galerie sur mobile
+
+Sous 768 px, le hero utilise `clamp(408px, calc(57svh + 28px), 478px)` pour équilibrer
+l'image et son contenu avec les catégories suivantes. La hauteur utilise
+le petit viewport stable afin de ne pas grandir au repli des barres du navigateur.
+Le titre « Des meubles à faire revivre chez vous » précède les quatre catégories
+Buffets, Armoires, Miroirs et Commodes, en grille 2 × 2 avec photos au ratio 4/5,
+sans chevauchement avec le hero. La grille est plafonnée à 360 px avec des
+marges internes latérales de 36 px et un cadre de 6 px autour des photos.
+Le titre mobile mesure 28,5 px, le descriptif 14,3 px et les boutons 33 px
+de hauteur. Les espacements sont agrandis avec le contenu ; la marge sous
+le descriptif est de 44 px et les boutons restent côte à côte.
+Ce sont des liens de catégories, pas une
+sélection de produits. À partir de 768 px, le hero et le rail conservent
+leur présentation existante. Le scroll interne et son propriétaire restent inchangés.
 
 ### Section avant / après
 

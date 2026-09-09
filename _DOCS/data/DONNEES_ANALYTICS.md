@@ -264,6 +264,49 @@ newsletter la recherche simple `code`.
 
 ## 7. Analytics
 
+### Consentement navigateur
+
+Le code local du 9 septembre 2026 ajoute `app/CookieConsentIsland.jsx` et
+`src/kit/shared/cookieConsent.js`. Le panneau reprend la palette ivoire/brun,
+le thème sombre et les polices du site. Il est non modal : la navigation reste
+possible ; Échap refuse lors du premier choix, ou ferme les réglages sans
+modifier un choix existant. « Gérer mes cookies », dans le pied de page mobile
+et desktop (`FooterCookiePreferencesIsland`), ouvre les réglages et récupère
+le focus à leur fermeture. Après acceptation ou refus, aucun bouton cookies
+flottant ne reste affiché. La galerie permet de retrouver cet accès depuis
+les routes sans pied de page.
+
+Deux finalités indépendantes, désactivées par défaut : audience/performance
+(sessions Seconde Vie sur Firebase et Firebase Performance) et carte externe
+Google Maps. Sans accord audience, aucun chargement du runtime analytics pour
+ce motif, aucune initialisation de session, synchronisation ou beacon ; les
+événements antérieurs ne sont pas mis en file. Le retrait bloque aussi les
+réponses tardives côté client et purge les clés `analytics_session_*` ainsi
+que la file d'événements. Une requête déjà partie ne peut pas être rappelée ;
+les données déjà transmises suivent leur rétention, sans suppression cloud.
+L'identité Auth partagée n'est pas supprimée, car elle sert aussi au commerce.
+
+La clé locale `secondevie:cookie-consent:v1` contient version, finalités,
+date du choix et expiration à six mois, identiques pour accord et refus.
+Choix invalide/expiré = aucune autorisation. Les onglets se synchronisent via
+`storage` ; expiration et retour au premier plan revérifient le choix.
+Si l'écriture locale échoue, le choix reste en mémoire et un statut accessible
+signale qu'il ne sera pas conservé après rechargement. Aucun document Firestore
+de consentement ni nouvelle collection. Une évolution des finalités exige
+une nouvelle version et un nouveau recueil.
+
+Google Maps n'est chargé qu'après accord et proximité du viewport ; sinon,
+un lien externe d'itinéraire et les réglages restent disponibles. Son retrait
+démonte l'iframe, sans prétendre supprimer les cookies du domaine Google.
+Panier, connexion, sécurité et préférences nécessaires restent disponibles.
+Les statistiques ne représentent donc que les visites consentantes.
+
+Référence : [recommandations CNIL](https://www.cnil.fr/fr/cookies-et-autres-traceurs/regles/cookies/comment-mettre-mon-site-web-en-conformite).
+La vérification locale du mécanisme ne vaut ni déploiement ni validation
+juridique complète : identité du responsable, politique de confidentialité,
+sous-traitants/transferts et preuve du consentement restent à valider avant
+production. La valeur locale est un état fonctionnel, pas un registre d'audit.
+
 Le moteur est le portage fonctionnel du moteur de Tous a Table. Les adaptations sont limitees a Next App Router, aux routes Seconde Vie, a la region Functions `europe-west1` et au controle admin fort deja present dans le projet.
 
 Pipeline:
@@ -295,7 +338,7 @@ Routes suivies:
 Contrat du moteur:
 
 - le collecteur attend 1,5 seconde et ignore les robots courants;
-- chaque visiteur obtient un UID Firebase anonyme persistant si aucun compte n'est connecte;
+- après accord audience, le collecteur obtient un UID Firebase anonyme persistant si aucun compte n'est connecte;
 - aucune IP, adresse e-mail ou chaine user-agent brute n'est stockee;
 - l'identite fiable utilise un UID Firebase opaque, puis un ID de session pseudonymise;
 - la premiere page et chaque changement de route sont synchronises en moins d'une seconde apres initialisation;
@@ -443,7 +486,7 @@ Les anciennes collections de rollup peuvent encore exister dans le sandbox apres
 ### 7.1 Performance Monitoring vitrine
 
 Firebase Performance Monitoring est distinct des sessions analytics metier et
-n'ecrit aucun document Firestore. Son SDK est charge paresseusement uniquement
+n'ecrit aucun document Firestore. Son SDK exige l'accord audience/performance et est charge paresseusement uniquement
 sur la galerie, les categories, les fiches produit et A propos. Checkout,
 paiement prive, compte, admin, wishlist, recherche et devis restent exclus; la
 collecte est coupee avant leur transition. Aucun identifiant de commande,

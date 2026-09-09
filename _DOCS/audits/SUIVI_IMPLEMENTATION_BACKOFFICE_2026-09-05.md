@@ -1,5 +1,14 @@
 # Suivi local des lots I0 à I6
 
+État final du périmètre d’optimisation : [clôture du 5 septembre](CLOTURE_BACKEND_2026-09-05.md).
+Ce suivi conserve les états de réception initiale. Les huit lecteurs légers,
+les projecteurs et les correctifs Stats/Data ont été livrés ensuite ; les
+mesures hébergées et le scénario Data de reconnexion sont consignés dans
+[Stats/Data](SUIVI_STATS_DATA_2026-09-05.md). Ne plus interpréter « I7 non exécuté »,
+« non livré » ou « Git non committé » ci-dessous comme l’état courant global.
+La neuvième entrée légère, lecteur client, est désormais livrée. Les limites facultatives
+et les migrations exclues sont distinguées des blocages dans la clôture.
+
 Validation initiale : 2026-09-05, sans commit, push, déploiement ni mutation cloud.
 Après cette validation, le commit et le frontend ont été livrés dans
 l'[extension Stats/Data](SUIVI_STATS_DATA_2026-09-05.md). Les états du tableau

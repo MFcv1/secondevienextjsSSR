@@ -26,6 +26,16 @@ client et reduisent les erreurs fournisseur a leur nom et code bornes.
 
 ## 2. Etat de reference
 
+Durcissements locaux du 2026-09-07, non déployés : un accusé fournisseur
+incomplet est `delivery_unknown`, sans succès déclaré ni renvoi automatique.
+Les mises à jour OTP et newsletter vérifient leur génération/propriétaire
+dans la transaction ; un callback tardif ne reprend pas un envoi déjà attribué.
+Les pièces jointes PDF sont complètes dans les limites métier et les artefacts
+émis sont relus/contrôlés plutôt que réécrits. La
+[relecture intégrale](../audits/RELECTURE_INTEGRALE_INTERACTIONS_2026-09-07.md)
+précise les tests simulés : aucune livraison ni apparence dans une boîte mail
+réelle n'a été qualifiée par cette campagne.
+
 La bibliotheque metier actuelle regroupe 19 rendus canoniques. Huit variantes
 supplementaires restent envoyables par les triggers de compatibilite des
 anciennes commandes et par les actions manuelles d'exploitation. Le depot
@@ -392,9 +402,36 @@ par l'administratrice est valide serveur et n'est persiste que sous forme de
 hash. Ce rendu ne fait pas partie de la galerie historique des e-mails
 commerce tant qu'aucune recette visuelle sandbox ne l'a accepte.
 
+Durcissement local du 7 septembre 2026, non déployé : une facture dont l'envoi
+est `sending` ou `delivery_unknown` ne peut pas être renvoyée, même avec un nouvel
+ID de demande. Un appel refusé ne modifie aucun état de livraison. La même
+demande ne peut pas changer de destinataire. Le client conserve son ID après
+erreur et verrouille la soumission ; un succès confirmé autorise ensuite une
+nouvelle demande explicite. Une acceptation fournisseur suivie d'un acquittement
+incomplet ou d'une erreur de persistance reste incertaine. Un `sent` déjà durable
+n'est jamais rétrogradé par la perte de réponse Firestore. Un envoi interrompu
+peut donc nécessiter une vérification manuelle ; aucun renvoi aveugle ne le
+débloque.
+
+L'accusé de devis applique la même prudence : un lease d'envoi expiré devient
+`delivery_unknown`, et les erreurs après acceptation ne déclenchent pas de
+nouvelle livraison. Les états incertains doivent être rapprochés avant reprise.
+
 ![Facture manuelle client](captures/19-facture-manuelle.png)
 
 Les e-mails commerce v2 passent par `commerce_outbox`:
+
+Correctif local du 7 septembre 2026, non déployé : si le sender a répondu mais
+son acquittement n'a pas de `providerMessageId` non vide, le worker conserve
+`delivery_unknown`, jamais une relance automatique. L'acceptation potentielle
+est enregistrée dans le contrôle d'exécution avant de valider cet acquittement.
+Le rendu de `v2Operations` appelle exclusivement `renderCommerceEmail` ; les
+anciens templates de repli inaccessibles ont été retirés.
+
+Un refus de carte réessayable conserve le PaymentIntent et son hold ; il est
+présenté par l'interface. Le code actuel ne produit pas d'e-mail dédié à chaque
+refus de carte. Les e-mails `order-refund-failed` concernent un échec de
+remboursement, ce qui est un événement différent.
 
 Durcissement local I6 du 2026-09-05, non livré : la prise transactionnelle vérifie
 échéance, tentative attendue et lease. `deliveryContractVersion:2` distingue les

@@ -3,6 +3,11 @@
 Derniere mise a jour: 2026-09-01
 Statut: `PREPROD_READY - PRODUCTION_DEFERRED`
 
+Contrôle complémentaire du 2026-09-05 : [inventaire backend daté](../audits/AUDIT_BACKEND_2026-09-05.md),
+avec configuration Functions/App Hosting, TTL, queues et limites de mesure.
+Les inventaires et rollouts des sections historiques ci-dessous conservent
+leur date ; ils ne doivent pas remplacer une lecture cloud avant mutation.
+
 ## 1. Runtime et gestionnaire de paquets
 
 | Element | Contrat |
@@ -13,7 +18,12 @@ Statut: `PREPROD_READY - PRODUCTION_DEFERRED`
 | React | `19.2.x` |
 | Functions | Node 22 dans le package prive `functions/` |
 
-Node 24 local ne doit pas devenir la reference tant que `engines`, CI, App Hosting et Functions imposent Node 22. La migration Next.js 16.3 est qualifiee localement sous Node 22; son deploiement doit encore etre qualifie sur le sandbox avant toute promotion.
+La version Node du shell ne change pas la cible 22 imposee par `engines`, CI,
+App Hosting et Functions (shell 26.7.0 observe pendant l’audit du 5 septembre,
+tests executes explicitement sous 22.23.2). La migration Next.js 16.3 a deja
+fait l’objet du rollout et des smokes sandbox du 4 aout consignes ci-dessous.
+Cette preuve historique ne qualifie pas automatiquement chaque livraison
+ulterieure ; l’audit du 5 septembre n’a pas rejoue ces parcours navigateur.
 
 Next.js 16.3 conserve ici le modele de cache historique. `cacheComponents`,
 `partialPrefetching`, le React Compiler Rust et `experimental.useOffline` ne

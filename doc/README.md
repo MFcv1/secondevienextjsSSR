@@ -4,7 +4,7 @@ Revue : 2026-09-04. Propriétaire : équipe Seconde Vie.
 Statut : `RANGEMENT_EFFECTUE_CONTROLES_LOCAUX`.
 Ce compte rendu décrit la passe documentaire, pas une qualification cloud.
 
-## Résultat
+## Résultat du premier rangement
 
 Le problème principal n'était pas le nombre de fichiers : les règles, états
 courants, recettes, anciens audits et journaux étaient mélangés. Une même
@@ -49,11 +49,20 @@ conservées au total. Leur [classement](archives/README.md) indique le relais
 utile. Aucun historique n'est perdu. Les plans encore ouverts, le registre
 d'anomalies et les preuves Gen2 ne sont pas classés « finis » par ancienneté.
 
-Les 33 skills ont été inventoriés (structure, poids, déclencheurs, liens et
-doublons exacts). Les bases de références design sont des bibliothèques
-spécialisées, pas l'état du projet ; aucune suppression sur la seule taille.
-Le skill client/admin a été simplifié et raccordé à une procédure unique.
-Cette passe ne prétend pas avoir réécrit sémantiquement les 228 fichiers de skills.
+Les 33 skills avaient d'abord été inventoriés et conservés, avec simplification
+du lanceur client/admin. Sur demande explicite suivante de l'utilisateur,
+ils ont tous été retirés de `.agents/skills`, recette comprise. Leurs 230
+fichiers (228 Markdown et deux YAML) sont conservés intégralement dans une
+[archive compressée](archives/2026-09-04/skills-locaux.tar.gz), avec
+[manifeste SHA-256](archives/2026-09-04/skills-locaux.manifest.json).
+Chaque fichier a été relu intégralement pour le contrôle d'identité ; les
+230 contenus extraits de l'archive ont été comparés avant retrait des sources.
+Ce transfert ne réactive ni n'applique leurs instructions.
+
+Aucun skill local ne reste actif. L'archive est hors découverte des skills et
+hors recherches `rg` ordinaires. Ne pas l'extraire ni la restaurer sans demande.
+La procédure de recette documentaire reste disponible, sans lanceur implicite.
+Les skills personnels et plugins extérieurs au dépôt n'ont pas été modifiés.
 
 ## Incohérences corrigées
 

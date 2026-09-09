@@ -1,5 +1,12 @@
 # Stats et Data — ouvertures et coût de lecture
 
+État final : [clôture backend de préproduction](CLOTURE_BACKEND_2026-09-05.md).
+Les correctifs décrits dans la section « Correctifs locaux » ci-dessous ont
+ensuite été committés et livrés comme le précise la section de livraison.
+Ses mentions « non livré » et demandes d’autorisation sont historiques, pas
+des actions encore attendues. Le dernier correctif du lecteur client,
+décrit dans la clôture, a également été livré après un nouvel accord.
+
 ## Livraison autorisée le 5 septembre — hosting et deux lecteurs livrés
 
 L'utilisateur a autorisé la livraison sandbox et le scénario Data synthétique

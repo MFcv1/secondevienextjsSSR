@@ -103,12 +103,34 @@ Refonte de présentation du 2026-08-10, sans changement de contrat de données:
 
 ## 3. Commandes
 
+Correctif livré sur sandbox le 6 septembre : `pending_payment` affiche
+« Paiement à finaliser », son montant, l'échéance connue et une action de reprise
+du snapshot serveur. Ces dossiers portent une carte distincte dans la liste.
+Un délai dépassé sans clôture durable reste « en cours de vérification » ; une
+annulation durable après échéance est « Réservation expirée ». Aucun repli ne
+dit « Préparée ». Sans document, « Document à venir » est réservé aux états
+payés/remboursés ; sans image propre au meuble, un placeholder neutre remplace
+les anciennes photos de démonstration. Le résultat d'annulation `paid` affiche
+une confirmation, jamais une libération. La vue est remontée par UID pour isoler
+ses données et callbacks. La galerie propose une reprise à partir d'une lecture
+bornée de 25 commandes ; les dossiers plus anciens restent accessibles par
+pagination. Un invité conserve exclusivement son identité anonyme du navigateur.
+La proposition de reprise et sa confirmation d'annulation utilisent une feuille
+compacte aux boutons arrondis : reprise principale, conservation secondaire,
+annulation séparée. Les cibles tactiles, le focus visible, Escape et la restauration
+du focus sont conservés ; l'annulation exige toujours une confirmation explicite.
+
 Le client ne recoit que les commandes admises par le reader serveur et les
 Rules. L'UID materialise au checkout est l'unique preuve de propriete; une
 adresse e-mail identique, meme verifiee, ne donne jamais acces a la commande
 d'un autre UID. L'ancien listener Firestore filtre par `userEmail` a ete retire;
-`listMyOrdersV2` est l'unique reader de l'interface. La reprise invite produit
-elle aussi un UID autoritaire borne.
+`listMyOrdersV2` fournit les pages et leurs enrichissements. Un listener borné
+complète cette lecture avec les changements appartenant au même UID. Depuis le
+correctif local du 7 septembre 2026, non déployé, son seuil `updatedAt` est une
+chaîne ISO comme le producteur v2, avec tri décroissant et limite 25. L'index
+`orders(userId ASC, updatedAt DESC)` est ajouté au manifeste ; il doit être
+déployé avant de qualifier cette écoute. La reprise invite produit elle aussi
+un UID autoritaire borne.
 
 Les statuts importants sont actuellement reconstruits depuis le champ composite `status`, notamment:
 
@@ -129,22 +151,29 @@ montant rembourse autoritaire revient a zero, le reader masque la confirmation
 de remboursement devenue obsolete et conserve le recu de paiement; le document
 historique n'est pas supprime du journal serveur.
 
-L'affordance d'annulation client est masquee en Gate 0B et la callable legacy
-est bloquee avant effet. Les commandes existantes convergent uniquement par les
-signaux Stripe autoritaires et les lecteurs de suivi.
+Historiquement, en Gate 0B, l'affordance d'annulation client etait masquee et la
+callable legacy bloquee avant effet. Ce n'est pas le branchement V2 actuel.
 
 La callable v2 `requestOrderCancellation` est deployee dans
 `functions/src/commerce/v2Cancellation.js`. Elle exige App Check et une session
 Firebase, derive le proprietaire exclusivement du contexte Auth puis execute la
-coordination provider-first. Elle est exportee mais le controle mutations
-serveur absent la refuse avant effet et son branchement `MyOrdersView` reste
-derriere un flag compile a `false`: l'affordance reste masquee.
+coordination provider-first. Le branchement V2 actuel utilise les actions
+autorisees du reader et le controle serveur actif ; les anciens flags fermes de
+Gate 0B ne decrivent plus ce parcours. Le correctif local du 6 septembre distingue
+explicitement les resultats `paid` et `canceled`, sans annoncer une annulation
+lorsque le fournisseur confirme le paiement. Il est livre sur sandbox le 6 septembre.
 
 Gate 5 active `listMyOrdersV2` en sandbox: la Function filtre exclusivement par
 `userId`, borne la page, verifie que le curseur appartient au meme UID et
 renvoie les actions autorisees calculees serveur. `MyOrdersView` consomme ce
 reader et sa pagination; l'adaptateur historique v1 ne promeut jamais une
 commande ambigue.
+
+Le code local réutilise le snapshot du curseur après vérification d’UID pour
+positionner la page : aucune seconde lecture du même document. Le lecteur
+`listMyOrdersV2Gen2` bénéficie aussi de l’entrée légère ciblée, sans modifier
+Auth/App Check, capacité ou contrat de réponse. Ces deux derniers correctifs
+sont livrés sur le sandbox ; voir la [clôture backend](../audits/CLOTURE_BACKEND_2026-09-05.md).
 
 Le reader joint aussi, pour chaque commande, les documents et la derniere
 demande client. La requete de sous-collection
@@ -255,13 +284,23 @@ La wishlist utilise:
 - `src/kit/marketplace/wishlistState.js` pour le modele et les abonnements;
 - `src/kit/marketplace/publicCatalogWishlist.js` pour resoudre les produits absents du rendu initial via l'API publique same-origin;
 - `users/{uid}/wishlist/{item}` pour l'utilisateur connecte;
-- un etat local borne pour la continuite visiteur;
+- un état local pour la continuité visiteur, sans plafond de nombre de favoris actuellement;
 - le catalogue courant pour rafraichir disponibilite et visuel.
 
 Un passage wishlist -> panier doit revalider `isPurchasable`. Les informations de prix/stock conservees dans la wishlist ne sont jamais autoritaires.
 Les Rules exigent un `originalId` identique a l'ID du document, une liste
 fermee de champs d'affichage et des tailles/prix bornes; la suppression reste
 reservee au proprietaire.
+
+Contrat local du 7 septembre 2026, non déployé : le cache visiteur
+`sv_public_product_wishlist:v2:guest` est séparé des caches
+`sv_public_product_wishlist:v2:uid:<UID encodé>`. La clé historique non attribuable
+`sv_public_product_wishlist` est laissée intacte mais n'est plus importée : ses
+favoris locaux peuvent ne plus apparaître ; les favoris Firestore sont conservés.
+Les composants d'un même UID partagent l'écoute et la migration visiteur. Les
+migrations sont sérialisées, chaque ID visiteur étant retiré après écriture
+réussie. Une écriture refusée ne doit pas être annoncée comme réussie dans le
+cache. Le rapprochement catalogue utilise un index par ID, en temps linéaire.
 Le premier rendu de `WishlistPageIsland` reste identique entre serveur et
 navigateur. La liste locale est chargee uniquement par
 `subscribeWishlistItems` apres montage afin d'eviter toute divergence
@@ -278,6 +317,13 @@ second argument de `fetchPublicCatalogProduct` est reserve a l'injection d'un
 `fetch` de test et ne doit jamais recevoir l'index implicite de `Array.map`.
 
 ## 6. Panier et handoff
+
+Correctifs locaux du 7 septembre 2026, non déployés : les actions reçues pendant
+le chargement du panier sont conservées et rejouées une seule fois après
+installation de ses listeners. Une réponse d'écoute tardive de l'ancien compte
+est ignorée. Après paiement, chaque suppression distante relit la ligne en
+transaction et compare son ID et sa révision au snapshot acheté : une ligne
+modifiée ou réajoutée entre lecture et suppression est conservée.
 
 Le panier invite est persiste localement par `src/kit/commerce/guestCart.js`.
 Chaque ligne porte un `cartLineId` et une `cartRevision`; la variante
