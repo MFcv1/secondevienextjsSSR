@@ -208,6 +208,7 @@ export default function GalleryLiveProductGridIsland({
           <ProductGridMoreButtonIsland
             key={release.aggregateSha256}
             sectionId={sectionId}
+            initialCount={PRODUCT_GRID_INITIAL_COUNT}
             darkMode={darkMode}
           />
         </div>

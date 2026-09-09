@@ -11,29 +11,32 @@ export default function CategoryRailServer({
   const safeCategories = Array.isArray(categories) ? categories : [];
 
   return (
-    <section className="relative z-20 isolate -mt-[58px] w-full md:-mt-[135px]">
+    <section className="relative z-20 isolate w-full pt-6 md:-mt-[135px] md:pt-0">
       <div
         aria-hidden="true"
-        className={`pointer-events-none absolute inset-x-0 bottom-0 top-[58px] z-0 md:top-[135px] ${darkMode ? 'bg-[#121212]' : 'bg-[#FAFAF9] dark:bg-[#080807]'}`}
+        className={`pointer-events-none absolute inset-x-0 bottom-0 top-0 z-0 md:top-[135px] ${darkMode ? 'bg-[#121212]' : 'bg-[#FAFAF9] dark:bg-[#080807]'}`}
       />
 
-      <div className="relative z-10 grid -translate-y-[7px] grid-cols-4 gap-2 px-4 pb-5 md:hidden">
+      <h2 className="relative z-10 mx-auto mb-5 w-full max-w-[380px] px-8 font-serif text-[25px] font-medium leading-[1.18] tracking-[-0.025em] md:hidden">
+        Des meubles à faire revivre chez vous
+      </h2>
+      <div className="relative z-10 mx-auto grid w-full max-w-[360px] grid-cols-2 gap-x-4 gap-y-5 px-9 pb-5 md:hidden">
         {safeCategories.slice(0, 4).map((cat, index) => (
           <Link key={cat.id} href={getCategoryUrl(cat.id)} prefetch={false} className="group flex min-w-0 cursor-pointer flex-col items-center text-inherit no-underline">
-            <div className={`mb-2 h-[130px] w-full max-w-[86px] overflow-hidden rounded-[999px] border-[4px] shadow-[0_12px_26px_rgba(0,0,0,0.17)] ${darkMode ? 'border-[#1A1A1A]' : 'border-white dark:border-[#191511]'}`}>
+            <div className={`mb-3 aspect-[4/5] w-[95%] overflow-hidden rounded-[18px] border-[6px] shadow-[0_6px_18px_rgba(0,0,0,0.06)] ${darkMode ? 'border-[#1A1A1A] bg-[#1A1A1A]' : 'border-white bg-white dark:border-[#191511] dark:bg-[#191511]'}`}>
               <img
                 src={getImageSrc(cat.id)}
-                sizes="86px"
+                sizes="(max-width: 359px) calc((100vw - 112px) / 2), (max-width: 767px) 124px, 86px"
                 alt={cat.label}
                 loading="eager"
                 decoding="async"
                 fetchPriority={index === 0 ? 'high' : 'auto'}
-                className="h-full w-full object-cover transition-transform duration-[1.5s] ease-[cubic-bezier(0.25,1,0.5,1)] group-active:scale-[1.04]"
+                className="h-full w-full rounded-[12px] object-cover transition-transform duration-[1.5s] ease-[cubic-bezier(0.25,1,0.5,1)] group-active:scale-[1.04]"
               />
             </div>
-            <span className="w-full truncate text-center font-sans text-[8px] font-black uppercase tracking-widest">
-              {cat.label}
-            </span>
+            <h3 className="w-full truncate text-center font-serif text-[18px] font-medium leading-[1.18] tracking-[-0.025em]">
+              {cat.label.charAt(0) + cat.label.slice(1).toLocaleLowerCase('fr-FR')}
+            </h3>
           </Link>
         ))}
       </div>

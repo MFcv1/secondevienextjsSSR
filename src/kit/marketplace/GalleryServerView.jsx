@@ -87,24 +87,29 @@ const GallerySeoQuoteMark = ({ darkMode = false } = {}) => (
 );
 
 const GallerySeoIntro = ({ darkMode = false } = {}) => (
-  <section className={`relative z-10 px-4 pb-7 pt-7 md:px-8 md:pb-0 md:pt-[112px] lg:px-12 ${darkMode ? 'bg-[#121212]' : 'bg-[#FAFAF9] dark:bg-[#0c0b0a]'}`} aria-labelledby="gallery-seo-title">
+  <section className={`relative z-10 px-8 pb-7 pt-7 md:px-8 md:pb-0 md:pt-[112px] lg:px-12 ${darkMode ? 'bg-[#121212]' : 'bg-[#FAFAF9] dark:bg-[#0c0b0a]'}`} aria-labelledby="gallery-seo-title">
     <div className="mx-auto grid max-w-6xl gap-7 md:grid-cols-[1.1fr_0.9fr] md:items-end">
       <div className="gallery-seo-copy-block relative">
         <GallerySeoQuoteMark darkMode={darkMode} />
-        <p className={`relative mb-3 -translate-y-3 font-sans text-[10px] font-black uppercase tracking-[0.26em] md:-translate-y-4 ${darkMode ? 'text-[#bca78c]' : 'text-[#8a6848] dark:text-[#c7a071]'}`}>
+        <p data-gallery-text-reveal="0" className={`relative mb-3 -translate-y-3 font-sans text-[10px] font-black uppercase tracking-[0.26em] md:-translate-y-4 ${darkMode ? 'text-[#bca78c]' : 'text-[#8a6848] dark:text-[#c7a071]'}`}>
           {GALLERY_SEO_COPY.eyebrow}
         </p>
-        <h2 id="gallery-seo-title" className={`font-serif text-[28px] leading-tight tracking-normal md:text-[38px] ${darkMode ? 'text-white' : 'text-[#181716] dark:text-[#f5efe6]'}`}>
-          {GALLERY_SEO_COPY.title}
+        <h2 data-gallery-text-reveal="100" aria-label={GALLERY_SEO_COPY.title} id="gallery-seo-title" className={`font-serif text-[28px] leading-tight tracking-normal md:text-[38px] ${darkMode ? 'text-white' : 'text-[#181716] dark:text-[#f5efe6]'}`}>
+          {GALLERY_SEO_COPY.title.split(' ').map((word, index) => (
+            <span key={`${word}-${index}`} aria-hidden="true">
+              <span data-gallery-reveal-word className="inline-block">{word}</span>{' '}
+            </span>
+          ))}
         </h2>
-        <p className={`mt-4 max-w-3xl text-[14px] leading-[1.8] md:text-[15px] ${darkMode ? 'text-stone-300/82' : 'text-[#62584f] dark:text-[#c8bbaa]/82'}`}>
-          {GALLERY_SEO_COPY.intro}
+        <p data-gallery-text-reveal="80" className={`mt-4 max-w-3xl text-[13px] leading-[1.65] md:text-[15px] md:leading-[1.8] ${darkMode ? 'text-stone-300/82' : 'text-[#62584f] dark:text-[#c8bbaa]/82'}`}>
+          <span className="md:hidden">{GALLERY_SEO_COPY.introMobile}</span>
+          <span className="hidden md:inline">{GALLERY_SEO_COPY.intro}</span>
         </p>
       </div>
       <ul className="relative grid self-center pl-4 md:translate-x-20 md:pl-7">
         <span className={`pointer-events-none absolute -left-10 -top-5 hidden h-[calc(100%+2.5rem)] w-[2px] rounded-full bg-gradient-to-b from-transparent to-transparent md:block ${darkMode ? 'via-white/16' : 'via-[#c9b49e] dark:via-[#b99569]/26'}`} aria-hidden="true" />
         {GALLERY_SEO_COPY.highlights.map((highlight, index) => (
-          <li key={highlight} className={`grid grid-cols-[30px_1fr] items-baseline gap-1 py-1.5 text-[12px] font-semibold leading-[1.5] md:grid-cols-[40px_1fr] md:py-2 ${darkMode ? 'text-stone-300' : 'text-[#4f463e] dark:text-[#d6cab9]/80'}`}>
+          <li data-gallery-text-reveal={120 + index * 70} key={highlight} className={`grid grid-cols-[30px_1fr] items-baseline gap-1 py-1.5 text-[12px] font-semibold leading-[1.5] md:grid-cols-[40px_1fr] md:py-2 ${darkMode ? 'text-stone-300' : 'text-[#4f463e] dark:text-[#d6cab9]/80'}`}>
             <span className={`font-serif text-[17px] font-normal italic leading-none md:text-[20px] ${darkMode ? 'text-[#d4b48c]' : 'text-[#9A654B] dark:text-[#c7a071]'}`}>
               {String(index + 1).padStart(2, '0')}&nbsp;.
             </span>

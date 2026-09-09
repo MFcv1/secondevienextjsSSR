@@ -165,9 +165,14 @@ const GlobalMenu = ({
 
         previouslyFocusedRef.current = document.activeElement;
         const focusFrame = window.requestAnimationFrame(() => {
-            const panel = getIsDesktopMenuViewport() ? panelRef.current : mobilePanelRef.current;
+            const isDesktop = getIsDesktopMenuViewport();
+            const panel = isDesktop ? panelRef.current : mobilePanelRef.current;
+            // Focus mobile navigation, not the search input: focusing it opens
+            // suggestions and the virtual keyboard before any search intent.
             const initialFocus = panel?.querySelector(
-                'input:not([disabled]), button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+                isDesktop
+                    ? 'input:not([disabled]), button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+                    : 'button:not([disabled]), a[href]'
             );
             focusWithoutScroll(initialFocus || dialogRef.current);
         });

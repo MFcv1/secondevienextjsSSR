@@ -17,6 +17,7 @@ export const GALLERY_SEO_COPY = {
     eyebrow: 'Galerie Seconde Vie par Anais',
     title: 'Mobilier ancien restauré autour de Marseille',
     intro: 'La galerie rassemble des meubles anciens restaurés, des pièces vintage et des objets de caractère sélectionnés pour leur matière, leurs proportions et leur potentiel dans une maison actuelle.',
+    introMobile: 'Meubles anciens restaurés, pièces vintage et objets de caractère, choisis pour leurs matières et leurs lignes.',
     detail: 'Le référencement reste volontairement prudent tant que les informations administratives finales ne sont pas confirmées : l’ancrage éditorial se concentre autour de Marseille, avec livraison possible sur Marseille, en France et plus tard vers les pays frontaliers si la logistique le permet.',
     highlights: [
         'Pièces uniques ou en petites quantités',

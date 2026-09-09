@@ -170,14 +170,72 @@ html.gallery-entry-scroll-lock {
 
 @media (max-width: 767px) {
   [data-gallery-hero] {
-    height: max(
-      492px,
-      calc(
-        var(--marketplace-viewport-height, 100dvh)
-        - var(--gallery-mobile-initial-shell-offset, 92px)
-        - var(--gallery-mobile-first-screen-reserve, 104px)
-      )
-    );
+    height: clamp(408px, calc(57svh + 28px), 478px);
+  }
+
+  [data-gallery-hero] .marketplace-hero-copy {
+    transform: translateY(9px);
+  }
+
+  .marketplace-hero-copy > div:first-child {
+    top: -13px;
+    padding: 5.5px 12px;
+    font-size: 8.25px;
+    letter-spacing: 0.08em;
+  }
+
+  .marketplace-hero-copy h1 {
+    font-size: 28.5px;
+    margin-bottom: 13px;
+  }
+
+  .marketplace-hero-copy p {
+    max-width: 352px;
+    margin-bottom: 44px;
+    font-size: 14.3px;
+  }
+
+  .marketplace-hero-copy p + div {
+    top: 3px;
+    height: 38px;
+    flex-direction: row;
+    align-items: center;
+    gap: 11px;
+    max-width: none;
+  }
+
+  .marketplace-hero-copy > div:last-child {
+    position: relative;
+    top: 28px;
+    margin-top: 26px;
+    gap: 9px;
+  }
+
+  .marketplace-hero-copy [data-hero-step] {
+    width: 37px;
+  }
+
+  .marketplace-hero-copy .hero-cta-particles {
+    width: auto;
+    height: 33px;
+    gap: 5.5px;
+    padding-left: 10px;
+    padding-right: 3.5px;
+  }
+
+  .marketplace-hero-copy .hero-cta-particles > span:not(.hero-cta-icon):not(.hero-cta-particle-field) {
+    font-size: 8px;
+    letter-spacing: 0.1em;
+  }
+
+  .marketplace-hero-copy .hero-cta-icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .marketplace-hero-copy .hero-cta-arrow {
+    width: 13px;
+    height: 13px;
   }
 }
 

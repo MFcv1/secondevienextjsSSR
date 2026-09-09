@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useLayoutEffect } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { createDomLifetime } from '../ui/domLifetime';
 
@@ -21,36 +21,56 @@ const revealAllProductGridItems = (section) => {
     item.hidden = false;
   });
 
-  const button = section.querySelector('[data-product-grid-more]');
-  button?.setAttribute('aria-expanded', 'true');
-  button?.closest('.product-grid-more-wrap')?.setAttribute('hidden', '');
 };
 
-export function ProductGridMoreButtonIsland({ sectionId, darkMode = false } = {}) {
+export function ProductGridMoreButtonIsland({ sectionId, darkMode = false, initialCount = 10 } = {}) {
+  const [expanded, setExpanded] = useState(false);
   useLayoutEffect(() => {
     if (!getExpandedGridIds().has(sectionId)) return;
     const section = document.getElementById(sectionId);
     if (section?.matches('[data-expandable-product-grid]')) {
       revealAllProductGridItems(section);
+      setExpanded(true);
     }
   }, [sectionId]);
 
-  const revealAll = (event) => {
+  const toggleExpanded = (event) => {
     const section = event.currentTarget.closest('[data-expandable-product-grid]');
     if (!section) return;
 
-    revealAllProductGridItems(section);
+    const nextExpanded = !expanded;
+    if (nextExpanded) {
+      revealAllProductGridItems(section);
+    } else {
+      section.querySelectorAll('[data-product-grid-item]').forEach((item, index) => {
+        item.hidden = index >= initialCount;
+      });
+      const button = event.currentTarget;
+      button.focus({ preventScroll: true });
+      // Attendre le repli et le nouveau libellé avant de retrouver le bouton,
+      // dans le scroll interne mobile comme dans le document sur ordinateur.
+      window.requestAnimationFrame(() => {
+        if (!button.isConnected) return;
+        button.scrollIntoView({
+          behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
+          block: 'center',
+          inline: 'nearest',
+        });
+      });
+    }
+    setExpanded(nextExpanded);
     if (!section.id) return;
 
     try {
       const expandedGridIds = getExpandedGridIds();
-      expandedGridIds.add(section.id);
+      if (nextExpanded) expandedGridIds.add(section.id);
+      else expandedGridIds.delete(section.id);
       window.sessionStorage.setItem(
         EXPANDED_PRODUCT_GRIDS_KEY,
         JSON.stringify([...expandedGridIds]),
       );
     } catch {
-      // The current grid still expands when session storage is unavailable.
+      // Le bouton reste utilisable si le stockage de session est indisponible.
     }
   };
 
@@ -58,12 +78,12 @@ export function ProductGridMoreButtonIsland({ sectionId, darkMode = false } = {}
     <button
       type="button"
       aria-controls={`${sectionId}-grid`}
-      aria-expanded="false"
+      aria-expanded={expanded}
       data-product-grid-more
-      onClick={revealAll}
+      onClick={toggleExpanded}
       className={`flex min-h-11 items-center gap-2 rounded-full px-8 py-3 font-sans text-[10px] font-bold uppercase tracking-widest transition-colors ${darkMode ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-stone-100 text-stone-800 hover:bg-stone-200'}`}
     >
-      Voir plus <ArrowRight size={12} />
+      {expanded ? 'Voir moins' : 'Voir plus'} <ArrowRight size={12} className={expanded ? '-rotate-90' : ''} />
     </button>
   );
 }
@@ -2089,6 +2109,58 @@ const setupNewsletterGame = () => {
 };
 
 export default function GalleryFixedSectionsInteractions() {
+  useEffect(() => {
+    const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (preference.matches || !('IntersectionObserver' in window)) return undefined;
+    const animations = new Set();
+    const prepared = new Map();
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(({ target, isIntersecting }) => {
+        if (!isIntersecting) return;
+        observer.unobserve(target);
+        if (!preference.matches) prepared.get(target)?.forEach((animation) => animation.play());
+      });
+    }, { threshold: 0.6, rootMargin: '0px 0px -8% 0px' });
+    document.querySelectorAll('[data-gallery-text-reveal]').forEach((element) => {
+      if (typeof element.animate !== 'function') return;
+      const words = [...element.querySelectorAll('[data-gallery-reveal-word]')];
+      const targets = words.length ? words : [element];
+      const group = targets.map((target, index) => {
+        // transform ne remplace pas le translate CSS de l'étiquette.
+        const animation = target.animate([
+          { opacity: 0, transform: 'translateY(10px)', ...(words.length ? { clipPath: 'inset(0 0 100% 0)' } : {}) },
+          { opacity: 1, transform: 'translateY(0)', ...(words.length ? { clipPath: 'inset(0 0 0% 0)' } : {}) },
+        ], {
+          duration: 850,
+          delay: (Number(element.dataset.galleryTextReveal) || 0) + index * 85,
+          easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+          fill: 'both',
+        });
+        animation.pause();
+        animations.add(animation);
+        animation.onfinish = () => {
+          animation.cancel();
+          animations.delete(animation);
+        };
+        return animation;
+      });
+      prepared.set(element, group);
+      observer.observe(element);
+    });
+    const stop = () => {
+      if (!preference.matches) return;
+      observer.disconnect();
+      animations.forEach((animation) => animation.cancel());
+      animations.clear();
+    };
+    preference.addEventListener('change', stop);
+    return () => {
+      observer.disconnect();
+      preference.removeEventListener('change', stop);
+      animations.forEach((animation) => animation.cancel());
+    };
+  }, []);
+
   useEffect(() => {
     const cleanupBeforeAfter = setupBeforeAfter();
     const cleanupInstagram = setupInstagram();

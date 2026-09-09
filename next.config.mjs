@@ -52,6 +52,8 @@ const privateSurfaceSources = [
 ];
 
 const nextConfig = {
+  // Accès à la prévisualisation locale depuis le téléphone sur le même Wi-Fi.
+  allowedDevOrigins: ['192.168.1.199'],
   reactStrictMode: true,
   poweredByHeader: false,
   expireTime: 300,

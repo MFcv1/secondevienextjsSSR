@@ -42,7 +42,7 @@ export default function MarketplaceHeroServer({
   const isDefaultGalleryHeroTitle = String(heroTitle).toLowerCase().includes('mobilier ancien');
 
   return (
-    <section className="relative flex h-[492px] w-full flex-col items-center justify-center overflow-hidden md:h-[65vh] md:min-h-[500px]" data-gallery-hero>
+    <section className="relative flex h-[340px] w-full flex-col items-center justify-center overflow-hidden md:h-[65vh] md:min-h-[500px]" data-gallery-hero>
       <HeroMotionIsland />
       <div className="parallax-container absolute inset-0 z-0">
         {safeImages.map((img, index) => (
@@ -83,15 +83,15 @@ export default function MarketplaceHeroServer({
         <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#080807]/92 via-[#080807]/36 to-transparent opacity-0 dark:opacity-100" aria-hidden="true" />
       </div>
 
-      <div className="relative z-10 flex w-full max-w-4xl -translate-y-6 flex-col items-center px-4 text-center md:-translate-y-12">
+      <div className="marketplace-hero-copy relative z-10 flex w-full max-w-4xl flex-col items-center px-4 text-center md:-translate-y-12">
         {heroBannerText ? (
-          <div className="relative -top-4 mb-7 inline-flex max-w-[calc(100vw-2.5rem)] items-center justify-center rounded-full border border-white/30 bg-white/20 px-3.5 py-1.5 text-center text-[9px] font-bold uppercase leading-none tracking-widest text-white shadow-lg backdrop-blur-md dark:border-[#e6c18a]/35 dark:bg-[#0f0d0a]/42 dark:text-[#f5eadb] md:top-0 md:mb-6 md:px-4 md:text-[10px]">
+          <div className="relative mb-4 inline-flex max-w-[calc(100vw-2.5rem)] items-center justify-center rounded-full border border-white/30 bg-white/20 px-3.5 py-1.5 text-center text-[9px] font-bold uppercase leading-none tracking-widest text-white shadow-lg backdrop-blur-md dark:border-[#e6c18a]/35 dark:bg-[#0f0d0a]/42 dark:text-[#f5eadb] md:top-0 md:mb-6 md:px-4 md:text-[10px]">
             {heroBannerText}
           </div>
         ) : null}
 
         <div className="relative">
-          <h1 className="relative left-1/2 mb-5 w-[min(94vw,390px)] -translate-x-1/2 font-serif text-[26px] leading-[1.12] tracking-normal text-white drop-shadow-md min-[380px]:text-[28px] md:mb-5 md:w-auto md:max-w-[900px] md:text-5xl md:leading-tight lg:text-[56px]">
+          <h1 className="relative left-1/2 mb-3 w-[min(94vw,390px)] -translate-x-1/2 font-serif text-[26px] leading-[1.12] tracking-normal text-white drop-shadow-md min-[380px]:text-[28px] md:mb-5 md:w-auto md:max-w-[900px] md:text-5xl md:leading-tight lg:text-[56px]">
             {isDefaultGalleryHeroTitle ? (
               <>
                 Mobilier ancien restaure autour{' '}
@@ -102,7 +102,7 @@ export default function MarketplaceHeroServer({
               heroTitle
             )}
           </h1>
-          <p className="mx-auto mb-8 max-w-[360px] font-serif text-[14px] leading-[1.42] text-white opacity-90 drop-shadow-md min-[380px]:text-[15px] md:mb-10 md:max-w-none md:text-2xl">
+          <p className="mx-auto mb-5 max-w-[360px] font-serif text-[14px] leading-[1.42] text-white opacity-90 drop-shadow-md min-[380px]:text-[15px] md:mb-10 md:max-w-none md:text-2xl">
             {heroSubtitle}
           </p>
 
@@ -150,7 +150,7 @@ export default function MarketplaceHeroServer({
           </div>
         </div>
 
-        <div className="mt-16 flex items-center gap-2 md:mt-10 md:gap-3">
+        <div className="mt-6 flex items-center gap-2 md:mt-10 md:gap-3">
           {safeImages.map((_, index) => (
             <button
               key={index}

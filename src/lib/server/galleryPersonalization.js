@@ -4,14 +4,24 @@ import { unstable_cache } from 'next/cache';
 import { getAdminDb } from './firebaseAdmin';
 
 export const DEFAULT_ANNOUNCEMENT_MESSAGES = Object.freeze([
+  '🚚 Livraison et retrait selon votre adresse',
+  '💌 Découvrez nos nouveautés avec la newsletter',
+  '🔒 Paiement sécurisé : moyens disponibles affichés par Stripe',
+]);
+
+const LEGACY_ANNOUNCEMENT_MESSAGES = [
   '🚚 Livraison et retrait proposes selon la piece et votre adresse',
   '🔒 Paiement securise : les moyens eligibles sont affiches par Stripe',
   '🪑 Chaque meuble est une piece unique restauree avec soin',
-]);
+];
 
 const sanitizeMessages = (value) => (
   [value?.msg_1, value?.msg_2, value?.msg_3, value?.msg_4]
     .map((message) => String(message || '').trim())
+    .map((message) => {
+      const legacyIndex = LEGACY_ANNOUNCEMENT_MESSAGES.indexOf(message);
+      return legacyIndex < 0 ? message : DEFAULT_ANNOUNCEMENT_MESSAGES[legacyIndex];
+    })
     .filter(Boolean)
 );
 
@@ -39,6 +49,6 @@ async function fetchGalleryPersonalization() {
 
 export const getGalleryPersonalization = unstable_cache(
   fetchGalleryPersonalization,
-  ['gallery-personalization-v1'],
+  ['gallery-personalization-v2'],
   { revalidate: 300 },
 );
