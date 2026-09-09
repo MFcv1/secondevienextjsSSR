@@ -49,9 +49,15 @@ cookies flottant après choix, aucun débordement horizontal ni erreur JS.
 Le menu mobile n'active pas la recherche à son ouverture. Captures et preuves
 locales : `logs/livraison-hosting-20260909/` (non versionné).
 
-Les annonces par défaut restent factuelles : livraison selon l'adresse,
-newsletter et moyens affichés par Stripe. Les promesses de gratuité, de
-fidélité et de paiement fractionné ne sont pas confirmées dans cette livraison.
+La première livraison avait remplacé à tort les annonces demandées dans la
+tâche « Adapter le hero mobile » par des textes génériques. Correctif du
+9 septembre, sur rappel utilisateur : « Livraison offerte autour de Marseille »,
+« Abonnez-vous à notre newsletter » et « Payez en 3 fois sans frais avec Klarna ».
+La newsletter remplace ici le programme de fidélité de la demande initiale,
+conformément à la demande actuelle. La clé de cache des annonces est renouvelée ;
+le test des promesses publiques autorise uniquement la formulation Klarna
+explicitement demandée. Ce changement éditorial ne modifie pas la configuration
+Stripe ni les conditions d'éligibilité au paiement.
 
 Limites de cette première livraison hosting : aucune nouvelle livraison Functions,
 rules ou indexes ; le complément serveur passkey est livré séparément ci-dessous.

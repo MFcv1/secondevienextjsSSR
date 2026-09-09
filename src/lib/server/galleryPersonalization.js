@@ -4,9 +4,9 @@ import { unstable_cache } from 'next/cache';
 import { getAdminDb } from './firebaseAdmin';
 
 export const DEFAULT_ANNOUNCEMENT_MESSAGES = Object.freeze([
-  '🚚 Livraison et retrait selon votre adresse',
-  '💌 Découvrez nos nouveautés avec la newsletter',
-  '🔒 Paiement sécurisé : moyens disponibles affichés par Stripe',
+  '🚚 Livraison offerte autour de Marseille',
+  '💌 Abonnez-vous à notre newsletter',
+  '💳 Payez en 3 fois sans frais avec Klarna',
 ]);
 
 const LEGACY_ANNOUNCEMENT_MESSAGES = [
@@ -49,6 +49,6 @@ async function fetchGalleryPersonalization() {
 
 export const getGalleryPersonalization = unstable_cache(
   fetchGalleryPersonalization,
-  ['gallery-personalization-v2'],
+  ['gallery-personalization-v3'],
   { revalidate: 300 },
 );

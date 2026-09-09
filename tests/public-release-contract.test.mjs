@@ -112,7 +112,9 @@ test('unverified social proof and unavailable payment promises fail closed', asy
     footer,
     support,
     menu,
-    announcements,
+    // Cette annonce a été demandée explicitement le 9 septembre 2026.
+    // L'exception ne doit pas autoriser d'autres promesses Klarna dans le site.
+    announcements.replace('💳 Payez en 3 fois sans frais avec Klarna', ''),
   ].join('\n');
 
   for (const unsupportedClaim of [
