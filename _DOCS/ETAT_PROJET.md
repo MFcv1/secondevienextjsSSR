@@ -18,9 +18,56 @@ La gate CLI est corrigée sans dérogation. Les états d'audit ci-dessous sont h
 le design local ultérieur reste hors livraison. Preuves, périmètre et recette dans le
 [dossier de livraison](audits/2026-09-07-livraison-interactions/README.md).
 
-## Rapidité passkey — correctif local du 9 septembre
+## Consolidation main et livraison UI — 9 septembre
 
-Correctif préparé, **non committé et non déployé** : entrée isolée pour les deux
+Les changements locaux sont consolidés sur `main` et poussés sur GitHub en
+quatre commits : `e948eaa` (documentation, audits et archivage des 33 anciens
+skills), `d7b7ae4` (passkeys), `097bacb` (hero/mobile, menu et galerie),
+`865429c` (consentement cookies). L'archive des skills a été vérifiée par SHA256 ;
+aucun skill archivé n'a été restauré. Les anciens commits livrés sur les branches
+de travail sont intégrés par avance rapide, sans réécriture de l'historique.
+
+Le push de `865429c` a déclenché le rollout automatique App Hosting sandbox
+`rollout-2026-09-09-001`, **SUCCEEDED**, build `build-2026-09-09-001` **READY**,
+100 % du trafic. Source Git vérifiée : branche `main`, hash complet
+`865429c086d9e5c6a299fd83bbcb9d6e98a0c2e7`. Deployment ID servi :
+`sv-mtu0bdmb-19c6b77d7843`, HTTP 200 et `s-maxage=300`.
+Retour arrière identifié avant livraison : `build-2026-09-08-003`.
+
+Validation locale sous Node 22.23.2 : 159 tests distincts réussis (91 Auth,
+50 catalogue/newsletter/cache/contrats Gen2, 18 UI/cookies/accessibilité),
+build Next 16.3.0, contrats SEO/routes/mobile et `git diff --check` réussis.
+Lint des sources : zéro erreur, 121 avertissements ; commande explicite
+`eslint . --ignore-pattern 'logs/**'` pour exclure les copies techniques locales
+non versionnées. La commande brute avait rencontré 103 erreurs dans ces copies.
+Les liens locaux de la documentation active modifiée ont été vérifiés.
+
+Recette Chromium locale et hébergée à 390 et 1440 px : refus, persistance après
+rechargement, réglages depuis le pied de page, acceptation puis retrait,
+démontage de la carte Google et restauration du focus réussis. Aucun bouton
+cookies flottant après choix, aucun débordement horizontal ni erreur JS.
+Le menu mobile n'active pas la recherche à son ouverture. Captures et preuves
+locales : `logs/livraison-hosting-20260909/` (non versionné).
+
+Les annonces par défaut restent factuelles : livraison selon l'adresse,
+newsletter et moyens affichés par Stripe. Les promesses de gratuité, de
+fidélité et de paiement fractionné ne sont pas confirmées dans cette livraison.
+
+Limites : aucune nouvelle livraison Functions, rules ou indexes ; le client
+passkey est livré, ses optimisations serveur ci-dessous restent à déployer.
+Aucune connexion passkey humaine, commande ou opération Stripe test exécutée.
+La CI GitHub [34344923891](https://github.com/MFcv1/secondevienextjsSSR/actions/runs/34344923891)
+reste **rouge** sur l'audit des dépendances : neuf alertes, dont deux critiques
+Next.js (versions antérieures à 16.3.3), deux hautes et cinq modérées.
+Les dépendances n'ont pas été modifiées et aucun seuil n'a été abaissé.
+Cette livraison sandbox pour recette ne constitue pas une validation de
+sécurité ni un GO production. Références des alertes critiques :
+[Windows](https://github.com/advisories/GHSA-p293-qw3h-jr36) et
+[optimisation AVIF](https://github.com/advisories/GHSA-2xp9-vwfh-vxw4).
+
+## Rapidité passkey — correctif du 9 septembre
+
+Correctif committé dans `d7b7ae4` ; **partie serveur non déployée** : entrée isolée pour les deux
 fonctions de reconnexion, CPU 1, concurrence 8, minimum 1 / maximum 2 instances,
 mesures par étape sans identité. Contrat dans [Auth](security/AUTHENTIFICATION.md#capacité-et-mesures-de-la-reconnexion-passkey).
 Seconde passe locale : import Firebase général retiré de la modale, préparation
@@ -42,14 +89,14 @@ ESLint ciblé : aucune erreur ; cinq avertissements préexistants dans la modale
 et un sur l'argument `name` du script de déploiement empêchent le passage strict.
 Pas de build Next, navigateur ni connexion humaine exécutés.
 
-La livraison exige un commit explicitement autorisé, puis une archive immuable
-vérifiée et un manifeste ciblé via `scripts/deploy-functions-targeted.mjs`.
+La livraison serveur exige encore une autorisation Functions ciblée, une archive
+immuable vérifiée et un manifeste via `scripts/deploy-functions-targeted.mjs`.
 Le déploiement source seul doit également appliquer les nouveaux paramètres
 de capacité : ne pas annoncer ceux-ci actifs après une simple mise à jour du code.
 Les observations cloud avant livraison sont conservées localement dans
 `logs/passkey-performance-20260909/` ; relire les révisions avant mutation et
 conserver leurs sources de rollback. La seconde passe modifie aussi le client :
-elle nécessitera une livraison App Hosting distincte avec les gates associées.
+elle est livrée par App Hosting dans la consolidation du 9 septembre ci-dessus.
 
 ## Avant / après et newsletter — livraison des designs du 8 septembre
 
