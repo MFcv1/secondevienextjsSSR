@@ -5,7 +5,13 @@ GitHub et App Hosting sandbox. Comparaison avec l'archive du rollout 007 : seule
 modification applicative restante, la géométrie du graphique Data (toutes périodes).
 Les deux nouveaux services Functions sont déjà ACTIVE et ne sont pas redéployés.
 Contrôles ciblés : 21/21 après actualisation du contrat de navigation pour Coûts.
-Publication du graphique en cours ; preuve finale ajoutée après le rollout.
+Graphique publié : rollout `build-2026-09-09-008` terminé, build cloud
+`2b6589d9-da0e-4145-8abd-a66dda7e6123` SUCCESS, deploymentId
+`sv-mtulgidx-949bf223a895`. Galerie, admin et version catalogue 200 ; API coûts
+non authentifiée 401. Maximum du service réappliqué à 3 après livraison.
+Commit applicatif `7d6556a` ; source locale synchronisée avec la livraison,
+hors documents de preuve ajoutés après build. Pas de nouvelle recette métier
+ni de validation visuelle navigateur. Premier relevé Google toujours en attente.
 
 Chantier du 9 septembre : [page Coûts du projet](admin/COUTS_PROJET.md),
 mois réellement reçus de Google et comparaison trafic. Aperçu fictif et import
