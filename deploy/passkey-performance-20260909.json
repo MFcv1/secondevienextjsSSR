@@ -1,0 +1,119 @@
+{
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "codebase": "main",
+    "baselineCommit": "5cf97d5efed85bf162d644d7ed96128eaa0763ab",
+    "gate": "PASSKEY_PERFORMANCE_20260909",
+    "authorization": "User requested deployment of all server passkey improvements on sandbox on 2026-09-09."
+  },
+  "gates": {
+    "deploymentAllowed": true,
+    "targetedTestsPassed": 61,
+    "immutableArchiveVerified": true,
+    "rollbackSourcesHeld": true
+  },
+  "deploymentPolicy": {
+    "archiveUri": "gs://gcf-v2-sources-231220287936-europe-west1/passkey-performance-20260909/a88ce301e7fc495b579fda299ff689585b7c801e371cf7725679a45c22367a5a/function-source.zip",
+    "archiveSha256": "a88ce301e7fc495b579fda299ff689585b7c801e371cf7725679a45c22367a5a",
+    "archiveGeneration": "1788953786492549",
+    "archiveSize": 439498,
+    "allowedTargets": [
+      "generatePasskeyAuthenticationOptionsGen2",
+      "verifyPasskeyAuthenticationGen2"
+    ],
+    "maxBatchSize": 1
+  },
+  "functions": [
+    {
+      "name": "generatePasskeyAuthenticationOptionsGen2",
+      "cloud": {
+        "present": true,
+        "generation": 2,
+        "revision": "generatepasskeyauthenticationoptionsgen2-00002-vej"
+      },
+      "identities": {
+        "runtimeServiceAccount": "auth-login-runtime@secondevienextjsssr.iam.gserviceaccount.com",
+        "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "before": {
+        "availableCpu": "167m",
+        "availableMemory": "256Mi",
+        "maxInstanceRequestConcurrency": 1,
+        "minInstanceCount": null,
+        "maxInstanceCount": 1,
+        "timeoutSeconds": 60,
+        "ingressSettings": "ALLOW_ALL",
+        "environmentVariables": {
+          "LOG_EXECUTION_ID": "true",
+          "SITE_URL": "https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app"
+        }
+      },
+      "expected": {
+        "availableCpu": "1",
+        "availableMemory": "256Mi",
+        "maxInstanceRequestConcurrency": 8,
+        "minInstanceCount": 1,
+        "maxInstanceCount": 2,
+        "timeoutSeconds": 60
+      },
+      "rollbackSource": {
+        "name": "generatePasskeyAuthenticationOptionsGen2",
+        "uri": "gs://gcf-v2-sources-231220287936-europe-west1/passkey-performance-20260909/rollback/generatePasskeyAuthenticationOptionsGen2/d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f/function-source.zip",
+        "sha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "generation": "1788953792392122",
+        "size": 445569,
+        "revision": "generatepasskeyauthenticationoptionsgen2-00002-vej"
+      },
+      "iamSha256": "f55bd80f34f26df983c544912da1d72017848c70c07d8a5e8b31ede0207609f0"
+    },
+    {
+      "name": "verifyPasskeyAuthenticationGen2",
+      "cloud": {
+        "present": true,
+        "generation": 2,
+        "revision": "verifypasskeyauthenticationgen2-00002-xem"
+      },
+      "identities": {
+        "runtimeServiceAccount": "auth-login-runtime@secondevienextjsssr.iam.gserviceaccount.com",
+        "buildServiceAccount": "projects/secondevienextjsssr/serviceAccounts/functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com"
+      },
+      "decision": {
+        "classification": "KEEP_GEN2",
+        "deploymentMaxBatchSize": 1
+      },
+      "before": {
+        "availableCpu": "167m",
+        "availableMemory": "256Mi",
+        "maxInstanceRequestConcurrency": 1,
+        "minInstanceCount": null,
+        "maxInstanceCount": 1,
+        "timeoutSeconds": 60,
+        "ingressSettings": "ALLOW_ALL",
+        "environmentVariables": {
+          "LOG_EXECUTION_ID": "true"
+        }
+      },
+      "expected": {
+        "availableCpu": "1",
+        "availableMemory": "256Mi",
+        "maxInstanceRequestConcurrency": 8,
+        "minInstanceCount": 1,
+        "maxInstanceCount": 2,
+        "timeoutSeconds": 60
+      },
+      "rollbackSource": {
+        "name": "verifyPasskeyAuthenticationGen2",
+        "uri": "gs://gcf-v2-sources-231220287936-europe-west1/passkey-performance-20260909/rollback/verifyPasskeyAuthenticationGen2/d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f/function-source.zip",
+        "sha256": "d1f57ece8ef8becbbe83903e46165729f757889408bfcb5a3e93d625db2c740f",
+        "generation": "1788953797220055",
+        "size": 445569,
+        "revision": "verifypasskeyauthenticationgen2-00002-xem"
+      },
+      "iamSha256": "f55bd80f34f26df983c544912da1d72017848c70c07d8a5e8b31ede0207609f0"
+    }
+  ]
+}

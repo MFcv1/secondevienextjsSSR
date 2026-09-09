@@ -4,11 +4,21 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { GCLOUD_GEN2_TARGETS } from '../scripts/deploy-functions-targeted.mjs';
+import { GCLOUD_GEN2_TARGETS, buildGcloudGen2DeployArgs } from '../scripts/deploy-functions-targeted.mjs';
 import { classificationFor, extractLocalExports } from '../scripts/functions-gen2-inventory.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (relativePath) => fs.readFileSync(path.join(ROOT, relativePath), 'utf8');
+
+test('passkey capacity rollout preserves unrelated runtime environment variables', () => {
+  const args = buildGcloudGen2DeployArgs({ transport: 'gcloud-gen2', allowlist: ['generatePasskeyAuthenticationOptionsGen2'], project: 'secondevienextjsssr', commit: 'a'.repeat(40) });
+  assert.ok(args.includes('--cpu=1'));
+  assert.ok(args.includes('--concurrency=8'));
+  assert.ok(args.includes('--min-instances=1'));
+  assert.ok(args.includes('--max-instances=2'));
+  assert.ok(args.some(value => value.startsWith('--update-env-vars=SITE_URL=')));
+  assert.ok(!args.some(value => value.startsWith('--set-env-vars=')));
+});
 
 test('G5 prepare uniquement getUserStatsGen2 avec handler et securite partages', () => {
   const source = read('functions/src/auth/adminManagement.js');

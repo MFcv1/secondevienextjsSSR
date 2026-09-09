@@ -638,7 +638,7 @@ export const GCLOUD_GEN2_TARGETS = Object.freeze({
     minInstances: '1',
     maxInstances: '2',
     ingressSettings: 'all',
-    environmentVariables: [
+    updateEnvironmentVariables: [
       'SITE_URL=https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app'
     ]
   }),
