@@ -1,0 +1,1072 @@
+{
+  "start": "2026-09-08T15:56:07.934Z",
+  "end": "2026-09-09T15:56:07.934Z",
+  "bucketSeconds": 300,
+  "results": {
+    "request_count": [
+      {
+        "service": "aggregateanalyticssessiongen2",
+        "region": "europe-west1",
+        "points": 85,
+        "maximum": 20,
+        "total": 187
+      },
+      {
+        "service": "catalogmediagarbagecollector",
+        "region": "europe-west1",
+        "points": 5,
+        "maximum": 1,
+        "total": 1
+      },
+      {
+        "service": "catalogreconciler",
+        "region": "europe-west1",
+        "points": 120,
+        "maximum": 1,
+        "total": 24
+      },
+      {
+        "service": "cleanupproductpublicationsessions",
+        "region": "europe-west1",
+        "points": 5,
+        "maximum": 1,
+        "total": 1
+      },
+      {
+        "service": "commerceoperationsreconcilergen2",
+        "region": "europe-west1",
+        "points": 5,
+        "maximum": 1,
+        "total": 1
+      },
+      {
+        "service": "commerceoutboxdispatchergen2",
+        "region": "europe-west1",
+        "points": 120,
+        "maximum": 1,
+        "total": 24
+      },
+      {
+        "service": "commercereservationexpirydispatchergen2",
+        "region": "europe-west1",
+        "points": 109,
+        "maximum": 1,
+        "total": 24
+      },
+      {
+        "service": "commercewebhookcoveragewatchdoggen2",
+        "region": "europe-west1",
+        "points": 288,
+        "maximum": 1,
+        "total": 96
+      },
+      {
+        "service": "drawnewsletterrewardgen2",
+        "region": "europe-west1",
+        "points": 48,
+        "maximum": 4,
+        "total": 25
+      },
+      {
+        "service": "expireadminpaymentlinksgen2",
+        "region": "europe-west1",
+        "points": 288,
+        "maximum": 1,
+        "total": 288
+      },
+      {
+        "service": "generatepasskeyauthenticationoptionsgen2",
+        "region": "europe-west1",
+        "points": 57,
+        "maximum": 4,
+        "total": 9
+      },
+      {
+        "service": "generatepasskeyregistrationoptionsgen2",
+        "region": "europe-west1",
+        "points": 7,
+        "maximum": 2,
+        "total": 4
+      },
+      {
+        "service": "getdeliverypolicyadmingen2",
+        "region": "europe-west1",
+        "points": 10,
+        "maximum": 2,
+        "total": 4
+      },
+      {
+        "service": "getinstagramconnectionstatusadmingen2",
+        "region": "europe-west1",
+        "points": 10,
+        "maximum": 2,
+        "total": 4
+      },
+      {
+        "service": "getmanualinvoiceworkspaceadmingen2",
+        "region": "europe-west1",
+        "points": 10,
+        "maximum": 2,
+        "total": 4
+      },
+      {
+        "service": "getmetaconnectionstatusadmingen2",
+        "region": "europe-west1",
+        "points": 10,
+        "maximum": 2,
+        "total": 4
+      },
+      {
+        "service": "getstripeconnectstatusgen2",
+        "region": "europe-west1",
+        "points": 11,
+        "maximum": 2,
+        "total": 4
+      },
+      {
+        "service": "initlivesessiongen2",
+        "region": "europe-west1",
+        "points": 44,
+        "maximum": 6,
+        "total": 25
+      },
+      {
+        "service": "journalcommerceincidentgen2",
+        "region": "europe-west1",
+        "points": 5,
+        "maximum": 10,
+        "total": 10
+      },
+      {
+        "service": "listadminpaymentlinksgen2",
+        "region": "europe-west1",
+        "points": 10,
+        "maximum": 2,
+        "total": 4
+      },
+      {
+        "service": "listcustomerreturnrequestsadminv2gen2",
+        "region": "europe-west1",
+        "points": 10,
+        "maximum": 2,
+        "total": 4
+      },
+      {
+        "service": "listmynewsletterrewardsgen2",
+        "region": "europe-west1",
+        "points": 5,
+        "maximum": 0,
+        "total": 0
+      },
+      {
+        "service": "listmyordersv2gen2",
+        "region": "europe-west1",
+        "points": 56,
+        "maximum": 8,
+        "total": 43
+      },
+      {
+        "service": "listordersadminv2gen2",
+        "region": "europe-west1",
+        "points": 10,
+        "maximum": 2,
+        "total": 4
+      },
+      {
+        "service": "listpromotioncodesadmingen2",
+        "region": "europe-west1",
+        "points": 10,
+        "maximum": 2,
+        "total": 4
+      },
+      {
+        "service": "listquoterequestsadmingen2",
+        "region": "europe-west1",
+        "points": 10,
+        "maximum": 2,
+        "total": 4
+      },
+      {
+        "service": "listreturnsadminv2gen2",
+        "region": "europe-west1",
+        "points": 10,
+        "maximum": 2,
+        "total": 4
+      },
+      {
+        "service": "maintainanalyticsgen2",
+        "region": "europe-west1",
+        "points": 288,
+        "maximum": 1,
+        "total": 96
+      },
+      {
+        "service": "reconcileproductpublicationsessions",
+        "region": "europe-west1",
+        "points": 286,
+        "maximum": 1,
+        "total": 96
+      },
+      {
+        "service": "secondevie-next-sandbox",
+        "region": "europe-west4",
+        "points": 84,
+        "maximum": 133,
+        "total": 1124
+      },
+      {
+        "service": "syncsessionbeacongen2",
+        "region": "europe-west1",
+        "points": 62,
+        "maximum": 6,
+        "total": 45
+      },
+      {
+        "service": "syncsessiongen2",
+        "region": "europe-west1",
+        "points": 68,
+        "maximum": 28,
+        "total": 248
+      },
+      {
+        "service": "updateusersessionsgen2",
+        "region": "europe-west1",
+        "points": 15,
+        "maximum": 2,
+        "total": 6
+      },
+      {
+        "service": "verifypasskeyauthenticationgen2",
+        "region": "europe-west1",
+        "points": 52,
+        "maximum": 2,
+        "total": 3
+      }
+    ],
+    "container/cpu/utilizations": [
+      {
+        "service": "aggregateanalyticssessiongen2",
+        "region": "europe-west1",
+        "points": 76,
+        "maximum": 0.1495
+      },
+      {
+        "service": "catalogmediagarbagecollector",
+        "region": "europe-west1",
+        "points": 4,
+        "maximum": 0.1685
+      },
+      {
+        "service": "catalogreconciler",
+        "region": "europe-west1",
+        "points": 96,
+        "maximum": 0.4685
+      },
+      {
+        "service": "cleanupproductpublicationsessions",
+        "region": "europe-west1",
+        "points": 4,
+        "maximum": 0.0695
+      },
+      {
+        "service": "commerceoperationsreconcilergen2",
+        "region": "europe-west1",
+        "points": 4,
+        "maximum": 0.118
+      },
+      {
+        "service": "commerceoutboxdispatchergen2",
+        "region": "europe-west1",
+        "points": 79,
+        "maximum": 0.3775
+      },
+      {
+        "service": "commercereservationexpirydispatchergen2",
+        "region": "europe-west1",
+        "points": 77,
+        "maximum": 0.4175
+      },
+      {
+        "service": "commercewebhookcoveragewatchdoggen2",
+        "region": "europe-west1",
+        "points": 288,
+        "maximum": 0.4375
+      },
+      {
+        "service": "drawnewsletterrewardgen2",
+        "region": "europe-west1",
+        "points": 40,
+        "maximum": 0.369
+      },
+      {
+        "service": "expireadminpaymentlinksgen2",
+        "region": "europe-west1",
+        "points": 288,
+        "maximum": 0.0275
+      },
+      {
+        "service": "generatepasskeyauthenticationoptionsgen2",
+        "region": "europe-west1",
+        "points": 56,
+        "maximum": 0.139
+      },
+      {
+        "service": "generatepasskeyregistrationoptionsgen2",
+        "region": "europe-west1",
+        "points": 8,
+        "maximum": 0.189
+      },
+      {
+        "service": "getdeliverypolicyadmingen2",
+        "region": "europe-west1",
+        "points": 8,
+        "maximum": 0.1195
+      },
+      {
+        "service": "getinstagramconnectionstatusadmingen2",
+        "region": "europe-west1",
+        "points": 8,
+        "maximum": 0.2585
+      },
+      {
+        "service": "getmanualinvoiceworkspaceadmingen2",
+        "region": "europe-west1",
+        "points": 8,
+        "maximum": 0.089
+      },
+      {
+        "service": "getmetaconnectionstatusadmingen2",
+        "region": "europe-west1",
+        "points": 7,
+        "maximum": 0.109
+      },
+      {
+        "service": "getstripeconnectstatusgen2",
+        "region": "europe-west1",
+        "points": 6,
+        "maximum": 0.1075
+      },
+      {
+        "service": "initlivesessiongen2",
+        "region": "europe-west1",
+        "points": 38,
+        "maximum": 0.288
+      },
+      {
+        "service": "journalcommerceincidentgen2",
+        "region": "europe-west1",
+        "points": 4,
+        "maximum": 0.058499999999999996
+      },
+      {
+        "service": "listadminpaymentlinksgen2",
+        "region": "europe-west1",
+        "points": 8,
+        "maximum": 0.1195
+      },
+      {
+        "service": "listcustomerreturnrequestsadminv2gen2",
+        "region": "europe-west1",
+        "points": 8,
+        "maximum": 0.2095
+      },
+      {
+        "service": "listmynewsletterrewardsgen2",
+        "region": "europe-west1",
+        "points": 4,
+        "maximum": 0.0495
+      },
+      {
+        "service": "listmyordersv2gen2",
+        "region": "europe-west1",
+        "points": 46,
+        "maximum": 0.378
+      },
+      {
+        "service": "listordersadminv2gen2",
+        "region": "europe-west1",
+        "points": 8,
+        "maximum": 0.089
+      },
+      {
+        "service": "listpromotioncodesadmingen2",
+        "region": "europe-west1",
+        "points": 8,
+        "maximum": 0.1195
+      },
+      {
+        "service": "listquoterequestsadmingen2",
+        "region": "europe-west1",
+        "points": 8,
+        "maximum": 0.0795
+      },
+      {
+        "service": "listreturnsadminv2gen2",
+        "region": "europe-west1",
+        "points": 8,
+        "maximum": 0.0895
+      },
+      {
+        "service": "maintainanalyticsgen2",
+        "region": "europe-west1",
+        "points": 288,
+        "maximum": 0.0175
+      },
+      {
+        "service": "reconcileproductpublicationsessions",
+        "region": "europe-west1",
+        "points": 286,
+        "maximum": 0.3175
+      },
+      {
+        "service": "secondevie-next-sandbox",
+        "region": "europe-west4",
+        "points": 74,
+        "maximum": 0.2375
+      },
+      {
+        "service": "syncsessionbeacongen2",
+        "region": "europe-west1",
+        "points": 54,
+        "maximum": 0.369
+      },
+      {
+        "service": "syncsessiongen2",
+        "region": "europe-west1",
+        "points": 60,
+        "maximum": 0.198
+      },
+      {
+        "service": "updateusersessionsgen2",
+        "region": "europe-west1",
+        "points": 12,
+        "maximum": 0.3175
+      },
+      {
+        "service": "verifypasskeyauthenticationgen2",
+        "region": "europe-west1",
+        "points": 52,
+        "maximum": 0.0175
+      }
+    ],
+    "container/memory/utilizations": [
+      {
+        "service": "aggregateanalyticssessiongen2",
+        "region": "europe-west1",
+        "points": 76,
+        "maximum": 0.4195
+      },
+      {
+        "service": "catalogmediagarbagecollector",
+        "region": "europe-west1",
+        "points": 4,
+        "maximum": 0.3785
+      },
+      {
+        "service": "catalogreconciler",
+        "region": "europe-west1",
+        "points": 96,
+        "maximum": 0.4285
+      },
+      {
+        "service": "cleanupproductpublicationsessions",
+        "region": "europe-west1",
+        "points": 4,
+        "maximum": 0.3695
+      },
+      {
+        "service": "commerceoperationsreconcilergen2",
+        "region": "europe-west1",
+        "points": 4,
+        "maximum": 0.3795
+      },
+      {
+        "service": "commerceoutboxdispatchergen2",
+        "region": "europe-west1",
+        "points": 79,
+        "maximum": 0.3975
+      },
+      {
+        "service": "commercereservationexpirydispatchergen2",
+        "region": "europe-west1",
+        "points": 77,
+        "maximum": 0.3975
+      },
+      {
+        "service": "commercewebhookcoveragewatchdoggen2",
+        "region": "europe-west1",
+        "points": 288,
+        "maximum": 0.4195
+      },
+      {
+        "service": "drawnewsletterrewardgen2",
+        "region": "europe-west1",
+        "points": 40,
+        "maximum": 0.759
+      },
+      {
+        "service": "expireadminpaymentlinksgen2",
+        "region": "europe-west1",
+        "points": 288,
+        "maximum": 0.3395
+      },
+      {
+        "service": "generatepasskeyauthenticationoptionsgen2",
+        "region": "europe-west1",
+        "points": 56,
+        "maximum": 0.759
+      },
+      {
+        "service": "generatepasskeyregistrationoptionsgen2",
+        "region": "europe-west1",
+        "points": 8,
+        "maximum": 0.759
+      },
+      {
+        "service": "getdeliverypolicyadmingen2",
+        "region": "europe-west1",
+        "points": 8,
+        "maximum": 0.7095
+      },
+      {
+        "service": "getinstagramconnectionstatusadmingen2",
+        "region": "europe-west1",
+        "points": 8,
+        "maximum": 0.7585000000000001
+      },
+      {
+        "service": "getmanualinvoiceworkspaceadmingen2",
+        "region": "europe-west1",
+        "points": 8,
+        "maximum": 0.3095
+      },
+      {
+        "service": "getmetaconnectionstatusadmingen2",
+        "region": "europe-west1",
+        "points": 7,
+        "maximum": 0.7395
+      },
+      {
+        "service": "getstripeconnectstatusgen2",
+        "region": "europe-west1",
+        "points": 6,
+        "maximum": 0.6995
+      },
+      {
+        "service": "initlivesessiongen2",
+        "region": "europe-west1",
+        "points": 38,
+        "maximum": 0.7785000000000001
+      },
+      {
+        "service": "journalcommerceincidentgen2",
+        "region": "europe-west1",
+        "points": 4,
+        "maximum": 0.7395
+      },
+      {
+        "service": "listadminpaymentlinksgen2",
+        "region": "europe-west1",
+        "points": 8,
+        "maximum": 0.7895000000000001
+      },
+      {
+        "service": "listcustomerreturnrequestsadminv2gen2",
+        "region": "europe-west1",
+        "points": 8,
+        "maximum": 0.6094999999999999
+      },
+      {
+        "service": "listmynewsletterrewardsgen2",
+        "region": "europe-west1",
+        "points": 4,
+        "maximum": 0.7395
+      },
+      {
+        "service": "listmyordersv2gen2",
+        "region": "europe-west1",
+        "points": 46,
+        "maximum": 0.6395
+      },
+      {
+        "service": "listordersadminv2gen2",
+        "region": "europe-west1",
+        "points": 8,
+        "maximum": 0.6094999999999999
+      },
+      {
+        "service": "listpromotioncodesadmingen2",
+        "region": "europe-west1",
+        "points": 8,
+        "maximum": 0.5595000000000001
+      },
+      {
+        "service": "listquoterequestsadmingen2",
+        "region": "europe-west1",
+        "points": 8,
+        "maximum": 0.3095
+      },
+      {
+        "service": "listreturnsadminv2gen2",
+        "region": "europe-west1",
+        "points": 8,
+        "maximum": 0.6194999999999999
+      },
+      {
+        "service": "maintainanalyticsgen2",
+        "region": "europe-west1",
+        "points": 288,
+        "maximum": 0.3995
+      },
+      {
+        "service": "reconcileproductpublicationsessions",
+        "region": "europe-west1",
+        "points": 286,
+        "maximum": 0.3795
+      },
+      {
+        "service": "secondevie-next-sandbox",
+        "region": "europe-west4",
+        "points": 74,
+        "maximum": 0.545
+      },
+      {
+        "service": "syncsessionbeacongen2",
+        "region": "europe-west1",
+        "points": 54,
+        "maximum": 0.7795000000000001
+      },
+      {
+        "service": "syncsessiongen2",
+        "region": "europe-west1",
+        "points": 60,
+        "maximum": 0.7795000000000001
+      },
+      {
+        "service": "updateusersessionsgen2",
+        "region": "europe-west1",
+        "points": 12,
+        "maximum": 0.749
+      },
+      {
+        "service": "verifypasskeyauthenticationgen2",
+        "region": "europe-west1",
+        "points": 52,
+        "maximum": 0.5395000000000001
+      }
+    ],
+    "container/instance_count": [
+      {
+        "service": "aggregateanalyticssessiongen2",
+        "region": "europe-west1",
+        "points": 84,
+        "maximum": 1
+      },
+      {
+        "service": "catalogmediagarbagecollector",
+        "region": "europe-west1",
+        "points": 5,
+        "maximum": 1
+      },
+      {
+        "service": "catalogreconciler",
+        "region": "europe-west1",
+        "points": 120,
+        "maximum": 1
+      },
+      {
+        "service": "cleanupproductpublicationsessions",
+        "region": "europe-west1",
+        "points": 6,
+        "maximum": 1
+      },
+      {
+        "service": "commerceoperationsreconcilergen2",
+        "region": "europe-west1",
+        "points": 5,
+        "maximum": 1
+      },
+      {
+        "service": "commerceoutboxdispatchergen2",
+        "region": "europe-west1",
+        "points": 120,
+        "maximum": 1
+      },
+      {
+        "service": "commercereservationexpirydispatchergen2",
+        "region": "europe-west1",
+        "points": 120,
+        "maximum": 1
+      },
+      {
+        "service": "commercewebhookcoveragewatchdoggen2",
+        "region": "europe-west1",
+        "points": 288,
+        "maximum": 1
+      },
+      {
+        "service": "drawnewsletterrewardgen2",
+        "region": "europe-west1",
+        "points": 50,
+        "maximum": 1
+      },
+      {
+        "service": "expireadminpaymentlinksgen2",
+        "region": "europe-west1",
+        "points": 288,
+        "maximum": 1
+      },
+      {
+        "service": "generatepasskeyauthenticationoptionsgen2",
+        "region": "europe-west1",
+        "points": 58,
+        "maximum": 1
+      },
+      {
+        "service": "generatepasskeyregistrationoptionsgen2",
+        "region": "europe-west1",
+        "points": 11,
+        "maximum": 2
+      },
+      {
+        "service": "getdeliverypolicyadmingen2",
+        "region": "europe-west1",
+        "points": 11,
+        "maximum": 1
+      },
+      {
+        "service": "getinstagramconnectionstatusadmingen2",
+        "region": "europe-west1",
+        "points": 10,
+        "maximum": 1
+      },
+      {
+        "service": "getmanualinvoiceworkspaceadmingen2",
+        "region": "europe-west1",
+        "points": 10,
+        "maximum": 1
+      },
+      {
+        "service": "getmetaconnectionstatusadmingen2",
+        "region": "europe-west1",
+        "points": 11,
+        "maximum": 1
+      },
+      {
+        "service": "getstripeconnectstatusgen2",
+        "region": "europe-west1",
+        "points": 11,
+        "maximum": 1
+      },
+      {
+        "service": "initlivesessiongen2",
+        "region": "europe-west1",
+        "points": 46,
+        "maximum": 1
+      },
+      {
+        "service": "journalcommerceincidentgen2",
+        "region": "europe-west1",
+        "points": 5,
+        "maximum": 1
+      },
+      {
+        "service": "listadminpaymentlinksgen2",
+        "region": "europe-west1",
+        "points": 11,
+        "maximum": 1
+      },
+      {
+        "service": "listcustomerreturnrequestsadminv2gen2",
+        "region": "europe-west1",
+        "points": 11,
+        "maximum": 1
+      },
+      {
+        "service": "listmynewsletterrewardsgen2",
+        "region": "europe-west1",
+        "points": 5,
+        "maximum": 1
+      },
+      {
+        "service": "listmyordersv2gen2",
+        "region": "europe-west1",
+        "points": 56,
+        "maximum": 1
+      },
+      {
+        "service": "listordersadminv2gen2",
+        "region": "europe-west1",
+        "points": 10,
+        "maximum": 1
+      },
+      {
+        "service": "listpromotioncodesadmingen2",
+        "region": "europe-west1",
+        "points": 11,
+        "maximum": 1
+      },
+      {
+        "service": "listquoterequestsadmingen2",
+        "region": "europe-west1",
+        "points": 10,
+        "maximum": 1
+      },
+      {
+        "service": "listreturnsadminv2gen2",
+        "region": "europe-west1",
+        "points": 10,
+        "maximum": 1
+      },
+      {
+        "service": "maintainanalyticsgen2",
+        "region": "europe-west1",
+        "points": 288,
+        "maximum": 1
+      },
+      {
+        "service": "reconcileproductpublicationsessions",
+        "region": "europe-west1",
+        "points": 287,
+        "maximum": 1
+      },
+      {
+        "service": "secondevie-next-sandbox",
+        "region": "europe-west4",
+        "points": 87,
+        "maximum": 2
+      },
+      {
+        "service": "syncsessionbeacongen2",
+        "region": "europe-west1",
+        "points": 63,
+        "maximum": 1
+      },
+      {
+        "service": "syncsessiongen2",
+        "region": "europe-west1",
+        "points": 67,
+        "maximum": 1
+      },
+      {
+        "service": "updateusersessionsgen2",
+        "region": "europe-west1",
+        "points": 15,
+        "maximum": 1
+      },
+      {
+        "service": "verifypasskeyauthenticationgen2",
+        "region": "europe-west1",
+        "points": 52,
+        "maximum": 1
+      }
+    ],
+    "container/max_request_concurrencies": [
+      {
+        "service": "aggregateanalyticssessiongen2",
+        "region": "europe-west1",
+        "points": 83,
+        "maximum": 1.9500000000000002
+      },
+      {
+        "service": "catalogmediagarbagecollector",
+        "region": "europe-west1",
+        "points": 5,
+        "maximum": 1.95
+      },
+      {
+        "service": "catalogreconciler",
+        "region": "europe-west1",
+        "points": 108,
+        "maximum": 1.95
+      },
+      {
+        "service": "cleanupproductpublicationsessions",
+        "region": "europe-west1",
+        "points": 5,
+        "maximum": 1.95
+      },
+      {
+        "service": "commerceoperationsreconcilergen2",
+        "region": "europe-west1",
+        "points": 4,
+        "maximum": 1.95
+      },
+      {
+        "service": "commerceoutboxdispatchergen2",
+        "region": "europe-west1",
+        "points": 96,
+        "maximum": 1.95
+      },
+      {
+        "service": "commercereservationexpirydispatchergen2",
+        "region": "europe-west1",
+        "points": 96,
+        "maximum": 1.95
+      },
+      {
+        "service": "commercewebhookcoveragewatchdoggen2",
+        "region": "europe-west1",
+        "points": 288,
+        "maximum": 1.9500000000000002
+      },
+      {
+        "service": "drawnewsletterrewardgen2",
+        "region": "europe-west1",
+        "points": 45,
+        "maximum": 1.95
+      },
+      {
+        "service": "expireadminpaymentlinksgen2",
+        "region": "europe-west1",
+        "points": 288,
+        "maximum": 1.95
+      },
+      {
+        "service": "generatepasskeyauthenticationoptionsgen2",
+        "region": "europe-west1",
+        "points": 57,
+        "maximum": 1.95
+      },
+      {
+        "service": "generatepasskeyregistrationoptionsgen2",
+        "region": "europe-west1",
+        "points": 10,
+        "maximum": 1.9500000000000002
+      },
+      {
+        "service": "getdeliverypolicyadmingen2",
+        "region": "europe-west1",
+        "points": 10,
+        "maximum": 1.95
+      },
+      {
+        "service": "getinstagramconnectionstatusadmingen2",
+        "region": "europe-west1",
+        "points": 10,
+        "maximum": 1.95
+      },
+      {
+        "service": "getmanualinvoiceworkspaceadmingen2",
+        "region": "europe-west1",
+        "points": 9,
+        "maximum": 1.95
+      },
+      {
+        "service": "getmetaconnectionstatusadmingen2",
+        "region": "europe-west1",
+        "points": 10,
+        "maximum": 1.95
+      },
+      {
+        "service": "getstripeconnectstatusgen2",
+        "region": "europe-west1",
+        "points": 9,
+        "maximum": 1.95
+      },
+      {
+        "service": "initlivesessiongen2",
+        "region": "europe-west1",
+        "points": 45,
+        "maximum": 1.9500000000000002
+      },
+      {
+        "service": "journalcommerceincidentgen2",
+        "region": "europe-west1",
+        "points": 4,
+        "maximum": 1.95
+      },
+      {
+        "service": "listadminpaymentlinksgen2",
+        "region": "europe-west1",
+        "points": 10,
+        "maximum": 1.95
+      },
+      {
+        "service": "listcustomerreturnrequestsadminv2gen2",
+        "region": "europe-west1",
+        "points": 10,
+        "maximum": 1.95
+      },
+      {
+        "service": "listmynewsletterrewardsgen2",
+        "region": "europe-west1",
+        "points": 5,
+        "maximum": 1.95
+      },
+      {
+        "service": "listmyordersv2gen2",
+        "region": "europe-west1",
+        "points": 53,
+        "maximum": 1.9500000000000002
+      },
+      {
+        "service": "listordersadminv2gen2",
+        "region": "europe-west1",
+        "points": 9,
+        "maximum": 1.95
+      },
+      {
+        "service": "listpromotioncodesadmingen2",
+        "region": "europe-west1",
+        "points": 10,
+        "maximum": 1.95
+      },
+      {
+        "service": "listquoterequestsadmingen2",
+        "region": "europe-west1",
+        "points": 10,
+        "maximum": 1.95
+      },
+      {
+        "service": "listreturnsadminv2gen2",
+        "region": "europe-west1",
+        "points": 10,
+        "maximum": 1.95
+      },
+      {
+        "service": "maintainanalyticsgen2",
+        "region": "europe-west1",
+        "points": 288,
+        "maximum": 1.95
+      },
+      {
+        "service": "reconcileproductpublicationsessions",
+        "region": "europe-west1",
+        "points": 287,
+        "maximum": 1.9500000000000002
+      },
+      {
+        "service": "secondevie-next-sandbox",
+        "region": "europe-west4",
+        "points": 82,
+        "maximum": 15.8
+      },
+      {
+        "service": "syncsessionbeacongen2",
+        "region": "europe-west1",
+        "points": 59,
+        "maximum": 1.9500000000000002
+      },
+      {
+        "service": "syncsessiongen2",
+        "region": "europe-west1",
+        "points": 64,
+        "maximum": 1.9500000000000002
+      },
+      {
+        "service": "updateusersessionsgen2",
+        "region": "europe-west1",
+        "points": 13,
+        "maximum": 1.95
+      },
+      {
+        "service": "verifypasskeyauthenticationgen2",
+        "region": "europe-west1",
+        "points": 52,
+        "maximum": 1.95
+      }
+    ]
+  },
+  "concurrencyMethod": "maximum of 5-minute p95 distribution, not simultaneous fleet sum"
+}

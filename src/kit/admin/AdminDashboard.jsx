@@ -886,6 +886,7 @@ export const preloadAdminDashboardData = async () => undefined;
 // ─── ADMIN DASHBOARD ───
 
 const AdminDashboard = ({
+    onInitialReady,
     user,
     darkMode = false,
     isSuperAdmin = false,
@@ -911,6 +912,9 @@ const AdminDashboard = ({
         domains: unavailableDomains()
     });
     const [criticalAccessFailed, setCriticalAccessFailed] = useState(false);
+    useEffect(() => {
+        if (!projection.loading) onInitialReady?.();
+    }, [onInitialReady, projection.loading]);
     const revisionsRef = useRef({});
     const timingRef = useRef({ backOfficeReadyAt, strongAuthReadyAt });
     timingRef.current = { backOfficeReadyAt, strongAuthReadyAt };

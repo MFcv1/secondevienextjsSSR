@@ -5,6 +5,13 @@ Statut: `REFERENCE_ACTIVE`
 
 ## 1. Perimetre
 
+Cache de validation serveur livré sur sandbox : trois releases immuables maximum,
+24 Mio de JSON estimé, promesses concurrentes partagées. Tous les champs du pointeur
+participent à l'identité validée ; les pointeurs current/previous/last-known-good
+restent frais. Aucun rejet mémorisé ni fallback Firestore. Cette borne ne représente
+pas toute la mémoire V8. ISR 300 inchangé.
+[Livraison sandbox et preuves](../audits/2026-09-09-mutualisation/LIVRAISON_SANDBOX.md).
+
 Ce chapitre couvre la creation d'une annonce meuble, son stockage, sa publication, son indexabilite, son affichage dans la galerie, sa recherche et son passage dans le panier.
 
 La collection catalogue unifiee est `furniture`. L'identifiant technique ne doit pas etre renomme sans migration de donnees, rules, Functions, scripts et routes.

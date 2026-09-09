@@ -1302,41 +1302,15 @@ const setupNewsletterGame = () => {
       game.dataset.nlAct = act;
     };
 
-    /* --- Tirage anticipe --------------------------------------------------
-       L'animation ne couvre que HERO_SETTLED_AT, soit 1400 ms de reseau. Une
-       fonction Gen2 tiede repond dans ce budget ; la meme, froide — et avec
-       minInstances a 0 elle l'est presque toujours — demande plusieurs
-       secondes, pendant lesquelles la carte attend a l'ecran.
-
-       On demande donc le lot avant le clic. Le serveur reste seul juge du
-       resultat : il est memorise par playId, et rien de ce que fait le
-       navigateur ne peut en changer la valeur. Seul l'instant de la demande
-       bouge, pas la mecanique. */
-    let pendingDraw = null;
-    let prefetchedCardIndex = 1;
-
-    const prefetchDraw = () => {
-      if (pendingDraw || disposed || game.dataset.nlAct !== 'idle') return;
-      pendingDraw = (async () => {
-        const api = await import('./newsletterRewardClient');
-        playId ||= api.createNewsletterPlayId();
-        return api.drawNewsletterReward({ playId, cardIndex: prefetchedCardIndex });
-      })();
-      // L'echec est traite au clic, pas ici : sans ce filet il remonterait en
-      // rejet non gere, personne n'attendant encore cette promesse.
-      pendingDraw.catch(() => {});
-    };
-
-    // Rend la reponse anticipee, ou `null` si elle manque ou a echoue — auquel
-    // cas le clic refait la demande lui-meme.
-    const settleDraw = async () => {
-      if (!pendingDraw) return null;
-      try {
-        return await pendingDraw;
-      } catch {
-        pendingDraw = null;
-        return null;
-      }
+    // Prepare code only. Drawing a reward writes data and requires a click.
+    let newsletterApiPromise = null;
+    const prepareNewsletterRuntime = () => {
+      if (newsletterApiPromise || disposed || navigator.connection?.saveData) return;
+      newsletterApiPromise = import('./newsletterRewardClient').catch(error => {
+        newsletterApiPromise = null;
+        throw error;
+      });
+      newsletterApiPromise.catch(() => {});
     };
 
     const labelText = gameLabel?.querySelector('[data-nl-game-label-text]') || gameLabel;
@@ -1891,15 +1865,14 @@ const setupNewsletterGame = () => {
     if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
       cards.forEach((card) => {
         card.addEventListener('pointerenter', () => {
-          prefetchedCardIndex = Number(card.dataset.nlCard || 0);
-          prefetchDraw();
+          prepareNewsletterRuntime();
         }, eventOptions);
       });
     } else if ('IntersectionObserver' in window && cardsWrap) {
       let dwellTimer = 0;
       const dwellObserver = new IntersectionObserver(([entry]) => {
         if (entry?.isIntersecting) {
-          if (!dwellTimer) dwellTimer = window.setTimeout(prefetchDraw, 1200);
+          if (!dwellTimer) dwellTimer = window.setTimeout(prepareNewsletterRuntime, 1200);
           return;
         }
         window.clearTimeout(dwellTimer);
@@ -1920,7 +1893,6 @@ const setupNewsletterGame = () => {
       stopFx();
       prize = null;
       playId = null;
-      pendingDraw = null;
       setAct('idle');
       cards.forEach((other) => {
         other.disabled = false;
@@ -1984,18 +1956,11 @@ const setupNewsletterGame = () => {
         const startedAt = performance.now();
 
         try {
-          // Le tirage a normalement ete lance avant le clic ; on ne fait ici
-          // que recuperer sa reponse. On ne rappelle la fonction que si
-          // l'anticipation n'a pas eu lieu ou a echoue.
-          let result = await settleDraw();
-          if (!result) {
-            const api = await import('./newsletterRewardClient');
-            playId ||= api.createNewsletterPlayId();
-            result = await api.drawNewsletterReward({
-              playId,
-              cardIndex: Number(card.dataset.nlCard || 0),
-            });
-          }
+          const api = await (newsletterApiPromise || import('./newsletterRewardClient'));
+          playId ||= api.createNewsletterPlayId();
+          const result = await api.drawNewsletterReward({
+            playId, cardIndex: Number(card.dataset.nlCard || 0)
+          });
           if (disposed) return;
           prize = Number(result.percentage);
 
@@ -2075,7 +2040,6 @@ const setupNewsletterGame = () => {
       isSubmitting = false;
       playId = null;
       prize = null;
-      pendingDraw = null;
       eventController.abort();
       cancelPending();
       stopFx();

@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const test = require('node:test');
 
-const source = fs.readFileSync(require.resolve('../functions/src/auth/passkeys.js'), 'utf8');
+const source = fs.readFileSync(require.resolve('../functions/src/auth/passkeyHandlers.cjs'), 'utf8');
 const retrySource = source.slice(source.indexOf('async function resumeFailedTokenMint('), source.indexOf('function getClientIp('));
 
 test('a Firestore transaction retry cannot retain permission from an aborted passkey token claim', async () => {

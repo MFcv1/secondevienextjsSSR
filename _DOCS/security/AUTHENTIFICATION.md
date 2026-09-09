@@ -19,6 +19,26 @@ Les anciens documents restent recuperables dans l'historique Git, notamment dans
 
 ## 2. Resume executif
 
+Contrat de transport partagé ajouté le 2026-09-09 : les quatre handlers passkey
+sont communs à leurs wrappers Functions et aux routes Node Next
+`/api/auth/passkeys/[operation]`. Allowlist fermée, enveloppe callable Firebase,
+POST JSON borné, App Check et ID token vérifiés explicitement, réponses privées.
+Le transport navigateur utilise Next sur le sandbox depuis la livraison du 9 septembre.
+La chaîne IP observée comporte trois sauts ; les droits signBlob sont accordés
+au compte App Hosting sur lui-même. La recette de connexion réelle reste à faire.
+Les guards d'inscription admin, la vérification locale WebAuthn, les challenges
+et la réussite seulement après `loginWithCustomToken` sont conservés.
+Avancement et conditions de bascule :
+[premier lot passkeys](../audits/2026-09-09-mutualisation/INTEGRATION_PASSKEYS.md).
+
+Les quatre OTP et `updateUserSessions` utilisent aussi des factories
+partagées, exécutables via `/api/public/[operation]`. Les appelants réels passent
+par `getCallableFunction` ; les flags BUILD/RUNTIME sont distincts et activés
+sur le sandbox. Aucune mutation ne se précharge et aucun échec ambigu ne bascule
+automatiquement sur une seconde destination. La conversion analytics reste non
+bloquante ; `getUserStats`/`deleteSession` restent admin.
+[Livraison, preuves et recette restante](../audits/2026-09-09-mutualisation/LIVRAISON_SANDBOX.md).
+
 Complément de code local du 2026-09-07, non déployé : les transitions OTP
 comparent le challenge attendu dans une transaction ; un callback d'envoi ou
 d'émission de token devenu ancien ne modifie pas le challenge suivant. Le

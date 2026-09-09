@@ -8,13 +8,19 @@ import { GCLOUD_GEN2_TARGETS, buildGcloudGen2DeployArgs } from '../scripts/deplo
 import { classificationFor, extractLocalExports } from '../scripts/functions-gen2-inventory.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const read = (relativePath) => fs.readFileSync(path.join(ROOT, relativePath), 'utf8');
+const read = (relativePath) => {
+  const source = fs.readFileSync(path.join(ROOT, relativePath), 'utf8');
+  if (/auth\/(customerLogin|guestCheckout)Otp\.js$/.test(relativePath)) {
+    return source + '\n' + fs.readFileSync(path.join(ROOT, relativePath.replace(/\.js$/, 'Handlers.cjs')), 'utf8');
+  }
+  return source;
+};
 
 test('passkey capacity rollout preserves unrelated runtime environment variables', () => {
   const args = buildGcloudGen2DeployArgs({ transport: 'gcloud-gen2', allowlist: ['generatePasskeyAuthenticationOptionsGen2'], project: 'secondevienextjsssr', commit: 'a'.repeat(40) });
   assert.ok(args.includes('--cpu=1'));
   assert.ok(args.includes('--concurrency=8'));
-  assert.ok(args.includes('--min-instances=1'));
+  assert.ok(args.includes('--min-instances=0'));
   assert.ok(args.includes('--max-instances=2'));
   assert.ok(args.some(value => value.startsWith('--update-env-vars=SITE_URL=')));
   assert.ok(!args.some(value => value.startsWith('--set-env-vars=')));
@@ -174,7 +180,7 @@ test('G5-A5 prepare uniquement verifyGuestCheckoutOtpGen2 avec handler et secret
   assert.equal(target.maxInstances, '1');
   assert.deepEqual(target.secrets, ['OTP_HMAC_SECRET=OTP_HMAC_SECRET:1']);
   assert.match(read('src/kit/config/functionTargets.js'), /verifyGuestCheckoutOtp:\s*'verifyGuestCheckoutOtpGen2'/);
-  assert.match(read('src/kit/commerce/CheckoutView.jsx'), /getFunctionTarget\('verifyGuestCheckoutOtp'\)/);
+  assert.match(read('src/kit/commerce/CheckoutView.jsx'), /getCallableFunction\('verifyGuestCheckoutOtp'\)/);
 });
 
 test('G5-A5 borne IAM au runtime de verification OTP et au seul secret HMAC', () => {
@@ -217,7 +223,7 @@ test('G5-A5 prouve le runtime OTP et autorise seulement le cutover client', () =
   assert.equal(manifest.runtimeEvidence.verifiedTokenHashPresent, true);
   assert.equal(manifest.runtimeEvidence.otpDisplayed, false);
   assert.equal(manifest.runtimeEvidence.checkoutTokenDisplayed, false);
-  assert.equal(manifest.postDeploymentInventory.cloudFunctions, 162);
+  assert.equal(manifest.postDeploymentInventory.cloudFunctions, 163);
   assert.equal(manifest.postDeploymentInventory.cloudGen2, 23);
   const proof = read('scripts/prove-guest-otp-verification-g5.mjs');
   assert.match(proof, /SEND_TARGET = 'sendGuestCheckoutOtpGen2'/);
@@ -232,7 +238,7 @@ test('G5-A5 prouve le runtime OTP et autorise seulement le cutover client', () =
 test('G5-A5 ferme le cutover, le rollback reel et la reactivation finale', () => {
   const manifest = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g5-verify-guest-checkout-otp-rollout.json'));
   assert.equal(manifest.reconciliation.sourceExports, 167);
-  assert.equal(manifest.reconciliation.cloudFunctions, 162);
+  assert.equal(manifest.reconciliation.cloudFunctions, 163);
   assert.equal(manifest.reconciliation.cloudGen1, 139);
   assert.equal(manifest.reconciliation.cloudGen2, 23);
   assert.equal(manifest.function.name, 'verifyGuestCheckoutOtpGen2');
@@ -275,7 +281,7 @@ test('G5-A6 prepare uniquement sendCustomerLoginOtpGen2 avec runtime OTP reutili
     'OTP_HMAC_SECRET=OTP_HMAC_SECRET:1'
   ]);
   assert.equal(manifest.preflight.sourceExportsWithParallel, 168);
-  assert.equal(manifest.preflight.cloudFunctions, 162);
+  assert.equal(manifest.preflight.cloudFunctions, 163);
   assert.equal(manifest.functions[0].cloud.present, true);
   assert.equal(manifest.functions[0].cloud.revision, 'sendcustomerloginotpgen2-00002-kod');
   assert.equal(manifest.iamEvidence.reusedRuntimeFrom, 'G5-A4 sendGuestCheckoutOtpGen2');
@@ -299,7 +305,7 @@ test('G5-A6 prepare uniquement sendCustomerLoginOtpGen2 avec runtime OTP reutili
   assert.equal(manifest.postDeploymentInventory.cloudFunctions, 163);
   assert.equal(manifest.postDeploymentInventory.cloudGen2, 24);
   assert.match(read('src/kit/config/functionTargets.js'), /sendCustomerLoginOtp:\s*'sendCustomerLoginOtpGen2'/);
-  assert.match(read('src/kit/marketplace/LegacyLoginModalFullIsland.jsx'), /getFunctionTarget\('sendCustomerLoginOtp'\)/);
+  assert.match(read('src/kit/marketplace/LegacyLoginModalFullIsland.jsx'), /getCallableFunction\('sendCustomerLoginOtp'\)/);
 });
 
 test('G5-A7 prepare verifyCustomerLoginOtpGen2 avec handler partage et runtime login', () => {
@@ -316,11 +322,11 @@ test('G5-A7 prepare verifyCustomerLoginOtpGen2 avec handler partage et runtime l
   assert.equal(target.runtimeServiceAccount, 'auth-login-runtime@secondevienextjsssr.iam.gserviceaccount.com');
   assert.deepEqual(target.secrets, ['OTP_HMAC_SECRET=OTP_HMAC_SECRET:1']);
   assert.match(read('src/kit/config/functionTargets.js'), /verifyCustomerLoginOtp:\s*'verifyCustomerLoginOtpGen2'/);
-  assert.match(read('src/kit/marketplace/LegacyLoginModalFullIsland.jsx'), /getFunctionTarget\('verifyCustomerLoginOtp'\)/);
+  assert.match(read('src/kit/marketplace/LegacyLoginModalFullIsland.jsx'), /getCallableFunction\('verifyCustomerLoginOtp'\)/);
 });
 
 test('G5-A8-A9 preparent les deux endpoints passkey de connexion avec handler partage', () => {
-  const source = read('functions/src/auth/passkeys.js');
+  const source = read('functions/src/auth/passkeys.js') + read('functions/src/auth/passkeyHandlers.cjs');
   const exports = extractLocalExports(ROOT);
   for (const name of ['generatePasskeyAuthenticationOptionsGen2', 'verifyPasskeyAuthenticationGen2']) {
     assert.ok(exports.some(({ name: exported }) => exported === name));
@@ -329,7 +335,7 @@ test('G5-A8-A9 preparent les deux endpoints passkey de connexion avec handler pa
     assert.equal(target.runtimeServiceAccount, 'auth-login-runtime@secondevienextjsssr.iam.gserviceaccount.com');
     assert.equal(target.cpu, '1');
     assert.equal(target.concurrency, '8');
-    assert.equal(target.minInstances, '1');
+    assert.equal(target.minInstances, '0');
     assert.equal(target.maxInstances, '2');
   }
   assert.match(source, /const generatePasskeyAuthenticationOptionsHandler = async \(data, context\) =>/);
@@ -341,12 +347,12 @@ test('G5-A8-A9 preparent les deux endpoints passkey de connexion avec handler pa
   assert.match(registry, /generatePasskeyAuthenticationOptions:\s*'generatePasskeyAuthenticationOptionsGen2'/);
   assert.match(registry, /verifyPasskeyAuthentication:\s*'verifyPasskeyAuthenticationGen2'/);
   const modal = read('src/kit/marketplace/LegacyLoginModalFullIsland.jsx');
-  assert.match(modal, /getFunctionTarget\('generatePasskeyAuthenticationOptions'\)/);
-  assert.match(modal, /getFunctionTarget\('verifyPasskeyAuthentication'\)/);
+  assert.match(modal, /getCallableFunction\('generatePasskeyAuthenticationOptions'\)/);
+  assert.match(modal, /getCallableFunction\('verifyPasskeyAuthentication'\)/);
 });
 
 test('G5-A10-A11 preparent les deux endpoints passkey d inscription avec handler partage', () => {
-  const source = read('functions/src/auth/passkeys.js');
+  const source = read('functions/src/auth/passkeys.js') + read('functions/src/auth/passkeyHandlers.cjs');
   const exports = extractLocalExports(ROOT);
   for (const name of ['generatePasskeyRegistrationOptionsGen2', 'verifyPasskeyRegistrationGen2']) {
     assert.ok(exports.some(({ name: exported }) => exported === name));
@@ -366,8 +372,8 @@ test('G5-A10-A11 preparent les deux endpoints passkey d inscription avec handler
   assert.match(registry, /generatePasskeyRegistrationOptions:\s*'generatePasskeyRegistrationOptionsGen2'/);
   assert.match(registry, /verifyPasskeyRegistration:\s*'verifyPasskeyRegistrationGen2'/);
   const modal = read('src/kit/marketplace/LegacyLoginModalFullIsland.jsx');
-  assert.match(modal, /getFunctionTarget\('generatePasskeyRegistrationOptions'\)/);
-  assert.match(modal, /getFunctionTarget\('verifyPasskeyRegistration'\)/);
+  assert.match(modal, /getCallableFunction\('generatePasskeyRegistrationOptions'\)/);
+  assert.match(modal, /getCallableFunction\('verifyPasskeyRegistration'\)/);
 });
 
 test('G5-A10-A11 bornent IAM au runtime d inscription passkey', () => {
@@ -441,7 +447,7 @@ test('G5-A4 prouve le deploy et autorise uniquement le cutover client', () => {
   const clientRegistry = read('src/kit/config/functionTargets.js');
   const checkout = read('src/kit/commerce/CheckoutView.jsx');
   assert.match(clientRegistry, /sendGuestCheckoutOtp: 'sendGuestCheckoutOtpGen2'/);
-  assert.match(checkout, /httpsCallable\(functions, getFunctionTarget\('sendGuestCheckoutOtp'\)\)/);
+  assert.match(checkout, /getCallableFunction\('sendGuestCheckoutOtp'\)/);
   assert.doesNotMatch(checkout, /httpsCallable\(functions, 'sendGuestCheckoutOtp'\)/);
 });
 

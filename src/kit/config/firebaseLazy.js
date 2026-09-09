@@ -1,5 +1,9 @@
 import { app, functionsRegion } from './firebaseCore';
 import { getFunctionTarget } from './functionTargets';
+import { getPasskeyEndpoint } from '../../../shared/passkeyTransport.mjs';
+import { getPublicOperationEndpoint } from '../../../shared/publicOperationTransport.mjs';
+import { usesSharedAdminReader } from '../../../shared/adminReaderTransport.mjs';
+import { createPrivateReadCoalescer } from '../auth/privateReadCoalescer.mjs';
 import { getAdminCacheGeneration, setAdminCacheAuthorization } from '../admin/adminDataCache';
 
 let firestoreModulePromise = null;
@@ -12,6 +16,8 @@ let authInstance = null;
 let storageInstance = null;
 let googleProviderInstance = null;
 let appCheckPromise = null;
+const coalescePrivateRead = createPrivateReadCoalescer();
+const COALESCED_CUSTOMER_READS = new Set(['listMyOrdersV2', 'listMyNewsletterRewards']);
 export const ADMIN_STEP_UP_REQUIRED_EVENT = 'sv:admin-step-up-required';
 
 const OBSERVED_CALLABLES = new Set([
@@ -158,11 +164,21 @@ export const getStorageInstance = async () => {
 };
 
 export const getCallableFunction = async (name) => {
-  const [{ httpsCallable }, functions] = await Promise.all([
+  const [{ httpsCallable, httpsCallableFromURL }, functions] = await Promise.all([
     loadFunctionsModule(),
     getFunctionsInstance(),
   ]);
-  const callable = httpsCallable(functions, getFunctionTarget(name));
+  const passkeyPath = getPasskeyEndpoint(name, process.env.NEXT_PUBLIC_PASSKEY_TRANSPORT)
+    || getPublicOperationEndpoint(name, process.env.NEXT_PUBLIC_SHARED_RUNTIME_GROUPS);
+  const sharedAdmin = usesSharedAdminReader(name, process.env.NEXT_PUBLIC_SHARED_ADMIN_READER);
+  const transport = passkeyPath && typeof window !== 'undefined'
+    ? httpsCallableFromURL(functions, new URL(passkeyPath, window.location.origin).href)
+    : httpsCallable(functions, sharedAdmin ? 'readAdminSharedGen2' : getFunctionTarget(name));
+  const invoke = sharedAdmin ? (data) => transport({ operation: name, data: data || {} }) : transport;
+  const callable = COALESCED_CUSTOMER_READS.has(name) ? async (data) => {
+    const auth = await getFirebaseAuth();
+    return coalescePrivateRead(auth.currentUser, JSON.stringify([name, data]), () => invoke(data), () => auth.currentUser);
+  } : invoke;
   return async (payload) => {
     const authorizationGeneration = getAdminCacheGeneration();
     try {

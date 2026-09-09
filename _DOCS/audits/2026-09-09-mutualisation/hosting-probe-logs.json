@@ -1,0 +1,44 @@
+[
+  {
+    "httpRequest": {
+      "latency": "0.368773s",
+      "status": 304
+    },
+    "resource": {
+      "labels": {
+        "revision_name": "secondevie-next-sandbox-build-2026-09-09-005"
+      }
+    },
+    "timestamp": "2026-09-09T16:01:17.066639Z"
+  },
+  {
+    "resource": {
+      "labels": {
+        "revision_name": "secondevie-next-sandbox-build-2026-09-09-005"
+      }
+    },
+    "textPayload": "Default STARTUP TCP probe succeeded after 1 attempt for container \"secondevie-next-sandbox-1\" on port 8080.",
+    "timestamp": "2026-09-09T16:01:12.878889Z"
+  },
+  {
+    "resource": {
+      "labels": {
+        "revision_name": "secondevie-next-sandbox-build-2026-09-09-005"
+      }
+    },
+    "textPayload": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic.",
+    "timestamp": "2026-09-09T16:01:10.811670Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "5.508667s",
+      "status": 200
+    },
+    "resource": {
+      "labels": {
+        "revision_name": "secondevie-next-sandbox-build-2026-09-09-005"
+      }
+    },
+    "timestamp": "2026-09-09T16:01:10.745914Z"
+  }
+]

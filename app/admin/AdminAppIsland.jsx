@@ -25,6 +25,7 @@ import {
   Users,
   Package,
   ReceiptText,
+  Wallet,
   TicketPercent,
   TriangleAlert,
 } from 'lucide-react';
@@ -56,6 +57,7 @@ import { dataPerformance, startDataPerformance } from '../../src/kit/admin/admin
 import { ANALYTICS_REALTIME_ENABLED, analyticsChannel } from '../../src/kit/admin/adminAnalyticsRealtime';
 import { liveSessionsChannel } from '../../src/kit/admin/liveSessionsChannel';
 import { createReadLease } from '../../src/kit/admin/retainedRead';
+import { createAdminPreloadQueue, preloadAdminChannels } from '../../src/kit/admin/adminPreloadQueue';
 
 const loadAdminDashboard = () => import('../../src/kit/admin/AdminDashboard');
 const loadAdminOrders = () => import('../../src/kit/admin/AdminOrders');
@@ -63,15 +65,44 @@ const loadAdminReturns = () => import('../../src/kit/admin/AdminReturns');
 const loadAdminInvoices = () => import('../../src/kit/admin/AdminInvoices');
 const loadAdminLivraison = () => import('../../src/kit/admin/AdminLivraison');
 const loadAdminQuotes = () => import('../../src/kit/admin/AdminQuotes');
+const loadAdminPromotionCodes = () => import('../../src/kit/admin/AdminPromotionCodes');
+const loadAdminPaymentLinks = () => import('../../src/kit/admin/AdminPaymentLinks');
 const loadAdminAnalytics = () => dataPerformance.span('chunk', () => import('../../src/kit/admin/AdminAnalytics'));
 const loadAdminIncidentConsole = () => import('../../src/kit/admin/AdminIncidentConsole');
+
+const ADMIN_PRELOADERS = {
+  analytics: loadAdminAnalytics, orders: loadAdminOrders, returns: loadAdminReturns,
+  quotes: loadAdminQuotes, invoices: loadAdminInvoices, payment_links: loadAdminPaymentLinks,
+  promotions: loadAdminPromotionCodes, livraison: loadAdminLivraison,
+  inventory: () => import('../../src/kit/admin/GlobalInventoryView'),
+  furniture: () => import('../../src/kit/admin/AdminPublicationWorkspace'),
+  homepage: () => import('../../src/kit/admin/AdminHomepage'),
+  newsletter: () => import('../../src/kit/admin/AdminNewsletter'),
+  seo: () => import('../../src/kit/admin/AdminSEO'),
+  studio: () => import('../../src/kit/admin/AdminStudio'),
+  payment_settings: () => import('../../src/kit/admin/AdminPaymentSettings'),
+  account: () => import('../../src/kit/admin/AdminAccount'),
+  users: () => import('../../src/kit/admin/AdminUsers'),
+  performance: () => import('../../src/kit/admin/AdminFunctionPerformance'),
+  incidents: loadAdminIncidentConsole,
+};
+
+async function preloadAdminTab(tabId, generation, signal) {
+  const loadedView = await ADMIN_PRELOADERS[tabId]?.();
+  if (signal?.aborted || generation !== getAdminCacheGeneration()) return;
+  const loadData = loadedView?.preloadAdminOrdersWorkspace
+    || loadedView?.preloadAdminQuotesData || loadedView?.preloadAdminInvoicesData
+    || loadedView?.preloadAdminReturnsData || loadedView?.preloadAdminDeliveryData
+    || loadedView?.preloadAdminPromotionsData || loadedView?.preloadAdminPaymentLinksData;
+  await loadData?.();
+}
 
 const AdminDashboard = React.lazy(loadAdminDashboard);
 const AdminHomepage = React.lazy(() => import('../../src/kit/admin/AdminHomepage'));
 const AdminOrders = React.lazy(loadAdminOrders);
 const AdminInvoices = React.lazy(loadAdminInvoices);
 const AdminReturns = React.lazy(loadAdminReturns);
-const AdminPromotionCodes = React.lazy(() => import('../../src/kit/admin/AdminPromotionCodes'));
+const AdminPromotionCodes = React.lazy(loadAdminPromotionCodes);
 const AdminLivraison = React.lazy(loadAdminLivraison);
 const AdminQuotes = React.lazy(loadAdminQuotes);
 const AdminStudio = React.lazy(() => import('../../src/kit/admin/AdminStudio'));
@@ -81,9 +112,10 @@ const AdminNewsletter = React.lazy(() => import('../../src/kit/admin/AdminNewsle
 const AdminAnalytics = React.lazy(loadAdminAnalytics);
 const AdminIncidentConsole = React.lazy(loadAdminIncidentConsole);
 const AdminFunctionPerformance = React.lazy(() => import('../../src/kit/admin/AdminFunctionPerformance'));
+const AdminProjectCosts = React.lazy(() => import('../../src/kit/admin/AdminProjectCosts'));
 const AdminSEO = React.lazy(() => import('../../src/kit/admin/AdminSEO'));
 const AdminPaymentSettings = React.lazy(() => import('../../src/kit/admin/AdminPaymentSettings'));
-const AdminPaymentLinks = React.lazy(() => import('../../src/kit/admin/AdminPaymentLinks'));
+const AdminPaymentLinks = React.lazy(loadAdminPaymentLinks);
 const AdminGlobalInventory = React.lazy(() => import('../../src/kit/admin/GlobalInventoryView'));
 const AdminAccount = React.lazy(() => import('../../src/kit/admin/AdminAccount'));
 const BillingOnboardingGuide = React.lazy(() => import('../../src/kit/admin/BillingOnboardingGuide'));
@@ -94,6 +126,7 @@ const TAB_ICONS = {
   analytics: BarChart3,
   incidents: TriangleAlert,
   performance: Activity,
+  project_costs: Wallet,
   studio: Palette,
   homepage: Palette,
   orders: Package,
@@ -155,7 +188,7 @@ const ADMIN_NAV_GROUPS = [
   { label: 'Catalogue', tabs: ['furniture', 'inventory', 'studio'] },
   { label: 'Ventes', tabs: ['orders', 'quotes', 'payment_links', 'invoices', 'returns', 'promotions', 'livraison', 'payment_settings'] },
   { label: 'Communication', tabs: ['homepage', 'newsletter', 'seo'] },
-  { label: 'Administration', tabs: ['account', 'users', 'performance', 'incidents'] },
+  { label: 'Administration', tabs: ['account', 'users', 'project_costs', 'performance', 'incidents'] },
 ];
 
 /** Onglets qui pilotent leur propre hauteur : liste et detail scrollent separement. */
@@ -166,6 +199,11 @@ function AdminContent() {
   const router = useRouter();
   const [focusedOrderId, setFocusedOrderId] = useState(null);
   const [adminCollection, setAdminCollection] = useState('dashboard');
+  const activeTabRef = React.useRef(adminCollection);
+  activeTabRef.current = adminCollection;
+  const preloadQueueRef = React.useRef(null);
+  const [initialReadyGeneration, setInitialReadyGeneration] = useState(null);
+  const onDashboardReady = React.useCallback(() => setInitialReadyGeneration(cacheGeneration), [cacheGeneration]);
   const [editingItem, setEditingItem] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
@@ -280,6 +318,44 @@ function AdminContent() {
   }, [hasStrongAuth, isAdmin, isSuperAdmin, refreshBillingGate, user]);
 
   const backOfficeReady = isSuperAdmin || (billingGate.status === 'ready' && billingGate.data?.required !== true);
+  React.useEffect(() => {
+    // A direct order link or a user click must not wait for an unmounted dashboard.
+    if (adminCollection !== 'dashboard') setInitialReadyGeneration(cacheGeneration);
+  }, [adminCollection, cacheGeneration]);
+  React.useEffect(() => {
+    if (!user?.uid || !isAdmin || !hasStrongAuth || !backOfficeReady || initialReadyGeneration !== cacheGeneration) return undefined;
+    const queue = createAdminPreloadQueue({
+      delay: 1500,
+      jobs: Object.keys(ADMIN_PRELOADERS).map(id => ({ id, run: async (signal) => {
+        await preloadAdminTab(id, cacheGeneration, signal);
+        if (id === 'analytics' && ANALYTICS_REALTIME_ENABLED && !signal.aborted && cacheGeneration === getAdminCacheGeneration()) {
+          await preloadAdminChannels([analyticsChannel, liveSessionsChannel], {
+            signal,
+            keepActive: () => cacheGeneration !== getAdminCacheGeneration()
+              || (activeTabRef.current === 'analytics' && document.visibilityState !== 'hidden'),
+          });
+        }
+      } })),
+    });
+    preloadQueueRef.current = queue;
+    const update = () => {
+      if (document.visibilityState === 'hidden' || navigator.onLine === false || navigator.connection?.saveData) queue.pause();
+      else queue.resume();
+    };
+    document.addEventListener('visibilitychange', update);
+    window.addEventListener('online', update);
+    window.addEventListener('offline', update);
+    navigator.connection?.addEventListener?.('change', update);
+    update();
+    return () => {
+      queue.dispose();
+      if (preloadQueueRef.current === queue) preloadQueueRef.current = null;
+      document.removeEventListener('visibilitychange', update);
+      window.removeEventListener('online', update);
+      window.removeEventListener('offline', update);
+      navigator.connection?.removeEventListener?.('change', update);
+    };
+  }, [backOfficeReady, cacheGeneration, hasStrongAuth, initialReadyGeneration, isAdmin, user?.uid]);
   React.useEffect(() => {
     const owner = ANALYTICS_REALTIME_ENABLED && isAdmin && hasStrongAuth && backOfficeReady ? user?.uid : null;
     analyticsChannel.setOwner(owner || null);
@@ -465,6 +541,7 @@ function AdminContent() {
   }, []);
 
   const selectAdminTab = (tabId) => {
+    preloadQueueRef.current?.prioritize(tabId);
     if (tabId === 'analytics' && adminCollection !== 'analytics') startDataPerformance('open');
     if (ADMIN_PUBLIC_CATALOG_TABS.has(tabId)) void ensureAdminCatalog();
     if (tabId === 'incidents' && systemIncidentState.data?.revision) {
@@ -628,11 +705,12 @@ function AdminContent() {
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         onIntent={(tabId) => {
-          if (tabId === 'analytics') void loadAdminAnalytics();
-          if (tabId === 'incidents') void loadAdminIncidentConsole();
-          if (tabId === 'orders') {
-            void loadAdminOrders().then((module) => module.preloadAdminOrdersWorkspace?.());
-          }
+          if (!backOfficeReady || !hasStrongAuth || !isAdmin || tabId === adminCollection) return;
+          preloadQueueRef.current?.prioritize(tabId);
+          // Hover prepares code and moves the job forward; it must not launch
+          // multiple background data reads while the pointer crosses the menu.
+          // The clicked view starts its own foreground read immediately.
+          void ADMIN_PRELOADERS[tabId]?.().catch(() => {});
         }}
         onSelect={selectAdminTab}
         tabs={adminTabs}
@@ -671,6 +749,7 @@ function AdminContent() {
         <Suspense fallback={<div className="flex items-center justify-center p-20"><div className="h-10 w-10 animate-spin rounded-full border-4 border-stone-200 border-t-stone-800" /></div>}>
           {adminCollection === 'dashboard' ? (
             <AdminDashboard
+              onInitialReady={onDashboardReady}
               user={user}
               darkMode={darkMode}
               isSuperAdmin={isSuperAdmin}
@@ -729,6 +808,8 @@ function AdminContent() {
             <AdminIncidentConsole darkMode={darkMode} systemIncidentState={systemIncidentState} />
           ) : adminCollection === 'performance' ? (
             <AdminFunctionPerformance darkMode={darkMode} />
+          ) : adminCollection === 'project_costs' ? (
+            <AdminProjectCosts darkMode={darkMode} />
           ) : adminCollection === 'payment_settings' ? (
             <AdminPaymentSettings darkMode={darkMode} />
           ) : adminCollection === 'payment_links' ? (

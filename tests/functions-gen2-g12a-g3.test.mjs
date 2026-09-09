@@ -21,7 +21,7 @@ test('G12-A:G3 ferme exactement les six Gen1 autorisees', () => {
   assert.equal(manifest.validation.handlerInvocations, 0);
   assert.equal(manifest.validation.realDataDeletionCount, 0);
   assert.equal(manifest.authorization.g12BAllowed, false);
-  assert.equal(EXPECTED_CURRENT_SOURCE_COUNT, 161);
+  assert.equal(EXPECTED_CURRENT_SOURCE_COUNT, 163);
   assert.equal(EXPECTED_CURRENT_CLOUD_COUNT, 158);
 });
 

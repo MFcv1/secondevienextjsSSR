@@ -1,0 +1,1969 @@
+[
+  {
+    "environment": "GEN_2",
+    "eventTrigger": {
+      "eventType": "google.cloud.firestore.document.v1.created"
+    },
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/onOrderCreated",
+    "serviceConfig": {
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/onordercreated",
+      "serviceAccountEmail": "legacy-order-email-worker@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/getInstagramConnectionStatusAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/getinstagramconnectionstatusadmingen2",
+      "serviceAccountEmail": "meta-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/initLiveSessionGen2",
+    "serviceConfig": {
+      "availableCpu": "0.1666",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/initlivesessiongen2",
+      "serviceAccountEmail": "analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "eventTrigger": {
+      "eventType": "google.cloud.firestore.document.v1.written"
+    },
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/projectAdminActionSummaryGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/projectadminactionsummarygen2",
+      "serviceAccountEmail": "commerce-operations-reconciler@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "eventTrigger": {
+      "eventType": "google.cloud.pubsub.topic.v1.messagePublished"
+    },
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/projectSystemIncidentGen2",
+    "serviceConfig": {
+      "availableCpu": "0.1666",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 2,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/projectsystemincidentgen2",
+      "serviceAccountEmail": "observability-admin-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/regenerateAdminPaymentLinkGen2",
+    "serviceConfig": {
+      "availableCpu": "0.1666",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/regenerateadminpaymentlinkgen2",
+      "serviceAccountEmail": "231220287936-compute@developer.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/resolveReturnAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/resolvereturnadmingen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/stripeConnectWebhookV2Gen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/stripeconnectwebhookv2gen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/commerceWebhookCoverageWatchdogGen2",
+    "serviceConfig": {
+      "availableCpu": "0.3333",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/commercewebhookcoveragewatchdoggen2",
+      "serviceAccountEmail": "commerce-operations-reconciler@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/requestCustomerReturnGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/requestcustomerreturngen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/syncSuperAdminClaimGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/syncsuperadminclaimgen2",
+      "serviceAccountEmail": "auth-admin-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/getSocialPublicationStatusAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/getsocialpublicationstatusadmingen2",
+      "serviceAccountEmail": "meta-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/claimNewsletterRewardGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/claimnewsletterrewardgen2",
+      "serviceAccountEmail": "newsletter-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/drawNewsletterRewardGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/drawnewsletterrewardgen2",
+      "serviceAccountEmail": "newsletter-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/trackAdminIPGen2",
+    "serviceConfig": {
+      "availableCpu": "0.1666",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/trackadminipgen2",
+      "serviceAccountEmail": "analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/resumeCheckoutV2Gen2",
+    "serviceConfig": {
+      "availableCpu": "0.1666",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/resumecheckoutv2gen2",
+      "serviceAccountEmail": "231220287936-compute@developer.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/commerceOperationsReconcilerGen2",
+    "serviceConfig": {
+      "availableCpu": "0.167",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/commerceoperationsreconcilergen2",
+      "serviceAccountEmail": "commerce-operations-reconciler@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/getMetaConnectionStatusAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/getmetaconnectionstatusadmingen2",
+      "serviceAccountEmail": "meta-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/instagramOAuthCallbackGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/instagramoauthcallbackgen2",
+      "serviceAccountEmail": "meta-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/recreateAdminPaymentLinkGen2",
+    "serviceConfig": {
+      "availableCpu": "0.1666",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/recreateadminpaymentlinkgen2",
+      "serviceAccountEmail": "231220287936-compute@developer.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "eventTrigger": {
+      "eventType": "google.cloud.firestore.document.v1.written"
+    },
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/journalWebhookStatusGen2",
+    "serviceConfig": {
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/journalwebhookstatusgen2",
+      "serviceAccountEmail": "commerce-operations-reconciler@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/setPromotionCodeStatusAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/setpromotioncodestatusadmingen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/archiveOrderAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "0.1666",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/archiveorderadmingen2",
+      "serviceAccountEmail": "231220287936-compute@developer.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/cleanupProductPublicationSessions",
+    "serviceConfig": {
+      "availableCpu": "1",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/cleanupproductpublicationsessions",
+      "serviceAccountEmail": "product-publication-worker@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/sendManualInvoiceAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/sendmanualinvoiceadmingen2",
+      "serviceAccountEmail": "manual-invoice-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/updateUserSessionsGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/updateusersessionsgen2",
+      "serviceAccountEmail": "analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/cancelAdminPaymentLinkGen2",
+    "serviceConfig": {
+      "availableCpu": "0.1666",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/canceladminpaymentlinkgen2",
+      "serviceAccountEmail": "231220287936-compute@developer.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/requestRefundAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/requestrefundadmingen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/requestStripeConnectReconnectGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/requeststripeconnectreconnectgen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/verifyCustomerLoginOtpGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/verifycustomerloginotpgen2",
+      "serviceAccountEmail": "auth-login-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/markOrderReadyForPickupAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/markorderreadyforpickupadmingen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/listReturnsAdminV2Gen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/listreturnsadminv2gen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/verifyGuestCheckoutOtpGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/verifyguestcheckoutotpgen2",
+      "serviceAccountEmail": "auth-otp-verify-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "eventTrigger": {
+      "eventType": "google.cloud.firestore.document.v1.written"
+    },
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/onCommerceReservationWrittenGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/oncommercereservationwrittengen2",
+      "serviceAccountEmail": "commerce-reservation-expiry@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/listPromotionCodesAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/listpromotioncodesadmingen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/decideCustomerReturnRequestAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/decidecustomerreturnrequestadmingen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/getUserStatsGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/getuserstatsgen2",
+      "serviceAccountEmail": "auth-reader-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/startStripeConnectOnboardingGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/startstripeconnectonboardinggen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "eventTrigger": {
+      "eventType": "google.cloud.firestore.document.v1.written"
+    },
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/projectLegacyFinancialHistoryGen2",
+    "serviceConfig": {
+      "availableCpu": "0.1666",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/projectlegacyfinancialhistorygen2",
+      "serviceAccountEmail": "order-stats-projector@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/sendCustomerLoginOtpGen2",
+    "serviceConfig": {
+      "availableCpu": "0.1666",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/sendcustomerloginotpgen2",
+      "serviceAccountEmail": "auth-otp-email-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/generatePasskeyAuthenticationOptionsGen2",
+    "serviceConfig": {
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 2,
+      "maxInstanceRequestConcurrency": 8,
+      "minInstanceCount": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/generatepasskeyauthenticationoptionsgen2",
+      "serviceAccountEmail": "auth-login-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/ensureAdminAccessRegistryGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/ensureadminaccessregistrygen2",
+      "serviceAccountEmail": "auth-registry-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/confirmStripeConnectReconnectGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/confirmstripeconnectreconnectgen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_1",
+    "eventTrigger": {
+      "eventType": "providers/firebase.auth/eventTypes/user.delete"
+    },
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/onRegisteredUserDeleted",
+    "serviceConfig": {
+      "availableMemory": "256M",
+      "maxInstanceCount": 3000,
+      "maxInstanceRequestConcurrency": 1,
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/getOrderTimelineAdminV2Gen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/getordertimelineadminv2gen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/verifyMetaConnectionAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/verifymetaconnectionadmingen2",
+      "serviceAccountEmail": "meta-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/getCatalogPublicationStatusGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 2,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/getcatalogpublicationstatusgen2",
+      "serviceAccountEmail": "catalog-builder@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/requestOrderCancellationGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/requestordercancellationgen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/createProductAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/createproductadmingen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/previewPromotionCodeV2Gen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/previewpromotioncodev2gen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/markOrderShippedAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/markordershippedadmingen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/prepareSocialPublicationAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/preparesocialpublicationadmingen2",
+      "serviceAccountEmail": "meta-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/publishProductAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/publishproductadmingen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/listQuoteRequestsAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/listquoterequestsadmingen2",
+      "serviceAccountEmail": "quote-request-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/markOrderPreparingAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/markorderpreparingadmingen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/saveDeliveryPolicyAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/savedeliverypolicyadmingen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/expireAdminPaymentLinksGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/expireadminpaymentlinksgen2",
+      "serviceAccountEmail": "admin-payment-link-expiry@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/saveManualInvoiceDraftAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/savemanualinvoicedraftadmingen2",
+      "serviceAccountEmail": "manual-invoice-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/completeBillingGuideAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/completebillingguideadmingen2",
+      "serviceAccountEmail": "billing-guide-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/listCustomerReturnRequestsAdminV2Gen2",
+    "serviceConfig": {
+      "availableCpu": "0.1666",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/listcustomerreturnrequestsadminv2gen2",
+      "serviceAccountEmail": "231220287936-compute@developer.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/dispatchCommerceReservationExpiryTaskGen2",
+    "serviceConfig": {
+      "availableCpu": "0.3333",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/dispatchcommercereservationexpirytaskgen2",
+      "serviceAccountEmail": "commerce-reservation-expiry@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/updateProductOfferAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/updateproductofferadmingen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/getOrderStatusClientGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/getorderstatusclientgen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/stripeWebhookV2Gen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/stripewebhookv2gen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/deleteSessionGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/deletesessiongen2",
+      "serviceAccountEmail": "analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "eventTrigger": {
+      "eventType": "google.cloud.firestore.document.v1.written"
+    },
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/onCatalogSourceWrite",
+    "serviceConfig": {
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/oncatalogsourcewrite",
+      "serviceAccountEmail": "catalog-enqueuer@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/getBillingGuideStatusGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/getbillingguidestatusgen2",
+      "serviceAccountEmail": "billing-guide-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/uploadQuoteRequestPhotoGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/uploadquoterequestphotogen2",
+      "serviceAccountEmail": "quote-request-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/cancelReturnAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/cancelreturnadmingen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/getAnalyticsAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "333m",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/getanalyticsadmingen2",
+      "serviceAccountEmail": "analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/finalizeQuoteRequestGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/finalizequoterequestgen2",
+      "serviceAccountEmail": "quote-request-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/verifyPasskeyRegistrationGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/verifypasskeyregistrationgen2",
+      "serviceAccountEmail": "auth-passkey-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/rebuildCommerceOperationsAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/rebuildcommerceoperationsadmingen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/writeOffReturnLinesAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/writeoffreturnlinesadmingen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/preflightProductMutationAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/preflightproductmutationadmingen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "eventTrigger": {
+      "eventType": "google.cloud.firestore.document.v1.created"
+    },
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/journalInventoryMovementGen2",
+    "serviceConfig": {
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/journalinventorymovementgen2",
+      "serviceAccountEmail": "commerce-operations-reconciler@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/createCheckoutV2Gen2",
+    "serviceConfig": {
+      "availableCpu": "0.1666",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/createcheckoutv2gen2",
+      "serviceAccountEmail": "231220287936-compute@developer.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/generatePasskeyRegistrationOptionsGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/generatepasskeyregistrationoptionsgen2",
+      "serviceAccountEmail": "auth-passkey-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/commerceOutboxDispatcherGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/commerceoutboxdispatchergen2",
+      "serviceAccountEmail": "commerce-outbox-dispatcher@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/prepareCommerceDocumentDeliveryGen2",
+    "serviceConfig": {
+      "availableCpu": "0.3333",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/preparecommercedocumentdeliverygen2",
+      "serviceAccountEmail": "231220287936-compute@developer.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/verifyInstagramConnectionAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/verifyinstagramconnectionadmingen2",
+      "serviceAccountEmail": "meta-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/listMyOrdersV2Gen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/listmyordersv2gen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/getBillingGuideOperatorStatusGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/getbillingguideoperatorstatusgen2",
+      "serviceAccountEmail": "billing-guide-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/extendAdminPaymentLinkGen2",
+    "serviceConfig": {
+      "availableCpu": "0.1666",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/extendadminpaymentlinkgen2",
+      "serviceAccountEmail": "231220287936-compute@developer.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/catalogMediaGarbageCollector",
+    "serviceConfig": {
+      "availableCpu": "1",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/catalogmediagarbagecollector",
+      "serviceAccountEmail": "catalog-builder@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "eventTrigger": {
+      "eventType": "google.cloud.firestore.document.v1.written"
+    },
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/onCommerceOutboxWrittenGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/oncommerceoutboxwrittengen2",
+      "serviceAccountEmail": "commerce-outbox-dispatcher@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/createQuoteRequestGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/createquoterequestgen2",
+      "serviceAccountEmail": "quote-request-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/dispatchCatalogRevalidation",
+    "serviceConfig": {
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/dispatchcatalogrevalidation",
+      "serviceAccountEmail": "catalog-builder@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/rollbackCatalogSnapshotGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/rollbackcatalogsnapshotgen2",
+      "serviceAccountEmail": "catalog-builder@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/updateQuoteRequestAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/updatequoterequestadmingen2",
+      "serviceAccountEmail": "quote-request-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/createOrderGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/createordergen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/runSocialPublicationAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/runsocialpublicationadmingen2",
+      "serviceAccountEmail": "meta-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/markReturnReceivedAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/markreturnreceivedadmingen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/createPublishedProductAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/createpublishedproductadmingen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/createAdminPaymentLinkGen2",
+    "serviceConfig": {
+      "availableCpu": "0.1666",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/createadminpaymentlinkgen2",
+      "serviceAccountEmail": "231220287936-compute@developer.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/getManualInvoiceWorkspaceAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/getmanualinvoiceworkspaceadmingen2",
+      "serviceAccountEmail": "manual-invoice-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/syncSessionBeaconGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/syncsessionbeacongen2",
+      "serviceAccountEmail": "analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/syncSessionGen2",
+    "serviceConfig": {
+      "availableCpu": "0.1666",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/syncsessiongen2",
+      "serviceAccountEmail": "analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/syncStripeConnectAccountGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/syncstripeconnectaccountgen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "eventTrigger": {
+      "eventType": "google.cloud.firestore.document.v1.written"
+    },
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/aggregateAnalyticsSessionGen2",
+    "serviceConfig": {
+      "availableCpu": "333m",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/aggregateanalyticssessiongen2",
+      "serviceAccountEmail": "analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/rebuildCatalogSnapshotGen2",
+    "serviceConfig": {
+      "availableCpu": "0.3333",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/rebuildcatalogsnapshotgen2",
+      "serviceAccountEmail": "catalog-builder@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "eventTrigger": {
+      "eventType": "google.cloud.firestore.document.v1.updated"
+    },
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/onArtifactUpdated",
+    "serviceConfig": {
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/onartifactupdated",
+      "serviceAccountEmail": "catalog-media-enqueuer@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/dispatchCatalogBuild",
+    "serviceConfig": {
+      "availableCpu": "1",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/dispatchcatalogbuild",
+      "serviceAccountEmail": "catalog-builder@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "eventTrigger": {
+      "eventType": "google.cloud.firestore.document.v1.created"
+    },
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/journalFinancialFactGen2",
+    "serviceConfig": {
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/journalfinancialfactgen2",
+      "serviceAccountEmail": "commerce-operations-reconciler@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/reconcileProductPublicationSessions",
+    "serviceConfig": {
+      "availableCpu": "1",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/reconcileproductpublicationsessions",
+      "serviceAccountEmail": "product-publication-worker@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "eventTrigger": {
+      "eventType": "google.cloud.firestore.document.v1.updated"
+    },
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/onOrderUpdated",
+    "serviceConfig": {
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/onorderupdated",
+      "serviceAccountEmail": "legacy-order-email-worker@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/saveBillingGuideProgressGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/savebillingguideprogressgen2",
+      "serviceAccountEmail": "billing-guide-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/markOrderDeliveredAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/markorderdeliveredadmingen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/prepareManualInvoicePdfAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/preparemanualinvoicepdfadmingen2",
+      "serviceAccountEmail": "manual-invoice-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/markOrderPickedUpAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/markorderpickedupadmingen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/maintainAnalyticsGen2",
+    "serviceConfig": {
+      "availableCpu": "333m",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/maintainanalyticsgen2",
+      "serviceAccountEmail": "analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/getDeliveryPolicyAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/getdeliverypolicyadmingen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/openReturnAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/openreturnadmingen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_1",
+    "eventTrigger": {
+      "eventType": "providers/firebase.auth/eventTypes/user.create"
+    },
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/onRegisteredUserCreated",
+    "serviceConfig": {
+      "availableMemory": "256M",
+      "maxInstanceCount": 3000,
+      "maxInstanceRequestConcurrency": 1,
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "eventTrigger": {
+      "eventType": "google.cloud.firestore.document.v1.written"
+    },
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/onOrderStatsWrite",
+    "serviceConfig": {
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/onorderstatswrite",
+      "serviceAccountEmail": "order-stats-projector@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "eventTrigger": {
+      "eventType": "google.cloud.firestore.document.v1.written"
+    },
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/journalOutboxStatusGen2",
+    "serviceConfig": {
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/journaloutboxstatusgen2",
+      "serviceAccountEmail": "commerce-operations-reconciler@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/commerceReservationExpiryDispatcherGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/commercereservationexpirydispatchergen2",
+      "serviceAccountEmail": "commerce-reservation-expiry@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/getStripeConnectStatusGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/getstripeconnectstatusgen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/listOrdersAdminV2Gen2",
+    "serviceConfig": {
+      "availableCpu": "0.1666",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/listordersadminv2gen2",
+      "serviceAccountEmail": "231220287936-compute@developer.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/createPromotionCodeAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/createpromotioncodeadmingen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/listMyNewsletterRewardsGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/listmynewsletterrewardsgen2",
+      "serviceAccountEmail": "newsletter-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "eventTrigger": {
+      "eventType": "google.cloud.firestore.document.v1.updated"
+    },
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/onQuoteRequestSubmittedGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/onquoterequestsubmittedgen2",
+      "serviceAccountEmail": "quote-request-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/adjustInventoryAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/adjustinventoryadmingen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/getDiagnosticTimelineAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "0.3333",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/getdiagnostictimelineadmingen2",
+      "serviceAccountEmail": "231220287936-compute@developer.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/sendTestEmailGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/sendtestemailgen2",
+      "serviceAccountEmail": "email-manual-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/getAdminPaymentLinkPublicGen2",
+    "serviceConfig": {
+      "availableCpu": "0.1666",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/getadminpaymentlinkpublicgen2",
+      "serviceAccountEmail": "231220287936-compute@developer.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/startMetaOAuthAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/startmetaoauthadmingen2",
+      "serviceAccountEmail": "meta-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/updateOrderTrackingAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/updateordertrackingadmingen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/startInstagramOAuthAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/startinstagramoauthadmingen2",
+      "serviceAccountEmail": "meta-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/getSystemIncidentsAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "0.3333",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/getsystemincidentsadmingen2",
+      "serviceAccountEmail": "observability-admin-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/sendRefundStatusEmailAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "0.1666",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/sendrefundstatusemailadmingen2",
+      "serviceAccountEmail": "email-manual-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "eventTrigger": {
+      "eventType": "google.cloud.firestore.document.v1.written"
+    },
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/projectNewsletterSubscriberGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/projectnewslettersubscribergen2",
+      "serviceAccountEmail": "newsletter-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/metaOAuthCallbackGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/metaoauthcallbackgen2",
+      "serviceAccountEmail": "meta-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/catalogReconciler",
+    "serviceConfig": {
+      "availableCpu": "1",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/catalogreconciler",
+      "serviceAccountEmail": "catalog-builder@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/logUserConnectionGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/loguserconnectiongen2",
+      "serviceAccountEmail": "auth-session-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "eventTrigger": {
+      "eventType": "google.cloud.firestore.document.v1.written"
+    },
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/projectCommerceFinancialHistoryGen2",
+    "serviceConfig": {
+      "availableCpu": "0.1666",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/projectcommercefinancialhistorygen2",
+      "serviceAccountEmail": "order-stats-projector@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/sendGuestCheckoutOtpGen2",
+    "serviceConfig": {
+      "availableCpu": "0.1666",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/sendguestcheckoutotpgen2",
+      "serviceAccountEmail": "auth-otp-email-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/selectMetaAssetAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/selectmetaassetadmingen2",
+      "serviceAccountEmail": "meta-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/getQuoteRequestAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/getquoterequestadmingen2",
+      "serviceAccountEmail": "quote-request-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "eventTrigger": {
+      "eventType": "google.cloud.firestore.document.v1.written"
+    },
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/journalCommerceIncidentGen2",
+    "serviceConfig": {
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/journalcommerceincidentgen2",
+      "serviceAccountEmail": "commerce-operations-reconciler@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/deleteProductAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/deleteproductadmingen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/restockReturnLinesAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/restockreturnlinesadmingen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/disconnectInstagramConnectionAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/disconnectinstagramconnectionadmingen2",
+      "serviceAccountEmail": "meta-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/cleanupFixtureRunAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/cleanupfixturerunadmingen2",
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/verifyPasskeyAuthenticationGen2",
+    "serviceConfig": {
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 2,
+      "maxInstanceRequestConcurrency": 8,
+      "minInstanceCount": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/verifypasskeyauthenticationgen2",
+      "serviceAccountEmail": "auth-login-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/dispatchCommerceOutboxTaskGen2",
+    "serviceConfig": {
+      "availableCpu": "0.3333",
+      "availableMemory": "512Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/dispatchcommerceoutboxtaskgen2",
+      "serviceAccountEmail": "commerce-outbox-dispatcher@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "eventTrigger": {
+      "eventType": "google.cloud.firestore.document.v1.created"
+    },
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/journalOrderEventGen2",
+    "serviceConfig": {
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/journalordereventgen2",
+      "serviceAccountEmail": "commerce-operations-reconciler@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/prepareAdminPaymentLinkPaymentGen2",
+    "serviceConfig": {
+      "availableCpu": "0.1666",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/prepareadminpaymentlinkpaymentgen2",
+      "serviceAccountEmail": "231220287936-compute@developer.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "eventTrigger": {
+      "eventType": "google.cloud.firestore.document.v1.deleted"
+    },
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/onArtifactDeleted",
+    "serviceConfig": {
+      "availableCpu": "1",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/onartifactdeleted",
+      "serviceAccountEmail": "catalog-media-enqueuer@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/removeAdminUserGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/removeadminusergen2",
+      "serviceAccountEmail": "auth-admin-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/addAdminUserGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/addadminusergen2",
+      "serviceAccountEmail": "auth-admin-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/listAdminPaymentLinksGen2",
+    "serviceConfig": {
+      "availableCpu": "0.1666",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/listadminpaymentlinksgen2",
+      "serviceAccountEmail": "231220287936-compute@developer.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/resetBillingGuideTestGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/resetbillingguidetestgen2",
+      "serviceAccountEmail": "billing-guide-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/resumeAdminPaymentLinkPaymentGen2",
+    "serviceConfig": {
+      "availableCpu": "0.1666",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/resumeadminpaymentlinkpaymentgen2",
+      "serviceAccountEmail": "231220287936-compute@developer.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/getCommerceOperationsStatusAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/getcommerceoperationsstatusadmingen2",
+      "serviceAccountEmail": "231220287936-compute@developer.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "name": "projects/secondevienextjsssr/locations/europe-west1/functions/disconnectMetaConnectionAdminGen2",
+    "serviceConfig": {
+      "availableCpu": "167m",
+      "availableMemory": "256Mi",
+      "maxInstanceCount": 1,
+      "maxInstanceRequestConcurrency": 1,
+      "service": "projects/secondevienextjsssr/locations/europe-west1/services/disconnectmetaconnectionadmingen2",
+      "serviceAccountEmail": "meta-runtime@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_1",
+    "eventTrigger": {
+      "eventType": "providers/firebase.auth/eventTypes/user.create"
+    },
+    "name": "projects/secondevienextjsssr/locations/us-central1/functions/grantAdminOnAuth",
+    "serviceConfig": {
+      "availableMemory": "256M",
+      "maxInstanceCount": 3000,
+      "maxInstanceRequestConcurrency": 1,
+      "serviceAccountEmail": "secondevienextjsssr@appspot.gserviceaccount.com"
+    }
+  },
+  {
+    "environment": "GEN_2",
+    "eventTrigger": {
+      "eventType": "google.cloud.storage.object.v1.finalized"
+    },
+    "name": "projects/secondevienextjsssr/locations/us-central1/functions/processProductPublicationImage",
+    "serviceConfig": {
+      "availableCpu": "1",
+      "availableMemory": "1024Mi",
+      "maxInstanceCount": 4,
+      "maxInstanceRequestConcurrency": 4,
+      "service": "projects/secondevienextjsssr/locations/us-central1/services/processproductpublicationimage",
+      "serviceAccountEmail": "product-publication-worker@secondevienextjsssr.iam.gserviceaccount.com"
+    }
+  }
+]

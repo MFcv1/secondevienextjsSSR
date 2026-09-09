@@ -91,32 +91,12 @@ const TrafficChart = ({ data, darkMode, valueLabel = 'visite', animationKey = 0 
         return ticks;
     }, [maxVal, isMobile]);
 
-    // Dimensions des barres — minimum garanti pour tactile
+    // Chaque créneau occupe la même largeur, sans plafond qui tasse les barres à gauche.
     const barMetrics = useMemo(() => {
-        const n = data.length;
-        if (n === 0) return { barW: 0, gap: 0, total: 0 };
-
-        // Desktop : gap proportionnel, Mobile : gap minimal pour maximiser barW
-        const gapRatio = isMobile ? 0.15 : 0.25;
-        const totalGaps = n > 1 ? (n - 1) : 0;
-
-        // Calcul avec un minimum de 4px par barre (visible) et 1px de gap
-        let gap = Math.max(1, Math.round((chartW * gapRatio) / Math.max(1, totalGaps)));
-        let barW = n > 0 ? (chartW - gap * totalGaps) / n : 0;
-
-        // Si les barres sont trop fines, on réduit le gap
-        if (barW < 4 && n > 1) {
-            gap = 1;
-            barW = (chartW - gap * totalGaps) / n;
-        }
-
-        // Minimum absolu de largeur de barre
-        barW = Math.max(isMobile ? 3 : 4, barW);
-
-        // Cap la largeur max — plafond serré pour une cohérence visuelle quel que soit le nb de barres
-        barW = Math.min(barW, isMobile ? 18 : 28);
-
-        return { barW, gap, total: n };
+        const total = data.length;
+        const slotW = total ? Math.max(0, chartW) / total : 0;
+        const gap = Math.min(isMobile ? 4 : 8, slotW * 0.18);
+        return { slotW, barW: slotW - gap, gap, total };
     }, [data.length, chartW, isMobile]);
 
     // Labels X — espacement intelligent selon la taille
@@ -134,7 +114,8 @@ const TrafficChart = ({ data, darkMode, valueLabel = 'visite', animationKey = 0 
         const rect = e.currentTarget.getBoundingClientRect();
         const localX = clientX - rect.left;
 
-        const slotW = barMetrics.barW + barMetrics.gap;
+        const slotW = barMetrics.slotW;
+        if (!slotW) return;
         let idx = Math.floor(localX / slotW);
         // Empêcher le débordement des index
         idx = Math.max(0, Math.min(barMetrics.total - 1, idx));
@@ -150,7 +131,7 @@ const TrafficChart = ({ data, darkMode, valueLabel = 'visite', animationKey = 0 
     const tooltipInfo = useMemo(() => {
         if (activeIdx === null || !data[activeIdx]) return null;
         const d = data[activeIdx];
-        const barX = margin.left + activeIdx * (barMetrics.barW + barMetrics.gap) + barMetrics.barW / 2;
+        const barX = margin.left + (activeIdx + 0.5) * barMetrics.slotW;
         const barH = d.visites > 0 ? Math.max(2, (d.visites / maxVal) * chartH) : 0;
         const barTopY = margin.top + chartH - barH;
 
@@ -222,7 +203,7 @@ const TrafficChart = ({ data, darkMode, valueLabel = 'visite', animationKey = 0 
 
                     {/* Barres */}
                     {data.map((d, i) => {
-                        const x = i * (barMetrics.barW + barMetrics.gap);
+                        const x = i * barMetrics.slotW + barMetrics.gap / 2;
                         const h = d.visites > 0 ? Math.max(3, (d.visites / maxVal) * chartH) : 0;
                         const y = chartH - h;
                         const isActive = activeIdx === i;
@@ -271,8 +252,9 @@ const TrafficChart = ({ data, darkMode, valueLabel = 'visite', animationKey = 0 
 
                     {/* Labels X */}
                     {data.map((d, i) => {
-                        if (i % xLabelInterval !== 0) return null;
-                        const x = i * (barMetrics.barW + barMetrics.gap) + barMetrics.barW / 2;
+                        if (i % xLabelInterval !== 0 && i !== data.length - 1) return null;
+                        if (i !== data.length - 1 && data.length - 1 - i < xLabelInterval * 0.65) return null;
+                        const x = (i + 0.5) * barMetrics.slotW;
                         return (
                             <text key={`x-${i}`} x={x} y={chartH + (isMobile ? 16 : 22)}
                                 textAnchor="middle" fontSize={isMobile ? 8 : 10}
@@ -298,7 +280,7 @@ const TrafficChart = ({ data, darkMode, valueLabel = 'visite', animationKey = 0 
             </svg>
 
             {/* ── Tooltip flottant (ancré au-dessus de la barre) ── */}
-            {tooltipInfo && tooltipInfo.d.visites > 0 && (
+            {tooltipInfo && (
                 <div style={{
                     position: 'absolute',
                     left: tooltipInfo.x,

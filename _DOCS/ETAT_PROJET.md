@@ -1,5 +1,18 @@
 # État du projet
 
+Synchronisation du 9 septembre : ensemble des changements locaux autorisé pour
+GitHub et App Hosting sandbox. Comparaison avec l'archive du rollout 007 : seule
+modification applicative restante, la géométrie du graphique Data (toutes périodes).
+Les deux nouveaux services Functions sont déjà ACTIVE et ne sont pas redéployés.
+Contrôles ciblés : 21/21 après actualisation du contrat de navigation pour Coûts.
+Publication du graphique en cours ; preuve finale ajoutée après le rollout.
+
+Chantier du 9 septembre : [page Coûts du projet](admin/COUTS_PROJET.md),
+mois réellement reçus de Google et comparaison trafic. Aperçu fictif et import
+retirés à la demande utilisateur ; raccordement Billing/PubSub autorisé et créé,
+collecteur et page déployés (rollout 007 réussi). Premier relevé Google en attente ;
+aucun montant inventé. API privée contrôlée, recette admin authentifiée non exécutée.
+
 Revue documentaire : 2026-09-05. Propriétaire : équipe Seconde Vie.
 Source : code du worktree, historique Git et preuves de livraison.
 La revue documentaire initiale était sans contrôle cloud. La consolidation
@@ -19,6 +32,44 @@ le design local ultérieur reste hors livraison. Preuves, périmètre et recette
 [dossier de livraison](audits/2026-09-07-livraison-interactions/README.md).
 
 ## Consolidation main et livraison UI — 9 septembre
+
+**Runtime public partagé et optimisations back-office activés
+sur sandbox** depuis le rollout `build-2026-09-09-006`, puis inclus dans 007
+avec la page Coûts, un minimum de service public 1 et
+maximum 3, 1 CPU/512 Mio ; lecteur admin partagé à minimum zéro. Connexion réelle,
+emails, checkout et performances à qualifier par la recette demandée après livraison.
+[Actions, preuves et rollback](audits/2026-09-09-mutualisation/LIVRAISON_SANDBOX.md).
+Les paragraphes suivants décrivent les étapes antérieures.
+
+Après clarification du budget, [plan public chaud unique](audits/2026-09-09-mutualisation/PLAN_PUBLIC_CHAUD.md)
+actualisé : App Hosting galerie + connexions + opérations publiques interactives,
+1 vCPU/512 MiB à qualifier, un seul maintien permanent / max 3 proposé, back-office
+min 0 préchargé. [Premier lot passkeys](audits/2026-09-09-mutualisation/INTEGRATION_PASSKEYS.md) :
+le 9 septembre à 18:08 UTC, les deux fonctions de connexion sont ACTIVE/min 0,
+sans ancienne révision chaude référencée. Aucun App Hosting modifié : phase
+transitoire froide. Les quatre handlers passkey directs Next sont locaux,
+testés et désactivés par défaut ; ingress/IP, IAM, cérémonie réelle et maintien
+public unique restent à qualifier avant bascule. Suite :
+[18 opérations publiques et dix lecteurs admin préparés localement](audits/2026-09-09-mutualisation/INTEGRATION_RUNTIME_PUBLIC.md),
+avec OTP/checkout, cache catalogue borné et suppression du tirage newsletter anticipé.
+Transports désactivés, aucune livraison de cette reprise ; mesures locales sur
+fixture, pas qualification cloud 1 CPU/512 Mio ni économie démontrée.
+
+Audit de mutualisation demandé ensuite : [rapport et plan](audits/2026-09-09-mutualisation/README.md).
+158 Functions inventoriées, 2 passkeys à min 1 ; App Hosting à min 0.
+Sonde galerie : premier accès 6,3 s avec démarrage corrélé, suivant 17 ms via CDN.
+Proposition de mutualisation identité/lecteurs et comparaison de un/deux socles
+chauds ; aucune mise en œuvre ni modification cloud. Révision App Hosting
+observée le 9 septembre à 16 h UTC : `build-2026-09-09-005`, distincte des preuves
+de livraison historiques ci-dessous ; correspondance Git non vérifiée par cet audit.
+
+Audit de chargement admin du 9 septembre : [diagnostic et preuves cloud](audits/2026-09-09-chargements-admin/README.md).
+Démarrages à froid confirmés aux heures des captures. Entrées lecteurs isolées
+Promo/Liens/Livraison corrigées localement, non déployées. À la demande suivante,
+maintien permanent à chaud écarté pour son coût : [préchargement progressif](audits/2026-09-09-chargements-admin/PRECHARGEMENT.md)
+après Stats, avec préparation Data bornée et caches Liens/Promo, implémenté localement.
+Aucun réglage cloud modifié. Gains après correctif non mesurés ; rendu progressif
+Retours et faux zéros du résumé Ventes restent ouverts.
 
 Les changements locaux sont consolidés sur `main` et poussés sur GitHub en
 quatre commits : `e948eaa` (documentation, audits et archivage des 33 anciens

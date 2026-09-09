@@ -1,6 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { getAdminCachedData } from './adminDataCache';
+import { ADMIN_PAYMENT_LINKS_CACHE_KEY } from '../commerce/adminPaymentLinkClient';
 import {
   Ban,
   Check,
@@ -83,8 +85,14 @@ const isSelectableProduct = (item) => (
   productStock(item) > 0
 );
 
+export const preloadAdminPaymentLinksData = () => listAdminPaymentLinks();
+
 export default function AdminPaymentLinks({ darkMode, items = [], mutationsEnabled }) {
-  const [state, setState] = useState({ status: 'loading', links: [], setup: null, error: '' });
+  const [state, setState] = useState(() => {
+    const cached = getAdminCachedData(ADMIN_PAYMENT_LINKS_CACHE_KEY);
+    return { status: cached ? 'ready' : 'loading', links: cached?.links || [], setup: cached?.setup || null,
+      nextCursor: cached?.nextCursor || null, supportsReference: typeof cached?.hasMore === 'boolean', error: '' };
+  });
   const [query, setQuery] = useState('');
   const [reference, setReference] = useState('');
   const [appliedReference, setAppliedReference] = useState(null);
@@ -95,10 +103,10 @@ export default function AdminPaymentLinks({ darkMode, items = [], mutationsEnabl
   const [action, setAction] = useState('');
   const [notice, setNotice] = useState('');
 
-  const refresh = useCallback(async ({ silent = false, cursor = null, reference = null } = {}) => {
+  const refresh = useCallback(async ({ silent = false, cursor = null, reference = null, force = true } = {}) => {
     if (!silent) setState((current) => ({ ...current, status: 'loading', error: '' }));
     try {
-      const result = await listAdminPaymentLinks({ pageSize: 50, cursor, reference });
+      const result = await listAdminPaymentLinks({ pageSize: 50, cursor, reference, force });
       setAppliedReference(reference);
       setState((current) => ({
         status: 'ready',
@@ -119,7 +127,7 @@ export default function AdminPaymentLinks({ darkMode, items = [], mutationsEnabl
   }, []);
 
   useEffect(() => {
-    void refresh();
+    void refresh({ silent: Boolean(getAdminCachedData(ADMIN_PAYMENT_LINKS_CACHE_KEY)), force: false });
   }, [refresh]);
 
   const selectableItems = useMemo(() => {
@@ -254,7 +262,7 @@ export default function AdminPaymentLinks({ darkMode, items = [], mutationsEnabl
         )}
       />
 
-      {!canMutate ? (
+      {!canMutate && state.setup ? (
         <Notice darkMode={darkMode} tone="warning">
           Création et pilotage désactivés par le contrôle commerce. Les liens existants restent visibles et copiables.
         </Notice>

@@ -24,32 +24,38 @@ const {
 const {
     createAdminPaymentLinkRuntime
 } = require('./domain/v2Runtime');
-const { normalizeCommerceControl } = require('./domain/policy');
+const { createPublicPaymentLinkHandlers } = require('./publicPaymentLinkHandlers.cjs');
 
 const db = admin.firestore();
 const ADMIN_SECRETS = [STRIPE_SECRET_KEY, PAYMENT_LINK_HMAC_SECRET];
 const PAYMENT_LINK_EXPIRY_RUNTIME_SERVICE_ACCOUNT =
     'admin-payment-link-expiry@secondevienextjsssr.iam.gserviceaccount.com';
 
-function snapshotExists(snapshot) {
-    return typeof snapshot?.exists === 'function' ? snapshot.exists() : snapshot?.exists === true;
-}
 
+let stripeClient;
+const callStripe = (method, ...args) => {
+    stripeClient ||= require('stripe')(STRIPE_SECRET_KEY.value());
+    return stripeClient.paymentIntents[method](...args);
+};
 function runtime() {
-    const Stripe = require('stripe');
     return createAdminPaymentLinkRuntime({
         db,
-        stripe: Stripe(STRIPE_SECRET_KEY.value()),
+        stripe: { paymentIntents: {
+            create: (...args) => callStripe('create', ...args),
+            retrieve: (...args) => callStripe('retrieve', ...args),
+            cancel: (...args) => callStripe('cancel', ...args),
+            update: (...args) => callStripe('update', ...args),
+        } },
         appId: APP_ID,
         tokenSecret: PAYMENT_LINK_HMAC_SECRET.value(),
         siteUrl: getSiteUrl()
     }).paymentLinks;
 }
 
-async function loadControl() {
-    const snapshot = await db.doc('sys_commerce_control/current').get();
-    return normalizeCommerceControl(snapshotExists(snapshot) ? snapshot.data() : null);
-}
+
+const { loadControl, normalizeOrderId, normalizeOptionalEmail, mapError, getAdminPaymentLinkPublicHandler, prepareAdminPaymentLinkPaymentHandler, resumeAdminPaymentLinkPaymentHandler } = createPublicPaymentLinkHandlers({
+    db, HttpsError: functions.https.HttpsError, normalizeFirestoreId, runtime
+});
 
 async function requireAdminPaymentLinksEnabled() {
     const control = await loadControl();
@@ -67,41 +73,13 @@ async function requireAdminPaymentLinksEnabled() {
     return control;
 }
 
-async function requirePublicPaymentLinkCheckoutEnabled() {
-    const control = await loadControl();
-    if (control.newCheckoutMode !== 'v2_all' || !control.activePolicyVersion) {
-        throw new functions.https.HttpsError(
-            'failed-precondition',
-            'Ce paiement est temporairement indisponible.',
-            { reason: 'COMMERCE_ADMIN_PAYMENT_LINKS_OFF' }
-        );
-    }
-    return control;
-}
 
-function normalizeToken(value) {
-    if (typeof value !== 'string' || !/^[A-Za-z0-9_-]{40,64}$/.test(value)) {
-        throw new functions.https.HttpsError('not-found', 'Lien de paiement introuvable.');
-    }
-    return value;
-}
 
-function normalizeOrderId(value) {
-    return normalizeFirestoreId(value, 'Lien de paiement');
-}
 
 function normalizeDeliveryModeId(value) {
     return normalizeFirestoreId(value, 'Mode de livraison');
 }
 
-function normalizeOptionalEmail(value) {
-    const email = String(value || '').trim().toLowerCase();
-    if (!email) return null;
-    if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        throw new functions.https.HttpsError('invalid-argument', 'Adresse e-mail invalide.');
-    }
-    return email;
-}
 
 function normalizeItems(value) {
     if (!Array.isArray(value) || value.length < 1 || value.length > 20) {
@@ -149,82 +127,7 @@ function normalizeItems(value) {
     return normalized;
 }
 
-function normalizeShippingAddress(value) {
-    if (!value || typeof value !== 'object' || Array.isArray(value)) {
-        throw new functions.https.HttpsError('invalid-argument', 'Adresse de livraison invalide.');
-    }
-    const allowed = new Set(['fullName', 'phone', 'line1', 'line2', 'postalCode', 'city', 'country']);
-    if (Object.keys(value).some((key) => !allowed.has(key))) {
-        throw new functions.https.HttpsError('invalid-argument', 'Adresse de livraison invalide.');
-    }
-    return value;
-}
 
-function mapError(error, { publicRequest = false } = {}) {
-    if (error instanceof functions.https.HttpsError) return error;
-    const reason = String(error?.code || '');
-    if (reason === 'COMMERCE_PROVIDER_RECONCILIATION_REQUIRED') {
-        return new functions.https.HttpsError(
-            'failed-precondition',
-            'Un rapprochement du paiement par l atelier est requis avant de poursuivre.',
-            { reason }
-        );
-    }
-    if (reason.includes('ACCESS_DENIED') || reason.includes('NOT_FOUND')) {
-        return new functions.https.HttpsError('not-found', 'Lien de paiement introuvable.');
-    }
-    if (reason.includes('_PAID')) {
-        return new functions.https.HttpsError('already-exists', 'Ce paiement est deja confirme.', { reason });
-    }
-    if (reason.includes('_EXPIRED')) {
-        return new functions.https.HttpsError('failed-precondition', 'Ce lien de paiement a expire.', { reason });
-    }
-    if (reason.includes('_CANCELED')) {
-        return new functions.https.HttpsError('failed-precondition', 'Ce lien de paiement a ete annule.', { reason });
-    }
-    if (
-        reason.includes('EMAIL_MISMATCH') ||
-        reason.includes('DELIVERY_OUT_OF_ZONE') ||
-        reason.includes('ADDRESS_INVALID')
-    ) {
-        return new functions.https.HttpsError(
-            'invalid-argument',
-            reason.includes('EMAIL_MISMATCH')
-                ? 'Utilisez l adresse e-mail indiquee par l atelier.'
-                : 'Les coordonnees de livraison ne sont pas admissibles.',
-            { reason }
-        );
-    }
-    if (
-        reason.includes('STRIPE_RESULT_UNKNOWN') ||
-        reason.includes('CANCEL_UNKNOWN') ||
-        reason.includes('CREATE_UNKNOWN')
-    ) {
-        return new functions.https.HttpsError(
-            'unavailable',
-            'Stripe est en cours de rapprochement. Reessayez le meme lien sans recreer de commande.',
-            { reason }
-        );
-    }
-    if (publicRequest) {
-        return new functions.https.HttpsError(
-            'failed-precondition',
-            'Ce paiement ne peut pas etre initialise pour le moment.',
-            { reason }
-        );
-    }
-    if (reason.startsWith('COMMERCE_')) {
-        return new functions.https.HttpsError(
-            'invalid-argument',
-            'La demande de lien de paiement est invalide.',
-            { reason }
-        );
-    }
-    return new functions.https.HttpsError(
-        'internal',
-        'Le lien de paiement n a pas pu etre traite.'
-    );
-}
 
 async function createAdminPaymentLinkHandler(data, context) {
     try {
@@ -249,9 +152,10 @@ async function listAdminPaymentLinksHandler(data, context) {
         if (!Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > 50) {
             throw new functions.https.HttpsError('invalid-argument', 'Taille de page invalide.');
         }
+        const paymentLinks = runtime();
         const [page, setup] = await Promise.all([
-            runtime().list({ pageSize, cursor: data?.cursor, reference: data?.reference, paginated: true }),
-            runtime().getSetup()
+            paymentLinks.list({ pageSize, cursor: data?.cursor, reference: data?.reference, paginated: true }),
+            paymentLinks.getSetup()
         ]);
         return { ...page, setup };
     } catch (error) {
@@ -313,42 +217,8 @@ async function cancelAdminPaymentLinkHandler(data, context) {
     }
 }
 
-async function getAdminPaymentLinkPublicHandler(data) {
-    try {
-        return await runtime().getPublic({
-            orderId: normalizeOrderId(data?.orderId),
-            token: normalizeToken(data?.token)
-        });
-    } catch (error) {
-        throw mapError(error, { publicRequest: true });
-    }
-}
 
-async function prepareAdminPaymentLinkPaymentHandler(data) {
-    try {
-        await requirePublicPaymentLinkCheckoutEnabled();
-        return await runtime().bindCustomerDetails({
-            orderId: normalizeOrderId(data?.orderId),
-            token: normalizeToken(data?.token),
-            email: normalizeOptionalEmail(data?.email),
-            shippingAddress: normalizeShippingAddress(data?.shippingAddress)
-        });
-    } catch (error) {
-        throw mapError(error, { publicRequest: true });
-    }
-}
 
-async function resumeAdminPaymentLinkPaymentHandler(data) {
-    try {
-        await requirePublicPaymentLinkCheckoutEnabled();
-        return await runtime().resumePayment({
-            orderId: normalizeOrderId(data?.orderId),
-            token: normalizeToken(data?.token)
-        });
-    } catch (error) {
-        throw mapError(error, { publicRequest: true });
-    }
-}
 
 async function expireAdminPaymentLinksHandler({
     logger = console,

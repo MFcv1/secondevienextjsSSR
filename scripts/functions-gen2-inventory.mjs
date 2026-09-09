@@ -35,6 +35,7 @@ export const ACTIVE_OBSERVABILITY_EXPORTS = new Set([
   'projectAdminActionSummaryGen2'
 ]);
 export const PENDING_OBSERVABILITY_EXPORTS = new Set([]);
+export const PENDING_RUNTIME_EXPORTS = new Set(['readAdminSharedGen2', 'captureProjectCostsGen2']);
 
 export const PARALLEL_MIGRATION_EXPORTS = new Set([
   'addAdminUserGen2',
@@ -188,7 +189,7 @@ export const CLEANED_G12B_REMAINING_TARGETS = new Set(Object.values(G12_REMAININ
 export const EXPECTED_CURRENT_SOURCE_COUNT = EXPECTED_SOURCE_COUNT +
   PARALLEL_MIGRATION_EXPORTS.size - CLEANED_G12B_GEN1_TARGETS.size - CLEANED_G12B_G3_TARGETS.size -
   CLEANED_G12B_REMAINING_TARGETS.size + ACTIVE_OBSERVABILITY_EXPORTS.size +
-  PENDING_OBSERVABILITY_EXPORTS.size;
+  PENDING_OBSERVABILITY_EXPORTS.size + PENDING_RUNTIME_EXPORTS.size;
 export const EXPECTED_CURRENT_CLOUD_COUNT = EXPECTED_CLOUD_COUNT +
   PARALLEL_MIGRATION_EXPORTS.size + CLOUD_ONLY_PARALLEL_TARGETS.size -
   CLEANED_G12B_GEN1_TARGETS.size - RETIRED_G12A_G3_TARGETS.size - CLEANED_G12B_REMAINING_TARGETS.size +
@@ -419,7 +420,7 @@ export function extractLocalExports(rootDir) {
 }
 
 export function classificationFor(name) {
-  if (PENDING_OBSERVABILITY_EXPORTS.has(name)) return 'PENDING_DEPLOYMENT';
+  if (PENDING_OBSERVABILITY_EXPORTS.has(name) || PENDING_RUNTIME_EXPORTS.has(name)) return 'PENDING_DEPLOYMENT';
   if (ACTIVE_OBSERVABILITY_EXPORTS.has(name)) return 'KEEP_GEN2';
   if (PARALLEL_MIGRATION_EXPORTS.has(name)) return 'MIGRATION_PARALLEL';
   if (KEEP_GEN2.has(name)) return 'KEEP_GEN2';
@@ -651,7 +652,7 @@ export function buildInventory({ rootDir, firebaseRows, gcloudRows, iamPolicies,
   if (JSON.stringify(cloudOnly) !== JSON.stringify(expectedCloudOnly)) {
     throw new Error(`Cibles cloud sans source inattendues: ${cloudOnly.join(', ')}`);
   }
-  const expectedLocalOnly = [...HOLD_META_RECONCILIATION, ...PENDING_OBSERVABILITY_EXPORTS].sort();
+  const expectedLocalOnly = [...HOLD_META_RECONCILIATION, ...PENDING_OBSERVABILITY_EXPORTS, ...PENDING_RUNTIME_EXPORTS].sort();
   if (JSON.stringify(localOnly) !== JSON.stringify(expectedLocalOnly)) {
     throw new Error(`Ecart local/cloud inattendu: ${localOnly.join(', ')}`);
   }

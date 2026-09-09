@@ -1,0 +1,21 @@
+[
+  {
+    "metadata": {
+      "name": "secondevie-next-sandbox"
+    },
+    "spec": {
+      "template": {
+        "spec": {
+          "containers": {
+            "resources": {
+              "limits": {
+                "cpu": "1.00",
+                "memory": "512Mi"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+]

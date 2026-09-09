@@ -40,7 +40,7 @@ for (const target of ['generatePasskeyAuthenticationOptionsGen2', 'verifyPasskey
             const endpoint = direct.__endpoint;
             assert.equal(endpoint.cpu, 1);
             assert.equal(endpoint.concurrency, 8);
-            assert.equal(endpoint.minInstances, 1);
+            assert.equal(endpoint.minInstances, 0);
             assert.equal(endpoint.maxInstances, 2);
             assert.ok(!Object.keys(require.cache).some(file =>
                 /functions\\/src\\/(commerce|email|invoicing)\\//.test(file) ||

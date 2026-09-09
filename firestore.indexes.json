@@ -182,6 +182,8 @@
     }
   ],
   "fieldOverrides": [
+    { "collectionGroup": "sys_project_costs", "fieldPath": "*", "indexes": [] },
+    { "collectionGroup": "sys_project_costs", "fieldPath": "expiresAt", "ttl": true, "indexes": [] },
     { "collectionGroup": "admin_analytics_sessions", "fieldPath": "*", "indexes": [] },
     { "collectionGroup": "admin_analytics_sessions", "fieldPath": "lastActivityAt", "indexes": [{ "order": "DESCENDING", "queryScope": "COLLECTION" }] },
     { "collectionGroup": "admin_analytics_session_details", "fieldPath": "*", "indexes": [] },

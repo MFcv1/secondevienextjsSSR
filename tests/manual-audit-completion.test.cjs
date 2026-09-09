@@ -20,7 +20,7 @@ const extract = (file, start, end) => {
 const stamp = millis => ({ toMillis: () => millis });
 
 test('session conversion checks the current token and does not claim an unprotected legacy session', async () => {
-    const source = extract('functions/src/analytics/updateUserSessions.js', 'const updateUserSessionsHandler', '\nexports.updateUserSessions');
+    const source = extract('functions/src/analytics/updateUserSessionsHandler.cjs', 'const updateUserSessionsHandler', '\nreturn updateUserSessionsHandler');
     for (const [current, token, expected] of [
         [{ type: 'anonymous' }, 'arbitrary', 0],
         [{ type: 'anonymous', syncTokenHash: hashSyncToken('fresh') }, 'old', 0],
@@ -175,7 +175,7 @@ test('late analytics completion cannot rearm a heartbeat after unmount', () => {
     let timers = 0;
     const mountedRef = { current: false };
     const context = { armHeartbeatRef: {}, clearHeartbeatTimer() {}, mountedRef, sessionIdRef: { current: 'session' },
-        isAdmin: false, document: { visibilityState: 'visible' }, lastSyncAtRef: { current: Date.now() },
+        isAdmin: false, hasConsent: () => true, document: { visibilityState: 'visible' }, lastSyncAtRef: { current: Date.now() },
         heartbeatTimerRef: {}, ANALYTICS_SYNC_INTERVAL_MS: 30000, setTimeout: () => { timers++; },
     };
     const arm = vm.runInNewContext(source + '\narmHeartbeatRef.current', context);

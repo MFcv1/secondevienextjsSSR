@@ -1,0 +1,5777 @@
+[
+  {
+    "name": "addadminusergen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "addadminusergen2-00002-wel"
+      }
+    ],
+    "revision": "addadminusergen2-00002-wel"
+  },
+  {
+    "name": "adjustinventoryadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "adjustinventoryadmingen2-00001-jay"
+      }
+    ],
+    "revision": "adjustinventoryadmingen2-00001-jay"
+  },
+  {
+    "name": "aggregateanalyticssessiongen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "aggregateanalyticssessiongen2-00011-fuz"
+      }
+    ],
+    "revision": "aggregateanalyticssessiongen2-00011-fuz"
+  },
+  {
+    "name": "archiveorderadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "archiveorderadmingen2-00003-rig"
+      }
+    ],
+    "revision": "archiveorderadmingen2-00003-rig"
+  },
+  {
+    "name": "canceladminpaymentlinkgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "canceladminpaymentlinkgen2-00004-quj"
+      }
+    ],
+    "revision": "canceladminpaymentlinkgen2-00004-quj"
+  },
+  {
+    "name": "cancelreturnadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "cancelreturnadmingen2-00002-hod"
+      }
+    ],
+    "revision": "cancelreturnadmingen2-00002-hod"
+  },
+  {
+    "name": "catalogmediagarbagecollector",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "catalogmediagarbagecollector-00011-cov"
+      }
+    ],
+    "revision": "catalogmediagarbagecollector-00011-cov"
+  },
+  {
+    "name": "catalogreconciler",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "catalogreconciler-00012-jef"
+      }
+    ],
+    "revision": "catalogreconciler-00012-jef"
+  },
+  {
+    "name": "claimnewsletterrewardgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "claimnewsletterrewardgen2-00002-vim"
+      }
+    ],
+    "revision": "claimnewsletterrewardgen2-00002-vim"
+  },
+  {
+    "name": "cleanupfixturerunadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "cleanupfixturerunadmingen2-00002-duj"
+      }
+    ],
+    "revision": "cleanupfixturerunadmingen2-00002-duj"
+  },
+  {
+    "name": "cleanupproductpublicationsessions",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "cleanupproductpublicationsessions-00004-mop"
+      }
+    ],
+    "revision": "cleanupproductpublicationsessions-00004-mop"
+  },
+  {
+    "name": "commerceoperationsreconcilergen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "commerceoperationsreconcilergen2-00006-wag"
+      }
+    ],
+    "revision": "commerceoperationsreconcilergen2-00006-wag"
+  },
+  {
+    "name": "commerceoutboxdispatchergen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "commerceoutboxdispatchergen2-00009-yar"
+      }
+    ],
+    "revision": "commerceoutboxdispatchergen2-00009-yar"
+  },
+  {
+    "name": "commercereservationexpirydispatchergen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "commercereservationexpirydispatchergen2-00003-qas"
+      }
+    ],
+    "revision": "commercereservationexpirydispatchergen2-00003-qas"
+  },
+  {
+    "name": "commercewebhookcoveragewatchdoggen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "commercewebhookcoveragewatchdoggen2-00002-lof"
+      }
+    ],
+    "revision": "commercewebhookcoveragewatchdoggen2-00002-lof"
+  },
+  {
+    "name": "completebillingguideadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "completebillingguideadmingen2-00001-roz"
+      }
+    ],
+    "revision": "completebillingguideadmingen2-00001-roz"
+  },
+  {
+    "name": "confirmstripeconnectreconnectgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "confirmstripeconnectreconnectgen2-00001-rut"
+      }
+    ],
+    "revision": "confirmstripeconnectreconnectgen2-00001-rut"
+  },
+  {
+    "name": "createadminpaymentlinkgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "createadminpaymentlinkgen2-00004-sub"
+      }
+    ],
+    "revision": "createadminpaymentlinkgen2-00004-sub"
+  },
+  {
+    "name": "createcheckoutv2gen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "createcheckoutv2gen2-00006-fuy"
+      }
+    ],
+    "revision": "createcheckoutv2gen2-00006-fuy"
+  },
+  {
+    "name": "createordergen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "createordergen2-00002-hih"
+      }
+    ],
+    "revision": "createordergen2-00002-hih"
+  },
+  {
+    "name": "createproductadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "createproductadmingen2-00001-wir"
+      }
+    ],
+    "revision": "createproductadmingen2-00001-wir"
+  },
+  {
+    "name": "createpromotioncodeadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "createpromotioncodeadmingen2-00001-dal"
+      }
+    ],
+    "revision": "createpromotioncodeadmingen2-00001-dal"
+  },
+  {
+    "name": "createpublishedproductadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "createpublishedproductadmingen2-00001-vef"
+      }
+    ],
+    "revision": "createpublishedproductadmingen2-00001-vef"
+  },
+  {
+    "name": "createquoterequestgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "createquoterequestgen2-00002-fes"
+      }
+    ],
+    "revision": "createquoterequestgen2-00002-fes"
+  },
+  {
+    "name": "decidecustomerreturnrequestadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "decidecustomerreturnrequestadmingen2-00002-mif"
+      }
+    ],
+    "revision": "decidecustomerreturnrequestadmingen2-00002-mif"
+  },
+  {
+    "name": "deleteproductadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "deleteproductadmingen2-00001-fub"
+      }
+    ],
+    "revision": "deleteproductadmingen2-00001-fub"
+  },
+  {
+    "name": "deletesessiongen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "deletesessiongen2-00002-som"
+      }
+    ],
+    "revision": "deletesessiongen2-00002-som"
+  },
+  {
+    "name": "disconnectinstagramconnectionadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "disconnectinstagramconnectionadmingen2-00002-dar"
+      }
+    ],
+    "revision": "disconnectinstagramconnectionadmingen2-00002-dar"
+  },
+  {
+    "name": "disconnectmetaconnectionadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "disconnectmetaconnectionadmingen2-00002-gaq"
+      }
+    ],
+    "revision": "disconnectmetaconnectionadmingen2-00002-gaq"
+  },
+  {
+    "name": "dispatchcatalogbuild",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "dispatchcatalogbuild-00017-lez"
+      }
+    ],
+    "revision": "dispatchcatalogbuild-00017-lez"
+  },
+  {
+    "name": "dispatchcatalogrevalidation",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "dispatchcatalogrevalidation-00015-pos"
+      }
+    ],
+    "revision": "dispatchcatalogrevalidation-00015-pos"
+  },
+  {
+    "name": "dispatchcommerceoutboxtaskgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "dispatchcommerceoutboxtaskgen2-00003-yur"
+      }
+    ],
+    "revision": "dispatchcommerceoutboxtaskgen2-00003-yur"
+  },
+  {
+    "name": "dispatchcommercereservationexpirytaskgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "dispatchcommercereservationexpirytaskgen2-00003-lih"
+      }
+    ],
+    "revision": "dispatchcommercereservationexpirytaskgen2-00003-lih"
+  },
+  {
+    "name": "drawnewsletterrewardgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "drawnewsletterrewardgen2-00002-fiv"
+      }
+    ],
+    "revision": "drawnewsletterrewardgen2-00002-fiv"
+  },
+  {
+    "name": "ensureadminaccessregistrygen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "ensureadminaccessregistrygen2-00002-win"
+      }
+    ],
+    "revision": "ensureadminaccessregistrygen2-00002-win"
+  },
+  {
+    "name": "expireadminpaymentlinksgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "expireadminpaymentlinksgen2-00003-jiq"
+      }
+    ],
+    "revision": "expireadminpaymentlinksgen2-00003-jiq"
+  },
+  {
+    "name": "extendadminpaymentlinkgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "extendadminpaymentlinkgen2-00003-boh"
+      }
+    ],
+    "revision": "extendadminpaymentlinkgen2-00003-boh"
+  },
+  {
+    "name": "finalizequoterequestgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "finalizequoterequestgen2-00002-mid"
+      }
+    ],
+    "revision": "finalizequoterequestgen2-00002-mid"
+  },
+  {
+    "name": "generatepasskeyauthenticationoptionsgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": "1",
+    "maxRevision": "2",
+    "concurrency": 8,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "generatepasskeyauthenticationoptionsgen2-00003-kos"
+      }
+    ],
+    "revision": "generatepasskeyauthenticationoptionsgen2-00003-kos"
+  },
+  {
+    "name": "generatepasskeyregistrationoptionsgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "generatepasskeyregistrationoptionsgen2-00002-yaf"
+      }
+    ],
+    "revision": "generatepasskeyregistrationoptionsgen2-00002-yaf"
+  },
+  {
+    "name": "getadminpaymentlinkpublicgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "getadminpaymentlinkpublicgen2-00003-yoq"
+      }
+    ],
+    "revision": "getadminpaymentlinkpublicgen2-00003-yoq"
+  },
+  {
+    "name": "getanalyticsadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "getanalyticsadmingen2-00003-xuv"
+      }
+    ],
+    "revision": "getanalyticsadmingen2-00003-xuv"
+  },
+  {
+    "name": "getbillingguideoperatorstatusgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "getbillingguideoperatorstatusgen2-00001-vox"
+      }
+    ],
+    "revision": "getbillingguideoperatorstatusgen2-00001-vox"
+  },
+  {
+    "name": "getbillingguidestatusgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "getbillingguidestatusgen2-00003-dam"
+      }
+    ],
+    "revision": "getbillingguidestatusgen2-00003-dam"
+  },
+  {
+    "name": "getcatalogpublicationstatusgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "2",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "getcatalogpublicationstatusgen2-00005-vuk"
+      }
+    ],
+    "revision": "getcatalogpublicationstatusgen2-00005-vuk"
+  },
+  {
+    "name": "getcommerceoperationsstatusadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "getcommerceoperationsstatusadmingen2-00004-qon"
+      }
+    ],
+    "revision": "getcommerceoperationsstatusadmingen2-00004-qon"
+  },
+  {
+    "name": "getdeliverypolicyadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "getdeliverypolicyadmingen2-00001-yaj"
+      }
+    ],
+    "revision": "getdeliverypolicyadmingen2-00001-yaj"
+  },
+  {
+    "name": "getdiagnostictimelineadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "getdiagnostictimelineadmingen2-00004-cey"
+      }
+    ],
+    "revision": "getdiagnostictimelineadmingen2-00004-cey"
+  },
+  {
+    "name": "getinstagramconnectionstatusadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "getinstagramconnectionstatusadmingen2-00002-hit"
+      }
+    ],
+    "revision": "getinstagramconnectionstatusadmingen2-00002-hit"
+  },
+  {
+    "name": "getmanualinvoiceworkspaceadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "getmanualinvoiceworkspaceadmingen2-00004-mip"
+      }
+    ],
+    "revision": "getmanualinvoiceworkspaceadmingen2-00004-mip"
+  },
+  {
+    "name": "getmetaconnectionstatusadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "getmetaconnectionstatusadmingen2-00002-xuv"
+      }
+    ],
+    "revision": "getmetaconnectionstatusadmingen2-00002-xuv"
+  },
+  {
+    "name": "getorderstatusclientgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "getorderstatusclientgen2-00002-vas"
+      }
+    ],
+    "revision": "getorderstatusclientgen2-00002-vas"
+  },
+  {
+    "name": "getordertimelineadminv2gen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "getordertimelineadminv2gen2-00004-kud"
+      }
+    ],
+    "revision": "getordertimelineadminv2gen2-00004-kud"
+  },
+  {
+    "name": "getquoterequestadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "getquoterequestadmingen2-00005-gul"
+      }
+    ],
+    "revision": "getquoterequestadmingen2-00005-gul"
+  },
+  {
+    "name": "getsocialpublicationstatusadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "getsocialpublicationstatusadmingen2-00002-pip"
+      }
+    ],
+    "revision": "getsocialpublicationstatusadmingen2-00002-pip"
+  },
+  {
+    "name": "getstripeconnectstatusgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "getstripeconnectstatusgen2-00001-qiv"
+      }
+    ],
+    "revision": "getstripeconnectstatusgen2-00001-qiv"
+  },
+  {
+    "name": "getsystemincidentsadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "getsystemincidentsadmingen2-00001-soz"
+      }
+    ],
+    "revision": "getsystemincidentsadmingen2-00001-soz"
+  },
+  {
+    "name": "getuserstatsgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "getuserstatsgen2-00002-civ"
+      }
+    ],
+    "revision": "getuserstatsgen2-00002-civ"
+  },
+  {
+    "name": "initlivesessiongen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "initlivesessiongen2-00004-yij"
+      }
+    ],
+    "revision": "initlivesessiongen2-00004-yij"
+  },
+  {
+    "name": "instagramoauthcallbackgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "instagramoauthcallbackgen2-00003-bex"
+      }
+    ],
+    "revision": "instagramoauthcallbackgen2-00003-bex"
+  },
+  {
+    "name": "journalcommerceincidentgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "journalcommerceincidentgen2-00005-gab"
+      }
+    ],
+    "revision": "journalcommerceincidentgen2-00005-gab"
+  },
+  {
+    "name": "journalfinancialfactgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "journalfinancialfactgen2-00004-xab"
+      }
+    ],
+    "revision": "journalfinancialfactgen2-00004-xab"
+  },
+  {
+    "name": "journalinventorymovementgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "journalinventorymovementgen2-00002-xup"
+      }
+    ],
+    "revision": "journalinventorymovementgen2-00002-xup"
+  },
+  {
+    "name": "journalordereventgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "journalordereventgen2-00002-gis"
+      }
+    ],
+    "revision": "journalordereventgen2-00002-gis"
+  },
+  {
+    "name": "journaloutboxstatusgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "journaloutboxstatusgen2-00003-xey"
+      }
+    ],
+    "revision": "journaloutboxstatusgen2-00003-xey"
+  },
+  {
+    "name": "journalwebhookstatusgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "journalwebhookstatusgen2-00003-nix"
+      }
+    ],
+    "revision": "journalwebhookstatusgen2-00003-nix"
+  },
+  {
+    "name": "listadminpaymentlinksgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "listadminpaymentlinksgen2-00004-vap"
+      }
+    ],
+    "revision": "listadminpaymentlinksgen2-00004-vap"
+  },
+  {
+    "name": "listcustomerreturnrequestsadminv2gen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "listcustomerreturnrequestsadminv2gen2-00006-woq"
+      }
+    ],
+    "revision": "listcustomerreturnrequestsadminv2gen2-00006-woq"
+  },
+  {
+    "name": "listmynewsletterrewardsgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "listmynewsletterrewardsgen2-00002-rax"
+      }
+    ],
+    "revision": "listmynewsletterrewardsgen2-00002-rax"
+  },
+  {
+    "name": "listmyordersv2gen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "listmyordersv2gen2-00005-vug"
+      }
+    ],
+    "revision": "listmyordersv2gen2-00005-vug"
+  },
+  {
+    "name": "listordersadminv2gen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "listordersadminv2gen2-00006-ved"
+      }
+    ],
+    "revision": "listordersadminv2gen2-00006-ved"
+  },
+  {
+    "name": "listpromotioncodesadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "listpromotioncodesadmingen2-00001-doq"
+      }
+    ],
+    "revision": "listpromotioncodesadmingen2-00001-doq"
+  },
+  {
+    "name": "listquoterequestsadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "listquoterequestsadmingen2-00004-yul"
+      }
+    ],
+    "revision": "listquoterequestsadmingen2-00004-yul"
+  },
+  {
+    "name": "listreturnsadminv2gen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "listreturnsadminv2gen2-00004-len"
+      }
+    ],
+    "revision": "listreturnsadminv2gen2-00004-len"
+  },
+  {
+    "name": "loguserconnectiongen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "loguserconnectiongen2-00002-goh"
+      }
+    ],
+    "revision": "loguserconnectiongen2-00002-goh"
+  },
+  {
+    "name": "maintainanalyticsgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "maintainanalyticsgen2-00005-yev"
+      }
+    ],
+    "revision": "maintainanalyticsgen2-00005-yev"
+  },
+  {
+    "name": "markorderdeliveredadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "markorderdeliveredadmingen2-00001-jop"
+      }
+    ],
+    "revision": "markorderdeliveredadmingen2-00001-jop"
+  },
+  {
+    "name": "markorderpickedupadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "markorderpickedupadmingen2-00001-mov"
+      }
+    ],
+    "revision": "markorderpickedupadmingen2-00001-mov"
+  },
+  {
+    "name": "markorderpreparingadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "markorderpreparingadmingen2-00001-qod"
+      }
+    ],
+    "revision": "markorderpreparingadmingen2-00001-qod"
+  },
+  {
+    "name": "markorderreadyforpickupadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "markorderreadyforpickupadmingen2-00001-vah"
+      }
+    ],
+    "revision": "markorderreadyforpickupadmingen2-00001-vah"
+  },
+  {
+    "name": "markordershippedadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "markordershippedadmingen2-00001-gen"
+      }
+    ],
+    "revision": "markordershippedadmingen2-00001-gen"
+  },
+  {
+    "name": "markreturnreceivedadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "markreturnreceivedadmingen2-00002-vik"
+      }
+    ],
+    "revision": "markreturnreceivedadmingen2-00002-vik"
+  },
+  {
+    "name": "metaoauthcallbackgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "metaoauthcallbackgen2-00003-kif"
+      }
+    ],
+    "revision": "metaoauthcallbackgen2-00003-kif"
+  },
+  {
+    "name": "onartifactdeleted",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "onartifactdeleted-00025-wok"
+      }
+    ],
+    "revision": "onartifactdeleted-00025-wok"
+  },
+  {
+    "name": "onartifactupdated",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "onartifactupdated-00025-wew"
+      }
+    ],
+    "revision": "onartifactupdated-00025-wew"
+  },
+  {
+    "name": "oncatalogsourcewrite",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "oncatalogsourcewrite-00013-jos"
+      }
+    ],
+    "revision": "oncatalogsourcewrite-00013-jos"
+  },
+  {
+    "name": "oncommerceoutboxwrittengen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "oncommerceoutboxwrittengen2-00004-kuj"
+      }
+    ],
+    "revision": "oncommerceoutboxwrittengen2-00004-kuj"
+  },
+  {
+    "name": "oncommercereservationwrittengen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "oncommercereservationwrittengen2-00003-weg"
+      }
+    ],
+    "revision": "oncommercereservationwrittengen2-00003-weg"
+  },
+  {
+    "name": "onordercreated",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "onordercreated-00030-nuc"
+      }
+    ],
+    "revision": "onordercreated-00030-nuc"
+  },
+  {
+    "name": "onorderstatswrite",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "onorderstatswrite-00028-sed"
+      }
+    ],
+    "revision": "onorderstatswrite-00028-sed"
+  },
+  {
+    "name": "onorderupdated",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "onorderupdated-00030-hez"
+      }
+    ],
+    "revision": "onorderupdated-00030-hez"
+  },
+  {
+    "name": "onquoterequestsubmittedgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "onquoterequestsubmittedgen2-00003-hap"
+      }
+    ],
+    "revision": "onquoterequestsubmittedgen2-00003-hap"
+  },
+  {
+    "name": "openreturnadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "openreturnadmingen2-00002-cex"
+      }
+    ],
+    "revision": "openreturnadmingen2-00002-cex"
+  },
+  {
+    "name": "preflightproductmutationadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "preflightproductmutationadmingen2-00001-non"
+      }
+    ],
+    "revision": "preflightproductmutationadmingen2-00001-non"
+  },
+  {
+    "name": "prepareadminpaymentlinkpaymentgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "prepareadminpaymentlinkpaymentgen2-00003-lif"
+      }
+    ],
+    "revision": "prepareadminpaymentlinkpaymentgen2-00003-lif"
+  },
+  {
+    "name": "preparecommercedocumentdeliverygen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "preparecommercedocumentdeliverygen2-00005-kuf"
+      }
+    ],
+    "revision": "preparecommercedocumentdeliverygen2-00005-kuf"
+  },
+  {
+    "name": "preparemanualinvoicepdfadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "preparemanualinvoicepdfadmingen2-00002-fah"
+      }
+    ],
+    "revision": "preparemanualinvoicepdfadmingen2-00002-fah"
+  },
+  {
+    "name": "preparesocialpublicationadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "preparesocialpublicationadmingen2-00002-woc"
+      }
+    ],
+    "revision": "preparesocialpublicationadmingen2-00002-woc"
+  },
+  {
+    "name": "previewpromotioncodev2gen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "previewpromotioncodev2gen2-00001-diz"
+      }
+    ],
+    "revision": "previewpromotioncodev2gen2-00001-diz"
+  },
+  {
+    "name": "processproductpublicationimage",
+    "region": "us-central1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "4",
+    "concurrency": 4,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "processproductpublicationimage-00005-yac"
+      }
+    ],
+    "revision": "processproductpublicationimage-00005-yac"
+  },
+  {
+    "name": "projectadminactionsummarygen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "projectadminactionsummarygen2-00007-dim"
+      }
+    ],
+    "revision": "projectadminactionsummarygen2-00007-dim"
+  },
+  {
+    "name": "projectcommercefinancialhistorygen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "projectcommercefinancialhistorygen2-00002-rej"
+      }
+    ],
+    "revision": "projectcommercefinancialhistorygen2-00002-rej"
+  },
+  {
+    "name": "projectlegacyfinancialhistorygen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "projectlegacyfinancialhistorygen2-00002-kaf"
+      }
+    ],
+    "revision": "projectlegacyfinancialhistorygen2-00002-kaf"
+  },
+  {
+    "name": "projectnewslettersubscribergen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "projectnewslettersubscribergen2-00002-guj"
+      }
+    ],
+    "revision": "projectnewslettersubscribergen2-00002-guj"
+  },
+  {
+    "name": "projectsystemincidentgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "2",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "projectsystemincidentgen2-00001-daz"
+      }
+    ],
+    "revision": "projectsystemincidentgen2-00001-daz"
+  },
+  {
+    "name": "publishproductadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "publishproductadmingen2-00001-zok"
+      }
+    ],
+    "revision": "publishproductadmingen2-00001-zok"
+  },
+  {
+    "name": "rebuildcatalogsnapshotgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "rebuildcatalogsnapshotgen2-00003-sig"
+      }
+    ],
+    "revision": "rebuildcatalogsnapshotgen2-00003-sig"
+  },
+  {
+    "name": "rebuildcommerceoperationsadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "rebuildcommerceoperationsadmingen2-00003-ven"
+      }
+    ],
+    "revision": "rebuildcommerceoperationsadmingen2-00003-ven"
+  },
+  {
+    "name": "reconcileproductpublicationsessions",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "reconcileproductpublicationsessions-00005-waw"
+      }
+    ],
+    "revision": "reconcileproductpublicationsessions-00005-waw"
+  },
+  {
+    "name": "recreateadminpaymentlinkgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "recreateadminpaymentlinkgen2-00004-vax"
+      }
+    ],
+    "revision": "recreateadminpaymentlinkgen2-00004-vax"
+  },
+  {
+    "name": "regenerateadminpaymentlinkgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "regenerateadminpaymentlinkgen2-00003-dec"
+      }
+    ],
+    "revision": "regenerateadminpaymentlinkgen2-00003-dec"
+  },
+  {
+    "name": "removeadminusergen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "removeadminusergen2-00002-zoq"
+      }
+    ],
+    "revision": "removeadminusergen2-00002-zoq"
+  },
+  {
+    "name": "requestcustomerreturngen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "requestcustomerreturngen2-00002-don"
+      }
+    ],
+    "revision": "requestcustomerreturngen2-00002-don"
+  },
+  {
+    "name": "requestordercancellationgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "requestordercancellationgen2-00003-hef"
+      }
+    ],
+    "revision": "requestordercancellationgen2-00003-hef"
+  },
+  {
+    "name": "requestrefundadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "requestrefundadmingen2-00003-tur"
+      }
+    ],
+    "revision": "requestrefundadmingen2-00003-tur"
+  },
+  {
+    "name": "requeststripeconnectreconnectgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "requeststripeconnectreconnectgen2-00001-vid"
+      }
+    ],
+    "revision": "requeststripeconnectreconnectgen2-00001-vid"
+  },
+  {
+    "name": "resetbillingguidetestgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "resetbillingguidetestgen2-00001-lef"
+      }
+    ],
+    "revision": "resetbillingguidetestgen2-00001-lef"
+  },
+  {
+    "name": "resolvereturnadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "resolvereturnadmingen2-00002-kud"
+      }
+    ],
+    "revision": "resolvereturnadmingen2-00002-kud"
+  },
+  {
+    "name": "restockreturnlinesadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "restockreturnlinesadmingen2-00002-fov"
+      }
+    ],
+    "revision": "restockreturnlinesadmingen2-00002-fov"
+  },
+  {
+    "name": "resumeadminpaymentlinkpaymentgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "resumeadminpaymentlinkpaymentgen2-00003-kos"
+      }
+    ],
+    "revision": "resumeadminpaymentlinkpaymentgen2-00003-kos"
+  },
+  {
+    "name": "resumecheckoutv2gen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "resumecheckoutv2gen2-00004-zas"
+      }
+    ],
+    "revision": "resumecheckoutv2gen2-00004-zas"
+  },
+  {
+    "name": "rollbackcatalogsnapshotgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "rollbackcatalogsnapshotgen2-00003-rub"
+      }
+    ],
+    "revision": "rollbackcatalogsnapshotgen2-00003-rub"
+  },
+  {
+    "name": "runsocialpublicationadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "runsocialpublicationadmingen2-00002-tox"
+      }
+    ],
+    "revision": "runsocialpublicationadmingen2-00002-tox"
+  },
+  {
+    "name": "savebillingguideprogressgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "savebillingguideprogressgen2-00001-taf"
+      }
+    ],
+    "revision": "savebillingguideprogressgen2-00001-taf"
+  },
+  {
+    "name": "savedeliverypolicyadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "savedeliverypolicyadmingen2-00001-wow"
+      }
+    ],
+    "revision": "savedeliverypolicyadmingen2-00001-wow"
+  },
+  {
+    "name": "savemanualinvoicedraftadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "savemanualinvoicedraftadmingen2-00002-gun"
+      }
+    ],
+    "revision": "savemanualinvoicedraftadmingen2-00002-gun"
+  },
+  {
+    "name": "secondevie-next-sandbox",
+    "region": "europe-west4",
+    "manager": "firebase-app-hosting",
+    "minService": 0,
+    "minRevision": "0",
+    "maxRevision": "10",
+    "concurrency": 80,
+    "cpuThrottling": "true",
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-13-000",
+        "tag": "t-2938873028",
+        "url": "https://t-2938873028---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-13-001",
+        "tag": "t-2938873029",
+        "url": "https://t-2938873029---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-13-002",
+        "tag": "t-2938873030",
+        "url": "https://t-2938873030---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-13-003",
+        "tag": "t-2938873031",
+        "url": "https://t-2938873031---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-13-004",
+        "tag": "t-2938873024",
+        "url": "https://t-2938873024---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-13-005",
+        "tag": "t-2938873025",
+        "url": "https://t-2938873025---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-13-006",
+        "tag": "t-2938873026",
+        "url": "https://t-2938873026---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-13-007",
+        "tag": "t-2938873027",
+        "url": "https://t-2938873027---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-13-008",
+        "tag": "t-2938873036",
+        "url": "https://t-2938873036---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-13-009",
+        "tag": "t-2938873037",
+        "url": "https://t-2938873037---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-15-001",
+        "tag": "t-4277169103",
+        "url": "https://t-4277169103---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-15-002",
+        "tag": "t-4277169100",
+        "url": "https://t-4277169100---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-15-003",
+        "tag": "t-4277169101",
+        "url": "https://t-4277169101---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-15-004",
+        "tag": "t-4277169098",
+        "url": "https://t-4277169098---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-15-005",
+        "tag": "t-4277169099",
+        "url": "https://t-4277169099---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-15-006",
+        "tag": "t-4277169096",
+        "url": "https://t-4277169096---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-16-001",
+        "tag": "t-4016169244",
+        "url": "https://t-4016169244---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-16-002",
+        "tag": "t-4016169247",
+        "url": "https://t-4016169247---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-16-003",
+        "tag": "t-4016169246",
+        "url": "https://t-4016169246---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-16-004",
+        "tag": "t-4016169241",
+        "url": "https://t-4016169241---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-16-005",
+        "tag": "t-4016169240",
+        "url": "https://t-4016169240---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-16-006",
+        "tag": "t-4016169243",
+        "url": "https://t-4016169243---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-17-001",
+        "tag": "t-1255802753",
+        "url": "https://t-1255802753---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-17-002",
+        "tag": "t-1255802754",
+        "url": "https://t-1255802754---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-17-003",
+        "tag": "t-1255802755",
+        "url": "https://t-1255802755---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-17-004",
+        "tag": "t-1255802756",
+        "url": "https://t-1255802756---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-17-005",
+        "tag": "t-1255802757",
+        "url": "https://t-1255802757---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-17-006",
+        "tag": "t-1255802758",
+        "url": "https://t-1255802758---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-17-007",
+        "tag": "t-1255802759",
+        "url": "https://t-1255802759---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-17-008",
+        "tag": "t-1255802760",
+        "url": "https://t-1255802760---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-17-009",
+        "tag": "t-1255802761",
+        "url": "https://t-1255802761---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-17-010",
+        "tag": "t-1272580467",
+        "url": "https://t-1272580467---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-17-011",
+        "tag": "t-1272580466",
+        "url": "https://t-1272580466---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-17-012",
+        "tag": "t-1272580465",
+        "url": "https://t-1272580465---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-17-013",
+        "tag": "t-1272580464",
+        "url": "https://t-1272580464---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-17-014",
+        "tag": "t-1272580471",
+        "url": "https://t-1272580471---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-17-015",
+        "tag": "t-1272580470",
+        "url": "https://t-1272580470---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-17-016",
+        "tag": "t-1272580469",
+        "url": "https://t-1272580469---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-17-017",
+        "tag": "t-1272580468",
+        "url": "https://t-1272580468---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-17-018",
+        "tag": "t-1272580475",
+        "url": "https://t-1272580475---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-18-001",
+        "tag": "t-4222651262",
+        "url": "https://t-4222651262---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-24-001",
+        "tag": "t-2376881431",
+        "url": "https://t-2376881431---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-24-002",
+        "tag": "t-2376881428",
+        "url": "https://t-2376881428---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-24-003",
+        "tag": "t-2376881429",
+        "url": "https://t-2376881429---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-24-004",
+        "tag": "t-2376881426",
+        "url": "https://t-2376881426---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-25-001",
+        "tag": "t-3142417562",
+        "url": "https://t-3142417562---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-25-002",
+        "tag": "t-3142417561",
+        "url": "https://t-3142417561---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-25-003",
+        "tag": "t-3142417560",
+        "url": "https://t-3142417560---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-25-004",
+        "tag": "t-3142417567",
+        "url": "https://t-3142417567---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-25-005",
+        "tag": "t-3142417566",
+        "url": "https://t-3142417566---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-25-006",
+        "tag": "t-3142417565",
+        "url": "https://t-3142417565---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-25-007",
+        "tag": "t-3142417564",
+        "url": "https://t-3142417564---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-25-008",
+        "tag": "t-3142417555",
+        "url": "https://t-3142417555---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-25-009",
+        "tag": "t-3142417554",
+        "url": "https://t-3142417554---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-25-010",
+        "tag": "t-3125639976",
+        "url": "https://t-3125639976---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-25-011",
+        "tag": "t-3125639977",
+        "url": "https://t-3125639977---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-25-012",
+        "tag": "t-3125639978",
+        "url": "https://t-3125639978---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-25-013",
+        "tag": "t-3125639979",
+        "url": "https://t-3125639979---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-25-014",
+        "tag": "t-3125639980",
+        "url": "https://t-3125639980---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-25-015",
+        "tag": "t-3125639981",
+        "url": "https://t-3125639981---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-25-016",
+        "tag": "t-3125639982",
+        "url": "https://t-3125639982---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-25-017",
+        "tag": "t-3125639983",
+        "url": "https://t-3125639983---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-25-018",
+        "tag": "t-3125639968",
+        "url": "https://t-3125639968---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-25-019",
+        "tag": "t-3125639969",
+        "url": "https://t-3125639969---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-25-020",
+        "tag": "t-3175972833",
+        "url": "https://t-3175972833---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-25-021",
+        "tag": "t-3175972832",
+        "url": "https://t-3175972832---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-25-022",
+        "tag": "t-3175972835",
+        "url": "https://t-3175972835---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-25-023",
+        "tag": "t-3175972834",
+        "url": "https://t-3175972834---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-25-024",
+        "tag": "t-3175972837",
+        "url": "https://t-3175972837---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-26-001",
+        "tag": "t-1550871689",
+        "url": "https://t-1550871689---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-26-002",
+        "tag": "t-1550871690",
+        "url": "https://t-1550871690---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-26-003",
+        "tag": "t-1550871691",
+        "url": "https://t-1550871691---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-26-004",
+        "tag": "t-1550871692",
+        "url": "https://t-1550871692---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-26-005",
+        "tag": "t-1550871693",
+        "url": "https://t-1550871693---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-26-006",
+        "tag": "t-1550871694",
+        "url": "https://t-1550871694---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-26-007",
+        "tag": "t-1550871695",
+        "url": "https://t-1550871695---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-26-008",
+        "tag": "t-1550871680",
+        "url": "https://t-1550871680---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-28-001",
+        "tag": "t-736512851",
+        "url": "https://t-736512851---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-30-001",
+        "tag": "t-765992316",
+        "url": "https://t-765992316---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-30-002",
+        "tag": "t-765992319",
+        "url": "https://t-765992319---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-05-30-003",
+        "tag": "t-765992318",
+        "url": "https://t-765992318---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-09-001",
+        "tag": "t-233178593",
+        "url": "https://t-233178593---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-09-002",
+        "tag": "t-233178594",
+        "url": "https://t-233178594---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-09-003",
+        "tag": "t-233178595",
+        "url": "https://t-233178595---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-10-001",
+        "tag": "t-256307459",
+        "url": "https://t-256307459---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-10-002",
+        "tag": "t-256307456",
+        "url": "https://t-256307456---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-10-003",
+        "tag": "t-256307457",
+        "url": "https://t-256307457---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-10-004",
+        "tag": "t-256307462",
+        "url": "https://t-256307462---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-10-005",
+        "tag": "t-256307463",
+        "url": "https://t-256307463---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-10-006",
+        "tag": "t-256307460",
+        "url": "https://t-256307460---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-10-007",
+        "tag": "t-256307461",
+        "url": "https://t-256307461---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-10-008",
+        "tag": "t-256307466",
+        "url": "https://t-256307466---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-10-009",
+        "tag": "t-256307467",
+        "url": "https://t-256307467---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-11-001",
+        "tag": "t-1006278182",
+        "url": "https://t-1006278182---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-11-002",
+        "tag": "t-1006278181",
+        "url": "https://t-1006278181---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-12-001",
+        "tag": "t-3725265141",
+        "url": "https://t-3725265141---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-12-002",
+        "tag": "t-3725265142",
+        "url": "https://t-3725265142---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-12-003",
+        "tag": "t-3725265143",
+        "url": "https://t-3725265143---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-12-004",
+        "tag": "t-3725265136",
+        "url": "https://t-3725265136---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-12-005",
+        "tag": "t-3725265137",
+        "url": "https://t-3725265137---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-12-006",
+        "tag": "t-3725265138",
+        "url": "https://t-3725265138---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-13-001",
+        "tag": "t-191919344",
+        "url": "https://t-191919344---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-13-002",
+        "tag": "t-191919347",
+        "url": "https://t-191919347---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-13-003",
+        "tag": "t-191919346",
+        "url": "https://t-191919346---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-13-004",
+        "tag": "t-191919349",
+        "url": "https://t-191919349---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-13-005",
+        "tag": "t-191919348",
+        "url": "https://t-191919348---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-13-006",
+        "tag": "t-191919351",
+        "url": "https://t-191919351---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-13-007",
+        "tag": "t-191919350",
+        "url": "https://t-191919350---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-13-008",
+        "tag": "t-191919353",
+        "url": "https://t-191919353---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-13-009",
+        "tag": "t-191919352",
+        "url": "https://t-191919352---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-13-010",
+        "tag": "t-175141662",
+        "url": "https://t-175141662---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-13-011",
+        "tag": "t-175141663",
+        "url": "https://t-175141663---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-13-012",
+        "tag": "t-175141660",
+        "url": "https://t-175141660---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-13-013",
+        "tag": "t-175141661",
+        "url": "https://t-175141661---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-13-014",
+        "tag": "t-175141658",
+        "url": "https://t-175141658---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-13-015",
+        "tag": "t-175141659",
+        "url": "https://t-175141659---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-14-001",
+        "tag": "t-2895340799",
+        "url": "https://t-2895340799---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-14-002",
+        "tag": "t-2895340796",
+        "url": "https://t-2895340796---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-14-003",
+        "tag": "t-2895340797",
+        "url": "https://t-2895340797---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-14-004",
+        "tag": "t-2895340794",
+        "url": "https://t-2895340794---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-14-005",
+        "tag": "t-2895340795",
+        "url": "https://t-2895340795---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-14-006",
+        "tag": "t-2895340792",
+        "url": "https://t-2895340792---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-15-001",
+        "tag": "t-1944136834",
+        "url": "https://t-1944136834---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-15-002",
+        "tag": "t-1944136833",
+        "url": "https://t-1944136833---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-15-004",
+        "tag": "t-1944136839",
+        "url": "https://t-1944136839---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-15-005",
+        "tag": "t-1944136838",
+        "url": "https://t-1944136838---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-15-006",
+        "tag": "t-1944136837",
+        "url": "https://t-1944136837---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-15-007",
+        "tag": "t-1944136836",
+        "url": "https://t-1944136836---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-15-008",
+        "tag": "t-1944136843",
+        "url": "https://t-1944136843---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-15-009",
+        "tag": "t-1944136842",
+        "url": "https://t-1944136842---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-15-010",
+        "tag": "t-1927359248",
+        "url": "https://t-1927359248---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-15-011",
+        "tag": "t-1927359249",
+        "url": "https://t-1927359249---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-15-012",
+        "tag": "t-1927359250",
+        "url": "https://t-1927359250---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-15-013",
+        "tag": "t-1927359251",
+        "url": "https://t-1927359251---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-15-014",
+        "tag": "t-1927359252",
+        "url": "https://t-1927359252---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-15-015",
+        "tag": "t-1927359253",
+        "url": "https://t-1927359253---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-15-016",
+        "tag": "t-1927359254",
+        "url": "https://t-1927359254---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-15-017",
+        "tag": "t-1927359255",
+        "url": "https://t-1927359255---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-15-018",
+        "tag": "t-1927359256",
+        "url": "https://t-1927359256---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-15-019",
+        "tag": "t-1927359257",
+        "url": "https://t-1927359257---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-15-020",
+        "tag": "t-1977692137",
+        "url": "https://t-1977692137---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-15-021",
+        "tag": "t-1977692136",
+        "url": "https://t-1977692136---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-15-022",
+        "tag": "t-1977692139",
+        "url": "https://t-1977692139---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-15-023",
+        "tag": "t-1977692138",
+        "url": "https://t-1977692138---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-15-024",
+        "tag": "t-1977692141",
+        "url": "https://t-1977692141---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-16-001",
+        "tag": "t-2021406513",
+        "url": "https://t-2021406513---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-16-002",
+        "tag": "t-2021406514",
+        "url": "https://t-2021406514---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-16-003",
+        "tag": "t-2021406515",
+        "url": "https://t-2021406515---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-16-004",
+        "tag": "t-2021406516",
+        "url": "https://t-2021406516---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-16-005",
+        "tag": "t-2021406517",
+        "url": "https://t-2021406517---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-16-006",
+        "tag": "t-2021406518",
+        "url": "https://t-2021406518---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-16-007",
+        "tag": "t-2021406519",
+        "url": "https://t-2021406519---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-16-008",
+        "tag": "t-2021406520",
+        "url": "https://t-2021406520---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-16-009",
+        "tag": "t-2021406521",
+        "url": "https://t-2021406521---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-16-010",
+        "tag": "t-2038184099",
+        "url": "https://t-2038184099---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-16-011",
+        "tag": "t-2038184098",
+        "url": "https://t-2038184098---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-17-001",
+        "tag": "t-1666661772",
+        "url": "https://t-1666661772---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-17-002",
+        "tag": "t-1666661775",
+        "url": "https://t-1666661775---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-17-003",
+        "tag": "t-1666661774",
+        "url": "https://t-1666661774---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-18-001",
+        "tag": "t-464635211",
+        "url": "https://t-464635211---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-18-002",
+        "tag": "t-464635208",
+        "url": "https://t-464635208---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-18-003",
+        "tag": "t-464635209",
+        "url": "https://t-464635209---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-18-004",
+        "tag": "t-464635214",
+        "url": "https://t-464635214---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-18-005",
+        "tag": "t-464635215",
+        "url": "https://t-464635215---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-18-006",
+        "tag": "t-464635212",
+        "url": "https://t-464635212---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-18-007",
+        "tag": "t-464635213",
+        "url": "https://t-464635213---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-18-008",
+        "tag": "t-464635202",
+        "url": "https://t-464635202---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-19-001",
+        "tag": "t-1873143790",
+        "url": "https://t-1873143790---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-19-002",
+        "tag": "t-1873143789",
+        "url": "https://t-1873143789---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-21-001",
+        "tag": "t-4094804763",
+        "url": "https://t-4094804763---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-22-001",
+        "tag": "t-3509098184",
+        "url": "https://t-3509098184---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-22-002",
+        "tag": "t-3509098187",
+        "url": "https://t-3509098187---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-22-003",
+        "tag": "t-3509098186",
+        "url": "https://t-3509098186---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-23-001",
+        "tag": "t-1270050061",
+        "url": "https://t-1270050061---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-23-002",
+        "tag": "t-1270050062",
+        "url": "https://t-1270050062---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-23-003",
+        "tag": "t-1270050063",
+        "url": "https://t-1270050063---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-23-004",
+        "tag": "t-1270050056",
+        "url": "https://t-1270050056---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-23-005",
+        "tag": "t-1270050057",
+        "url": "https://t-1270050057---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-24-001",
+        "tag": "t-3156482266",
+        "url": "https://t-3156482266---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-24-002",
+        "tag": "t-3156482265",
+        "url": "https://t-3156482265---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-24-003",
+        "tag": "t-3156482264",
+        "url": "https://t-3156482264---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-25-001",
+        "tag": "t-2390946135",
+        "url": "https://t-2390946135---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-26-001",
+        "tag": "t-694096356",
+        "url": "https://t-694096356---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-26-002",
+        "tag": "t-694096359",
+        "url": "https://t-694096359---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-26-003",
+        "tag": "t-694096358",
+        "url": "https://t-694096358---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-27-001",
+        "tag": "t-1564936393",
+        "url": "https://t-1564936393---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-27-002",
+        "tag": "t-1564936394",
+        "url": "https://t-1564936394---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-27-003",
+        "tag": "t-1564936395",
+        "url": "https://t-1564936395---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-27-004",
+        "tag": "t-1564936396",
+        "url": "https://t-1564936396---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-27-005",
+        "tag": "t-1564936397",
+        "url": "https://t-1564936397---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-27-006",
+        "tag": "t-1564936398",
+        "url": "https://t-1564936398---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-27-007",
+        "tag": "t-1564936399",
+        "url": "https://t-1564936399---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-27-008",
+        "tag": "t-1564936384",
+        "url": "https://t-1564936384---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-27-009",
+        "tag": "t-1564936385",
+        "url": "https://t-1564936385---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-27-010",
+        "tag": "t-1581714107",
+        "url": "https://t-1581714107---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-27-011",
+        "tag": "t-1581714106",
+        "url": "https://t-1581714106---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-27-012",
+        "tag": "t-1581714105",
+        "url": "https://t-1581714105---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-27-013",
+        "tag": "t-1581714104",
+        "url": "https://t-1581714104---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-27-014",
+        "tag": "t-1581714111",
+        "url": "https://t-1581714111---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-27-015",
+        "tag": "t-1581714110",
+        "url": "https://t-1581714110---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-28-001",
+        "tag": "t-341480438",
+        "url": "https://t-341480438---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-28-002",
+        "tag": "t-341480437",
+        "url": "https://t-341480437---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-28-003",
+        "tag": "t-341480436",
+        "url": "https://t-341480436---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-29-001",
+        "tag": "t-750577555",
+        "url": "https://t-750577555---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-29-002",
+        "tag": "t-750577552",
+        "url": "https://t-750577552---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-29-003",
+        "tag": "t-750577553",
+        "url": "https://t-750577553---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-30-001",
+        "tag": "t-1282011229",
+        "url": "https://t-1282011229---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-30-002",
+        "tag": "t-1282011230",
+        "url": "https://t-1282011230---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-30-003",
+        "tag": "t-1282011231",
+        "url": "https://t-1282011231---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-06-30-004",
+        "tag": "t-1282011224",
+        "url": "https://t-1282011224---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-01-001",
+        "tag": "t-2799910546",
+        "url": "https://t-2799910546---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-01-002",
+        "tag": "t-2799910545",
+        "url": "https://t-2799910545---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-01-003",
+        "tag": "t-2799910544",
+        "url": "https://t-2799910544---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-01-004",
+        "tag": "t-2799910551",
+        "url": "https://t-2799910551---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-01-005",
+        "tag": "t-2799910550",
+        "url": "https://t-2799910550---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-01-006",
+        "tag": "t-2799910549",
+        "url": "https://t-2799910549---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-01-007",
+        "tag": "t-2799910548",
+        "url": "https://t-2799910548---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-02-001",
+        "tag": "t-1697323905",
+        "url": "https://t-1697323905---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-02-002",
+        "tag": "t-1697323906",
+        "url": "https://t-1697323906---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-02-003",
+        "tag": "t-1697323907",
+        "url": "https://t-1697323907---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-02-004",
+        "tag": "t-1697323908",
+        "url": "https://t-1697323908---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-02-005",
+        "tag": "t-1697323909",
+        "url": "https://t-1697323909---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-02-006",
+        "tag": "t-1697323910",
+        "url": "https://t-1697323910---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-02-007",
+        "tag": "t-1697323911",
+        "url": "https://t-1697323911---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-02-008",
+        "tag": "t-1697323912",
+        "url": "https://t-1697323912---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-02-009",
+        "tag": "t-1697323913",
+        "url": "https://t-1697323913---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-02-010",
+        "tag": "t-1714101619",
+        "url": "https://t-1714101619---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-03-001",
+        "tag": "t-162723100",
+        "url": "https://t-162723100---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-03-002",
+        "tag": "t-162723103",
+        "url": "https://t-162723103---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-05-001",
+        "tag": "t-682195702",
+        "url": "https://t-682195702---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-05-003",
+        "tag": "t-682195700",
+        "url": "https://t-682195700---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-05-004",
+        "tag": "t-682195699",
+        "url": "https://t-682195699---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-05-005",
+        "tag": "t-682195698",
+        "url": "https://t-682195698---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-05-008",
+        "tag": "t-682195711",
+        "url": "https://t-682195711---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-05-009",
+        "tag": "t-682195710",
+        "url": "https://t-682195710---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-05-010",
+        "tag": "t-665417988",
+        "url": "https://t-665417988---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-05-011",
+        "tag": "t-665417989",
+        "url": "https://t-665417989---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-05-012",
+        "tag": "t-665417990",
+        "url": "https://t-665417990---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-05-013",
+        "tag": "t-665417991",
+        "url": "https://t-665417991---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-06-001",
+        "tag": "t-3380394181",
+        "url": "https://t-3380394181---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-06-002",
+        "tag": "t-3380394182",
+        "url": "https://t-3380394182---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-06-003",
+        "tag": "t-3380394183",
+        "url": "https://t-3380394183---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-06-004",
+        "tag": "t-3380394176",
+        "url": "https://t-3380394176---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-06-005",
+        "tag": "t-3380394177",
+        "url": "https://t-3380394177---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-06-006",
+        "tag": "t-3380394178",
+        "url": "https://t-3380394178---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-06-007",
+        "tag": "t-3380394179",
+        "url": "https://t-3380394179---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-06-008",
+        "tag": "t-3380394188",
+        "url": "https://t-3380394188---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-06-009",
+        "tag": "t-3380394189",
+        "url": "https://t-3380394189---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-06-010",
+        "tag": "t-3397171895",
+        "url": "https://t-3397171895---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-06-011",
+        "tag": "t-3397171894",
+        "url": "https://t-3397171894---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-07-001",
+        "tag": "t-4162804032",
+        "url": "https://t-4162804032---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-07-002",
+        "tag": "t-4162804035",
+        "url": "https://t-4162804035---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-08-001",
+        "tag": "t-2731661399",
+        "url": "https://t-2731661399---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-08-002",
+        "tag": "t-2731661396",
+        "url": "https://t-2731661396---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-08-003",
+        "tag": "t-2731661397",
+        "url": "https://t-2731661397---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-08-004",
+        "tag": "t-2731661394",
+        "url": "https://t-2731661394---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-08-005",
+        "tag": "t-2731661395",
+        "url": "https://t-2731661395---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-08-006",
+        "tag": "t-2731661392",
+        "url": "https://t-2731661392---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-08-007",
+        "tag": "t-2731661393",
+        "url": "https://t-2731661393---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-08-008",
+        "tag": "t-2731661406",
+        "url": "https://t-2731661406---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-08-009",
+        "tag": "t-2731661407",
+        "url": "https://t-2731661407---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-10-001",
+        "tag": "t-3342152112",
+        "url": "https://t-3342152112---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-10-002",
+        "tag": "t-3342152115",
+        "url": "https://t-3342152115---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-10-003",
+        "tag": "t-3342152114",
+        "url": "https://t-3342152114---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-10-004",
+        "tag": "t-3342152117",
+        "url": "https://t-3342152117---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-10-005",
+        "tag": "t-3342152116",
+        "url": "https://t-3342152116---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-10-006",
+        "tag": "t-3342152119",
+        "url": "https://t-3342152119---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-10-007",
+        "tag": "t-3342152118",
+        "url": "https://t-3342152118---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-10-008",
+        "tag": "t-3342152121",
+        "url": "https://t-3342152121---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-10-009",
+        "tag": "t-3342152120",
+        "url": "https://t-3342152120---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-11-001",
+        "tag": "t-2580530613",
+        "url": "https://t-2580530613---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-11-002",
+        "tag": "t-2580530614",
+        "url": "https://t-2580530614---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-11-003",
+        "tag": "t-2580530615",
+        "url": "https://t-2580530615---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-11-004",
+        "tag": "t-2580530608",
+        "url": "https://t-2580530608---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-11-005",
+        "tag": "t-2580530609",
+        "url": "https://t-2580530609---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-11-006",
+        "tag": "t-2580530610",
+        "url": "https://t-2580530610---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-11-007",
+        "tag": "t-2580530611",
+        "url": "https://t-2580530611---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-11-008",
+        "tag": "t-2580530620",
+        "url": "https://t-2580530620---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-12-001",
+        "tag": "t-4156510950",
+        "url": "https://t-4156510950---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-12-002",
+        "tag": "t-4156510949",
+        "url": "https://t-4156510949---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-13-001",
+        "tag": "t-3406540227",
+        "url": "https://t-3406540227---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-13-002",
+        "tag": "t-3406540224",
+        "url": "https://t-3406540224---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-13-003",
+        "tag": "t-3406540225",
+        "url": "https://t-3406540225---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-13-004",
+        "tag": "t-3406540230",
+        "url": "https://t-3406540230---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-13-005",
+        "tag": "t-3406540231",
+        "url": "https://t-3406540231---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-15-001",
+        "tag": "t-876671985",
+        "url": "https://t-876671985---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-15-002",
+        "tag": "t-876671986",
+        "url": "https://t-876671986---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-15-003",
+        "tag": "t-876671987",
+        "url": "https://t-876671987---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-15-004",
+        "tag": "t-876671988",
+        "url": "https://t-876671988---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-15-005",
+        "tag": "t-876671989",
+        "url": "https://t-876671989---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-15-006",
+        "tag": "t-876671990",
+        "url": "https://t-876671990---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-15-007",
+        "tag": "t-876671991",
+        "url": "https://t-876671991---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-15-008",
+        "tag": "t-876671992",
+        "url": "https://t-876671992---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-15-009",
+        "tag": "t-876671993",
+        "url": "https://t-876671993---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-15-010",
+        "tag": "t-893449571",
+        "url": "https://t-893449571---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-15-011",
+        "tag": "t-893449570",
+        "url": "https://t-893449570---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-15-012",
+        "tag": "t-893449569",
+        "url": "https://t-893449569---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-15-013",
+        "tag": "t-893449568",
+        "url": "https://t-893449568---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-15-014",
+        "tag": "t-893449575",
+        "url": "https://t-893449575---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-15-015",
+        "tag": "t-893449574",
+        "url": "https://t-893449574---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-15-016",
+        "tag": "t-893449573",
+        "url": "https://t-893449573---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-15-017",
+        "tag": "t-893449572",
+        "url": "https://t-893449572---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-16-001",
+        "tag": "t-799402306",
+        "url": "https://t-799402306---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-17-000",
+        "tag": "t-1750606270",
+        "url": "https://t-1750606270---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-17-001",
+        "tag": "t-1750606271",
+        "url": "https://t-1750606271---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-17-002",
+        "tag": "t-1750606268",
+        "url": "https://t-1750606268---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-17-005",
+        "tag": "t-1750606267",
+        "url": "https://t-1750606267---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-17-006",
+        "tag": "t-1750606264",
+        "url": "https://t-1750606264---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-17-007",
+        "tag": "t-1750606265",
+        "url": "https://t-1750606265---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-18-001",
+        "tag": "t-3996840568",
+        "url": "https://t-3996840568---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-18-002",
+        "tag": "t-3996840571",
+        "url": "https://t-3996840571---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-18-003",
+        "tag": "t-3996840570",
+        "url": "https://t-3996840570---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-19-001",
+        "tag": "t-810901757",
+        "url": "https://t-810901757---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-19-002",
+        "tag": "t-810901758",
+        "url": "https://t-810901758---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-19-003",
+        "tag": "t-810901759",
+        "url": "https://t-810901759---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-20-001",
+        "tag": "t-1464992233",
+        "url": "https://t-1464992233---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-20-002",
+        "tag": "t-1464992234",
+        "url": "https://t-1464992234---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-20-003",
+        "tag": "t-1464992235",
+        "url": "https://t-1464992235---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-20-004",
+        "tag": "t-1464992236",
+        "url": "https://t-1464992236---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-20-005",
+        "tag": "t-1464992237",
+        "url": "https://t-1464992237---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-20-006",
+        "tag": "t-1464992238",
+        "url": "https://t-1464992238---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-20-007",
+        "tag": "t-1464992239",
+        "url": "https://t-1464992239---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-20-008",
+        "tag": "t-1464992224",
+        "url": "https://t-1464992224---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-20-009",
+        "tag": "t-1464992225",
+        "url": "https://t-1464992225---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-20-010",
+        "tag": "t-1481769819",
+        "url": "https://t-1481769819---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-20-011",
+        "tag": "t-1481769818",
+        "url": "https://t-1481769818---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-21-001",
+        "tag": "t-2508618628",
+        "url": "https://t-2508618628---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-21-002",
+        "tag": "t-2508618631",
+        "url": "https://t-2508618631---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-21-003",
+        "tag": "t-2508618630",
+        "url": "https://t-2508618630---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-21-004",
+        "tag": "t-2508618625",
+        "url": "https://t-2508618625---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-21-005",
+        "tag": "t-2508618624",
+        "url": "https://t-2508618624---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-21-006",
+        "tag": "t-2508618627",
+        "url": "https://t-2508618627---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-25-001",
+        "tag": "t-3176188520",
+        "url": "https://t-3176188520---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-26-001",
+        "tag": "t-3974072251",
+        "url": "https://t-3974072251---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-26-002",
+        "tag": "t-3974072248",
+        "url": "https://t-3974072248---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-26-003",
+        "tag": "t-3974072249",
+        "url": "https://t-3974072249---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-26-004",
+        "tag": "t-3974072254",
+        "url": "https://t-3974072254---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-26-005",
+        "tag": "t-3974072255",
+        "url": "https://t-3974072255---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-26-006",
+        "tag": "t-3974072252",
+        "url": "https://t-3974072252---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-26-007",
+        "tag": "t-3974072253",
+        "url": "https://t-3974072253---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-26-008",
+        "tag": "t-3974072242",
+        "url": "https://t-3974072242---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-26-009",
+        "tag": "t-3974072243",
+        "url": "https://t-3974072243---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-26-010",
+        "tag": "t-3990849837",
+        "url": "https://t-3990849837---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-27-001",
+        "tag": "t-2055292446",
+        "url": "https://t-2055292446---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-27-002",
+        "tag": "t-2055292445",
+        "url": "https://t-2055292445---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-28-001",
+        "tag": "t-3383411361",
+        "url": "https://t-3383411361---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-28-002",
+        "tag": "t-3383411362",
+        "url": "https://t-3383411362---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-28-003",
+        "tag": "t-3383411363",
+        "url": "https://t-3383411363---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-28-004",
+        "tag": "t-3383411364",
+        "url": "https://t-3383411364---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-28-005",
+        "tag": "t-3383411365",
+        "url": "https://t-3383411365---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-28-006",
+        "tag": "t-3383411366",
+        "url": "https://t-3383411366---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-28-007",
+        "tag": "t-3383411367",
+        "url": "https://t-3383411367---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-28-008",
+        "tag": "t-3383411368",
+        "url": "https://t-3383411368---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-28-009",
+        "tag": "t-3383411369",
+        "url": "https://t-3383411369---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-28-010",
+        "tag": "t-3400188947",
+        "url": "https://t-3400188947---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-28-011",
+        "tag": "t-3400188946",
+        "url": "https://t-3400188946---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-28-012",
+        "tag": "t-3400188945",
+        "url": "https://t-3400188945---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-28-013",
+        "tag": "t-3400188944",
+        "url": "https://t-3400188944---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-28-014",
+        "tag": "t-3400188951",
+        "url": "https://t-3400188951---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-28-015",
+        "tag": "t-3400188950",
+        "url": "https://t-3400188950---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-28-016",
+        "tag": "t-3400188949",
+        "url": "https://t-3400188949---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-28-017",
+        "tag": "t-3400188948",
+        "url": "https://t-3400188948---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-28-018",
+        "tag": "t-3400188955",
+        "url": "https://t-3400188955---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-28-019",
+        "tag": "t-3400188954",
+        "url": "https://t-3400188954---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-28-020",
+        "tag": "t-3416966534",
+        "url": "https://t-3416966534---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-28-021",
+        "tag": "t-3416966535",
+        "url": "https://t-3416966535---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-28-022",
+        "tag": "t-3416966532",
+        "url": "https://t-3416966532---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-28-023",
+        "tag": "t-3416966533",
+        "url": "https://t-3416966533---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-28-024",
+        "tag": "t-3416966530",
+        "url": "https://t-3416966530---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-28-025",
+        "tag": "t-3416966531",
+        "url": "https://t-3416966531---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-28-026",
+        "tag": "t-3416966528",
+        "url": "https://t-3416966528---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-28-027",
+        "tag": "t-3416966529",
+        "url": "https://t-3416966529---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-28-028",
+        "tag": "t-3416966542",
+        "url": "https://t-3416966542---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-28-029",
+        "tag": "t-3416966543",
+        "url": "https://t-3416966543---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-28-030",
+        "tag": "t-3433744249",
+        "url": "https://t-3433744249---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-29-001",
+        "tag": "t-4017030972",
+        "url": "https://t-4017030972---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-29-002",
+        "tag": "t-4017030975",
+        "url": "https://t-4017030975---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-29-003",
+        "tag": "t-4017030974",
+        "url": "https://t-4017030974---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-29-004",
+        "tag": "t-4017030969",
+        "url": "https://t-4017030969---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-29-005",
+        "tag": "t-4017030968",
+        "url": "https://t-4017030968---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-29-006",
+        "tag": "t-4017030971",
+        "url": "https://t-4017030971---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-29-007",
+        "tag": "t-4017030970",
+        "url": "https://t-4017030970---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-29-008",
+        "tag": "t-4017030965",
+        "url": "https://t-4017030965---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-29-009",
+        "tag": "t-4017030964",
+        "url": "https://t-4017030964---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-29-010",
+        "tag": "t-4000253258",
+        "url": "https://t-4000253258---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-29-011",
+        "tag": "t-4000253259",
+        "url": "https://t-4000253259---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-29-012",
+        "tag": "t-4000253256",
+        "url": "https://t-4000253256---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-29-013",
+        "tag": "t-4000253257",
+        "url": "https://t-4000253257---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-29-014",
+        "tag": "t-4000253262",
+        "url": "https://t-4000253262---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-29-015",
+        "tag": "t-4000253263",
+        "url": "https://t-4000253263---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-29-016",
+        "tag": "t-4000253260",
+        "url": "https://t-4000253260---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-30-001",
+        "tag": "t-3203565098",
+        "url": "https://t-3203565098---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-30-002",
+        "tag": "t-3203565097",
+        "url": "https://t-3203565097---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-30-003",
+        "tag": "t-3203565096",
+        "url": "https://t-3203565096---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-30-004",
+        "tag": "t-3203565103",
+        "url": "https://t-3203565103---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-30-005",
+        "tag": "t-3203565102",
+        "url": "https://t-3203565102---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-30-006",
+        "tag": "t-3203565101",
+        "url": "https://t-3203565101---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-30-007",
+        "tag": "t-3203565100",
+        "url": "https://t-3203565100---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-30-008",
+        "tag": "t-3203565091",
+        "url": "https://t-3203565091---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-30-009",
+        "tag": "t-3203565090",
+        "url": "https://t-3203565090---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-30-010",
+        "tag": "t-3186787512",
+        "url": "https://t-3186787512---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-30-011",
+        "tag": "t-3186787513",
+        "url": "https://t-3186787513---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-30-012",
+        "tag": "t-3186787514",
+        "url": "https://t-3186787514---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-30-013",
+        "tag": "t-3186787515",
+        "url": "https://t-3186787515---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-30-014",
+        "tag": "t-3186787516",
+        "url": "https://t-3186787516---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-30-015",
+        "tag": "t-3186787517",
+        "url": "https://t-3186787517---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-30-016",
+        "tag": "t-3186787518",
+        "url": "https://t-3186787518---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-30-017",
+        "tag": "t-3186787519",
+        "url": "https://t-3186787519---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-30-018",
+        "tag": "t-3186787504",
+        "url": "https://t-3186787504---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-30-019",
+        "tag": "t-3186787505",
+        "url": "https://t-3186787505---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-31-001",
+        "tag": "t-3617885159",
+        "url": "https://t-3617885159---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-31-002",
+        "tag": "t-3617885156",
+        "url": "https://t-3617885156---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-31-003",
+        "tag": "t-3617885157",
+        "url": "https://t-3617885157---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-31-004",
+        "tag": "t-3617885154",
+        "url": "https://t-3617885154---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-07-31-005",
+        "tag": "t-3617885155",
+        "url": "https://t-3617885155---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-01-001",
+        "tag": "t-3105073315",
+        "url": "https://t-3105073315---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-01-002",
+        "tag": "t-3105073312",
+        "url": "https://t-3105073312---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-01-003",
+        "tag": "t-3105073313",
+        "url": "https://t-3105073313---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-01-004",
+        "tag": "t-3105073318",
+        "url": "https://t-3105073318---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-02-001",
+        "tag": "t-701761040",
+        "url": "https://t-701761040---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-02-002",
+        "tag": "t-701761043",
+        "url": "https://t-701761043---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-02-003",
+        "tag": "t-701761042",
+        "url": "https://t-701761042---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-03-001",
+        "tag": "t-131528341",
+        "url": "https://t-131528341---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-03-002",
+        "tag": "t-131528342",
+        "url": "https://t-131528342---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-03-003",
+        "tag": "t-131528343",
+        "url": "https://t-131528343---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-04-001",
+        "tag": "t-2666155810",
+        "url": "https://t-2666155810---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-04-002",
+        "tag": "t-2666155809",
+        "url": "https://t-2666155809---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-04-003",
+        "tag": "t-2666155808",
+        "url": "https://t-2666155808---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-04-004",
+        "tag": "t-2666155815",
+        "url": "https://t-2666155815---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-04-005",
+        "tag": "t-2666155814",
+        "url": "https://t-2666155814---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-04-006",
+        "tag": "t-2666155813",
+        "url": "https://t-2666155813---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-04-007",
+        "tag": "t-2666155812",
+        "url": "https://t-2666155812---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-04-008",
+        "tag": "t-2666155819",
+        "url": "https://t-2666155819---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-04-009",
+        "tag": "t-2666155818",
+        "url": "https://t-2666155818---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-04-010",
+        "tag": "t-2649378224",
+        "url": "https://t-2649378224---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-04-011",
+        "tag": "t-2649378225",
+        "url": "https://t-2649378225---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-04-012",
+        "tag": "t-2649378226",
+        "url": "https://t-2649378226---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-04-013",
+        "tag": "t-2649378227",
+        "url": "https://t-2649378227---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-04-014",
+        "tag": "t-2649378228",
+        "url": "https://t-2649378228---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-07-001",
+        "tag": "t-595993297",
+        "url": "https://t-595993297---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-07-002",
+        "tag": "t-595993298",
+        "url": "https://t-595993298---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-07-003",
+        "tag": "t-595993299",
+        "url": "https://t-595993299---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-07-004",
+        "tag": "t-595993300",
+        "url": "https://t-595993300---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-07-005",
+        "tag": "t-595993301",
+        "url": "https://t-595993301---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-07-006",
+        "tag": "t-595993302",
+        "url": "https://t-595993302---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-07-007",
+        "tag": "t-595993303",
+        "url": "https://t-595993303---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-07-008",
+        "tag": "t-595993304",
+        "url": "https://t-595993304---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-07-009",
+        "tag": "t-595993305",
+        "url": "https://t-595993305---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-07-010",
+        "tag": "t-612770883",
+        "url": "https://t-612770883---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-07-011",
+        "tag": "t-612770882",
+        "url": "https://t-612770882---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-07-012",
+        "tag": "t-612770881",
+        "url": "https://t-612770881---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-08-001",
+        "tag": "t-2382985486",
+        "url": "https://t-2382985486---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-08-002",
+        "tag": "t-2382985485",
+        "url": "https://t-2382985485---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-08-003",
+        "tag": "t-2382985484",
+        "url": "https://t-2382985484---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-08-004",
+        "tag": "t-2382985483",
+        "url": "https://t-2382985483---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-08-005",
+        "tag": "t-2382985482",
+        "url": "https://t-2382985482---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-08-006",
+        "tag": "t-2382985481",
+        "url": "https://t-2382985481---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-08-007",
+        "tag": "t-2382985480",
+        "url": "https://t-2382985480---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-08-008",
+        "tag": "t-2382985479",
+        "url": "https://t-2382985479---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-08-009",
+        "tag": "t-2382985478",
+        "url": "https://t-2382985478---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-08-010",
+        "tag": "t-2366207900",
+        "url": "https://t-2366207900---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-08-011",
+        "tag": "t-2366207901",
+        "url": "https://t-2366207901---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-09-001",
+        "tag": "t-3334189419",
+        "url": "https://t-3334189419---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-09-002",
+        "tag": "t-3334189416",
+        "url": "https://t-3334189416---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-09-003",
+        "tag": "t-3334189417",
+        "url": "https://t-3334189417---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-09-004",
+        "tag": "t-3334189422",
+        "url": "https://t-3334189422---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-09-005",
+        "tag": "t-3334189423",
+        "url": "https://t-3334189423---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-09-006",
+        "tag": "t-3334189420",
+        "url": "https://t-3334189420---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-09-007",
+        "tag": "t-3334189421",
+        "url": "https://t-3334189421---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-09-008",
+        "tag": "t-3334189410",
+        "url": "https://t-3334189410---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-09-009",
+        "tag": "t-3334189411",
+        "url": "https://t-3334189411---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-09-010",
+        "tag": "t-3350967005",
+        "url": "https://t-3350967005---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-09-011",
+        "tag": "t-3350967004",
+        "url": "https://t-3350967004---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-09-012",
+        "tag": "t-3350967007",
+        "url": "https://t-3350967007---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-09-013",
+        "tag": "t-3350967006",
+        "url": "https://t-3350967006---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-09-014",
+        "tag": "t-3350967001",
+        "url": "https://t-3350967001---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-09-015",
+        "tag": "t-3350967000",
+        "url": "https://t-3350967000---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-09-016",
+        "tag": "t-3350967003",
+        "url": "https://t-3350967003---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-10-001",
+        "tag": "t-952180389",
+        "url": "https://t-952180389---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-10-002",
+        "tag": "t-952180390",
+        "url": "https://t-952180390---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-10-003",
+        "tag": "t-952180391",
+        "url": "https://t-952180391---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-10-004",
+        "tag": "t-952180384",
+        "url": "https://t-952180384---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-10-005",
+        "tag": "t-952180385",
+        "url": "https://t-952180385---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-11-001",
+        "tag": "t-3669845152",
+        "url": "https://t-3669845152---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-11-002",
+        "tag": "t-3669845155",
+        "url": "https://t-3669845155---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-11-003",
+        "tag": "t-3669845154",
+        "url": "https://t-3669845154---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-11-004",
+        "tag": "t-3669845157",
+        "url": "https://t-3669845157---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-12-001",
+        "tag": "t-2745869171",
+        "url": "https://t-2745869171---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-12-002",
+        "tag": "t-2745869168",
+        "url": "https://t-2745869168---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-12-003",
+        "tag": "t-2745869169",
+        "url": "https://t-2745869169---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-12-004",
+        "tag": "t-2745869174",
+        "url": "https://t-2745869174---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-12-005",
+        "tag": "t-2745869175",
+        "url": "https://t-2745869175---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-12-006",
+        "tag": "t-2745869172",
+        "url": "https://t-2745869172---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-12-007",
+        "tag": "t-2745869173",
+        "url": "https://t-2745869173---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-13-001",
+        "tag": "t-2548949078",
+        "url": "https://t-2548949078---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-13-002",
+        "tag": "t-2548949077",
+        "url": "https://t-2548949077---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-16-001",
+        "tag": "t-2078299311",
+        "url": "https://t-2078299311---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-17-001",
+        "tag": "t-2306951666",
+        "url": "https://t-2306951666---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-17-002",
+        "tag": "t-2306951665",
+        "url": "https://t-2306951665---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-17-003",
+        "tag": "t-2306951664",
+        "url": "https://t-2306951664---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-17-004",
+        "tag": "t-2306951671",
+        "url": "https://t-2306951671---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-17-005",
+        "tag": "t-2306951670",
+        "url": "https://t-2306951670---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-18-001",
+        "tag": "t-3265341677",
+        "url": "https://t-3265341677---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-18-002",
+        "tag": "t-3265341678",
+        "url": "https://t-3265341678---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-18-003",
+        "tag": "t-3265341679",
+        "url": "https://t-3265341679---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-18-004",
+        "tag": "t-3265341672",
+        "url": "https://t-3265341672---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-18-005",
+        "tag": "t-3265341673",
+        "url": "https://t-3265341673---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-18-006",
+        "tag": "t-3265341674",
+        "url": "https://t-3265341674---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-19-001",
+        "tag": "t-1188634152",
+        "url": "https://t-1188634152---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-19-002",
+        "tag": "t-1188634155",
+        "url": "https://t-1188634155---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-19-003",
+        "tag": "t-1188634154",
+        "url": "https://t-1188634154---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-19-004",
+        "tag": "t-1188634157",
+        "url": "https://t-1188634157---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-19-005",
+        "tag": "t-1188634156",
+        "url": "https://t-1188634156---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-22-001",
+        "tag": "t-3106815234",
+        "url": "https://t-3106815234---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-22-002",
+        "tag": "t-3106815233",
+        "url": "https://t-3106815233---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-22-003",
+        "tag": "t-3106815232",
+        "url": "https://t-3106815232---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-23-001",
+        "tag": "t-4058019199",
+        "url": "https://t-4058019199---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-23-002",
+        "tag": "t-4058019196",
+        "url": "https://t-4058019196---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-23-003",
+        "tag": "t-4058019197",
+        "url": "https://t-4058019197---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-23-004",
+        "tag": "t-4058019194",
+        "url": "https://t-4058019194---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-23-005",
+        "tag": "t-4058019195",
+        "url": "https://t-4058019195---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-23-006",
+        "tag": "t-4058019192",
+        "url": "https://t-4058019192---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-23-007",
+        "tag": "t-4058019193",
+        "url": "https://t-4058019193---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-23-008",
+        "tag": "t-4058019190",
+        "url": "https://t-4058019190---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-23-009",
+        "tag": "t-4058019191",
+        "url": "https://t-4058019191---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-23-010",
+        "tag": "t-4074796753",
+        "url": "https://t-4074796753---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-24-001",
+        "tag": "t-1354597744",
+        "url": "https://t-1354597744---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-24-002",
+        "tag": "t-1354597747",
+        "url": "https://t-1354597747---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-24-003",
+        "tag": "t-1354597746",
+        "url": "https://t-1354597746---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-25-001",
+        "tag": "t-592976245",
+        "url": "https://t-592976245---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-25-002",
+        "tag": "t-592976246",
+        "url": "https://t-592976246---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-25-003",
+        "tag": "t-592976247",
+        "url": "https://t-592976247---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-29-001",
+        "tag": "t-298089913",
+        "url": "https://t-298089913---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-08-31-001",
+        "tag": "t-2469726670",
+        "url": "https://t-2469726670---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-09-01-001",
+        "tag": "t-3877127780",
+        "url": "https://t-3877127780---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-09-02-001",
+        "tag": "t-1279010263",
+        "url": "https://t-1279010263---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-09-02-002",
+        "tag": "t-1279010260",
+        "url": "https://t-1279010260---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-09-02-003",
+        "tag": "t-1279010261",
+        "url": "https://t-1279010261---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-09-02-004",
+        "tag": "t-1279010258",
+        "url": "https://t-1279010258---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-09-02-005",
+        "tag": "t-1279010259",
+        "url": "https://t-1279010259---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-09-02-006",
+        "tag": "t-1279010256",
+        "url": "https://t-1279010256---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-09-02-007",
+        "tag": "t-1279010257",
+        "url": "https://t-1279010257---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-09-02-008",
+        "tag": "t-1279010270",
+        "url": "https://t-1279010270---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-09-03-001",
+        "tag": "t-2044546394",
+        "url": "https://t-2044546394---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-09-03-002",
+        "tag": "t-2044546393",
+        "url": "https://t-2044546393---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-09-04-001",
+        "tag": "t-158114189",
+        "url": "https://t-158114189---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-09-04-002",
+        "tag": "t-158114190",
+        "url": "https://t-158114190---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-09-04-003",
+        "tag": "t-158114191",
+        "url": "https://t-158114191---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-09-04-004",
+        "tag": "t-158114184",
+        "url": "https://t-158114184---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-09-05-001",
+        "tag": "t-2397162312",
+        "url": "https://t-2397162312---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-09-05-002",
+        "tag": "t-2397162315",
+        "url": "https://t-2397162315---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-09-05-003",
+        "tag": "t-2397162314",
+        "url": "https://t-2397162314---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-09-06-001",
+        "tag": "t-2982868891",
+        "url": "https://t-2982868891---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-09-06-002",
+        "tag": "t-2982868888",
+        "url": "https://t-2982868888---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-09-08-001",
+        "tag": "t-244672769",
+        "url": "https://t-244672769---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-09-08-002",
+        "tag": "t-244672770",
+        "url": "https://t-244672770---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-09-08-003",
+        "tag": "t-244672771",
+        "url": "https://t-244672771---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-09-09-001",
+        "tag": "t-3005039260",
+        "url": "https://t-3005039260---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-09-09-002",
+        "tag": "t-3005039263",
+        "url": "https://t-3005039263---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-09-09-003",
+        "tag": "t-3005039262",
+        "url": "https://t-3005039262---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-2026-09-09-004",
+        "tag": "t-3005039257",
+        "url": "https://t-3005039257---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "percent": 100,
+        "revisionName": "secondevie-next-sandbox-build-2026-09-09-005",
+        "tag": "t-3005039256",
+        "url": "https://t-3005039256---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      },
+      {
+        "revisionName": "secondevie-next-sandbox-build-20260908-6188058",
+        "tag": "t-1567554978",
+        "url": "https://t-1567554978---secondevie-next-sandbox-evkkvyaaga-ez.a.run.app"
+      }
+    ],
+    "revision": "secondevie-next-sandbox-build-2026-09-09-005"
+  },
+  {
+    "name": "selectmetaassetadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "selectmetaassetadmingen2-00002-tuz"
+      }
+    ],
+    "revision": "selectmetaassetadmingen2-00002-tuz"
+  },
+  {
+    "name": "sendcustomerloginotpgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "sendcustomerloginotpgen2-00004-vam"
+      }
+    ],
+    "revision": "sendcustomerloginotpgen2-00004-vam"
+  },
+  {
+    "name": "sendguestcheckoutotpgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "sendguestcheckoutotpgen2-00003-cec"
+      }
+    ],
+    "revision": "sendguestcheckoutotpgen2-00003-cec"
+  },
+  {
+    "name": "sendmanualinvoiceadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "sendmanualinvoiceadmingen2-00003-tiw"
+      }
+    ],
+    "revision": "sendmanualinvoiceadmingen2-00003-tiw"
+  },
+  {
+    "name": "sendrefundstatusemailadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "sendrefundstatusemailadmingen2-00002-num"
+      }
+    ],
+    "revision": "sendrefundstatusemailadmingen2-00002-num"
+  },
+  {
+    "name": "sendtestemailgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "sendtestemailgen2-00001-xoq"
+      }
+    ],
+    "revision": "sendtestemailgen2-00001-xoq"
+  },
+  {
+    "name": "setpromotioncodestatusadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "setpromotioncodestatusadmingen2-00001-vuh"
+      }
+    ],
+    "revision": "setpromotioncodestatusadmingen2-00001-vuh"
+  },
+  {
+    "name": "startinstagramoauthadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "startinstagramoauthadmingen2-00003-hex"
+      }
+    ],
+    "revision": "startinstagramoauthadmingen2-00003-hex"
+  },
+  {
+    "name": "startmetaoauthadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "startmetaoauthadmingen2-00003-gik"
+      }
+    ],
+    "revision": "startmetaoauthadmingen2-00003-gik"
+  },
+  {
+    "name": "startstripeconnectonboardinggen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "startstripeconnectonboardinggen2-00001-bof"
+      }
+    ],
+    "revision": "startstripeconnectonboardinggen2-00001-bof"
+  },
+  {
+    "name": "stripeconnectwebhookv2gen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "stripeconnectwebhookv2gen2-00004-gux"
+      }
+    ],
+    "revision": "stripeconnectwebhookv2gen2-00004-gux"
+  },
+  {
+    "name": "stripewebhookv2gen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "stripewebhookv2gen2-00005-lis"
+      }
+    ],
+    "revision": "stripewebhookv2gen2-00005-lis"
+  },
+  {
+    "name": "syncsessionbeacongen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "syncsessionbeacongen2-00006-xac"
+      }
+    ],
+    "revision": "syncsessionbeacongen2-00006-xac"
+  },
+  {
+    "name": "syncsessiongen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "syncsessiongen2-00004-foh"
+      }
+    ],
+    "revision": "syncsessiongen2-00004-foh"
+  },
+  {
+    "name": "syncstripeconnectaccountgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "syncstripeconnectaccountgen2-00001-wov"
+      }
+    ],
+    "revision": "syncstripeconnectaccountgen2-00001-wov"
+  },
+  {
+    "name": "syncsuperadminclaimgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "syncsuperadminclaimgen2-00002-cov"
+      }
+    ],
+    "revision": "syncsuperadminclaimgen2-00002-cov"
+  },
+  {
+    "name": "trackadminipgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "trackadminipgen2-00002-vus"
+      }
+    ],
+    "revision": "trackadminipgen2-00002-vus"
+  },
+  {
+    "name": "updateordertrackingadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "updateordertrackingadmingen2-00001-kug"
+      }
+    ],
+    "revision": "updateordertrackingadmingen2-00001-kug"
+  },
+  {
+    "name": "updateproductofferadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "updateproductofferadmingen2-00001-jex"
+      }
+    ],
+    "revision": "updateproductofferadmingen2-00001-jex"
+  },
+  {
+    "name": "updatequoterequestadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "updatequoterequestadmingen2-00002-wej"
+      }
+    ],
+    "revision": "updatequoterequestadmingen2-00002-wej"
+  },
+  {
+    "name": "updateusersessionsgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "updateusersessionsgen2-00004-har"
+      }
+    ],
+    "revision": "updateusersessionsgen2-00004-har"
+  },
+  {
+    "name": "uploadquoterequestphotogen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "uploadquoterequestphotogen2-00003-fen"
+      }
+    ],
+    "revision": "uploadquoterequestphotogen2-00003-fen"
+  },
+  {
+    "name": "verifycustomerloginotpgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "verifycustomerloginotpgen2-00002-gez"
+      }
+    ],
+    "revision": "verifycustomerloginotpgen2-00002-gez"
+  },
+  {
+    "name": "verifyguestcheckoutotpgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "verifyguestcheckoutotpgen2-00002-tul"
+      }
+    ],
+    "revision": "verifyguestcheckoutotpgen2-00002-tul"
+  },
+  {
+    "name": "verifyinstagramconnectionadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "verifyinstagramconnectionadmingen2-00002-seg"
+      }
+    ],
+    "revision": "verifyinstagramconnectionadmingen2-00002-seg"
+  },
+  {
+    "name": "verifymetaconnectionadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "verifymetaconnectionadmingen2-00002-liy"
+      }
+    ],
+    "revision": "verifymetaconnectionadmingen2-00002-liy"
+  },
+  {
+    "name": "verifypasskeyauthenticationgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": "1",
+    "maxRevision": "2",
+    "concurrency": 8,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "verifypasskeyauthenticationgen2-00003-xoq"
+      }
+    ],
+    "revision": "verifypasskeyauthenticationgen2-00003-xoq"
+  },
+  {
+    "name": "verifypasskeyregistrationgen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "verifypasskeyregistrationgen2-00002-lat"
+      }
+    ],
+    "revision": "verifypasskeyregistrationgen2-00002-lat"
+  },
+  {
+    "name": "writeoffreturnlinesadmingen2",
+    "region": "europe-west1",
+    "manager": "cloudfunctions",
+    "minService": 0,
+    "minRevision": 0,
+    "maxRevision": "1",
+    "concurrency": 1,
+    "cpuThrottling": null,
+    "cpuBoost": "true",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "writeoffreturnlinesadmingen2-00002-sit"
+      }
+    ],
+    "revision": "writeoffreturnlinesadmingen2-00002-sit"
+  }
+]

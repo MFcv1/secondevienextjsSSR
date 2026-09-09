@@ -15,7 +15,7 @@ test('Incidents reste le dernier item du menu lateral Admin', () => {
   const tabIds = [...tabs.matchAll(/id:\s*'([^']+)'/g)].map((match) => match[1]);
 
   assert.doesNotMatch(groups, /Vue d'ensemble[^\n]*incidents/);
-  assert.match(groups, /\{ label: 'Administration', tabs: \['account', 'users', 'performance', 'incidents'\] \},\s*$/);
+  assert.match(groups, /\{ label: 'Administration', tabs: \['account', 'users', 'project_costs', 'performance', 'incidents'\] \},\s*$/);
   assert.equal(tabIds.filter((id) => id === 'performance').length, 1);
   assert.equal(tabIds.at(-1), 'incidents');
   assert.equal(tabIds.filter((id) => id === 'incidents').length, 1);
@@ -40,7 +40,9 @@ test('Ventes se precharge sur intention et les retours affichent un badge materi
   const island = read('app/admin/AdminAppIsland.jsx');
   const sidebar = read('app/admin/AdminSidebar.jsx');
   const orders = read('src/kit/admin/AdminOrders.jsx');
-  assert.match(island, /loadAdminOrders\(\)\.then/);
+  assert.match(island, /orders: loadAdminOrders/);
+  assert.match(island, /createAdminPreloadQueue/);
+  assert.match(island, /preloadAdminOrdersWorkspace/);
   assert.match(orders, /preloadAdminOrdersWorkspace/);
   assert.match(island, /admin_action_summary/);
   assert.match(sidebar, /actionCounts\[tab\.id\]/);

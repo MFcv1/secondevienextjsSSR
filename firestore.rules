@@ -3,6 +3,10 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // Operational snapshots: server-only, three fixed IDs overwritten on demand.
+    match /sys_project_costs/{document} {
+      allow read, write: if false;
+    }
+
     match /sys_function_metrics_cache/{period} {
       allow read, write: if false;
     }

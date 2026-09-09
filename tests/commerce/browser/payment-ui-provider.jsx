@@ -7,6 +7,7 @@ export const db = {};
 export const functions = {};
 export const doc = () => ({});
 export const httpsCallable = () => { throw new Error('Hosted callable forbidden in local harness'); };
+export const getCallableFunction = async () => { throw new Error('Hosted callable forbidden in local harness'); };
 export const onSnapshot = (_ref, callback) => {
     window.orderListener = callback;
     return () => { window.orderListener = null; };

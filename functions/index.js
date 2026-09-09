@@ -9,9 +9,15 @@ admin.initializeApp();
 const { loadReaderTarget, resolveReaderTarget } = require('./src/admin/readerEntrypoint');
 const readerName = resolveReaderTarget(process.env);
 const readerTarget = loadReaderTarget(readerName);
-if (readerTarget) {
+if (readerName === 'captureProjectCostsGen2') {
+    exports.captureProjectCostsGen2 = require('./src/billing/projectCosts').captureProjectCostsGen2;
+} else if (readerTarget) {
     exports[readerName] = readerTarget;
 } else {
+const { readAdminSharedGen2 } = require('./src/admin/sharedReaderEntrypoint');
+exports.readAdminSharedGen2 = readAdminSharedGen2;
+const { captureProjectCostsGen2 } = require('./src/billing/projectCosts');
+exports.captureProjectCostsGen2 = captureProjectCostsGen2;
 
 // ── COMMERCE ──────────────────────────────────────────────
 

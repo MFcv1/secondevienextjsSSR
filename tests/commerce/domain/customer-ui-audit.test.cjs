@@ -87,6 +87,7 @@ test('checkout locks submitted coordinates during preparation and after reservat
     const component = await loadComponent('src/kit/commerce/CheckoutView.jsx', {
         react: state.react, 'react-dom': { createPortal: node => node }, 'framer-motion': { motion: { button: 'motion-button' } },
         '../config/firebase': {}, '../config/functionTargets': {}, '../config/constants': { legalLinks: { terms: '/cgv', privacy: '/privacy' } },
+        '../config/firebaseLazy': { getCallableFunction: async () => { throw new Error('Unexpected callable in coordinate-lock test'); } },
         'firebase/functions': {}, 'firebase/firestore': {}, '../ui/Toast': { useToast: () => () => {} },
         './purchasability': await import('../../../src/kit/commerce/purchasability.js'),
         '../shared/clientPerf': { startClientPerf: () => 0, logClientPerf: () => {} },

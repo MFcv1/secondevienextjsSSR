@@ -514,6 +514,18 @@ const GCLOUD_GEN1_TARGETS = Object.freeze({
   })
 });
 export const GCLOUD_GEN2_TARGETS = Object.freeze({
+  readAdminSharedGen2: Object.freeze({
+    create: true,
+    triggerType: 'http-callable',
+    region: 'europe-west1',
+    runtime: 'nodejs22',
+    entryPoint: 'readAdminSharedGen2',
+    runtimeServiceAccount: 'admin-reader-runtime@secondevienextjsssr.iam.gserviceaccount.com',
+    buildServiceAccount: G6_BUILD_SERVICE_ACCOUNT,
+    memory: '512Mi', cpu: '1', timeout: '60s', concurrency: '4',
+    minInstances: '0', maxInstances: '1', ingressSettings: 'all',
+    secrets: ['PAYMENT_LINK_HMAC_SECRET=PAYMENT_LINK_HMAC_SECRET:1'],
+  }),
   ...G6_GEN2_TARGETS,
   ...G7_GEN2_TARGETS,
   ...G8_GEN2_TARGETS,
@@ -619,7 +631,7 @@ export const GCLOUD_GEN2_TARGETS = Object.freeze({
     cpu: '1',
     timeout: '60s',
     concurrency: '8',
-    minInstances: '1',
+    minInstances: '0',
     maxInstances: '2',
     ingressSettings: 'all'
   }),
@@ -635,7 +647,7 @@ export const GCLOUD_GEN2_TARGETS = Object.freeze({
     cpu: '1',
     timeout: '60s',
     concurrency: '8',
-    minInstances: '1',
+    minInstances: '0',
     maxInstances: '2',
     ingressSettings: 'all',
     updateEnvironmentVariables: [

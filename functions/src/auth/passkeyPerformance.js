@@ -1,6 +1,5 @@
 'use strict';
 
-const logger = require('firebase-functions/logger');
 const { performance } = require('node:perf_hooks');
 
 const STAGES = new Set([
@@ -10,7 +9,7 @@ const STAGES = new Set([
 ]);
 
 // Request-local, monotonic intervals. No account, credential or token is logged.
-function createPasskeyTimer(ceremony, { now = () => performance.now(), log = logger.info } = {}) {
+function createPasskeyTimer(ceremony, { now = () => performance.now(), log = console.info } = {}) {
     if (!['options', 'verify'].includes(ceremony)) throw new Error('Unknown passkey ceremony');
     let previous = now();
     return (stage) => {

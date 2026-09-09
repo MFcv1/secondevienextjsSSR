@@ -134,6 +134,7 @@ export const KIT_CONFIG = {
     { id: 'payment_settings', label: 'Paiement'    },
     { id: 'account',          label: 'Mon compte'  },
     { id: 'performance',      label: 'Performance' },
+    { id: 'project_costs',    label: 'Coûts du projet' },
     { id: 'incidents',        label: 'Incidents'   },
   ],
 

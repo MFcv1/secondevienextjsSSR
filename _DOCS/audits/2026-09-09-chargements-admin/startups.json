@@ -1,0 +1,227 @@
+[
+  {
+    "resource": {
+      "labels": {
+        "service_name": "getdeliverypolicyadmingen2"
+      }
+    },
+    "textPayload": "Default STARTUP TCP probe succeeded after 1 attempt for container \"worker\" on port 8080.",
+    "timestamp": "2026-09-09T14:44:58.452094Z"
+  },
+  {
+    "resource": {
+      "labels": {
+        "service_name": "getstripeconnectstatusgen2"
+      }
+    },
+    "textPayload": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic.",
+    "timestamp": "2026-09-09T14:44:57.479858Z"
+  },
+  {
+    "resource": {
+      "labels": {
+        "service_name": "getdeliverypolicyadmingen2"
+      }
+    },
+    "textPayload": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic.",
+    "timestamp": "2026-09-09T14:44:55.751225Z"
+  },
+  {
+    "resource": {
+      "labels": {
+        "service_name": "listpromotioncodesadmingen2"
+      }
+    },
+    "textPayload": "Default STARTUP TCP probe succeeded after 1 attempt for container \"worker\" on port 8080.",
+    "timestamp": "2026-09-09T14:44:45.446558Z"
+  },
+  {
+    "resource": {
+      "labels": {
+        "service_name": "listpromotioncodesadmingen2"
+      }
+    },
+    "textPayload": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic.",
+    "timestamp": "2026-09-09T14:44:39.667883Z"
+  },
+  {
+    "resource": {
+      "labels": {
+        "service_name": "listcustomerreturnrequestsadminv2gen2"
+      }
+    },
+    "textPayload": "Default STARTUP TCP probe succeeded after 1 attempt for container \"worker\" on port 8080.",
+    "timestamp": "2026-09-09T14:44:32.908806Z"
+  },
+  {
+    "resource": {
+      "labels": {
+        "service_name": "listreturnsadminv2gen2"
+      }
+    },
+    "textPayload": "Default STARTUP TCP probe succeeded after 1 attempt for container \"worker\" on port 8080.",
+    "timestamp": "2026-09-09T14:44:31.661028Z"
+  },
+  {
+    "resource": {
+      "labels": {
+        "service_name": "listcustomerreturnrequestsadminv2gen2"
+      }
+    },
+    "textPayload": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic.",
+    "timestamp": "2026-09-09T14:44:30.318586Z"
+  },
+  {
+    "resource": {
+      "labels": {
+        "service_name": "listreturnsadminv2gen2"
+      }
+    },
+    "textPayload": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic.",
+    "timestamp": "2026-09-09T14:44:30.318007Z"
+  },
+  {
+    "resource": {
+      "labels": {
+        "service_name": "getmanualinvoiceworkspaceadmingen2"
+      }
+    },
+    "textPayload": "Default STARTUP TCP probe succeeded after 1 attempt for container \"worker\" on port 8080.",
+    "timestamp": "2026-09-09T14:44:11.758335Z"
+  },
+  {
+    "resource": {
+      "labels": {
+        "service_name": "getmanualinvoiceworkspaceadmingen2"
+      }
+    },
+    "textPayload": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic.",
+    "timestamp": "2026-09-09T14:44:10.470990Z"
+  },
+  {
+    "resource": {
+      "labels": {
+        "service_name": "listadminpaymentlinksgen2"
+      }
+    },
+    "textPayload": "Default STARTUP TCP probe succeeded after 1 attempt for container \"worker\" on port 8080.",
+    "timestamp": "2026-09-09T14:44:10.240248Z"
+  },
+  {
+    "resource": {
+      "labels": {
+        "service_name": "listadminpaymentlinksgen2"
+      }
+    },
+    "textPayload": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic.",
+    "timestamp": "2026-09-09T14:44:06.233022Z"
+  },
+  {
+    "resource": {
+      "labels": {
+        "service_name": "listquoterequestsadmingen2"
+      }
+    },
+    "textPayload": "Default STARTUP TCP probe succeeded after 1 attempt for container \"worker\" on port 8080.",
+    "timestamp": "2026-09-09T14:43:53.762641Z"
+  },
+  {
+    "resource": {
+      "labels": {
+        "service_name": "listquoterequestsadmingen2"
+      }
+    },
+    "textPayload": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic.",
+    "timestamp": "2026-09-09T14:43:52.409212Z"
+  },
+  {
+    "resource": {
+      "labels": {
+        "service_name": "listordersadminv2gen2"
+      }
+    },
+    "textPayload": "Default STARTUP TCP probe succeeded after 1 attempt for container \"worker\" on port 8080.",
+    "timestamp": "2026-09-09T14:43:33.236777Z"
+  },
+  {
+    "resource": {
+      "labels": {
+        "service_name": "getinstagramconnectionstatusadmingen2"
+      }
+    },
+    "textPayload": "Default STARTUP TCP probe succeeded after 1 attempt for container \"worker\" on port 8080.",
+    "timestamp": "2026-09-09T14:43:31.855157Z"
+  },
+  {
+    "resource": {
+      "labels": {
+        "service_name": "listordersadminv2gen2"
+      }
+    },
+    "textPayload": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic.",
+    "timestamp": "2026-09-09T14:43:31.718243Z"
+  },
+  {
+    "resource": {
+      "labels": {
+        "service_name": "getmetaconnectionstatusadmingen2"
+      }
+    },
+    "textPayload": "Default STARTUP TCP probe succeeded after 1 attempt for container \"worker\" on port 8080.",
+    "timestamp": "2026-09-09T14:43:31.358985Z"
+  },
+  {
+    "resource": {
+      "labels": {
+        "service_name": "getmetaconnectionstatusadmingen2"
+      }
+    },
+    "textPayload": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic.",
+    "timestamp": "2026-09-09T14:43:28.003212Z"
+  },
+  {
+    "resource": {
+      "labels": {
+        "service_name": "getinstagramconnectionstatusadmingen2"
+      }
+    },
+    "textPayload": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic.",
+    "timestamp": "2026-09-09T14:43:28.002579Z"
+  },
+  {
+    "resource": {
+      "labels": {
+        "service_name": "drawnewsletterrewardgen2"
+      }
+    },
+    "textPayload": "Default STARTUP TCP probe succeeded after 1 attempt for container \"worker\" on port 8080.",
+    "timestamp": "2026-09-09T14:43:16.843186Z"
+  },
+  {
+    "resource": {
+      "labels": {
+        "service_name": "drawnewsletterrewardgen2"
+      }
+    },
+    "textPayload": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic.",
+    "timestamp": "2026-09-09T14:43:13.055670Z"
+  },
+  {
+    "resource": {
+      "labels": {
+        "service_name": "generatepasskeyregistrationoptionsgen2"
+      }
+    },
+    "textPayload": "Default STARTUP TCP probe succeeded after 1 attempt for container \"worker\" on port 8080.",
+    "timestamp": "2026-09-09T14:43:08.956252Z"
+  },
+  {
+    "resource": {
+      "labels": {
+        "service_name": "generatepasskeyregistrationoptionsgen2"
+      }
+    },
+    "textPayload": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic.",
+    "timestamp": "2026-09-09T14:43:04.754817Z"
+  }
+]

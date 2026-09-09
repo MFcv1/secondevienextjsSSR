@@ -3,7 +3,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { test } = require('node:test');
 
-const source = fs.readFileSync(path.resolve(__dirname, '../functions/src/auth/passkeys.js'), 'utf8');
+const source = ['passkeys.js', 'passkeyHandlers.cjs'].map(file =>
+  fs.readFileSync(path.resolve(__dirname, '../functions/src/auth', file), 'utf8')).join('\n');
 
 test('all four passkey callables enforce App Check', () => {
   assert.equal((source.match(/runWith\(\{ enforceAppCheck: true \}\)\.https\.onCall/g) || []).length, 4);

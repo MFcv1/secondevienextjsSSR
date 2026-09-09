@@ -40,6 +40,7 @@ import orderReferenceHelpers from '../../../shared/orderReference.cjs';
 const { getOrderReference } = orderReferenceHelpers;
 
 const REFUNDABLE_STATUSES = new Set(['paid', 'shipped', 'completed']);
+export const preloadAdminReturnsData = () => loadAdminReturnsFirstPage();
 const REFUND_TRACKED_STATUSES = new Set(['refund_pending', 'refunded', 'refund_failed']);
 
 const STATUS_COPY = {

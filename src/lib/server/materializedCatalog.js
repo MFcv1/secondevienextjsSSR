@@ -4,6 +4,7 @@ import { unstable_cache } from 'next/cache';
 import { getAdminStorage } from './firebaseAdmin';
 import { publicEnv } from './env';
 import catalogValidation from './materializedCatalogValidation.cjs';
+import { createImmutableReleaseCache } from './immutableReleaseCache.mjs';
 
 const SNAPSHOT_ROOT = 'catalog-projection/v1';
 const RELEASE_REVALIDATE_SECONDS = 31536000;
@@ -48,7 +49,8 @@ const pointerReaders = () => [
   ['last-known-good', () => readFreshFallbackPointer('last-known-good')],
 ];
 
-const loadRelease = async (pointer) => {
+const validatedReleases = createImmutableReleaseCache();
+const loadRelease = (pointer) => validatedReleases(pointer, async (pointer) => {
   if (!pointer?.manifestPath) throw new Error('CATALOG_POINTER_INVALID');
   const manifestObject = await readReleaseObjectCached(pointer.manifestPath);
   const manifest = manifestObject.value;
@@ -68,7 +70,7 @@ const loadRelease = async (pointer) => {
     cardsBundle: cardsObject.value,
   });
   return snapshot;
-};
+});
 
 export const getMaterializedCatalogSnapshot = async () => {
   const buildFixture = await getBuildFixture();

@@ -1,11 +1,53 @@
 runConfig:
-  minInstances: 0
-  maxInstances: 10
-  concurrency: 80
+  minInstances: 1
+  maxInstances: 3
+  concurrency: 16
   cpu: 1
   memoryMiB: 512
 
 env:
+  - variable: PROJECT_COSTS_CONNECTED
+    value: "true"
+    availability: [RUNTIME]
+  - variable: PUBLIC_PASSKEY_ENABLED
+    value: "true"
+    availability: [RUNTIME]
+  - variable: NEXT_PUBLIC_PASSKEY_TRANSPORT
+    value: "apphosting"
+    availability: [BUILD, RUNTIME]
+  - variable: PUBLIC_SHARED_RUNTIME_GROUPS
+    value: "otp,sessions,checkout,orders,order-status,payment-links,promotions,newsletter,quotes"
+    availability: [RUNTIME]
+  - variable: NEXT_PUBLIC_SHARED_RUNTIME_GROUPS
+    value: "otp,sessions,checkout,orders,order-status,payment-links,promotions,newsletter,quotes"
+    availability: [BUILD, RUNTIME]
+  - variable: NEXT_PUBLIC_SHARED_ADMIN_READER
+    value: "true"
+    availability: [BUILD, RUNTIME]
+  - variable: PUBLIC_AUTH_PROXY_HOPS
+    value: "3"
+    availability: [RUNTIME]
+  - variable: PUBLIC_RUNTIME_METRICS
+    value: "true"
+    availability: [RUNTIME]
+  - variable: TRANSACTIONAL_EMAIL_PROVIDER
+    value: "gmail"
+    availability: [RUNTIME]
+  - variable: OTP_HMAC_SECRET
+    secret: OTP_HMAC_SECRET@1
+    availability: [RUNTIME]
+  - variable: GMAIL_EMAIL
+    secret: GMAIL_EMAIL@2
+    availability: [RUNTIME]
+  - variable: GMAIL_PASSWORD
+    secret: GMAIL_PASSWORD@6
+    availability: [RUNTIME]
+  - variable: STRIPE_SECRET_KEY
+    secret: STRIPE_SECRET_KEY@4
+    availability: [RUNTIME]
+  - variable: PAYMENT_LINK_HMAC_SECRET
+    secret: PAYMENT_LINK_HMAC_SECRET@1
+    availability: [RUNTIME]
   - variable: NEXT_PUBLIC_ADMIN_ANALYTICS_REALTIME
     value: "true"
     availability:

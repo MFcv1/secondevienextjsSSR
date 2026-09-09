@@ -22,6 +22,7 @@ test.beforeAll(async () => {
         resolve: { extensions: ['.js', '.jsx'], alias: {
             '@stripe/react-stripe-js': mock, 'firebase/firestore': mock, 'firebase/functions': mock,
             '../config/stripe': mock, '../config/firebase': mock, '../config/functionTargets': mock,
+            '../config/firebaseLazy': mock,
             './commerceV2Client': mock,
         } },
         module: { rules: [{ test: /\.jsx$/, exclude: /node_modules/, use: path.join(directory, 'payment-ui-loader.cjs') }] },

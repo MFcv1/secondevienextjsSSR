@@ -43,7 +43,8 @@
         "/tmp",
         "test-results",
         "playwright-report",
-        "functions",
+        "functions/node_modules",
+        "functions/.env*",
         "firebase-debug.log",
         "firebase-debug.*.log",
         "*.md"

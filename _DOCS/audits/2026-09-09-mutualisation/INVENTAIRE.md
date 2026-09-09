@@ -1,0 +1,174 @@
+# Inventaire des 158 Functions
+
+Photographie du 9 septembre 2026. Chaque ligne est une proposition de destination, pas une migration validée.
+
+Corrections de destination et nouveaux handlers locaux :
+[intégration runtime public](INTEGRATION_RUNTIME_PUBLIC.md). Les compteurs et
+ressources du tableau restent ceux de cette photographie cloud. Le nouveau
+lecteur `readAdminSharedGen2` est local/non déployé ; il n'est pas une 159e
+Function cloud observée dans cet inventaire.
+
+B : lecteurs admin candidats au service partagé. I : identité, frontière de droits à préserver. P : lectures client candidates au service public, privées sauf contrat public explicite. T : collecte non bloquante, à isoler du chemin critique. W : événements/planifications, maintien à zéro minimum. S : commandes, intégrations ou fonctions spécialisées conservées séparées au premier lot ; faible usage ne signifie pas inutilité.
+
+« — » : aucune série observée, pas une preuve de zéro usage. Comptages HTTP incluant OPTIONS, rejets, robots et recette, pas visiteurs uniques. CPU/RAM/min/max sont déployés, hors Gen1 non exposé.
+
+| Fonction | Groupe | Déclencheur | 24 h | 7 j | 30 j | CPU / RAM | Concurrence | Min / max | Identité technique |
+|---|---|---|---:|---:|---:|---|---:|---|---|
+| getAnalyticsAdminGen2 | B | HTTP | — | 102 | 176 | 333m / 512Mi | 1 | 0 / 1 | analytics-runtime |
+| getBillingGuideOperatorStatusGen2 | B | HTTP | — | 14 | 39 | 167m / 256Mi | 1 | 0 / 1 | billing-guide-runtime |
+| getBillingGuideStatusGen2 | B | HTTP | — | 25 | 51 | 167m / 256Mi | 1 | 0 / 1 | billing-guide-runtime |
+| getCatalogPublicationStatusGen2 | B | HTTP | — | — | 136 | 167m / 512Mi | 1 | 0 / 2 | catalog-builder |
+| getCommerceOperationsStatusAdminGen2 | B | HTTP | — | — | 58 | 167m / 256Mi | 1 | 0 / 1 | 231220287936-compute |
+| getDeliveryPolicyAdminGen2 | B | HTTP | 4 | 10 | 62 | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| getDiagnosticTimelineAdminGen2 | B | HTTP | — | 5 | 33 | 0.3333 / 512Mi | 1 | 0 / 1 | 231220287936-compute |
+| getManualInvoiceWorkspaceAdminGen2 | B | HTTP | 4 | 37 | 100 | 167m / 512Mi | 1 | 0 / 1 | manual-invoice-runtime |
+| getOrderTimelineAdminV2Gen2 | B | HTTP | — | 13 | 58 | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| getQuoteRequestAdminGen2 | B | HTTP | — | 12 | 25 | 167m / 512Mi | 1 | 0 / 1 | quote-request-runtime |
+| getSystemIncidentsAdminGen2 | B | HTTP | — | — | 29 | 0.3333 / 512Mi | 1 | 0 / 1 | observability-admin-runtime |
+| listAdminPaymentLinksGen2 | B | HTTP | 4 | 17 | 28 | 0.1666 / 256Mi | 1 | 0 / 1 | 231220287936-compute |
+| listCustomerReturnRequestsAdminV2Gen2 | B | HTTP | 4 | 39 | 114 | 0.1666 / 256Mi | 1 | 0 / 1 | 231220287936-compute |
+| listOrdersAdminV2Gen2 | B | HTTP | 4 | 97 | 202 | 0.1666 / 256Mi | 1 | 0 / 1 | 231220287936-compute |
+| listPromotionCodesAdminGen2 | B | HTTP | 4 | 10 | 23 | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| listQuoteRequestsAdminGen2 | B | HTTP | 4 | 46 | 99 | 167m / 512Mi | 1 | 0 / 1 | quote-request-runtime |
+| listReturnsAdminV2Gen2 | B | HTTP | 4 | 39 | 114 | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| deleteSessionGen2 | I | HTTP | — | — | 82 | 167m / 256Mi | 1 | 0 / 1 | analytics-runtime |
+| generatePasskeyAuthenticationOptionsGen2 | I | HTTP | 9 | 13 | 36 | 1 / 256Mi | 8 | 1 / 2 | auth-login-runtime |
+| generatePasskeyRegistrationOptionsGen2 | I | HTTP | 4 | 67 | 109 | 167m / 256Mi | 1 | 0 / 1 | auth-passkey-runtime |
+| logUserConnectionGen2 | I | HTTP | — | — | 3 | 167m / 256Mi | 1 | 0 / 1 | auth-session-runtime |
+| sendCustomerLoginOtpGen2 | I | HTTP | — | 8 | 20 | 0.1666 / 256Mi | 1 | 0 / 1 | auth-otp-email-runtime |
+| sendGuestCheckoutOtpGen2 | I | HTTP | — | — | 11 | 0.1666 / 256Mi | 1 | 0 / 1 | auth-otp-email-runtime |
+| updateUserSessionsGen2 | I | HTTP | 6 | 68 | 123 | 167m / 256Mi | 1 | 0 / 1 | analytics-runtime |
+| verifyCustomerLoginOtpGen2 | I | HTTP | — | 10 | 17 | 167m / 256Mi | 1 | 0 / 1 | auth-login-runtime |
+| verifyGuestCheckoutOtpGen2 | I | HTTP | — | — | 3 | 167m / 256Mi | 1 | 0 / 1 | auth-otp-verify-runtime |
+| verifyPasskeyAuthenticationGen2 | I | HTTP | 3 | 6 | 11 | 1 / 256Mi | 8 | 1 / 2 | auth-login-runtime |
+| verifyPasskeyRegistrationGen2 | I | HTTP | — | 2 | 5 | 167m / 256Mi | 1 | 0 / 1 | auth-passkey-runtime |
+| getAdminPaymentLinkPublicGen2 | P | HTTP | — | — | — | 0.1666 / 256Mi | 1 | 0 / 1 | 231220287936-compute |
+| getOrderStatusClientGen2 | P | HTTP | — | — | — | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| getUserStatsGen2 | P | HTTP | — | — | 70 | 167m / 512Mi | 1 | 0 / 1 | auth-reader-runtime |
+| listMyNewsletterRewardsGen2 | P | HTTP | 0 | 48 | 82 | 167m / 256Mi | 1 | 0 / 1 | newsletter-runtime |
+| listMyOrdersV2Gen2 | P | HTTP | 43 | 142 | 177 | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| addAdminUserGen2 | S | HTTP | — | — | 2 | 167m / 256Mi | 1 | 0 / 1 | auth-admin-runtime |
+| adjustInventoryAdminGen2 | S | HTTP | — | — | — | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| archiveOrderAdminGen2 | S | HTTP | — | — | 4 | 0.1666 / 256Mi | 1 | 0 / 1 | 231220287936-compute |
+| cancelAdminPaymentLinkGen2 | S | HTTP | — | — | — | 0.1666 / 256Mi | 1 | 0 / 1 | 231220287936-compute |
+| cancelReturnAdminGen2 | S | HTTP | — | — | — | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| claimNewsletterRewardGen2 | S | HTTP | — | — | 1 | 167m / 256Mi | 1 | 0 / 1 | newsletter-runtime |
+| cleanupFixtureRunAdminGen2 | S | HTTP | — | — | 8 | 167m / 512Mi | 1 | 0 / 1 | secondevienextjsssr |
+| completeBillingGuideAdminGen2 | S | HTTP | — | — | 1 | 167m / 256Mi | 1 | 0 / 1 | billing-guide-runtime |
+| confirmStripeConnectReconnectGen2 | S | HTTP | — | — | — | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| createAdminPaymentLinkGen2 | S | HTTP | — | — | — | 0.1666 / 256Mi | 1 | 0 / 1 | 231220287936-compute |
+| createCheckoutV2Gen2 | S | HTTP | — | 19 | 41 | 0.1666 / 256Mi | 1 | 0 / 1 | 231220287936-compute |
+| createOrderGen2 | S | HTTP | — | — | — | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| createProductAdminGen2 | S | HTTP | — | — | — | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| createPromotionCodeAdminGen2 | S | HTTP | — | — | — | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| createPublishedProductAdminGen2 | S | HTTP | — | 6 | 10 | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| createQuoteRequestGen2 | S | HTTP | — | — | 3 | 167m / 512Mi | 1 | 0 / 1 | quote-request-runtime |
+| decideCustomerReturnRequestAdminGen2 | S | HTTP | — | 3 | 7 | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| deleteProductAdminGen2 | S | HTTP | — | — | 2 | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| disconnectInstagramConnectionAdminGen2 | S | HTTP | — | — | — | 167m / 256Mi | 1 | 0 / 1 | meta-runtime |
+| disconnectMetaConnectionAdminGen2 | S | HTTP | — | — | — | 167m / 256Mi | 1 | 0 / 1 | meta-runtime |
+| dispatchCatalogBuild | S | HTTP | — | 21 | 72 | 1 / 512Mi | 1 | 0 / 1 | catalog-builder |
+| dispatchCatalogRevalidation | S | HTTP | — | 16 | 5666 | 1 / 256Mi | 1 | 0 / 1 | catalog-builder |
+| dispatchCommerceOutboxTaskGen2 | S | HTTP | — | 4 | 4 | 0.3333 / 512Mi | 1 | 0 / 1 | commerce-outbox-dispatcher |
+| dispatchCommerceReservationExpiryTaskGen2 | S | HTTP | — | 2 | 2 | 0.3333 / 512Mi | 1 | 0 / 1 | commerce-reservation-expiry |
+| drawNewsletterRewardGen2 | S | HTTP | 25 | 59 | 249 | 167m / 256Mi | 1 | 0 / 1 | newsletter-runtime |
+| ensureAdminAccessRegistryGen2 | S | HTTP | — | — | 4 | 167m / 256Mi | 1 | 0 / 1 | auth-registry-runtime |
+| extendAdminPaymentLinkGen2 | S | HTTP | — | — | — | 0.1666 / 256Mi | 1 | 0 / 1 | 231220287936-compute |
+| finalizeQuoteRequestGen2 | S | HTTP | — | — | 1 | 167m / 512Mi | 1 | 0 / 1 | quote-request-runtime |
+| getInstagramConnectionStatusAdminGen2 | S | HTTP | 4 | 27 | 61 | 167m / 256Mi | 1 | 0 / 1 | meta-runtime |
+| getMetaConnectionStatusAdminGen2 | S | HTTP | 4 | 27 | 59 | 167m / 256Mi | 1 | 0 / 1 | meta-runtime |
+| getSocialPublicationStatusAdminGen2 | S | HTTP | — | — | — | 167m / 256Mi | 1 | 0 / 1 | meta-runtime |
+| getStripeConnectStatusGen2 | S | HTTP | 4 | 10 | 25 | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| instagramOAuthCallbackGen2 | S | HTTP | — | — | — | 167m / 256Mi | 1 | 0 / 1 | meta-runtime |
+| markOrderDeliveredAdminGen2 | S | HTTP | — | — | 6 | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| markOrderPickedUpAdminGen2 | S | HTTP | — | — | 4 | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| markOrderPreparingAdminGen2 | S | HTTP | — | — | 13 | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| markOrderReadyForPickupAdminGen2 | S | HTTP | — | — | 4 | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| markOrderShippedAdminGen2 | S | HTTP | — | — | 7 | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| markReturnReceivedAdminGen2 | S | HTTP | — | — | 2 | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| metaOAuthCallbackGen2 | S | HTTP | — | — | — | 167m / 256Mi | 1 | 0 / 1 | meta-runtime |
+| openReturnAdminGen2 | S | HTTP | — | — | 4 | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| preflightProductMutationAdminGen2 | S | HTTP | — | 4 | 10 | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| prepareAdminPaymentLinkPaymentGen2 | S | HTTP | — | — | — | 0.1666 / 256Mi | 1 | 0 / 1 | 231220287936-compute |
+| prepareCommerceDocumentDeliveryGen2 | S | HTTP | — | 8 | 20 | 0.3333 / 512Mi | 1 | 0 / 1 | 231220287936-compute |
+| prepareManualInvoicePdfAdminGen2 | S | HTTP | — | — | 2 | 167m / 512Mi | 1 | 0 / 1 | manual-invoice-runtime |
+| prepareSocialPublicationAdminGen2 | S | HTTP | — | — | — | 167m / 512Mi | 1 | 0 / 1 | meta-runtime |
+| previewPromotionCodeV2Gen2 | S | HTTP | — | — | — | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| publishProductAdminGen2 | S | HTTP | — | 11 | 11 | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| rebuildCatalogSnapshotGen2 | S | HTTP | — | — | 1 | 0.3333 / 512Mi | 1 | 0 / 1 | catalog-builder |
+| rebuildCommerceOperationsAdminGen2 | S | HTTP | — | — | — | 167m / 512Mi | 1 | 0 / 1 | secondevienextjsssr |
+| recreateAdminPaymentLinkGen2 | S | HTTP | — | — | — | 0.1666 / 256Mi | 1 | 0 / 1 | 231220287936-compute |
+| regenerateAdminPaymentLinkGen2 | S | HTTP | — | — | — | 0.1666 / 256Mi | 1 | 0 / 1 | 231220287936-compute |
+| removeAdminUserGen2 | S | HTTP | — | — | 1 | 167m / 256Mi | 1 | 0 / 1 | auth-admin-runtime |
+| requestCustomerReturnGen2 | S | HTTP | — | 4 | 8 | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| requestOrderCancellationGen2 | S | HTTP | — | — | — | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| requestRefundAdminGen2 | S | HTTP | — | — | 8 | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| requestStripeConnectReconnectGen2 | S | HTTP | — | — | — | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| resetBillingGuideTestGen2 | S | HTTP | — | — | 1 | 167m / 256Mi | 1 | 0 / 1 | billing-guide-runtime |
+| resolveReturnAdminGen2 | S | HTTP | — | — | 2 | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| restockReturnLinesAdminGen2 | S | HTTP | — | — | 2 | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| resumeAdminPaymentLinkPaymentGen2 | S | HTTP | — | — | — | 0.1666 / 256Mi | 1 | 0 / 1 | 231220287936-compute |
+| resumeCheckoutV2Gen2 | S | HTTP | — | 11 | 18 | 0.1666 / 256Mi | 1 | 0 / 1 | 231220287936-compute |
+| rollbackCatalogSnapshotGen2 | S | HTTP | — | — | 1 | 167m / 512Mi | 1 | 0 / 1 | catalog-builder |
+| runSocialPublicationAdminGen2 | S | HTTP | — | — | — | 167m / 512Mi | 1 | 0 / 1 | meta-runtime |
+| saveBillingGuideProgressGen2 | S | HTTP | — | — | 1 | 167m / 256Mi | 1 | 0 / 1 | billing-guide-runtime |
+| saveDeliveryPolicyAdminGen2 | S | HTTP | — | — | — | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| saveManualInvoiceDraftAdminGen2 | S | HTTP | — | — | 2 | 167m / 512Mi | 1 | 0 / 1 | manual-invoice-runtime |
+| selectMetaAssetAdminGen2 | S | HTTP | — | — | — | 167m / 256Mi | 1 | 0 / 1 | meta-runtime |
+| sendManualInvoiceAdminGen2 | S | HTTP | — | — | 2 | 167m / 512Mi | 1 | 0 / 1 | manual-invoice-runtime |
+| sendRefundStatusEmailAdminGen2 | S | HTTP | — | — | 0 | 0.1666 / 256Mi | 1 | 0 / 1 | email-manual-runtime |
+| sendTestEmailGen2 | S | HTTP | — | — | 3 | 167m / 256Mi | 1 | 0 / 1 | email-manual-runtime |
+| setPromotionCodeStatusAdminGen2 | S | HTTP | — | — | — | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| startInstagramOAuthAdminGen2 | S | HTTP | — | — | — | 167m / 256Mi | 1 | 0 / 1 | meta-runtime |
+| startMetaOAuthAdminGen2 | S | HTTP | — | — | — | 167m / 256Mi | 1 | 0 / 1 | meta-runtime |
+| startStripeConnectOnboardingGen2 | S | HTTP | — | — | — | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| stripeConnectWebhookV2Gen2 | S | HTTP | — | 11 | 55 | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| stripeWebhookV2Gen2 | S | HTTP | — | 1 | 13 | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| syncStripeConnectAccountGen2 | S | HTTP | — | — | — | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| syncSuperAdminClaimGen2 | S | HTTP | — | — | 2 | 167m / 256Mi | 1 | 0 / 1 | auth-admin-runtime |
+| updateOrderTrackingAdminGen2 | S | HTTP | — | — | 2 | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| updateProductOfferAdminGen2 | S | HTTP | — | — | — | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| updateQuoteRequestAdminGen2 | S | HTTP | — | 8 | 10 | 167m / 512Mi | 1 | 0 / 1 | quote-request-runtime |
+| uploadQuoteRequestPhotoGen2 | S | HTTP | — | — | 2 | 167m / 512Mi | 1 | 0 / 1 | quote-request-runtime |
+| verifyInstagramConnectionAdminGen2 | S | HTTP | — | — | — | 167m / 256Mi | 1 | 0 / 1 | meta-runtime |
+| verifyMetaConnectionAdminGen2 | S | HTTP | — | — | — | 167m / 256Mi | 1 | 0 / 1 | meta-runtime |
+| writeOffReturnLinesAdminGen2 | S | HTTP | — | — | 2 | 167m / 256Mi | 1 | 0 / 1 | secondevienextjsssr |
+| initLiveSessionGen2 | T | HTTP | 25 | 113 | 299 | 0.1666 / 256Mi | 1 | 0 / 1 | analytics-runtime |
+| syncSessionBeaconGen2 | T | HTTP | 45 | 179 | 351 | 167m / 256Mi | 1 | 0 / 1 | analytics-runtime |
+| syncSessionGen2 | T | HTTP | 258 | 1176 | 6669 | 0.1666 / 256Mi | 1 | 0 / 1 | analytics-runtime |
+| trackAdminIPGen2 | T | HTTP | — | — | 105 | 0.1666 / 256Mi | 1 | 0 / 1 | analytics-runtime |
+| aggregateAnalyticsSessionGen2 | W | google.cloud.firestore.document.v1.written | 192 | 913 | 35445 | 333m / 512Mi | 1 | 0 / 1 | analytics-runtime |
+| catalogMediaGarbageCollector | W | scheduler | 1 | 7 | 31 | 1 / 512Mi | 1 | 0 / 1 | catalog-builder |
+| catalogReconciler | W | scheduler | 24 | 168 | 6784 | 1 / 512Mi | 1 | 0 / 1 | catalog-builder |
+| cleanupProductPublicationSessions | W | scheduler | 1 | 7 | 30 | 1 / 512Mi | 1 | 0 / 1 | product-publication-worker |
+| commerceOperationsReconcilerGen2 | W | scheduler | 1 | 7 | 261 | 0.167 / 512Mi | 1 | 0 / 1 | commerce-operations-reconciler |
+| commerceOutboxDispatcherGen2 | W | scheduler | 24 | 168 | 8213 | 167m / 512Mi | 1 | 0 / 1 | commerce-outbox-dispatcher |
+| commerceReservationExpiryDispatcherGen2 | W | scheduler | 24 | 168 | 8210 | 167m / 512Mi | 1 | 0 / 1 | commerce-reservation-expiry |
+| commerceWebhookCoverageWatchdogGen2 | W | scheduler | 96 | 672 | 769 | 0.3333 / 512Mi | 1 | 0 / 1 | commerce-operations-reconciler |
+| expireAdminPaymentLinksGen2 | W | scheduler | 288 | 2016 | 5238 | 167m / 512Mi | 1 | 0 / 1 | admin-payment-link-expiry |
+| grantAdminOnAuth | W | providers/firebase.auth/eventTypes/user.create | — | 17 | 46 | — / 256M | 1 | 0 / 3000 | secondevienextjsssr |
+| journalCommerceIncidentGen2 | W | google.cloud.firestore.document.v1.written | 10 | 71 | 125 | 1 / 256Mi | 1 | 0 / 1 | commerce-operations-reconciler |
+| journalFinancialFactGen2 | W | google.cloud.firestore.document.v1.created | — | 6 | 397 | 1 / 256Mi | 1 | 0 / 1 | commerce-operations-reconciler |
+| journalInventoryMovementGen2 | W | google.cloud.firestore.document.v1.created | — | 1240 | 4581 | 1 / 256Mi | 1 | 0 / 1 | commerce-operations-reconciler |
+| journalOrderEventGen2 | W | google.cloud.firestore.document.v1.created | — | 446 | 1016 | 1 / 256Mi | 1 | 0 / 1 | commerce-operations-reconciler |
+| journalOutboxStatusGen2 | W | google.cloud.firestore.document.v1.written | — | 64 | 3136 | 1 / 256Mi | 1 | 0 / 1 | commerce-operations-reconciler |
+| journalWebhookStatusGen2 | W | google.cloud.firestore.document.v1.written | — | 27 | 2348 | 1 / 256Mi | 1 | 0 / 1 | commerce-operations-reconciler |
+| maintainAnalyticsGen2 | W | scheduler | 96 | 672 | 1537 | 333m / 512Mi | 1 | 0 / 1 | analytics-runtime |
+| onArtifactDeleted | W | google.cloud.firestore.document.v1.deleted | — | — | 4 | 1 / 256Mi | 1 | 0 / 1 | catalog-media-enqueuer |
+| onArtifactUpdated | W | google.cloud.firestore.document.v1.updated | — | 16 | 55 | 1 / 256Mi | 1 | 0 / 1 | catalog-media-enqueuer |
+| onCatalogSourceWrite | W | google.cloud.firestore.document.v1.written | — | 18 | 68 | 1 / 256Mi | 1 | 0 / 1 | catalog-enqueuer |
+| onCommerceOutboxWrittenGen2 | W | google.cloud.firestore.document.v1.written | — | 64 | 64 | 167m / 256Mi | 1 | 0 / 1 | commerce-outbox-dispatcher |
+| onCommerceReservationWrittenGen2 | W | google.cloud.firestore.document.v1.written | — | 16 | 16 | 167m / 256Mi | 1 | 0 / 1 | commerce-reservation-expiry |
+| onOrderCreated | W | google.cloud.firestore.document.v1.created | — | 5 | 38 | 1 / 256Mi | 1 | 0 / 1 | legacy-order-email-worker |
+| onOrderStatsWrite | W | google.cloud.firestore.document.v1.written | — | 19 | 365 | 1 / 256Mi | 1 | 0 / 1 | order-stats-projector |
+| onOrderUpdated | W | google.cloud.firestore.document.v1.updated | — | 14 | 284 | 1 / 256Mi | 1 | 0 / 1 | legacy-order-email-worker |
+| onQuoteRequestSubmittedGen2 | W | google.cloud.firestore.document.v1.updated | — | 4 | 120 | 167m / 512Mi | 1 | 0 / 1 | quote-request-runtime |
+| onRegisteredUserCreated | W | providers/firebase.auth/eventTypes/user.create | — | 17 | 46 | — / 256M | 1 | 0 / 3000 | secondevienextjsssr |
+| onRegisteredUserDeleted | W | providers/firebase.auth/eventTypes/user.delete | — | — | 1 | — / 256M | 1 | 0 / 3000 | secondevienextjsssr |
+| processProductPublicationImage | W | google.cloud.storage.object.v1.finalized | — | 156 | 217 | 1 / 1024Mi | 4 | 0 / 4 | product-publication-worker |
+| projectAdminActionSummaryGen2 | W | google.cloud.firestore.document.v1.written | — | 14 | 14 | 167m / 256Mi | 1 | 0 / 1 | commerce-operations-reconciler |
+| projectCommerceFinancialHistoryGen2 | W | google.cloud.firestore.document.v1.written | — | 434 | 434 | 0.1666 / 256Mi | 1 | 0 / 1 | order-stats-projector |
+| projectLegacyFinancialHistoryGen2 | W | google.cloud.firestore.document.v1.written | — | — | — | 0.1666 / 256Mi | 1 | 0 / 1 | order-stats-projector |
+| projectNewsletterSubscriberGen2 | W | google.cloud.firestore.document.v1.written | — | — | — | 167m / 256Mi | 1 | 0 / 1 | newsletter-runtime |
+| projectSystemIncidentGen2 | W | google.cloud.pubsub.topic.v1.messagePublished | — | 8 | 24 | 0.1666 / 256Mi | 1 | 0 / 2 | observability-admin-runtime |
+| reconcileProductPublicationSessions | W | scheduler | 96 | 672 | 2881 | 1 / 512Mi | 1 | 0 / 1 | product-publication-worker |

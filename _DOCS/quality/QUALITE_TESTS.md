@@ -15,6 +15,23 @@ La validation depend du risque et de la demande:
 
 Toujours annoncer ce qui a ete lance et ce qui ne l'a pas ete.
 
+### Runtime public partagé (préparation locale du 9 septembre)
+
+Gates dédiées sans accès réseau : `tests/public-operation-http.test.mjs`,
+`tests/public-passkey-http.test.mjs`, `tests/shared-admin-reader.test.cjs`.
+Elles complètent Auth/transitions OTP, domaines/fautes commerce, catalogue,
+préchargements/caches admin et contrats Functions. Les factories partagées sont
+testées par les anciens wrappers ; les assertions de source suivent l'extraction.
+`tests/commerce/browser/payment-ui.spec.mjs` simule Firebase/Stripe sur loopback,
+en refusant le réseau externe ; aucune preuve de 3DS fournisseur réel.
+
+`node scripts/measure-public-runtime-local.mjs http://127.0.0.1:3187 <PID>`
+mesure un serveur de production local déjà lancé avec le catalogue fixture.
+GET allowlistés, 480 requêtes maximum, paliers 1/4/8/16, limites et arrêt intégrés.
+Ne pas lui passer une URL cloud. Pas de CPU/RAM contraints sur ce poste :
+la qualification 1 CPU/512 Mio et les effets externes restent des gates séparées.
+[Commandes, résultats et limites](../audits/2026-09-09-mutualisation/INTEGRATION_RUNTIME_PUBLIC.md).
+
 ### Gate diagnostic temps reel/couts
 
 Sessions live: `node --test tests/analytics-live-sessions.test.mjs` couvre

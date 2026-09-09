@@ -4,6 +4,7 @@ import { ArrowLeft, CreditCard, Truck, AlertCircle, Landmark, Wallet, Loader2, T
 import { motion } from 'framer-motion';
 import { functions, db } from '../config/firebase';
 import { getFunctionTarget } from '../config/functionTargets';
+import { getCallableFunction } from '../config/firebaseLazy';
 import KIT_CONFIG from '../config/constants';
 import { httpsCallable } from 'firebase/functions';
 import { doc, getDoc } from 'firebase/firestore';
@@ -770,7 +771,7 @@ const CheckoutView = ({
 
         const startedAt = startClientPerf();
         try {
-            const sendOtp = httpsCallable(functions, getFunctionTarget('sendGuestCheckoutOtp'));
+            const sendOtp = await getCallableFunction('sendGuestCheckoutOtp');
             await sendOtp({ email: normalizedCheckoutEmail });
             logClientPerf('checkout.guest.sendGuestCheckoutOtp', startedAt, { phase: 'success' });
             setGuestOtp(prev => ({
@@ -811,7 +812,7 @@ const CheckoutView = ({
         const startedAt = startClientPerf();
 
         try {
-            const verifyOtp = httpsCallable(functions, getFunctionTarget('verifyGuestCheckoutOtp'));
+            const verifyOtp = await getCallableFunction('verifyGuestCheckoutOtp');
             const result = await verifyOtp({
                 email: normalizedCheckoutEmail,
                 code

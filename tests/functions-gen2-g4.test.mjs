@@ -174,7 +174,8 @@ test('initLiveSession Gen2 partage le handler Gen1 et autorise une seule cible',
 });
 
 test('updateUserSessions Gen2 partage exactement le handler Gen1 et borne son runtime', () => {
-  const source = read('functions/src/analytics/updateUserSessions.js');
+  const source = read('functions/src/analytics/updateUserSessions.js')
+    + '\n' + read('functions/src/analytics/updateUserSessionsHandler.cjs');
   for (const expected of [
     /const updateUserSessionsHandler = async \(data = \{\}, context\) =>/,
     /exports\.updateUserSessions = regionalFunctions\(\)/,

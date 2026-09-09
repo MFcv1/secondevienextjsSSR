@@ -1,0 +1,71 @@
+{
+  "status": "DEPLOYED_AWAITING_FIRST_GOOGLE_NOTIFICATION",
+  "deployedRollout": "build-2026-09-09-007",
+  "hostingBuild": "f72bb3e4-baab-418e-aa05-f90d60f6f475",
+  "collectorBuild": "71f5ab66-5b80-4bc9-80d6-23bc4691754c",
+  "project": "secondevienextjsssr",
+  "billingAccount": "010EDA-57C968-C0B9E7",
+  "enableApis": [
+    "billingbudgets.googleapis.com"
+  ],
+  "topic": "projects/secondevienextjsssr/topics/project-costs-budget",
+  "budget": {
+    "displayName": "Seconde Vie — relevés pour le back-office",
+    "budgetFilter": {
+      "projects": [
+        "projects/231220287936"
+      ],
+      "calendarPeriod": "MONTH",
+      "creditTypesTreatment": "INCLUDE_ALL_CREDITS"
+    },
+    "amount": {
+      "specifiedAmount": {
+        "currencyCode": "EUR",
+        "units": "20"
+      }
+    },
+    "thresholdRules": [],
+    "notificationsRule": {
+      "pubsubTopic": "projects/secondevienextjsssr/topics/project-costs-budget",
+      "schemaVersion": "1.0",
+      "disableDefaultIamRecipients": true
+    }
+  },
+  "budgetPurpose": "Monthly cost feed only; no spending cap, automatic shutdown, or email notifications. Reuse only an exactly matching project/month/credits feed after listing existing budgets.",
+  "function": {
+    "name": "captureProjectCostsGen2",
+    "region": "europe-west1",
+    "runtime": "nodejs22",
+    "memoryMiB": 256,
+    "cpu": "gcf_gen1",
+    "concurrency": 1,
+    "minInstances": 0,
+    "maxInstances": 1,
+    "timeoutSeconds": 30,
+    "publicInvoker": false,
+    "runtimeServiceAccount": "project-costs-runtime@secondevienextjsssr.iam.gserviceaccount.com",
+    "runtimeProjectRole": "roles/datastore.user",
+    "buildServiceAccount": "functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "environment": {
+      "PROJECT_COSTS_BILLING_ACCOUNT": "010EDA-57C968-C0B9E7",
+      "PROJECT_COSTS_BUDGET_ID": "85a74a6a-6e91-4ab6-8c35-79f34159092f"
+    }
+  },
+  "firestore": {
+    "document": "sys_project_costs/current",
+    "clientAccess": "denied",
+    "indexing": "disabled",
+    "ttlField": "expiresAt",
+    "retainedMonths": 36
+  },
+  "hosting": {
+    "backend": "secondevie-next-sandbox",
+    "region": "europe-west4",
+    "runtimeEnvironmentAfterSubscriptionReady": {
+      "PROJECT_COSTS_CONNECTED": "true"
+    },
+    "preservePublicRuntimeCpuMemoryMinMax": true
+  },
+  "historicalBackfill": "Google-origin records only. No manual import, synthetic preview, or prefabricated monthly history.",
+  "rollback": "Restore previous App Hosting rollout; disconnect only the new budget topic and disable the new collector. Preserve stored monthly history. Never disable project billing."
+}

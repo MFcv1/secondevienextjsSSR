@@ -1,0 +1,105 @@
+{
+  "status": "DEPLOYED_SANDBOX_USER_RECIPES_PENDING",
+  "project": "secondevienextjsssr",
+  "backend": "secondevie-next-sandbox",
+  "region": "europe-west4",
+  "runConfigCandidate": {
+    "cpu": 1,
+    "memoryMiB": 512,
+    "minInstances": 1,
+    "maxInstances": 3,
+    "concurrency": 16
+  },
+  "runConfigMayBeApplied": true,
+  "gates": [
+    "trusted-ingress-and-proxy-chain",
+    "token-signing",
+    "real-auth-and-checkout",
+    "constrained-memory",
+    "two-rollouts-and-rollback-with-one-warm-revision"
+  ],
+  "runtimeServiceAccount": "firebase-app-hosting-compute@secondevienextjsssr.iam.gserviceaccount.com",
+  "iamActionsAfterApproval": {
+    "signingRoleId": "publicRuntimeTokenSigner",
+    "signingPermissions": [
+      "iam.serviceAccounts.signBlob"
+    ],
+    "signingRoleBindingResource": "firebase-app-hosting-compute@secondevienextjsssr.iam.gserviceaccount.com",
+    "signingRoleBindingMember": "serviceAccount:firebase-app-hosting-compute@secondevienextjsssr.iam.gserviceaccount.com",
+    "publicSecretAccessorResources": [
+      "OTP_HMAC_SECRET",
+      "GMAIL_EMAIL",
+      "GMAIL_PASSWORD",
+      "STRIPE_SECRET_KEY",
+      "PAYMENT_LINK_HMAC_SECRET"
+    ],
+    "createAdminServiceAccountId": "admin-reader-runtime",
+    "adminProjectRoles": [
+      "roles/datastore.viewer"
+    ],
+    "adminSecretAccessorResources": [
+      "PAYMENT_LINK_HMAC_SECRET"
+    ],
+    "adminServiceAccountUserMember": "serviceAccount:functions-gen2-builder@secondevienextjsssr.iam.gserviceaccount.com",
+    "checkExistingBindingsBeforeMutation": true
+  },
+  "runtimeFlagsBeforeQualification": {
+    "PUBLIC_PASSKEY_ENABLED": "false",
+    "PUBLIC_SHARED_RUNTIME_GROUPS": "",
+    "PUBLIC_RUNTIME_METRICS": "false"
+  },
+  "buildFlagsBeforeQualification": {
+    "NEXT_PUBLIC_PASSKEY_TRANSPORT": "functions",
+    "NEXT_PUBLIC_SHARED_RUNTIME_GROUPS": "",
+    "NEXT_PUBLIC_SHARED_ADMIN_READER": "false"
+  },
+  "runtimeGroupsCandidate": "otp,sessions,checkout,orders,order-status,payment-links,promotions,newsletter,quotes",
+  "publicAuthProxyHops": 3,
+  "runtimeSecretReferences": {
+    "OTP_HMAC_SECRET": "OTP_HMAC_SECRET@1",
+    "GMAIL_EMAIL": "GMAIL_EMAIL@2",
+    "GMAIL_PASSWORD": "GMAIL_PASSWORD@6",
+    "STRIPE_SECRET_KEY": "STRIPE_SECRET_KEY@4",
+    "PAYMENT_LINK_HMAC_SECRET": "PAYMENT_LINK_HMAC_SECRET@1"
+  },
+  "emailProvider": "gmail",
+  "stripeMode": "test-only",
+  "adminReaderCandidate": {
+    "function": "readAdminSharedGen2",
+    "region": "europe-west1",
+    "serviceAccount": "admin-reader-runtime@secondevienextjsssr.iam.gserviceaccount.com",
+    "cpu": 1,
+    "memoryMiB": 512,
+    "minInstances": 0,
+    "maxInstances": 1,
+    "concurrency": 4,
+    "secretReferences": [
+      "PAYMENT_LINK_HMAC_SECRET@1"
+    ]
+  },
+  "rollback": {
+    "observedAppHostingRevision": "secondevie-next-sandbox-build-2026-09-09-005",
+    "clientTransport": "rebuild-with-Functions-flags",
+    "oldFunctions": "retain-at-minimum-zero",
+    "catalogFixtureBuildDeployable": false
+  },
+  "authorization": "User requested direct full sandbox deployment; real user recipes and measurements deferred.",
+  "gatesDeferredByUser": [
+    "real-auth-and-checkout",
+    "constrained-memory",
+    "two-rollouts-and-rollback-with-one-warm-revision"
+  ],
+  "proxyStatus": "Three-hop hosted suffix qualified with synthetic prefix; both direct URLs denied 403; operator probe disabled.",
+  "deployed": {
+    "appHostingBuild": "build-2026-09-09-006",
+    "effectiveRevision": "secondevie-next-sandbox-public-shared-ip3",
+    "tag": "t-3005039259",
+    "trafficPercent": 100,
+    "serviceMin": 1,
+    "serviceMax": 3,
+    "revisionMin": 0,
+    "revisionMax": 3,
+    "adminReader": "ACTIVE",
+    "businessRecipes": "NOT_RUN"
+  }
+}

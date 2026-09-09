@@ -21,6 +21,8 @@ Derniers audits et dossiers datés : [index des audits](_DOCS/audits/README.md).
 | `/mes-commandes` | `app/mes-commandes/OrdersPageIsland.jsx` → `MyOrdersView` | Dynamique, propriétaire UID |
 | `/admin` | `app/admin/AdminAppIsland.jsx`, `AdminSidebar.jsx` | Dynamique, admin fort, vues lazy |
 | `/api/catalog`, `/api/catalog/version`, `/api/search` | `app/api/` → `src/lib/server/` | Snapshot public, pointeur frais ; ETag version |
+| `/api/auth/passkeys/[operation]` | `src/lib/server/publicPasskeys.js` → `functions/src/auth/passkeyHandlers.cjs` | POST privé, App Check/Auth ; transport partagé activable après qualification |
+| `/api/public/[operation]` | `src/lib/server/publicOperations.js`, `shared/publicOperationTransport.mjs` → factories `functions/src/` | Registre fermé, App Check/Auth, POST privé ; groupes désactivés par défaut |
 | `/api/revalidate-catalog` | `app/api/revalidate-catalog/route.js` | HMAC machine ou admin fort, plan borné |
 | `/api/admin/catalog-publication-status` | `app/api/admin/catalog-publication-status/route.js` | Preuve de release, App Check + admin AAL2 |
 | `/api/admin/function-metrics` | `app/api/admin/function-metrics/route.js` | Monitoring/inventaire, App Check + admin AAL2, no-store |
@@ -85,6 +87,9 @@ l'ID opaque reste technique.
   Aucun export Function supplémentaire.
 - **Mesures Data** : `adminAnalyticsPerformance.js`,
   `scripts/audit-interactive-runtime.mjs` ; ne prouvent pas un coût Billing.
+- **Coûts projet** : `AdminProjectCosts.jsx` → `/api/admin/project-costs` →
+  `sys_project_costs/current` ; `functions/src/billing/projectCosts.js` reçoit
+  les relevés budget, `projectCostsCore.cjs` valide et compare les mois réellement reçus.
 
 Schémas, minimisation, rétention : [Données](_DOCS/data/DONNEES_ANALYTICS.md).
 États de livraison : [État du projet](_DOCS/ETAT_PROJET.md).
@@ -94,6 +99,7 @@ Schémas, minimisation, rétention : [Données](_DOCS/data/DONNEES_ANALYTICS.md)
 | Responsabilité | Source |
 | --- | --- |
 | Exports locaux Functions | `functions/index.js` |
+| Lecteurs admin partagés | `functions/src/admin/sharedReader.cjs`, `shared/adminReaderTransport.mjs` ; nouvelle cible min 0, transport désactivé |
 | Noms réellement appelés par le client | `src/kit/config/functionTargets.js` |
 | Région/runtime/sécurité/secrets | `functions/helpers/runtime.js`, `security.js`, `secrets.js` |
 | Autorisation API Next | `src/lib/server/adminAuthorization.js`, `requestBody.js` |

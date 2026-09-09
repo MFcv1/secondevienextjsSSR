@@ -1,0 +1,15 @@
+Date : 2026-09-09
+Branche locale : main
+HEAD : 424239b30d24f02e7bc4f394395ee8a776b6ec45
+Worktree préexistant : correctifs admin et documentation, préservés.
+Node des scripts de collecte : 22.23.2
+Cloud : consultations gcloud et Monitoring uniquement ; 3 GET publics de sonde.
+JSON : tous les artefacts JSON décodés sans erreur.
+Inventaire : 158 lignes, 158 noms uniques.
+Liens Markdown locaux : rapports, index et ETAT_PROJET, aucun lien manquant.
+git diff --check : code de sortie 0.
+Tests métier / build / navigateur / E2E / test de charge : non exécutés.
+Implémentation applicative, commit, push, déploiement, mutation cloud : aucun.
+Déplacements / suppressions : aucun.
+Limites : pas de facture réelle, de LCP/INP, d'attribution de coût par visiteur,
+ni de mesure des gains d'une architecture encore proposée.

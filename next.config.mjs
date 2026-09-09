@@ -48,6 +48,8 @@ const privateSurfaceSources = [
   '/mes-commandes/:path*',
   '/payer/:path*',
   '/api/admin/:path*',
+  '/api/auth/:path*',
+  '/api/public/:path*',
   '/api/revalidate-catalog',
 ];
 

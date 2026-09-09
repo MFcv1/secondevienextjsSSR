@@ -3,10 +3,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { test } = require('node:test');
 
-const source = fs.readFileSync(
-  path.resolve(__dirname, '../functions/src/auth/customerLoginOtp.js'),
-  'utf8'
-);
+const source = ['customerLoginOtp.js', 'customerLoginOtpHandlers.cjs']
+  .map(name => fs.readFileSync(path.resolve(__dirname, '../functions/src/auth', name), 'utf8')).join('\n');
 
 test('OTP login does not reject administrator emails', () => {
   assert.doesNotMatch(source, /Connexion par code reservee aux comptes clients/);

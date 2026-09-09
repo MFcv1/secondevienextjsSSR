@@ -16,7 +16,11 @@ import {
   createPromotionCodeAdmin,
   listPromotionCodesAdmin,
   setPromotionCodeStatusAdmin,
+  ADMIN_PROMOTIONS_CACHE_KEY,
 } from './promotionCodeClient';
+import { getAdminCachedData } from './adminDataCache';
+
+export const preloadAdminPromotionsData = () => listPromotionCodesAdmin();
 
 const toLocalInput = (date) => {
   const local = new Date(date.getTime() - (date.getTimezoneOffset() * 60_000));
@@ -43,15 +47,15 @@ const formatDate = (value) => value
 
 export default function AdminPromotionCodes({ darkMode, items = [] }) {
   const surfaces = adminSurfaces(darkMode);
-  const [promotions, setPromotions] = useState([]);
-  const [status, setStatus] = useState('loading');
+  const [promotions, setPromotions] = useState(() => getAdminCachedData(ADMIN_PROMOTIONS_CACHE_KEY)?.promotions || []);
+  const [status, setStatus] = useState(() => getAdminCachedData(ADMIN_PROMOTIONS_CACHE_KEY) ? 'ready' : 'loading');
   const [message, setMessage] = useState(null);
   const [form, setForm] = useState(initialForm);
   const [productSearch, setProductSearch] = useState('');
   const [copied, setCopied] = useState(null);
 
   const load = async () => {
-    setStatus('loading');
+    if (!getAdminCachedData(ADMIN_PROMOTIONS_CACHE_KEY)) setStatus('loading');
     try {
       const result = await listPromotionCodesAdmin();
       setPromotions(result.promotions || []);

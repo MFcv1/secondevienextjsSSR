@@ -189,8 +189,8 @@ test('active registry and AAL2 token authorize an admin callable', async () => {
 });
 
 test('token minting and Firebase rules carry the same AAL contract', () => {
-  const passkeys = fs.readFileSync(path.resolve(__dirname, '../functions/src/auth/passkeys.js'), 'utf8');
-  const otp = fs.readFileSync(path.resolve(__dirname, '../functions/src/auth/customerLoginOtp.js'), 'utf8');
+  const passkeys = fs.readFileSync(path.resolve(__dirname, '../functions/src/auth/passkeyHandlers.cjs'), 'utf8');
+  const otp = fs.readFileSync(path.resolve(__dirname, '../functions/src/auth/customerLoginOtpHandlers.cjs'), 'utf8');
   const firestoreRules = fs.readFileSync(path.resolve(__dirname, '../firestore.rules'), 'utf8');
   const storageRules = fs.readFileSync(path.resolve(__dirname, '../storage.rules'), 'utf8');
 

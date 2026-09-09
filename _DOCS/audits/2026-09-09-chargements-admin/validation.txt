@@ -1,0 +1,152 @@
+TAP version 13
+# Subtest: périodes sans TTL, isolées par propriétaire et purgées à la révocation
+ok 1 - périodes sans TTL, isolées par propriétaire et purgées à la révocation
+  ---
+  duration_ms: 2.082959
+  type: 'test'
+  ...
+# Subtest: admin data cache deduplicates concurrent reads and reuses known data
+ok 2 - admin data cache deduplicates concurrent reads and reuses known data
+  ---
+  duration_ms: 0.4655
+  type: 'test'
+  ...
+# Subtest: stale page remains visible through refresh and error, then authorization still purges it
+ok 3 - stale page remains visible through refresh and error, then authorization still purges it
+  ---
+  duration_ms: 0.963959
+  type: 'test'
+  ...
+# Subtest: returns partial refresh preserves cached rows, but an authorization failure purges all rows
+ok 4 - returns partial refresh preserves cached rows, but an authorization failure purges all rows
+  ---
+  duration_ms: 8.774958
+  type: 'test'
+  ...
+# Subtest: admin data cache is cleared when the admin session ends
+ok 5 - admin data cache is cleared when the admin session ends
+  ---
+  duration_ms: 0.224834
+  type: 'test'
+  ...
+# Subtest: an in-flight read cannot repopulate the cache after logout
+ok 6 - an in-flight read cannot repopulate the cache after logout
+  ---
+  duration_ms: 0.177625
+  type: 'test'
+  ...
+# Subtest: logout hors admin puis autre propriétaire et révocation même UID purgent les données
+ok 7 - logout hors admin puis autre propriétaire et révocation même UID purgent les données
+  ---
+  duration_ms: 0.607333
+  type: 'test'
+  ...
+# Subtest: un refus tardif du premier admin ne purge pas les données du suivant
+ok 8 - un refus tardif du premier admin ne purge pas les données du suivant
+  ---
+  duration_ms: 0.187792
+  type: 'test'
+  ...
+# Subtest: listPromotionCodesAdminGen2: isolated startup preserves endpoint and refuses unauthenticated reads
+ok 9 - listPromotionCodesAdminGen2: isolated startup preserves endpoint and refuses unauthenticated reads
+  ---
+  duration_ms: 423.112166
+  type: 'test'
+  ...
+# Subtest: getDeliveryPolicyAdminGen2: isolated startup preserves endpoint and refuses unauthenticated reads
+ok 10 - getDeliveryPolicyAdminGen2: isolated startup preserves endpoint and refuses unauthenticated reads
+  ---
+  duration_ms: 246.710125
+  type: 'test'
+  ...
+# Subtest: listAdminPaymentLinksGen2: isolated startup preserves endpoint and refuses unauthenticated reads
+ok 11 - listAdminPaymentLinksGen2: isolated startup preserves endpoint and refuses unauthenticated reads
+  ---
+  duration_ms: 306.673291
+  type: 'test'
+  ...
+# LOCAL_FIXTURE_BYTES {"before":6916,"after":1946,"documentsAdded":0}
+# LOCAL_RETURN_READS {"beforeRPC":2,"afterRPC":1,"documents":2}
+# Subtest: I5 : les lecteurs ciblés reconnaissent aussi le nom Cloud Run sans FUNCTION_TARGET
+ok 12 - I5 : les lecteurs ciblés reconnaissent aussi le nom Cloud Run sans FUNCTION_TARGET
+  ---
+  duration_ms: 1.28725
+  type: 'test'
+  ...
+# Subtest: liste compacte : mêmes montants/actions, médias omis, détail complet et octets comparables
+ok 13 - liste compacte : mêmes montants/actions, médias omis, détail complet et octets comparables
+  ---
+  duration_ms: 304.657667
+  type: 'test'
+  ...
+# Subtest: Retours : enrichissement groupé identique, une RPC pour deux commandes uniques
+ok 14 - Retours : enrichissement groupé identique, une RPC pour deux commandes uniques
+  ---
+  duration_ms: 2.258417
+  type: 'test'
+  ...
+# Subtest: I3 / BA-01 : résolution puis ancienne création conserve les sept autres demandes
+ok 15 - I3 / BA-01 : résolution puis ancienne création conserve les sept autres demandes
+  ---
+  duration_ms: 2.524042
+  type: 'test'
+  ...
+# Subtest: I3 / BA-02 : suppression avant création conserve vingt contacts ; baseline ancienne explicite
+ok 16 - I3 / BA-02 : suppression avant création conserve vingt contacts ; baseline ancienne explicite
+  ---
+  duration_ms: 0.408084
+  type: 'test'
+  ...
+# Subtest: I3 / BA-03 : événement 60 s après source 120 s ne fait pas régresser le fait
+ok 17 - I3 / BA-03 : événement 60 s après source 120 s ne fait pas régresser le fait
+  ---
+  duration_ms: 29.641416
+  type: 'test'
+  ...
+# Subtest: I3 / BA-04 : fermeture 120 s, ancien heartbeat, reprise et ancien beacon
+ok 18 - I3 / BA-04 : fermeture 120 s, ancien heartbeat, reprise et ancien beacon
+  ---
+  duration_ms: 0.357583
+  type: 'test'
+  ...
+# Subtest: I6 / BA-09 : échéance, tentative obsolète et interruption avant persistance
+ok 19 - I6 / BA-09 : échéance, tentative obsolète et interruption avant persistance
+  ---
+  duration_ms: 0.337625
+  type: 'test'
+  ...
+# Subtest: I4 : une commande entièrement remboursée ne lit pas de tentative au seul affichage de liste
+ok 20 - I4 : une commande entièrement remboursée ne lit pas de tentative au seul affichage de liste
+  ---
+  duration_ms: 1.656083
+  type: 'test'
+  ...
+# Subtest: I4 détail exact réservé au lecteur admin ; le lecteur client reste filtré par propriétaire
+ok 21 - I4 détail exact réservé au lecteur admin ; le lecteur client reste filtré par propriétaire
+  ---
+  duration_ms: 1.353083
+  type: 'test'
+  ...
+1..21
+# tests 21
+# suites 0
+# pass 21
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1046.458542
+
+Runtime: Node 22.23.2 (cible du projet).
+Commande: node --test tests/admin-reader-startup.test.cjs tests/admin-data-cache-contract.test.mjs tests/backoffice-post-qualification.test.cjs
+ESLint sous Node 22.23.2, --no-ignore --max-warnings 0:
+  app/admin/AdminAppIsland.jsx
+  src/kit/admin/AdminReturns.jsx
+  functions/src/admin/readerEntrypoint.js
+  functions/src/commerce/v2AdminPaymentLinks.js
+  tests/admin-reader-startup.test.cjs
+Résultat final ESLint: exit 0, aucune erreur ni avertissement.
+git diff --check: exit 0.
+Liens relatifs des cinq documents Markdown modifiés/ajoutés: aucune cible absente.
+Preuves JSON valides: 14 requêtes, 25 événements de démarrage, 7 services.
+Non exécutés: build, navigateur, E2E, déploiement et mesures après correctif.

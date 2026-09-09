@@ -38,6 +38,13 @@ depuis le 2026-08-02 avec les controls `v2_all/v2` et Stripe test.
 
 ## 2. Sections de Mon espace
 
+Transport partagé préparé localement : `listMyOrdersV2`, `getOrderStatusClient`
+et `listMyNewsletterRewards` peuvent s'exécuter dans Next par registre fermé,
+avec les mêmes contrôles de propriété et réponses privées. Les listes de commandes
+et avantages ne dédupliquent que les lectures simultanées d'un même objet Auth ;
+aucun résultat n'est conservé et une réponse après changement d'identité est rejetée.
+[Activation sandbox et limites de recette](../audits/2026-09-09-mutualisation/LIVRAISON_SANDBOX.md).
+
 `src/kit/commerce/MyOrdersView.jsx` regroupe:
 
 | Section | Source | Capacite actuelle |

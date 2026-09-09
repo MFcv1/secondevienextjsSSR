@@ -1,0 +1,21 @@
+// Generates an explicitly provisional routing inventory from dated cloud evidence.
+import {readFile,writeFile} from 'node:fs/promises';
+const dir=new URL('./',import.meta.url);
+const read=async name=>JSON.parse(await readFile(new URL(name,dir),'utf8'));
+const functions=await read('functions.json');
+const periods=await Promise.all(['24h','7d','30d'].map(async p=>new Map((await read(`metrics-${p}.json`)).rows.map(r=>[r.name,r]))));
+const scheduled=new Set(['expireAdminPaymentLinksGen2','commerceWebhookCoverageWatchdogGen2','reconcileProductPublicationSessions','maintainAnalyticsGen2','commerceOutboxDispatcherGen2','commerceReservationExpiryDispatcherGen2','catalogReconciler','commerceOperationsReconcilerGen2','cleanupProductPublicationSessions','catalogMediaGarbageCollector']);
+const identity=new Set(['generatePasskeyAuthenticationOptionsGen2','verifyPasskeyAuthenticationGen2','generatePasskeyRegistrationOptionsGen2','verifyPasskeyRegistrationGen2','sendCustomerLoginOtpGen2','verifyCustomerLoginOtpGen2','sendGuestCheckoutOtpGen2','verifyGuestCheckoutOtpGen2','updateUserSessionsGen2','logUserConnectionGen2','deleteSessionGen2']);
+const publicCandidates=new Set(['listMyOrdersV2Gen2','getOrderStatusClientGen2','listMyNewsletterRewardsGen2','getAdminPaymentLinkPublicGen2','getUserStatsGen2']);
+const telemetry=new Set(['initLiveSessionGen2','syncSessionGen2','syncSessionBeaconGen2','trackAdminIPGen2']);
+const readers=new Set(['listOrdersAdminV2Gen2','listReturnsAdminV2Gen2','listCustomerReturnRequestsAdminV2Gen2','listQuoteRequestsAdminGen2','getQuoteRequestAdminGen2','getManualInvoiceWorkspaceAdminGen2','listAdminPaymentLinksGen2','listPromotionCodesAdminGen2','getDeliveryPolicyAdminGen2','getOrderTimelineAdminV2Gen2','getAnalyticsAdminGen2','getDiagnosticTimelineAdminGen2','getSystemIncidentsAdminGen2','getCommerceOperationsStatusAdminGen2','getCatalogPublicationStatusGen2','getBillingGuideOperatorStatusGen2','getBillingGuideStatusGen2']);
+const rows=functions.map(fn=>{
+ const name=fn.name.split('/').at(-1), r=periods[1].get(name);
+ const group=scheduled.has(name)||fn.eventTrigger?'W':identity.has(name)?'I':readers.has(name)?'B':publicCandidates.has(name)?'P':telemetry.has(name)?'T':'S';
+ return {name,group,trigger:scheduled.has(name)?'scheduler':fn.eventTrigger?.eventType||'HTTP',account:fn.serviceConfig?.serviceAccountEmail?.split('@')[0]||'non exposé',...Object.fromEntries(['24h','7d','30d'].map((p,i)=>[p,periods[i].get(name)?.calls??null])),cpu:r.cpu,memory:r.memory,concurrency:r.concurrency,min:r.minInstances,max:r.maxInstances};
+}).sort((a,b)=>a.group.localeCompare(b.group)||a.name.localeCompare(b.name));
+await writeFile(new URL('inventory.json',dir),JSON.stringify(rows,null,2)+'\n');
+const fmt=v=>v===null?'—':String(v);
+const head='# Inventaire des 158 Functions\n\nPhotographie du 9 septembre 2026. Chaque ligne est une proposition de destination, pas une migration validée.\n\nB : lecteurs admin candidats au service partagé. I : identité, frontière de droits à préserver. P : lectures client candidates au service public, privées sauf contrat public explicite. T : collecte non bloquante, à isoler du chemin critique. W : événements/planifications, maintien à zéro minimum. S : commandes, intégrations ou fonctions spécialisées conservées séparées au premier lot ; faible usage ne signifie pas inutilité.\n\n« — » : aucune série observée, pas une preuve de zéro usage. Comptages HTTP incluant OPTIONS, rejets, robots et recette, pas visiteurs uniques. CPU/RAM/min/max sont déployés, hors Gen1 non exposé.\n\n| Fonction | Groupe | Déclencheur | 24 h | 7 j | 30 j | CPU / RAM | Concurrence | Min / max | Identité technique |\n|---|---|---|---:|---:|---:|---|---:|---|---|\n';
+await writeFile(new URL('INVENTAIRE.md',dir),head+rows.map(r=>`| ${r.name} | ${r.group} | ${r.trigger} | ${fmt(r['24h'])} | ${fmt(r['7d'])} | ${fmt(r['30d'])} | ${fmt(r.cpu)} / ${fmt(r.memory)} | ${fmt(r.concurrency)} | ${r.min} / ${fmt(r.max)} | ${r.account} |`).join('\n')+'\n');
+console.log(JSON.stringify(Object.fromEntries(['B','I','P','T','W','S'].map(g=>{const subset=rows.filter(r=>r.group===g);return [g,{functions:subset.length,calls7d:subset.reduce((n,r)=>n+(r['7d']||0),0)}]}))));

@@ -1,5 +1,65 @@
 # Back-office
 
+## Graphique Data
+
+Le graphique visiteurs partage le même calcul de largeur sur toutes les périodes :
+chaque point reçu occupe un créneau égal, la barre remplit le créneau moins un
+espace de 18 %, plafonné à 8 px (4 px sur mobile). Aucun plafond fixe de largeur
+ne tasse les barres à gauche. Survol et dates suivent le centre des créneaux ;
+la dernière date est affichée, les zéros reçus restent consultables au survol.
+Ce réglage visuel ne modifie ni les agrégats ni les créneaux renvoyés par la source.
+
+## Coûts du projet
+
+Nouvel onglet : uniquement les mois reçus de Google et rapprochement
+avec le trafic ; aucun import ni historique prérempli : [contrat, limites et raccordement](COUTS_PROJET.md).
+API Budgets activée, flux filtré projet et collecteur déployés sur autorisation
+du 9 septembre. Premier relevé Google en attente ; état de publication dans le contrat.
+
+## Chargements et anticipation de navigation
+
+Transport partagé activé sur sandbox : dix lecteurs de premières pages/détails utilisent
+`readAdminSharedGen2`, service séparé min 0/max 1, sans résultat privé conservé côté
+serveur. App Check, claim/registre actif/AAL2 revérifiés à chaque appel. Le flag
+`NEXT_PUBLIC_SHARED_ADMIN_READER` est activé sur le sandbox ; l'identité technique dédiée
+est créée. La lecture de liens ne charge plus Stripe avant une vraie opération
+fournisseur, mais conserve le HMAC des URL signées.
+[Livraison sandbox et limites de recette](../audits/2026-09-09-mutualisation/LIVRAISON_SANDBOX.md).
+
+Les vues restent lazy. Après le premier résultat ou état d'erreur des KPI Stats,
+une file effectue un seul passage : Data, Ventes, Retours, Devis, Factures, Liens,
+Codes promo, Livraison, puis les modules des autres onglets. Elle laisse 1,5 s
+entre travaux. Les pages ne sont pas montées invisiblement. Une navigation directe
+ou un clic permet de commencer sans attendre un dashboard démonté.
+
+Data emprunte ses deux canaux existants jusqu'au résultat/erreur ou cinq secondes
+maximum, puis les suspend si la page n'est pas affichée. Les listes commerciales
+partagent leurs premières pages avec l'ouverture réelle ; Retours conserve ses
+lectures internes parallèles, dont la page Ventes dédupliquée. Les autres onglets
+préparent uniquement leur code : pas d'export, de photos privées, de PDF, de
+synchronisation Stripe, d'appel Monitoring ni d'historique au-delà de la première page.
+Le catalogue public reste chargé à la demande de ses consommateurs.
+
+La file se suspend en arrière-plan, hors ligne ou avec l'économie de données
+Save-Data. Elle est détruite à la sortie ou au changement de génération de droits.
+Une callable déjà envoyée peut finir ; sa réponse reste soumise à la génération
+du cache. Aucun polling, redémarrage automatique d'une tâche échouée ou maintien
+artificiel d'une Function n'est ajouté. Les survols/focus/touchers préparent le
+module et avancent la tâche dans la file ; le clic déclenche immédiatement la
+lecture de la vue, sans attendre les tâches restantes.
+
+Liens de paiement et Codes promo disposent désormais d'un cache mémoire de
+première page de 120 s, lié aux droits comme les autres listes. Une mutation
+invalide avant et après l'appel, y compris en cas d'échec ambigu ; une réponse
+antérieure ne peut repeupler le cache. Les recherches/paginations Liens ne passent
+pas par ce cache, Actualiser force la lecture. Les données périmées de ces deux
+listes ne sont pas réutilisées et les actions restent validées par le serveur.
+Le contrôle commerce inconnu n'est plus annoncé comme désactivé pendant le
+premier chargement des liens.
+
+Les lecteurs Promo/Liens/Livraison ont une entrée Functions isolée qui conserve
+le handler et son contrat runtime. État de livraison dans ETAT_PROJET.
+
 ## Contrats locaux de la relecture du 7 septembre 2026
 
 Ces modifications sont locales, non déployées ; preuves dans la
@@ -266,9 +326,13 @@ Le regroupement est porte par `ADMIN_NAV_GROUPS` dans `AdminAppIsland`; `AdminSi
 
 Les labels peuvent evoluer; les ID sont des contrats de navigation et ne doivent pas etre renommes sans migration.
 
-Sur desktop (`>= 1024 px`), `AdminAppIsland` affiche une navigation laterale fixe en cinq groupes. Elle reference les IDs de `KIT_CONFIG.adminTabs`, sans precharger leurs vues. Sous ce seuil, `AdminSidebar` devient un tiroir lateral; les IDs et le lazy loading restent identiques.
+Sur desktop (`>= 1024 px`), `AdminAppIsland` affiche une navigation laterale fixe en cinq groupes. Elle reference les IDs de `KIT_CONFIG.adminTabs`, avec anticipation sur intention décrite ci-dessus. Sous ce seuil, `AdminSidebar` devient un tiroir lateral; les IDs et le lazy loading restent identiques.
 
-Le catalogue public court (`scope=cards&limit=120`) est charge paresseusement uniquement par Stats, Data et Vue Globale, qui consomment ses miniatures ou ses donnees. Seule une requete en vol est dedupliquee; aucun catalogue n'est conserve dans `sessionStorage` ou dans un cache module persistant.
+Le catalogue public (`scope=cards&limit=120`) est chargé à la demande par Stats/Data,
+et à la sélection de Vue Globale, Liens de paiement ou Codes promo. Le lecteur
+enchaîne les pages de 120 jusqu'à 6 000 produits, sans mélanger les releases.
+La requête en vol est dédupliquée et le résultat conservé dans l'état du shell ;
+aucun catalogue n'est conservé dans `sessionStorage` ou dans un cache module persistant.
 
 ## 3. Publication catalogue
 

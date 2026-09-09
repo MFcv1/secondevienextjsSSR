@@ -1,6 +1,7 @@
 'use strict';
 
 const functions = require('firebase-functions/v1');
+const { createPasskeyRegistrationAuthorizer } = require('./passkeyHandlers.cjs');
 
 async function authorizePasskeyRegistration(context, {
     readAccess = async (uid) => {
@@ -9,16 +10,9 @@ async function authorizePasskeyRegistration(context, {
     },
     authorizeAdmin = (request) => require('../../helpers/security').checkActiveStrongAdmin(request)
 } = {}) {
-    if (!context.auth?.uid) {
-        throw new functions.https.HttpsError('unauthenticated', 'Connexion requise.');
-    }
-    const token = context.auth.token || {};
-    const access = await readAccess(context.auth.uid);
-    // A weak admin session must not enroll its own new strong authenticator.
-    // Read the registry as well: an existing token can predate the role grant.
-    if (access?.active === true || token.admin === true || token.superAdmin === true) {
-        await authorizeAdmin(context);
-    }
+    return createPasskeyRegistrationAuthorizer({
+        HttpsError: functions.https.HttpsError, readAccess, authorizeAdmin
+    })(context);
 }
 
 module.exports = { authorizePasskeyRegistration };

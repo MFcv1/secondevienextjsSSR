@@ -807,7 +807,7 @@ test('Gate 4/5 consumers contain no direct commerce writer on v2 surfaces', () =
     assert.ok(adminDelivery.includes('getAdminCachedData'));
     assert.equal(adminDelivery.includes('if (loading)'), false);
     assert.ok(adminIsland.includes('React.lazy(loadAdminLivraison)'));
-    assert.equal(adminIsland.includes('preloadAdminDeliveryData'), false);
+    assert.ok(adminIsland.includes('preloadAdminDeliveryData'));
     assert.equal(adminDelivery.includes('COMMERCE_V2_POLICY_COMMANDS_OFF'), false);
     assert.equal(adminDelivery.includes('Policy v2 en lecture seule'), false);
     assert.ok(functionsIndex.includes('getDeliveryPolicyAdmin'));

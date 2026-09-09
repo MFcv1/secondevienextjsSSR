@@ -1,0 +1,58 @@
+[
+  {
+    "service": "getmanualinvoiceworkspaceadmingen2",
+    "revision": "getmanualinvoiceworkspaceadmingen2-00004-mip",
+    "concurrency": 1,
+    "maxScale": "1",
+    "minScale": null,
+    "startupCpuBoost": "true"
+  },
+  {
+    "service": "listadminpaymentlinksgen2",
+    "revision": "listadminpaymentlinksgen2-00004-vap",
+    "concurrency": 1,
+    "maxScale": "1",
+    "minScale": null,
+    "startupCpuBoost": "true"
+  },
+  {
+    "service": "listcustomerreturnrequestsadminv2gen2",
+    "revision": "listcustomerreturnrequestsadminv2gen2-00006-woq",
+    "concurrency": 1,
+    "maxScale": "1",
+    "minScale": null,
+    "startupCpuBoost": "true"
+  },
+  {
+    "service": "listordersadminv2gen2",
+    "revision": "listordersadminv2gen2-00006-ved",
+    "concurrency": 1,
+    "maxScale": "1",
+    "minScale": null,
+    "startupCpuBoost": "true"
+  },
+  {
+    "service": "listpromotioncodesadmingen2",
+    "revision": "listpromotioncodesadmingen2-00001-doq",
+    "concurrency": 1,
+    "maxScale": "1",
+    "minScale": null,
+    "startupCpuBoost": "true"
+  },
+  {
+    "service": "listquoterequestsadmingen2",
+    "revision": "listquoterequestsadmingen2-00004-yul",
+    "concurrency": 1,
+    "maxScale": "1",
+    "minScale": null,
+    "startupCpuBoost": "true"
+  },
+  {
+    "service": "listreturnsadminv2gen2",
+    "revision": "listreturnsadminv2gen2-00004-len",
+    "concurrency": 1,
+    "maxScale": "1",
+    "minScale": null,
+    "startupCpuBoost": "true"
+  }
+]

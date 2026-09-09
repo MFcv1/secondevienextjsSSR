@@ -14,8 +14,17 @@ Ne pas les restaurer ni lire leurs archives par défaut.
 - [Audits d’architecture et de fiabilité](audits/README.md) — rapport backend du
   5 septembre et suites ; [clôture de l’optimisation](audits/CLOTURE_BACKEND_2026-09-05.md),
   preuves de livraison, y compris le dernier correctif client.
-- [Dernier audit : 7 septembre 2026, interactions et fiabilité](audits/2026-09-07-audit-interactions/README.md)
-  — synthèse accessible, rapports, preuves et photographie du code à la clôture ; correctifs non déployés.
+- [Dernier audit : 9 septembre 2026, mutualisation et capacité](audits/2026-09-09-mutualisation/README.md)
+  — 158 Functions, usage, cache galerie, CPU/mémoire, coûts et plan ; aucune modification cloud.
+  [Plan final proposé : un service public chaud](audits/2026-09-09-mutualisation/PLAN_PUBLIC_CHAUD.md),
+  galerie + connexions, 512 MiB, un maintien public et max 3 proposé, admin min 0.
+  [Premier lot passkeys](audits/2026-09-09-mutualisation/INTEGRATION_PASSKEYS.md) :
+  anciens maintiens retirés dans le cloud ; intégration Next locale, bascule non activée.
+  [Suite runtime public](audits/2026-09-09-mutualisation/INTEGRATION_RUNTIME_PUBLIC.md) :
+  migrations locales OTP/client/checkout, cache catalogue et lecteur admin séparé,
+  validations et manifeste candidat ; activation cloud encore non qualifiée.
+- [Chargements du back-office](audits/2026-09-09-chargements-admin/README.md)
+  — diagnostic par vue, preuves cloud expurgées et validations ; correctifs locaux non déployés.
 
 ## Références durables
 

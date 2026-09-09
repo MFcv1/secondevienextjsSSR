@@ -2,10 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Elements } from '@stripe/react-stripe-js';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
 import { getStripePromise, isStripeConfigured } from '../config/stripe';
-import { db, functions } from '../config/firebase';
-import { getFunctionTarget } from '../config/functionTargets';
+import { db } from '../config/firebase';
+import { getCallableFunction } from '../config/firebaseLazy';
 import CheckoutPaymentStep from './CheckoutPaymentStep';
 import { COMMERCE_V2_CONSUMERS_ENABLED } from './commerceV2Client';
 import { adaptCommerceOrder } from './orderAdapter';
@@ -16,11 +15,12 @@ const { formatOrderReference } = orderReferenceHelpers;
 const isTerminalPaymentFailure = (status) => ['payment_failed', 'canceled', 'cancelled', 'cancelled_by_client'].includes(status);
 
 const waitForPaidOrderViaFunction = ({ orderId, email, checkoutOtpToken }, timeoutMs = 45000) => new Promise((resolve, reject) => {
-    const getOrderStatusClient = httpsCallable(functions, getFunctionTarget('getOrderStatusClient'));
+    const statusCallable = getCallableFunction('getOrderStatusClient');
     const startedAt = Date.now();
 
     const tick = async () => {
         try {
+            const getOrderStatusClient = await statusCallable;
             const result = await getOrderStatusClient({ orderId, email, checkoutOtpToken });
             const order = result.data?.order || {};
             if (order.status === 'paid') {

@@ -1,4 +1,3 @@
-const crypto = require('crypto');
 const admin = require('firebase-admin');
 const { onCall } = require('firebase-functions/v2/https');
 const { functions, regionalFunctions, logFunctionPerf } = require('../../helpers/runtime');
@@ -10,17 +9,7 @@ const {
     TRANSACTIONAL_EMAIL_SECRETS,
     getTransactionalEmailRuntime
 } = require('../email/transactionalEmailRuntime');
-const { renderOtpEmail } = require('../email/otpEmailTemplates');
-const { updateOtpStateIfCurrent } = require('./otpState');
 
-const db = admin.firestore();
-
-const OTP_TTL_MS = 10 * 60 * 1000;
-const VERIFIED_TTL_MS = 30 * 60 * 1000;
-const MIN_RESEND_MS = 60 * 1000;
-const MAX_EMAIL_SENDS_PER_HOUR = 5;
-const MAX_IP_SENDS_PER_HOUR = 20;
-const MAX_VERIFY_ATTEMPTS = 5;
 const GUEST_OTP_SEND_GEN2_RUNTIME = Object.freeze({
     region: 'europe-west1',
     cpu: 'gcf_gen1',
@@ -46,197 +35,11 @@ const GUEST_OTP_VERIFY_GEN2_RUNTIME = Object.freeze({
     secrets: [OTP_HMAC_SECRET]
 });
 
-function normalizeEmail(email) {
-    const normalized = String(email || '').trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized) || normalized.length > 254) {
-        throw new functions.https.HttpsError('invalid-argument', 'Email invalide.');
-    }
-    return normalized;
-}
-
-function normalizeCode(code) {
-    const normalized = String(code || '').replace(/\D/g, '');
-    if (!/^\d{6}$/.test(normalized)) {
-        throw new functions.https.HttpsError('invalid-argument', 'Code invalide.');
-    }
-    return normalized;
-}
-
-function sha256(value) {
-    return crypto.createHash('sha256').update(String(value)).digest('hex');
-}
-
-function createCheckoutOtpToken() {
-    return crypto.randomBytes(32).toString('base64url');
-}
-
-function hashOtp(email, code) {
-    const secret = OTP_HMAC_SECRET.value();
-    if (!secret) {
-        throw new functions.https.HttpsError('failed-precondition', 'Configuration email incomplete.');
-    }
-    return crypto
-        .createHmac('sha256', secret)
-        .update(`${email}:${code}`)
-        .digest('hex');
-}
-
-function getOtpRef(email) {
-    return db.doc(`sys_ratelimit/guest_checkout_otp_${sha256(email)}`);
-}
-
-function getIpRef(context) {
-    const ip = getRateLimitClientIp(context);
-    return db.doc(`sys_ratelimit/guest_checkout_otp_ip_${sha256(ip)}`);
-}
-
-function buildEmailHtml(code) {
-    return renderOtpEmail({
-        variant: 'checkout',
-        code,
-        siteUrl: getSiteUrl()
-    }).html;
-}
-
-function buildEmailText(code) {
-    return renderOtpEmail({
-        variant: 'checkout',
-        code,
-        siteUrl: getSiteUrl()
-    }).text;
-}
-
-async function clearOtpAfterMailFailure(emailRef, error, expiresAtMillis, otpHash) {
-    await updateOtpStateIfCurrent(db, emailRef, { expiresAtMillis, otpHash }, {
-        otpHash: admin.firestore.FieldValue.delete(),
-        expiresAt: admin.firestore.FieldValue.delete(),
-        expiresAtMillis: admin.firestore.FieldValue.delete(),
-        nextSendAtMillis: admin.firestore.FieldValue.delete(),
-        lastMailErrorAt: admin.firestore.FieldValue.serverTimestamp(),
-        lastMailErrorCode: error?.code || null,
-        lastMailErrorResponseCode: error?.responseCode || null,
-        expireAt: timestampFromNow(SYSTEM_DOC_RETENTION_DAYS)
-    });
-}
-
-function mapMailError(error) {
-    console.error('Guest checkout OTP mail error:', {
-        code: error?.code || null,
-        responseCode: error?.responseCode || null,
-        command: error?.command || null
-    });
-
-    if (error?.code === 'EAUTH' || error?.responseCode === 535) {
-        return new functions.https.HttpsError(
-            'failed-precondition',
-            "Configuration email invalide. Verifiez le mot de passe d'application Gmail."
-        );
-    }
-
-    return new functions.https.HttpsError(
-        'unavailable',
-        "Impossible d'envoyer le code pour le moment. Reessayez dans quelques instants."
-    );
-}
-
-const sendGuestCheckoutOtpHandler = async (data, context) => {
-    const startedAt = Date.now();
-    const email = normalizeEmail(data?.email);
-    const emailHash = sha256(email);
-        let emailRuntime;
-        try {
-            emailRuntime = getTransactionalEmailRuntime();
-        } catch (error) {
-            console.error('Guest checkout email provider configuration error:', error?.code || error?.message || error);
-            throw new functions.https.HttpsError('failed-precondition', 'Configuration email incomplete.');
-        }
-
-        const code = String(crypto.randomInt(100000, 1000000));
-        const now = Date.now();
-        const expiresAtMillis = now + OTP_TTL_MS;
-        const emailRef = getOtpRef(email);
-        const ipRef = getIpRef(context);
-
-        await db.runTransaction(async (tx) => {
-            const [emailSnap, ipSnap] = await Promise.all([tx.get(emailRef), tx.get(ipRef)]);
-            const emailState = emailSnap.exists ? emailSnap.data() : {};
-            const ipState = ipSnap.exists ? ipSnap.data() : {};
-
-            if (emailState.nextSendAtMillis && now < emailState.nextSendAtMillis) {
-                throw new functions.https.HttpsError('resource-exhausted', 'Patientez avant de demander un nouveau code.');
-            }
-
-            const emailWindowResetAt = emailState.sendWindowResetAtMillis || 0;
-            const emailSendCount = now < emailWindowResetAt ? Number(emailState.sendCount || 0) : 0;
-            if (emailSendCount >= MAX_EMAIL_SENDS_PER_HOUR) {
-                throw new functions.https.HttpsError('resource-exhausted', 'Trop de codes demandes pour cet email. Reessayez plus tard.');
-            }
-
-            const ipWindowResetAt = ipState.sendWindowResetAtMillis || 0;
-            const ipSendCount = now < ipWindowResetAt ? Number(ipState.sendCount || 0) : 0;
-            if (ipSendCount >= MAX_IP_SENDS_PER_HOUR) {
-                throw new functions.https.HttpsError('resource-exhausted', 'Trop de codes demandes. Reessayez plus tard.');
-            }
-
-            tx.set(emailRef, {
-                emailHash: sha256(email),
-                otpHash: hashOtp(email, code),
-                createdAt: admin.firestore.FieldValue.serverTimestamp(),
-                expiresAt: admin.firestore.Timestamp.fromMillis(expiresAtMillis),
-                expiresAtMillis,
-                nextSendAtMillis: now + MIN_RESEND_MS,
-                sendCount: emailSendCount + 1,
-                sendWindowResetAtMillis: now < emailWindowResetAt ? emailWindowResetAt : now + 60 * 60 * 1000,
-                attempts: 0,
-                verifiedAt: admin.firestore.FieldValue.delete(),
-                verifiedAtMillis: admin.firestore.FieldValue.delete(),
-                verifiedExpiresAtMillis: admin.firestore.FieldValue.delete(),
-                verifiedUid: admin.firestore.FieldValue.delete(),
-                lastUid: context.auth?.uid || null,
-                expireAt: timestampFromNow(SYSTEM_DOC_RETENTION_DAYS)
-            }, { merge: true });
-
-            tx.set(ipRef, {
-                sendCount: ipSendCount + 1,
-                sendWindowResetAtMillis: now < ipWindowResetAt ? ipWindowResetAt : now + 60 * 60 * 1000,
-                expireAt: timestampFromNow(SYSTEM_DOC_RETENTION_DAYS)
-            }, { merge: true });
-        });
-
-        try {
-            await emailRuntime.sender.send({
-                from: `Seconde Vie <${emailRuntime.fromAddress}>`,
-                to: email,
-                subject: renderOtpEmail({
-                    variant: 'checkout',
-                    code,
-                    siteUrl: getSiteUrl()
-                }).subject,
-                text: buildEmailText(code),
-                html: buildEmailHtml(code)
-            }, {
-                idempotencyKey: `guest-checkout-otp/${emailHash}/${expiresAtMillis}`
-            });
-        } catch (error) {
-            await clearOtpAfterMailFailure(emailRef, error, expiresAtMillis, hashOtp(email, code)).catch((cleanupError) => {
-                console.error('Guest checkout OTP cleanup error:', cleanupError);
-            });
-            logFunctionPerf('sendGuestCheckoutOtp', startedAt, {
-                phase: 'mail_error',
-                emailHash,
-                code: error?.code || null,
-                responseCode: error?.responseCode || null
-            });
-            throw mapMailError(error);
-        }
-
-        logFunctionPerf('sendGuestCheckoutOtp', startedAt, {
-            phase: 'success',
-            emailHash
-        });
-    return { success: true, expiresInSeconds: Math.floor(OTP_TTL_MS / 1000), resendAfterSeconds: Math.floor(MIN_RESEND_MS / 1000) };
-};
-
+const { createGuestCheckoutOtpHandlers } = require('./guestCheckoutOtpHandlers.cjs');
+const { sendGuestCheckoutOtpHandler, verifyGuestCheckoutOtpHandler, assertGuestCheckoutOtpVerified, normalizeGuestCheckoutEmail } = createGuestCheckoutOtpHandlers({
+    admin, HttpsError: functions.https.HttpsError, getRateLimitClientIp, OTP_HMAC_SECRET,
+    getSiteUrl, timestampFromNow, SYSTEM_DOC_RETENTION_DAYS, getTransactionalEmailRuntime, logFunctionPerf
+});
 exports.sendGuestCheckoutOtp = regionalFunctions()
     .runWith({ enforceAppCheck: true, secrets: [...TRANSACTIONAL_EMAIL_SECRETS, OTP_HMAC_SECRET] })
     .https.onCall(sendGuestCheckoutOtpHandler);
@@ -245,71 +48,6 @@ exports.sendGuestCheckoutOtpGen2 = onCall(
     async (request) => sendGuestCheckoutOtpHandler(request.data, request)
 );
 
-const verifyGuestCheckoutOtpHandler = async (data, context) => {
-        const startedAt = Date.now();
-        const email = normalizeEmail(data?.email);
-        const emailHash = sha256(email);
-        const code = normalizeCode(data?.code);
-        const now = Date.now();
-        const otpRef = getOtpRef(email);
-        const checkoutOtpToken = createCheckoutOtpToken();
-        const checkoutOtpTokenHash = sha256(checkoutOtpToken);
-
-        const verificationResult = await db.runTransaction(async (tx) => {
-            const snap = await tx.get(otpRef);
-            if (!snap.exists) {
-                throw new functions.https.HttpsError('failed-precondition', 'Code invalide ou expire.');
-            }
-
-            const state = snap.data();
-            if (!state.expiresAtMillis || now > state.expiresAtMillis) {
-                throw new functions.https.HttpsError('deadline-exceeded', 'Code expire.');
-            }
-            if (Number(state.attempts || 0) >= MAX_VERIFY_ATTEMPTS) {
-                throw new functions.https.HttpsError('resource-exhausted', 'Trop de tentatives. Demandez un nouveau code.');
-            }
-
-            const expectedHash = state.otpHash || '';
-            const receivedHash = hashOtp(email, code);
-            const isValid = expectedHash.length === receivedHash.length &&
-                crypto.timingSafeEqual(Buffer.from(expectedHash), Buffer.from(receivedHash));
-
-            if (!isValid) {
-                tx.update(otpRef, {
-                    attempts: admin.firestore.FieldValue.increment(1),
-                    expireAt: timestampFromNow(SYSTEM_DOC_RETENTION_DAYS)
-                });
-                return {
-                    success: false,
-                    error: new functions.https.HttpsError('permission-denied', 'Code invalide.')
-                };
-            }
-
-            tx.update(otpRef, {
-                attempts: 0,
-                verifiedAt: admin.firestore.FieldValue.serverTimestamp(),
-                verifiedAtMillis: now,
-                verifiedExpiresAtMillis: now + VERIFIED_TTL_MS,
-                verifiedUid: context.auth?.uid || null,
-                verifiedTokenHash: checkoutOtpTokenHash,
-                otpHash: admin.firestore.FieldValue.delete(),
-                expireAt: timestampFromNow(SYSTEM_DOC_RETENTION_DAYS)
-            });
-
-            return { success: true };
-        });
-
-        if (!verificationResult.success) {
-            throw verificationResult.error;
-        }
-
-        logFunctionPerf('verifyGuestCheckoutOtp', startedAt, {
-            phase: 'success',
-            emailHash
-        });
-    return { success: true, checkoutOtpToken, verifiedForSeconds: Math.floor(VERIFIED_TTL_MS / 1000) };
-};
-
 exports.verifyGuestCheckoutOtp = regionalFunctions()
     .runWith({ enforceAppCheck: true, secrets: [OTP_HMAC_SECRET] })
     .https.onCall(verifyGuestCheckoutOtpHandler);
@@ -317,33 +55,8 @@ exports.verifyGuestCheckoutOtpGen2 = onCall(
     GUEST_OTP_VERIFY_GEN2_RUNTIME,
     async (request) => verifyGuestCheckoutOtpHandler(request.data, request)
 );
-
-async function assertGuestCheckoutOtpVerified(uid, email, checkoutOtpToken) {
-    const normalizedEmail = normalizeEmail(email);
-    const snap = await getOtpRef(normalizedEmail).get();
-    if (!snap.exists) {
-        throw new functions.https.HttpsError('failed-precondition', 'Veuillez valider votre email avant de passer commande.');
-    }
-
-    const state = snap.data();
-    if (!state.verifiedExpiresAtMillis || Date.now() > state.verifiedExpiresAtMillis) {
-        throw new functions.https.HttpsError('failed-precondition', 'Validation email expiree. Veuillez demander un nouveau code.');
-    }
-
-    if (uid && state.verifiedUid === uid) {
-        return normalizedEmail;
-    }
-
-    const receivedTokenHash = checkoutOtpToken ? sha256(checkoutOtpToken) : '';
-    if (!state.verifiedTokenHash || receivedTokenHash !== state.verifiedTokenHash) {
-        throw new functions.https.HttpsError('failed-precondition', 'Veuillez valider votre email avant de passer commande.');
-    }
-
-    return normalizedEmail;
-}
-
 module.exports.assertGuestCheckoutOtpVerified = assertGuestCheckoutOtpVerified;
-module.exports.normalizeGuestCheckoutEmail = normalizeEmail;
+module.exports.normalizeGuestCheckoutEmail = normalizeGuestCheckoutEmail;
 module.exports.sendGuestCheckoutOtpHandler = sendGuestCheckoutOtpHandler;
 module.exports.GUEST_OTP_SEND_GEN2_RUNTIME = GUEST_OTP_SEND_GEN2_RUNTIME;
 module.exports.verifyGuestCheckoutOtpHandler = verifyGuestCheckoutOtpHandler;

@@ -113,7 +113,8 @@ function createCancellationRuntime({
     stripe,
     appId,
     clock = createClock(),
-    failpoints = null
+    failpoints = null,
+    increment
 }) {
     if (
         typeof db?.doc !== 'function' ||
@@ -140,7 +141,7 @@ function createCancellationRuntime({
         },
         clock
     });
-    const paymentEffectApplier = createPaymentEffectApplier({ refs, clock });
+    const paymentEffectApplier = createPaymentEffectApplier({ refs, clock, increment });
     const sagaRepository = createCheckoutSagaRepository({
         db: database,
         checkoutRepository,
@@ -288,7 +289,8 @@ function createAdminPaymentLinkRuntime({
     tokenSecret,
     siteUrl,
     clock = createClock(),
-    failpoints = null
+    failpoints = null,
+    increment
 }) {
     if (
         typeof db?.doc !== 'function' ||
@@ -324,7 +326,7 @@ function createAdminPaymentLinkRuntime({
         ids,
         clock
     });
-    const paymentEffectApplier = createPaymentEffectApplier({ refs, clock });
+    const paymentEffectApplier = createPaymentEffectApplier({ refs, clock, increment });
     const sagaRepository = createCheckoutSagaRepository({
         db: database,
         checkoutRepository,

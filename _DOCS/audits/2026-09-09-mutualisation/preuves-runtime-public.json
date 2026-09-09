@@ -1,0 +1,4702 @@
+{
+  "recordedAt": "2026-09-09T19:12:05.512378+00:00",
+  "gitHead": "424239b30d24f02e7bc4f394395ee8a776b6ec45",
+  "branch": "main",
+  "deployed": false,
+  "externalMutations": false,
+  "node": "22.23.2",
+  "nodeTests": {
+    "tests": 623,
+    "pass": 623,
+    "fail": 0,
+    "skipped": 0,
+    "durationMs": 8150.768083
+  },
+  "nodeCommand": "node --require ./tests/commerce/helpers/no-network.cjs --test tests/auth-*.test.* tests/passkey-*.test.* tests/public-*.test.mjs tests/shared-admin-reader.test.cjs tests/admin-preload-*.test.mjs tests/admin-reader-startup.test.cjs tests/admin-data-cache-contract.test.mjs tests/admin-navigation-contract.test.mjs tests/deployment-cache-contract.test.mjs tests/manual-audit-completion.test.cjs tests/commerce/domain/*.test.cjs tests/commerce/faults/*.test.cjs tests/newsletter-rewards.test.cjs tests/quote-requests.test.cjs tests/catalog/core.test.cjs tests/catalog/resilience.test.cjs tests/catalog/security.test.cjs tests/functions-gen2-*.test.*",
+  "browser": {
+    "passed": 8,
+    "mockedProviders": true,
+    "externalNetworkBlocked": true,
+    "command": "node node_modules/@playwright/test/cli.js test tests/commerce/browser/payment-ui.spec.mjs"
+  },
+  "lint": {
+    "errors": 0,
+    "warnings": 6,
+    "scope": "changed runtime modules and affected callers; source-selected ESLint",
+    "preexistingWarnings": [
+      "deploy-functions-targeted unused name",
+      "LegacyLoginModalFullIsland accessibility/image/apostrophes"
+    ]
+  },
+  "build": {
+    "success": true,
+    "deploymentId": "local-public-runtime-20260909-qualified-final",
+    "fixture": true,
+    "deployable": false,
+    "command": "CATALOG_BUILD_FIXTURE=true NEXT_DEPLOYMENT_ID=local-public-runtime-20260909-qualified-final node node_modules/next/dist/bin/next build",
+    "routeTable": [
+      "┌ ○ /                                                     5m      5m",
+      "├ ○ /_not-found",
+      "├ ○ /a-propos                                             5m      5m",
+      "├ ƒ /admin",
+      "├ ƒ /api/admin/catalog-publication-status",
+      "├ ƒ /api/admin/function-metrics",
+      "├ ƒ /api/auth/passkeys/[operation]",
+      "├ ƒ /api/catalog",
+      "├ ƒ /api/catalog/version",
+      "├ ƒ /api/public/[operation]",
+      "├ ƒ /api/revalidate-catalog",
+      "├ ƒ /api/search",
+      "├   /categorie/[categoryId]",
+      "├ ƒ /checkout",
+      "├ ○ /devis                                                5m      5m",
+      "├ ○ /galerie                                              5m      5m",
+      "├ ƒ /mes-commandes",
+      "├ ƒ /payer/[orderId]/[token]",
+      "├   /produit/[slugOrId]",
+      "├ ○ /recherche                                            5m      5m",
+      "├ ○ /robots.txt",
+      "├ ○ /sitemap.xml                                          5m      5m",
+      "└ ƒ /wishlist"
+    ]
+  },
+  "compiledApiSmoke": {
+    "date": "2026-09-09T19:04:19.428Z",
+    "kind": "compiled-local-api-without-app-check",
+    "results": [
+      {
+        "operation": "sendCustomerLoginOtp",
+        "status": 401,
+        "cache": "private, no-store, max-age=0"
+      },
+      {
+        "operation": "verifyCustomerLoginOtp",
+        "status": 401,
+        "cache": "private, no-store, max-age=0"
+      },
+      {
+        "operation": "sendGuestCheckoutOtp",
+        "status": 401,
+        "cache": "private, no-store, max-age=0"
+      },
+      {
+        "operation": "verifyGuestCheckoutOtp",
+        "status": 401,
+        "cache": "private, no-store, max-age=0"
+      },
+      {
+        "operation": "updateUserSessions",
+        "status": 401,
+        "cache": "private, no-store, max-age=0"
+      },
+      {
+        "operation": "createCheckoutV2",
+        "status": 401,
+        "cache": "private, no-store, max-age=0"
+      },
+      {
+        "operation": "resumeCheckoutV2",
+        "status": 401,
+        "cache": "private, no-store, max-age=0"
+      },
+      {
+        "operation": "listMyOrdersV2",
+        "status": 401,
+        "cache": "private, no-store, max-age=0"
+      },
+      {
+        "operation": "getOrderStatusClient",
+        "status": 401,
+        "cache": "private, no-store, max-age=0"
+      },
+      {
+        "operation": "previewPromotionCodeV2",
+        "status": 401,
+        "cache": "private, no-store, max-age=0"
+      },
+      {
+        "operation": "getAdminPaymentLinkPublic",
+        "status": 401,
+        "cache": "private, no-store, max-age=0"
+      },
+      {
+        "operation": "prepareAdminPaymentLinkPayment",
+        "status": 401,
+        "cache": "private, no-store, max-age=0"
+      },
+      {
+        "operation": "resumeAdminPaymentLinkPayment",
+        "status": 401,
+        "cache": "private, no-store, max-age=0"
+      },
+      {
+        "operation": "drawNewsletterReward",
+        "status": 401,
+        "cache": "private, no-store, max-age=0"
+      },
+      {
+        "operation": "claimNewsletterReward",
+        "status": 401,
+        "cache": "private, no-store, max-age=0"
+      },
+      {
+        "operation": "listMyNewsletterRewards",
+        "status": 401,
+        "cache": "private, no-store, max-age=0"
+      },
+      {
+        "operation": "createQuoteRequest",
+        "status": 401,
+        "cache": "private, no-store, max-age=0"
+      },
+      {
+        "operation": "finalizeQuoteRequest",
+        "status": 401,
+        "cache": "private, no-store, max-age=0"
+      },
+      {
+        "operation": "generatePasskeyAuthenticationOptions",
+        "status": 401,
+        "cache": "private, no-store, max-age=0"
+      },
+      {
+        "operation": "verifyPasskeyAuthentication",
+        "status": 401,
+        "cache": "private, no-store, max-age=0"
+      },
+      {
+        "operation": "generatePasskeyRegistrationOptions",
+        "status": 401,
+        "cache": "private, no-store, max-age=0"
+      },
+      {
+        "operation": "verifyPasskeyRegistration",
+        "status": 401,
+        "cache": "private, no-store, max-age=0"
+      }
+    ],
+    "qualificationNote": "Transport smoke before final FieldValue.increment injection; final server patch covered by subsequent Node suite and production fixture build."
+  },
+  "benchmark": {
+    "date": "2026-09-09T18:46:24.010Z",
+    "node": "v22.23.2",
+    "platform": "darwin",
+    "arch": "arm64",
+    "kind": "local-production-build-fixture",
+    "cloudQualified": false,
+    "constrainedCpuMemory": false,
+    "durationMs": 2637,
+    "requests": 480,
+    "errors": 0,
+    "stopped": null,
+    "peakSampledRssMiB": 165.078125,
+    "firstRequest": {
+      "concurrency": 1,
+      "path": "/",
+      "status": 200,
+      "ms": 61.963125,
+      "bytes": 344679
+    },
+    "groups": [
+      {
+        "concurrency": 1,
+        "path": "/",
+        "n": 40,
+        "p50Ms": 9.805791999999997,
+        "p95Ms": 13.650750000000016,
+        "maxMs": 61.963125,
+        "errors": 0
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "n": 40,
+        "p50Ms": 3.2200840000000426,
+        "p95Ms": 6.331125000000043,
+        "maxMs": 210.719791,
+        "errors": 0
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "n": 40,
+        "p50Ms": 3.0258749999998145,
+        "p95Ms": 4.927832999999964,
+        "maxMs": 7.414999999999964,
+        "errors": 0
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "n": 40,
+        "p50Ms": 13.508624999999938,
+        "p95Ms": 19.601457999999866,
+        "maxMs": 22.57154199999991,
+        "errors": 0
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "n": 40,
+        "p50Ms": 6.217959000000064,
+        "p95Ms": 9.930415999999923,
+        "maxMs": 11.851292000000058,
+        "errors": 0
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "n": 40,
+        "p50Ms": 5.436666999999943,
+        "p95Ms": 9.98762499999998,
+        "maxMs": 11.109042000000045,
+        "errors": 0
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "n": 40,
+        "p50Ms": 22.548749999999927,
+        "p95Ms": 30.6887499999998,
+        "maxMs": 31.323207999999795,
+        "errors": 0
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "n": 40,
+        "p50Ms": 10.105874999999969,
+        "p95Ms": 17.692666000000372,
+        "maxMs": 20.628082999999606,
+        "errors": 0
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "n": 40,
+        "p50Ms": 9.44645800000012,
+        "p95Ms": 17.031417000000147,
+        "maxMs": 18.797500000000127,
+        "errors": 0
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "n": 40,
+        "p50Ms": 36.50937500000009,
+        "p95Ms": 43.111417000000074,
+        "maxMs": 49.177458000000115,
+        "errors": 0
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "n": 40,
+        "p50Ms": 14.292042000000038,
+        "p95Ms": 29.54654100000016,
+        "maxMs": 35.91624999999976,
+        "errors": 0
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "n": 40,
+        "p50Ms": 14.505166999999801,
+        "p95Ms": 30.96050000000014,
+        "maxMs": 37.13262500000019,
+        "errors": 0
+      }
+    ],
+    "resources": [
+      {
+        "elapsedMs": 67,
+        "cpuPercent": 0,
+        "rssMiB": 92.921875
+      },
+      {
+        "elapsedMs": 282,
+        "cpuPercent": 74,
+        "rssMiB": 117.890625
+      },
+      {
+        "elapsedMs": 293,
+        "cpuPercent": 74,
+        "rssMiB": 118.5625
+      },
+      {
+        "elapsedMs": 315,
+        "cpuPercent": 74,
+        "rssMiB": 119.546875
+      },
+      {
+        "elapsedMs": 325,
+        "cpuPercent": 74,
+        "rssMiB": 119.625
+      },
+      {
+        "elapsedMs": 333,
+        "cpuPercent": 74,
+        "rssMiB": 119.703125
+      },
+      {
+        "elapsedMs": 348,
+        "cpuPercent": 74,
+        "rssMiB": 119.8125
+      },
+      {
+        "elapsedMs": 355,
+        "cpuPercent": 74,
+        "rssMiB": 119.96875
+      },
+      {
+        "elapsedMs": 365,
+        "cpuPercent": 74,
+        "rssMiB": 120.21875
+      },
+      {
+        "elapsedMs": 378,
+        "cpuPercent": 93.5,
+        "rssMiB": 120.578125
+      },
+      {
+        "elapsedMs": 385,
+        "cpuPercent": 93.5,
+        "rssMiB": 120.59375
+      },
+      {
+        "elapsedMs": 392,
+        "cpuPercent": 93.5,
+        "rssMiB": 120.828125
+      },
+      {
+        "elapsedMs": 406,
+        "cpuPercent": 93.5,
+        "rssMiB": 121.25
+      },
+      {
+        "elapsedMs": 416,
+        "cpuPercent": 93.5,
+        "rssMiB": 122.15625
+      },
+      {
+        "elapsedMs": 423,
+        "cpuPercent": 93.5,
+        "rssMiB": 122.6875
+      },
+      {
+        "elapsedMs": 435,
+        "cpuPercent": 93.5,
+        "rssMiB": 123.03125
+      },
+      {
+        "elapsedMs": 440,
+        "cpuPercent": 93.5,
+        "rssMiB": 123.53125
+      },
+      {
+        "elapsedMs": 447,
+        "cpuPercent": 93.5,
+        "rssMiB": 124.03125
+      },
+      {
+        "elapsedMs": 460,
+        "cpuPercent": 93.5,
+        "rssMiB": 124.046875
+      },
+      {
+        "elapsedMs": 466,
+        "cpuPercent": 93.5,
+        "rssMiB": 124.140625
+      },
+      {
+        "elapsedMs": 471,
+        "cpuPercent": 93.5,
+        "rssMiB": 124.140625
+      },
+      {
+        "elapsedMs": 483,
+        "cpuPercent": 93.5,
+        "rssMiB": 124.234375
+      },
+      {
+        "elapsedMs": 490,
+        "cpuPercent": 93.5,
+        "rssMiB": 124.234375
+      },
+      {
+        "elapsedMs": 497,
+        "cpuPercent": 93.5,
+        "rssMiB": 124.234375
+      },
+      {
+        "elapsedMs": 512,
+        "cpuPercent": 82,
+        "rssMiB": 124.5
+      },
+      {
+        "elapsedMs": 517,
+        "cpuPercent": 82,
+        "rssMiB": 124.59375
+      },
+      {
+        "elapsedMs": 523,
+        "cpuPercent": 82,
+        "rssMiB": 125.078125
+      },
+      {
+        "elapsedMs": 536,
+        "cpuPercent": 82,
+        "rssMiB": 125.28125
+      },
+      {
+        "elapsedMs": 543,
+        "cpuPercent": 82,
+        "rssMiB": 125.703125
+      },
+      {
+        "elapsedMs": 548,
+        "cpuPercent": 82,
+        "rssMiB": 126.140625
+      },
+      {
+        "elapsedMs": 561,
+        "cpuPercent": 82,
+        "rssMiB": 126.359375
+      },
+      {
+        "elapsedMs": 566,
+        "cpuPercent": 82,
+        "rssMiB": 126.8125
+      },
+      {
+        "elapsedMs": 572,
+        "cpuPercent": 82,
+        "rssMiB": 127.234375
+      },
+      {
+        "elapsedMs": 585,
+        "cpuPercent": 82,
+        "rssMiB": 127.859375
+      },
+      {
+        "elapsedMs": 592,
+        "cpuPercent": 82,
+        "rssMiB": 128.59375
+      },
+      {
+        "elapsedMs": 598,
+        "cpuPercent": 82,
+        "rssMiB": 128.59375
+      },
+      {
+        "elapsedMs": 611,
+        "cpuPercent": 82,
+        "rssMiB": 128.609375
+      },
+      {
+        "elapsedMs": 617,
+        "cpuPercent": 82,
+        "rssMiB": 128.625
+      },
+      {
+        "elapsedMs": 623,
+        "cpuPercent": 69.4,
+        "rssMiB": 128.625
+      },
+      {
+        "elapsedMs": 638,
+        "cpuPercent": 69.4,
+        "rssMiB": 128.65625
+      },
+      {
+        "elapsedMs": 643,
+        "cpuPercent": 69.4,
+        "rssMiB": 128.65625
+      },
+      {
+        "elapsedMs": 648,
+        "cpuPercent": 69.4,
+        "rssMiB": 128.65625
+      },
+      {
+        "elapsedMs": 661,
+        "cpuPercent": 69.4,
+        "rssMiB": 128.65625
+      },
+      {
+        "elapsedMs": 666,
+        "cpuPercent": 69.4,
+        "rssMiB": 128.65625
+      },
+      {
+        "elapsedMs": 672,
+        "cpuPercent": 69.4,
+        "rssMiB": 128.65625
+      },
+      {
+        "elapsedMs": 684,
+        "cpuPercent": 69.4,
+        "rssMiB": 128.6875
+      },
+      {
+        "elapsedMs": 690,
+        "cpuPercent": 69.4,
+        "rssMiB": 128.6875
+      },
+      {
+        "elapsedMs": 695,
+        "cpuPercent": 69.4,
+        "rssMiB": 128.6875
+      },
+      {
+        "elapsedMs": 708,
+        "cpuPercent": 69.4,
+        "rssMiB": 128.6875
+      },
+      {
+        "elapsedMs": 714,
+        "cpuPercent": 69.4,
+        "rssMiB": 128.6875
+      },
+      {
+        "elapsedMs": 718,
+        "cpuPercent": 69.4,
+        "rssMiB": 129.03125
+      },
+      {
+        "elapsedMs": 732,
+        "cpuPercent": 69.4,
+        "rssMiB": 129.03125
+      },
+      {
+        "elapsedMs": 738,
+        "cpuPercent": 69.4,
+        "rssMiB": 129.03125
+      },
+      {
+        "elapsedMs": 745,
+        "cpuPercent": 69.4,
+        "rssMiB": 129.03125
+      },
+      {
+        "elapsedMs": 758,
+        "cpuPercent": 61.5,
+        "rssMiB": 129.03125
+      },
+      {
+        "elapsedMs": 764,
+        "cpuPercent": 61.5,
+        "rssMiB": 129.03125
+      },
+      {
+        "elapsedMs": 769,
+        "cpuPercent": 61.5,
+        "rssMiB": 129.03125
+      },
+      {
+        "elapsedMs": 783,
+        "cpuPercent": 61.5,
+        "rssMiB": 129.03125
+      },
+      {
+        "elapsedMs": 789,
+        "cpuPercent": 61.5,
+        "rssMiB": 129.03125
+      },
+      {
+        "elapsedMs": 796,
+        "cpuPercent": 61.5,
+        "rssMiB": 129.03125
+      },
+      {
+        "elapsedMs": 809,
+        "cpuPercent": 61.5,
+        "rssMiB": 129.03125
+      },
+      {
+        "elapsedMs": 816,
+        "cpuPercent": 61.5,
+        "rssMiB": 129.046875
+      },
+      {
+        "elapsedMs": 822,
+        "cpuPercent": 61.5,
+        "rssMiB": 129.046875
+      },
+      {
+        "elapsedMs": 835,
+        "cpuPercent": 61.5,
+        "rssMiB": 129.109375
+      },
+      {
+        "elapsedMs": 841,
+        "cpuPercent": 61.5,
+        "rssMiB": 129.125
+      },
+      {
+        "elapsedMs": 847,
+        "cpuPercent": 61.5,
+        "rssMiB": 129.140625
+      },
+      {
+        "elapsedMs": 860,
+        "cpuPercent": 61.5,
+        "rssMiB": 129.203125
+      },
+      {
+        "elapsedMs": 866,
+        "cpuPercent": 61.5,
+        "rssMiB": 129.5
+      },
+      {
+        "elapsedMs": 872,
+        "cpuPercent": 61.5,
+        "rssMiB": 129.5
+      },
+      {
+        "elapsedMs": 884,
+        "cpuPercent": 54.5,
+        "rssMiB": 129.5
+      },
+      {
+        "elapsedMs": 890,
+        "cpuPercent": 54.5,
+        "rssMiB": 129.5
+      },
+      {
+        "elapsedMs": 895,
+        "cpuPercent": 54.5,
+        "rssMiB": 129.5
+      },
+      {
+        "elapsedMs": 906,
+        "cpuPercent": 54.5,
+        "rssMiB": 129.5
+      },
+      {
+        "elapsedMs": 913,
+        "cpuPercent": 54.5,
+        "rssMiB": 129.5
+      },
+      {
+        "elapsedMs": 918,
+        "cpuPercent": 54.5,
+        "rssMiB": 129.515625
+      },
+      {
+        "elapsedMs": 931,
+        "cpuPercent": 54.5,
+        "rssMiB": 129.515625
+      },
+      {
+        "elapsedMs": 937,
+        "cpuPercent": 54.5,
+        "rssMiB": 129.515625
+      },
+      {
+        "elapsedMs": 942,
+        "cpuPercent": 54.5,
+        "rssMiB": 129.515625
+      },
+      {
+        "elapsedMs": 954,
+        "cpuPercent": 54.5,
+        "rssMiB": 129.515625
+      },
+      {
+        "elapsedMs": 960,
+        "cpuPercent": 54.5,
+        "rssMiB": 129.515625
+      },
+      {
+        "elapsedMs": 965,
+        "cpuPercent": 54.5,
+        "rssMiB": 129.53125
+      },
+      {
+        "elapsedMs": 978,
+        "cpuPercent": 54.5,
+        "rssMiB": 129.5625
+      },
+      {
+        "elapsedMs": 984,
+        "cpuPercent": 54.5,
+        "rssMiB": 129.5625
+      },
+      {
+        "elapsedMs": 990,
+        "cpuPercent": 54.5,
+        "rssMiB": 129.890625
+      },
+      {
+        "elapsedMs": 1003,
+        "cpuPercent": 52.3,
+        "rssMiB": 129.9375
+      },
+      {
+        "elapsedMs": 1010,
+        "cpuPercent": 52.3,
+        "rssMiB": 129.9375
+      },
+      {
+        "elapsedMs": 1016,
+        "cpuPercent": 52.3,
+        "rssMiB": 129.9375
+      },
+      {
+        "elapsedMs": 1029,
+        "cpuPercent": 52.3,
+        "rssMiB": 129.984375
+      },
+      {
+        "elapsedMs": 1035,
+        "cpuPercent": 52.3,
+        "rssMiB": 130
+      },
+      {
+        "elapsedMs": 1041,
+        "cpuPercent": 52.3,
+        "rssMiB": 130
+      },
+      {
+        "elapsedMs": 1054,
+        "cpuPercent": 52.3,
+        "rssMiB": 130
+      },
+      {
+        "elapsedMs": 1060,
+        "cpuPercent": 52.3,
+        "rssMiB": 130
+      },
+      {
+        "elapsedMs": 1066,
+        "cpuPercent": 52.3,
+        "rssMiB": 130
+      },
+      {
+        "elapsedMs": 1078,
+        "cpuPercent": 52.3,
+        "rssMiB": 130
+      },
+      {
+        "elapsedMs": 1085,
+        "cpuPercent": 52.3,
+        "rssMiB": 130
+      },
+      {
+        "elapsedMs": 1090,
+        "cpuPercent": 52.3,
+        "rssMiB": 130
+      },
+      {
+        "elapsedMs": 1104,
+        "cpuPercent": 52.3,
+        "rssMiB": 130
+      },
+      {
+        "elapsedMs": 1110,
+        "cpuPercent": 52.3,
+        "rssMiB": 130
+      },
+      {
+        "elapsedMs": 1115,
+        "cpuPercent": 52.3,
+        "rssMiB": 130
+      },
+      {
+        "elapsedMs": 1128,
+        "cpuPercent": 48.2,
+        "rssMiB": 130.609375
+      },
+      {
+        "elapsedMs": 1135,
+        "cpuPercent": 48.2,
+        "rssMiB": 130.90625
+      },
+      {
+        "elapsedMs": 1140,
+        "cpuPercent": 48.2,
+        "rssMiB": 130.90625
+      },
+      {
+        "elapsedMs": 1153,
+        "cpuPercent": 48.2,
+        "rssMiB": 130.9375
+      },
+      {
+        "elapsedMs": 1159,
+        "cpuPercent": 48.2,
+        "rssMiB": 130.9375
+      },
+      {
+        "elapsedMs": 1166,
+        "cpuPercent": 48.2,
+        "rssMiB": 130.9375
+      },
+      {
+        "elapsedMs": 1179,
+        "cpuPercent": 48.2,
+        "rssMiB": 130.984375
+      },
+      {
+        "elapsedMs": 1185,
+        "cpuPercent": 48.2,
+        "rssMiB": 131
+      },
+      {
+        "elapsedMs": 1192,
+        "cpuPercent": 48.2,
+        "rssMiB": 131
+      },
+      {
+        "elapsedMs": 1205,
+        "cpuPercent": 48.2,
+        "rssMiB": 131
+      },
+      {
+        "elapsedMs": 1212,
+        "cpuPercent": 48.2,
+        "rssMiB": 131
+      },
+      {
+        "elapsedMs": 1219,
+        "cpuPercent": 48.2,
+        "rssMiB": 131
+      },
+      {
+        "elapsedMs": 1233,
+        "cpuPercent": 48.2,
+        "rssMiB": 131
+      },
+      {
+        "elapsedMs": 1241,
+        "cpuPercent": 48.2,
+        "rssMiB": 131
+      },
+      {
+        "elapsedMs": 1246,
+        "cpuPercent": 48.2,
+        "rssMiB": 131
+      },
+      {
+        "elapsedMs": 1259,
+        "cpuPercent": 48.4,
+        "rssMiB": 131
+      },
+      {
+        "elapsedMs": 1268,
+        "cpuPercent": 48.4,
+        "rssMiB": 131
+      },
+      {
+        "elapsedMs": 1284,
+        "cpuPercent": 48.4,
+        "rssMiB": 132.4375
+      },
+      {
+        "elapsedMs": 1303,
+        "cpuPercent": 48.4,
+        "rssMiB": 132.1875
+      },
+      {
+        "elapsedMs": 1313,
+        "cpuPercent": 48.4,
+        "rssMiB": 132.1875
+      },
+      {
+        "elapsedMs": 1322,
+        "cpuPercent": 48.4,
+        "rssMiB": 132.1875
+      },
+      {
+        "elapsedMs": 1349,
+        "cpuPercent": 48.4,
+        "rssMiB": 132.515625
+      },
+      {
+        "elapsedMs": 1371,
+        "cpuPercent": 48.4,
+        "rssMiB": 132.53125
+      },
+      {
+        "elapsedMs": 1393,
+        "cpuPercent": 71.3,
+        "rssMiB": 132.875
+      },
+      {
+        "elapsedMs": 1422,
+        "cpuPercent": 71.3,
+        "rssMiB": 133.359375
+      },
+      {
+        "elapsedMs": 1447,
+        "cpuPercent": 71.3,
+        "rssMiB": 134.84375
+      },
+      {
+        "elapsedMs": 1467,
+        "cpuPercent": 71.3,
+        "rssMiB": 136.3125
+      },
+      {
+        "elapsedMs": 1489,
+        "cpuPercent": 71.3,
+        "rssMiB": 138.625
+      },
+      {
+        "elapsedMs": 1506,
+        "cpuPercent": 80.4,
+        "rssMiB": 140.125
+      },
+      {
+        "elapsedMs": 1522,
+        "cpuPercent": 80.4,
+        "rssMiB": 141.921875
+      },
+      {
+        "elapsedMs": 1542,
+        "cpuPercent": 80.4,
+        "rssMiB": 141.921875
+      },
+      {
+        "elapsedMs": 1558,
+        "cpuPercent": 80.4,
+        "rssMiB": 142.4375
+      },
+      {
+        "elapsedMs": 1574,
+        "cpuPercent": 80.4,
+        "rssMiB": 142.46875
+      },
+      {
+        "elapsedMs": 1594,
+        "cpuPercent": 80.4,
+        "rssMiB": 142.46875
+      },
+      {
+        "elapsedMs": 1611,
+        "cpuPercent": 80.4,
+        "rssMiB": 143.84375
+      },
+      {
+        "elapsedMs": 1628,
+        "cpuPercent": 89.5,
+        "rssMiB": 145.328125
+      },
+      {
+        "elapsedMs": 1648,
+        "cpuPercent": 89.5,
+        "rssMiB": 147.703125
+      },
+      {
+        "elapsedMs": 1666,
+        "cpuPercent": 89.5,
+        "rssMiB": 149.265625
+      },
+      {
+        "elapsedMs": 1683,
+        "cpuPercent": 89.5,
+        "rssMiB": 151.140625
+      },
+      {
+        "elapsedMs": 1702,
+        "cpuPercent": 89.5,
+        "rssMiB": 152.03125
+      },
+      {
+        "elapsedMs": 1717,
+        "cpuPercent": 89.5,
+        "rssMiB": 152.046875
+      },
+      {
+        "elapsedMs": 1731,
+        "cpuPercent": 89.5,
+        "rssMiB": 152.046875
+      },
+      {
+        "elapsedMs": 1751,
+        "cpuPercent": 94.4,
+        "rssMiB": 152.0625
+      },
+      {
+        "elapsedMs": 1767,
+        "cpuPercent": 94.4,
+        "rssMiB": 152.0625
+      },
+      {
+        "elapsedMs": 1783,
+        "cpuPercent": 94.4,
+        "rssMiB": 152.0625
+      },
+      {
+        "elapsedMs": 1802,
+        "cpuPercent": 94.4,
+        "rssMiB": 152.125
+      },
+      {
+        "elapsedMs": 1817,
+        "cpuPercent": 94.4,
+        "rssMiB": 152.1875
+      },
+      {
+        "elapsedMs": 1831,
+        "cpuPercent": 94.4,
+        "rssMiB": 152.25
+      },
+      {
+        "elapsedMs": 1848,
+        "cpuPercent": 94.4,
+        "rssMiB": 152.3125
+      },
+      {
+        "elapsedMs": 1864,
+        "cpuPercent": 94.4,
+        "rssMiB": 152.3125
+      },
+      {
+        "elapsedMs": 1879,
+        "cpuPercent": 90.7,
+        "rssMiB": 152.3125
+      },
+      {
+        "elapsedMs": 1899,
+        "cpuPercent": 90.7,
+        "rssMiB": 152.34375
+      },
+      {
+        "elapsedMs": 1922,
+        "cpuPercent": 90.7,
+        "rssMiB": 152.359375
+      },
+      {
+        "elapsedMs": 1942,
+        "cpuPercent": 90.7,
+        "rssMiB": 152.6875
+      },
+      {
+        "elapsedMs": 1967,
+        "cpuPercent": 90.7,
+        "rssMiB": 152.734375
+      },
+      {
+        "elapsedMs": 1998,
+        "cpuPercent": 90.7,
+        "rssMiB": 152.765625
+      },
+      {
+        "elapsedMs": 2026,
+        "cpuPercent": 107.7,
+        "rssMiB": 152.796875
+      },
+      {
+        "elapsedMs": 2063,
+        "cpuPercent": 107.7,
+        "rssMiB": 152.984375
+      },
+      {
+        "elapsedMs": 2101,
+        "cpuPercent": 107.7,
+        "rssMiB": 154.53125
+      },
+      {
+        "elapsedMs": 2132,
+        "cpuPercent": 117.9,
+        "rssMiB": 154.5625
+      },
+      {
+        "elapsedMs": 2158,
+        "cpuPercent": 117.9,
+        "rssMiB": 154.578125
+      },
+      {
+        "elapsedMs": 2189,
+        "cpuPercent": 117.9,
+        "rssMiB": 154.59375
+      },
+      {
+        "elapsedMs": 2218,
+        "cpuPercent": 117.9,
+        "rssMiB": 154.734375
+      },
+      {
+        "elapsedMs": 2250,
+        "cpuPercent": 117.9,
+        "rssMiB": 157.109375
+      },
+      {
+        "elapsedMs": 2283,
+        "cpuPercent": 118.7,
+        "rssMiB": 157.125
+      },
+      {
+        "elapsedMs": 2311,
+        "cpuPercent": 118.7,
+        "rssMiB": 157.140625
+      },
+      {
+        "elapsedMs": 2368,
+        "cpuPercent": 118.7,
+        "rssMiB": 157.375
+      },
+      {
+        "elapsedMs": 2409,
+        "cpuPercent": 128.7,
+        "rssMiB": 159.78125
+      },
+      {
+        "elapsedMs": 2440,
+        "cpuPercent": 128.7,
+        "rssMiB": 160.921875
+      },
+      {
+        "elapsedMs": 2479,
+        "cpuPercent": 128.7,
+        "rssMiB": 163.375
+      },
+      {
+        "elapsedMs": 2525,
+        "cpuPercent": 140,
+        "rssMiB": 163.8125
+      },
+      {
+        "elapsedMs": 2572,
+        "cpuPercent": 140,
+        "rssMiB": 164.0625
+      },
+      {
+        "elapsedMs": 2614,
+        "cpuPercent": 140,
+        "rssMiB": 165.0625
+      },
+      {
+        "elapsedMs": 2635,
+        "cpuPercent": 145.2,
+        "rssMiB": 165.078125
+      }
+    ],
+    "samples": [
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 61.963125,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 210.719791,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 7.414999999999964,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 18.664250000000038,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 6.331125000000043,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 4.660708,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 11.365333000000021,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.7837499999999977,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 6.901624999999967,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 10.086749999999995,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.9609170000000518,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 3.7145830000000046,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 10.518208000000016,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 6.703874999999982,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 4.085749999999962,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 9.463750000000005,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 2.404958000000022,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 3.3665840000000458,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 10.038042000000019,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 2.1735419999999976,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 1.9933340000000044,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 9.141707999999994,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.911707999999976,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 3.43020800000005,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 12.26091699999995,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 2.237792000000013,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 3.1630830000000287,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 10.307709000000045,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.2520410000000766,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 2.8181249999998954,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 9.845749999999953,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 2.901499999999942,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 2.9547919999999976,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 9.921334000000002,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.416917000000012,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 3.1079160000000456,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 9.35354099999995,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.0512090000000853,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 3.2071670000000267,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 11.050542000000064,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.1572080000000824,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 2.613124999999968,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 9.415290999999911,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 2.7277500000000146,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 2.6558749999999236,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 9.560750000000098,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.4039590000001,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 2.759708000000046,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 9.678249999999935,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.0607499999999845,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 1.7842920000000504,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 9.805791999999997,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.013166999999953,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 3.7718340000000126,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 9.921125000000075,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.0541670000000067,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 2.8590410000000475,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 9.710541000000035,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.21712500000001,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 3.6953340000000026,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 9.835583000000042,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.305458000000044,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 2.9823330000000396,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 9.856249999999932,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.1727919999999585,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 2.783333999999968,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 9.787832999999978,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.0338329999999587,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 2.720416,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 9.36587499999996,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 2.9560000000000173,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 2.6621659999999565,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 7.908832999999959,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.387207999999987,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 3.2273340000000417,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 9.328167000000008,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 2.952042000000006,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 2.6127089999999953,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 9.376874999999927,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.1793749999999363,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 2.5357079999999996,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 9.658999999999992,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.0146669999999176,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 3.5343749999999545,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 9.687625000000025,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.2858749999998054,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 3.0258749999998145,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 10.191083999999819,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.2200840000000426,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 2.9517080000000533,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 9.715541999999914,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 2.9488749999998163,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 2.7339170000000195,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 9.690333999999893,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.3852079999999205,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 3.092292000000043,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 9.790874999999915,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.1968339999998534,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 2.7610409999999774,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 9.780457999999953,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.4732500000000073,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 2.2376670000001013,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 9.553292000000056,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.598833999999897,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 3.268000000000029,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 10.22199999999998,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.509999999999991,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 3.5829579999999623,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 9.963416000000052,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.480624999999918,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 3.9980419999999413,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 10.839165999999977,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 4.46287499999994,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 1.8300829999998314,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 11.004374999999982,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.509667000000036,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 4.927832999999964,
+        "bytes": 140
+      },
+      {
+        "concurrency": 1,
+        "path": "/",
+        "status": 200,
+        "ms": 13.650750000000016,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 4.700207999999975,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 1,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 4.4036660000001575,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 15.650417000000061,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 8.374874999999975,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 9.300542000000178,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 19.601457999999866,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.0280840000000353,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 5.297416999999996,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 16.901499999999942,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 11.851292000000058,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 4.19620800000007,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 16.988415999999916,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 8.829165999999987,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 11.109042000000045,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 19.607708000000002,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 8.095624999999927,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 9.98762499999998,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 22.57154199999991,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 4.112209000000121,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 5.436666999999943,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 18.7623329999999,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 11.061791000000085,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 3.872665999999981,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 15.915666000000101,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 9.930415999999923,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 10.965124999999944,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 14.983457999999928,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 6.714291999999887,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 7.922833000000082,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 16.740082999999913,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.5663339999998698,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 4.558083000000124,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 13.436459000000013,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 8.128958000000011,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 3.431584000000157,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 12.150709000000006,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 6.797041999999919,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 7.688374999999951,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 13.630625000000009,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 5.922041000000036,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 6.705541999999923,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 15.634416999999985,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.174750000000131,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 4.174874999999929,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 12.08683300000007,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 7.414582999999993,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 3.4467500000000655,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 12.274458000000095,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 6.628500000000031,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 7.57545899999991,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 14.324624999999969,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 6.217959000000064,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 7.017499999999927,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 15.610791999999947,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 2.582291999999825,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 3.4435419999999795,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 12.565416999999798,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 7.666625000000067,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 3.5140829999998004,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 13.086832999999842,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 7.389124999999922,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 8.745792000000165,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 13.733375000000024,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 5.819707999999991,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 6.672833000000082,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 15.758458000000019,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.446374999999989,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 4.508291999999983,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 13.508624999999938,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 8.604709000000184,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 3.4897090000001754,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 12.891083000000208,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 7.785333000000037,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 8.63675000000012,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 13.503917000000001,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 5.954999999999927,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 6.758124999999836,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 14.806332999999995,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 2.068416999999954,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 2.760874999999942,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 11.039042000000109,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 5.857583000000204,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 1.6864160000000084,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 10.306291000000101,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 5.285249999999905,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 5.969625000000178,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 13.554000000000087,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 5.972792000000027,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 7.048375000000078,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 15.194625000000087,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.369374999999991,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 4.411415999999917,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 12.64474999999993,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 7.396332999999913,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 3.490374999999858,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 11.935624999999845,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 6.6321660000000975,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 7.441542000000027,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 13.324583999999959,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 5.7975410000001375,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 6.633458000000019,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 14.843208999999888,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.1071660000000065,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 3.831207999999833,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 11.321916000000101,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 6.633833000000095,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 3.0410839999999553,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 11.178540999999996,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 6.128540999999814,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 6.737250000000131,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 12.234834000000092,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 5.276374999999916,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 6.250916999999845,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 13.338707999999997,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.025917000000163,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 3.7714160000000447,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 12.221499999999878,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 6.584082999999964,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 3.199916999999914,
+        "bytes": 140
+      },
+      {
+        "concurrency": 4,
+        "path": "/",
+        "status": 200,
+        "ms": 10.981374999999844,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 6.756249999999909,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 4,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 7.390334000000166,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 13.338208000000122,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 4.438750000000027,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 5.065333999999893,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 13.999458000000004,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 8.224916000000121,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 9.44645800000012,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 16.645541999999978,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 11.847041999999874,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 3.616249999999809,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 17.011291999999912,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 6.48154199999999,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 7.143832999999859,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 17.193624999999884,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 10.238375000000133,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 11.240875000000187,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 18.735582999999906,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.0180420000001504,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 3.529166999999916,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 15.601500000000215,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 6.411166999999978,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 7.10225000000014,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 16.297250000000076,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 10.105874999999969,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 10.726042000000007,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 19.989832999999862,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 5.543833999999833,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 6.4960419999999885,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 19.79254100000003,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 10.257333000000017,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 11.528750000000173,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 20.559792000000016,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 15.201708000000053,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 3.1850420000000668,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 22.464542000000165,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 6.944082999999864,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 7.642917000000125,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 21.38649999999984,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 11.356292000000167,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 12.243375000000015,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 23.943416999999954,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.00916600000005,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 4.072374999999965,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 22.664999999999964,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 9.384708000000046,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 10.382749999999987,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 22.00108399999999,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 15.020167000000129,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 16.328457999999955,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 31.03412500000013,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 7.480583000000252,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 8.525082999999995,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 29.98645800000031,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 14.359042000000045,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 15.803207999999813,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 31.323207999999795,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 20.628082999999606,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 6.0881249999997635,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 28.757708999999977,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 11.13841599999978,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 12.368708999999853,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 29.22024999999985,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 17.692666000000372,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 18.797500000000127,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 30.6887499999998,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 4.102208000000246,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 5.203457999999955,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 24.057458000000224,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 10.792958999999883,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 11.832957999999962,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 24.318166999999903,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 16.645125000000007,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 18.30291699999998,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 20.677999999999884,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 6.110125000000153,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 7.128791000000092,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 21.364750000000186,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 10.970708000000286,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 11.7451659999997,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 21.836583000000246,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 15.549791999999798,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 3.9922919999999067,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 22.881333000000268,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 7.895958000000064,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 8.739250000000084,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 22.548749999999927,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 13.34487500000023,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 14.109332999999879,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 24.154915999999957,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.222374999999829,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 4.437250000000404,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 23.538375000000087,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 9.48291700000027,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 10.664084000000003,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 23.207458000000315,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 15.992792000000009,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 17.031417000000147,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 25.668040999999903,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 6.737166999999772,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 7.944958000000042,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 24.300917000000027,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 12.030250000000251,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 12.989042000000154,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 25.11499999999978,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 18.67733300000009,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 3.7852090000001226,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 24.895457999999962,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 8.78754200000003,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 10.171832999999879,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 25.423084000000017,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 15.106416999999965,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 15.988832999999886,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 26.971000000000004,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.2443749999997635,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 4.497666000000208,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 21.99408399999993,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 9.125708000000031,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 10.310915999999906,
+        "bytes": 140
+      },
+      {
+        "concurrency": 8,
+        "path": "/",
+        "status": 200,
+        "ms": 22.18754200000012,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 14.623583999999937,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 8,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 15.50191599999971,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 37.37825000000021,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 9.887708000000202,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 11.248000000000047,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 36.87095799999997,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 16.919708999999784,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 18.281082999999853,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 36.50937500000009,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 22.94445799999994,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 24.790915999999925,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 43.111417000000074,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 29.54654100000016,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 30.96050000000014,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 46.89504199999965,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 35.91624999999976,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 37.13262500000019,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 49.177458000000115,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.0089590000002318,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 4.103333999999904,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 34.337167000000136,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 9.268082999999933,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 9.974999999999909,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 33.938624999999774,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 14.292042000000038,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 15.06879200000003,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 34.93354199999976,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 21.102249999999913,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 22.06991599999992,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 34.98804199999995,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 25.625500000000102,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 26.312417000000096,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 36.0619999999999,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 29.242917000000034,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 2.4890419999996993,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 26.02133300000014,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 5.374332999999751,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 6.085832999999639,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 26.221292000000176,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 9.652666999999838,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 10.508624999999938,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 26.51741600000014,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 13.522583999999824,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 14.069749999999658,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 26.47804099999985,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 16.987959000000046,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 17.627292000000125,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 27.155707999999777,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 20.45641700000033,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 21.163790999999947,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 33.27291699999978,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 5.434458000000177,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 6.414250000000266,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 33.707916999999725,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 9.154415999999856,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 9.63458300000002,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 33.78441699999985,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 13.329541999999947,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 14.049250000000029,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 33.916999999999916,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 17.404917000000296,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 18.87608399999999,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 34.12995799999999,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 22.209124999999858,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 23.372208000000228,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 34.250416000000314,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.8380419999998594,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 4.8754579999999805,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 36.75245800000039,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 9.019374999999854,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 10.131083999999646,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 37.00066599999991,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 13.73458299999993,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 14.505166999999801,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 35.602084000000104,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 17.886457999999948,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 18.66954100000021,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 36.947791999999936,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 23.697625000000244,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 25.224792000000434,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 39.13454199999978,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 29.447999999999865,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 3.7354999999997744,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 38.43345799999997,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 7.839124999999967,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 8.702541999999994,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 37.82899999999972,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 13.763667000000169,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 14.59491700000035,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 37.56354099999999,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 18.717333999999937,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 19.614124999999603,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 38.899999999999636,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 23.929333999999926,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 25.104874999999993,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 39.80616700000019,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 30.186749999999847,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 31.235249999999724,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 38.23104199999989,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 6.318333000000166,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 7.061083000000053,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 36.797667000000274,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 10.701958000000104,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 11.450708999999733,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 36.94541700000036,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 15.99350000000004,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 17.36391700000013,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 37.898499999999785,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 22.565750000000207,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 23.44750000000022,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 37.98045899999988,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 27.106332999999722,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 27.88424999999961,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 38.01633300000003,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 3.2866250000001855,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 4.025542000000314,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 16.424916999999823,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 7.755083000000013,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 8.50329099999999,
+        "bytes": 140
+      },
+      {
+        "concurrency": 16,
+        "path": "/",
+        "status": 200,
+        "ms": 16.835625000000164,
+        "bytes": 344679
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog",
+        "status": 200,
+        "ms": 11.4721669999999,
+        "bytes": 1027
+      },
+      {
+        "concurrency": 16,
+        "path": "/api/catalog/version",
+        "status": 200,
+        "ms": 12.075249999999869,
+        "bytes": 140
+      }
+    ]
+  },
+  "publicBusinessModuleImport": {
+    "loadedModules": 159,
+    "rssMiB": 58.421875,
+    "firebaseFunctionsSharpPdfLoaded": false,
+    "businessOperationsExecuted": false
+  },
+  "cloudReadOnly": {
+    "service": "secondevie-next-sandbox",
+    "latestReadyRevision": "secondevie-next-sandbox-build-2026-09-09-005",
+    "ingress": "all",
+    "minScale": "0",
+    "maxScale": "10",
+    "concurrency": 80,
+    "revisionCount": 563,
+    "trafficEntries": 563,
+    "positiveRevisionMinimums": [],
+    "passkey-options": {
+      "revision": "generatepasskeyauthenticationoptionsgen2-00004-xak",
+      "traffic": [
+        {
+          "latestRevision": true,
+          "percent": 100,
+          "revisionName": "generatepasskeyauthenticationoptionsgen2-00004-xak"
+        }
+      ],
+      "minScale": "0"
+    },
+    "passkey-verify": {
+      "revision": "verifypasskeyauthenticationgen2-00004-qiw",
+      "traffic": [
+        {
+          "latestRevision": true,
+          "percent": 100,
+          "revisionName": "verifypasskeyauthenticationgen2-00004-qiw"
+        }
+      ],
+      "minScale": "0"
+    }
+  },
+  "billing": {
+    "observedEUR": 0.57,
+    "forecastEUR": 3.22,
+    "source": "historical user-provided Billing observation 2026-09-09; not reread this run",
+    "afterMigrationCost": null
+  },
+  "limitations": [
+    "No actual CPU/cgroup memory constraint; no Docker/Podman available",
+    "No real WebAuthn enrollment or real provider OTP/Stripe recipe",
+    "No hosted before/after p50/p95 or Firestore read accounting",
+    "No two rollouts/rollback or max-three-instance test",
+    "No post-migration Billing observation",
+    "Emulators not run; Node transactions/providers mocked"
+  ],
+  "sourceSha256": {
+    "app/admin/AdminAppIsland.jsx": "d26773ee1983ac0ccf5ece05337d05be8a93ee47c5021c4794d3e2d0f1c98504",
+    "app/api/auth/passkeys/[operation]/route.js": "72bff73c318a8663025740e87e448309a16c466435cc6cff1c99b68d31169eb0",
+    "app/api/public/[operation]/route.js": "bb6fd3cbb6a95585c52a28572b2227c7db1ce9c458a91e581b78a97b3ddb9076",
+    "deploy/public-runtime-candidate.json": "f6d69d049104eb4634be1d024aa212ec04f9c0e2e74066e3efd8a6c932f4f841",
+    "functions/index.js": "d66a14002481a7163e8f0ee9e0e91d724b1284b23bf929f064ffa310e47d1509",
+    "functions/src/admin/readerEntrypoint.js": "351b89cfd937dc4584ab7d1c7097973cf4b522e2956841b160a5638eab12776e",
+    "functions/src/admin/sharedReader.cjs": "04c933bc562000ea64ab7584f03497dc5787d7b79c125a869666343ee27c8063",
+    "functions/src/admin/sharedReaderEntrypoint.js": "81f178739e8af339f3e2a0b5f511396255809d6c1ddcc35d23dd2ad70a8b3fac",
+    "functions/src/analytics/updateUserSessions.js": "5e1fe2bffe9d3b51588a9ddff22d6aab8d55ccdf3606f8b8a17d061a9a0c36d2",
+    "functions/src/analytics/updateUserSessionsHandler.cjs": "a265a3323872b93bc77de4a24cb93d3a62fa93d8b1023308a28d461c166647a4",
+    "functions/src/auth/customerLoginOtp.js": "97189ad057985aca54c9caa022d31a09dd1df808fbf05d538e49b94a1c866a86",
+    "functions/src/auth/customerLoginOtpHandlers.cjs": "b9ba8449e87373288f0d8a87294facc2a506f55d2acf66b445a73026c49a48c1",
+    "functions/src/auth/guestCheckoutOtp.js": "8032323b3a438c2f97cf7393d638c15cbd963e109933d8609c852a5b28258f9c",
+    "functions/src/auth/guestCheckoutOtpHandlers.cjs": "fb1cb9fd64b3c761d171fbc2c39457badc2e3dd1aa2b3c481ab9569d94bed52a",
+    "functions/src/auth/passkeyHandlers.cjs": "a921d87bfe41f960363e1ec2b74b93b92b5b64caa07db68cec86d6b9564741b7",
+    "functions/src/auth/passkeyPerformance.js": "f25317954f2ea94cc537619ba2fcf7389b0f0c26158e6c43929354f0d0cb2d92",
+    "functions/src/auth/passkeyRegistration.js": "2802aca6c056687d1512638a6c60b0c5d3e1920b402beb4d4dcc0864c88ca888",
+    "functions/src/auth/passkeys.js": "e5a0e4104ab6a941596b6166c6f099222fa1e812e71326ac116575e0c74dc0a2",
+    "functions/src/commerce/checkoutEmailIdentity.js": "fa1a325aa1364f21a06e834668c46b16ceecf88f2b0dc6c820a5ea79671034b7",
+    "functions/src/commerce/checkoutEmailIdentityCore.cjs": "bd795894efdf428076ef1becaebdd42c0fd0e796901d355528646aa8c0f12deb",
+    "functions/src/commerce/checkoutHandlers.cjs": "e1969fe38488751a1a62b2e3a606a0ac68d0962f75bc8d5f9c83025d5312efd4",
+    "functions/src/commerce/customerOrderQueries.cjs": "142c4d26ac106f2ae410678682d39883aab2340d98162fd0658d6cd0a530ca45",
+    "functions/src/commerce/orderStatus.js": "19d09737864aa0fe47d7d3099df248856e8ece47f5fc7756d6655addf201e15e",
+    "functions/src/commerce/orderStatusHandler.cjs": "d9ab428d1bddcc80710bb8d96162bc95f549bd41c08943809ef29068d50d5009",
+    "functions/src/commerce/publicCheckoutRuntime.cjs": "d9bdf10af6b2211132e35ee6814601e4cba1511cd355f7e0170485225e29ce89",
+    "functions/src/commerce/publicPaymentLinkHandlers.cjs": "82b4e7d001d43c0e41c013d7f0a0e57a8b897efab74b8da8992d90b1b5f6c990",
+    "functions/src/commerce/publicPromotionHandlers.cjs": "3689289b9a82005b6ca8f4dab013ed4c92adf30eef7bc901b1c95ff99ae646d0",
+    "functions/src/commerce/v2AdminPaymentLinks.js": "f296bf8694612484e85f11306e72b020f6b45610bcf124bd1ac5c2d2c6f237ce",
+    "functions/src/commerce/v2Checkout.js": "bc86babb595c9e964ed2b424fa399d9bccb26c14dd95cf4badab1581946b771f",
+    "functions/src/commerce/v2OrderQueries.js": "762dac49a30ad4af6e558e2e9959482d79064fbdfd285227ef71b83cb217af59",
+    "functions/src/commerce/v2PromotionCodes.js": "ce6dd49b6d2c4bc23e6f460d1f733b4acf9c88972b0ee38cc9921d4e84e2de21",
+    "functions/src/newsletter/newsletterHandlers.cjs": "66b43cba9afe7ac21ada6e1b773fc91411905b056b70e269afcf30eb76ecc682",
+    "functions/src/newsletter/newsletterRewards.js": "0cf81cf3fa33f4acd6c1f8b91bed3528429ab69a9bf74e484d8f2637a62de89f",
+    "functions/src/quotes/publicQuoteHandlers.cjs": "99ed002abf59e4f3fb8e15cb47c0f51d12c95de802b326c83f7b3b54a2d68e36",
+    "functions/src/quotes/quoteRequests.js": "82fd35fdaaaa79c97c33ba169f4fbf590b37685ab9a4dba52604f9de307c1d65",
+    "next.config.mjs": "fd95e8f4e4bd6651a276402a9ec89a583a531ad7551642e97432c53f5f998f72",
+    "package.json": "0fe61ce752916e179edadcf931181064ed4fac3c8d51b932294fef73bf3fe428",
+    "pnpm-lock.yaml": "6729f8552ecb694f6637fc8e09a22b8b89fcdf6097cb63715af0bfd2538cf336",
+    "scripts/deploy-functions-targeted.mjs": "82abe5547fe5ae3ea8d526fed71d705b51b6a8df0c9831563c30894ea2fdd55a",
+    "scripts/functions-gen2-inventory.mjs": "64a0d851e37d18841d3cc1d2ffd1b586156ed59858a96ac88d270ac2fba652c9",
+    "scripts/measure-public-runtime-local.mjs": "9a164889505c8ef608fd2f092540fe6b10966d30a6266465f0855b5bbf88515e",
+    "shared/adminReaderTransport.mjs": "46606d0c22c8796bb50f95d9f3674933c4cd2b2de5651f8f623d658a033c3014",
+    "shared/passkeyTransport.mjs": "e7f9059cda665ace14d9e1d3605736042fa7771f0343cec7aad61863a57b3825",
+    "shared/publicOperationTransport.mjs": "244dde8891c42b978175677aa6721c3df9701337bc8d3fddb2c3e7179e502923",
+    "src/kit/admin/AdminDashboard.jsx": "9505498f3d3ddff842a4fe14c6f324223ed900fd1d6eaf283855c598a41c9845",
+    "src/kit/admin/AdminPaymentLinks.jsx": "1b2cf5f187ba0470244be4b31aa45eb1a52e8543afab46b16e71eb81192f8331",
+    "src/kit/admin/AdminPromotionCodes.jsx": "cd2f8c819d4206997308a6944cc2655369b5fbd5df90e54cd77553cfc68b9fcc",
+    "src/kit/admin/AdminReturns.jsx": "ad59255b927edeebc8dad110b716a7cafe2ea67c6b42ef42782c0bbe3a62da81",
+    "src/kit/admin/adminPreloadQueue.js": "e8aab208992cfddd6cea8e2a440ead29100735bf4bd9e51777ca8ec430e2d34b",
+    "src/kit/admin/promotionCodeClient.js": "961b5406b325f2bc458223d7a98e9123384fd6b30d89027547d5db277b6eb328",
+    "src/kit/auth/privateReadCoalescer.mjs": "ce5cf38cbd5d49210b2c70e0c508e1877c2917c3957d579b9f09d72d90c6037f",
+    "src/kit/commerce/CheckoutStripeModal.jsx": "64247bab138d81ec550b42e61015bb8daeeb87e4f150eedcff28931288d59db5",
+    "src/kit/commerce/CheckoutView.jsx": "0e2f4c1286c80c7ed5486675d64871b21cf98524add61f5f2d520c971fcb6186",
+    "src/kit/commerce/adminPaymentLinkClient.js": "fcff29108f86557956187d39585334a04a6723b4a6e3654c5e946087601ffdc2",
+    "src/kit/config/firebaseLazy.js": "435e9ea2144656c6fc5aafe4d0cdf5431006d8084edc713662be3024048617f6",
+    "src/kit/marketplace/GalleryFixedSectionsInteractions.jsx": "5f86e56eab2d7f8c665787abd046100fd0bd038cdb6a9a9f239cc802d3fc3d89",
+    "src/kit/marketplace/LegacyLoginModalFullIsland.jsx": "eb9feb3120eb39b47127f5898def822235702646a2aeef6641239046af278706",
+    "src/lib/server/immutableReleaseCache.mjs": "3219f4da244b0e8e0bf75b6f7e45e95061b01925b25c52ff0ccdf01169ffa406",
+    "src/lib/server/materializedCatalog.js": "dccfdf86e20505b36410a31d906a88c909df03d5ded4a4031f7416ab00a3855c",
+    "src/lib/server/passkeyHttp.mjs": "966ba28d366658bad994315d479788eab3c60c7a25b79f04b7c1e8d79fa22d3b",
+    "src/lib/server/publicAuthClientIp.mjs": "7aeae06da426ccdf5316723507fb7c648160a665502aaff77a5b899bf224ba46",
+    "src/lib/server/publicOperations.js": "27acbcbe38f3a448171b63045ab360d65f36e987ac817bd8538b28869550dac7",
+    "src/lib/server/publicPasskeys.js": "9a6d73f6f992daeeea04485d36c07dff5a68b94974961f8ac8dbb5ec5565eca7",
+    "src/lib/server/publicRuntimeMetrics.mjs": "853425bf559557adce9a84fb50f2c5da29e0c6416baeca18c62538910029f776",
+    "tests/admin-navigation-contract.test.mjs": "a26e7d174fd10fa6fd8a43dff0b2e3e47e1f8ba3acd87c1924b5135adc0374b7",
+    "tests/admin-preload-list-cache.test.mjs": "ae0201c4f79d192125cf6bb9e6f95dd4faa224e9a6274af3f177dbc7c7bd51e9",
+    "tests/admin-preload-queue.test.mjs": "776297c970a388a9f7f0650ecf99cfb905a094d3e79a42138ce1afe87947dc00",
+    "tests/admin-reader-startup.test.cjs": "77b3f070f5d11fcd63e46e76a580de1e57e4a38643fc563d373a2a6d1d77bbb0",
+    "tests/auth-assurance.test.cjs": "8cd00b8ffb8b1331d18b3f22eaa52d6dd84e35d736c9283842b7bd358df36538",
+    "tests/auth-email-provider-adapter.test.cjs": "94ddba03a71f85a1837b48f5fd72c1e7286d599d686461362c660ee3903694e4",
+    "tests/auth-unified-otp-contract.test.cjs": "4ffa8f78cdb254da0145eb5cd4969c4d027968fe2f2767ad4165edcf6d27059b",
+    "tests/commerce/browser/payment-ui-provider.jsx": "dbc8b9617c0b7130ede5e4ca66baea08dfaa825df258f71b418c3026155c2b3d",
+    "tests/commerce/browser/payment-ui.spec.mjs": "20dea5657a6df16fa1216f96be9ebf6bcc0780075add368af06ff15503b20b4d",
+    "tests/commerce/domain/customer-ui-audit.test.cjs": "ea9c1a6298f80e52877cba6b89b643b5003ea8e1e1ceab7d1fc19c98259e4b49",
+    "tests/commerce/domain/gate5-consumers.test.cjs": "efaa9b1e3b0333b03c6f9d4ab3e4a957210ae155c34373fb6fcef9b7ed907987",
+    "tests/functions-gen2-g0.test.mjs": "ecfc1042f291eabb8454471744cd9ead998381d089bac592d188b67a1ab2367f",
+    "tests/functions-gen2-g10.test.mjs": "1cf433bd6225123cdd57f2f1b356cd400427ff2a1a2d858ccf0ccbaa6550b862",
+    "tests/functions-gen2-g11.test.mjs": "1b841f504a100d49326b1b0176558ec6926fdfd25335199f6862f7766d8ce74d",
+    "tests/functions-gen2-g12-remaining.test.mjs": "8c5867c4b024d69289fdec8a568555fb2fcc2eee410ee121da96c91e08fe42d4",
+    "tests/functions-gen2-g12a-g3.test.mjs": "c283c8d08350743c3a392c26b6fe89b5a29fb50b5334c0c682286022bddb77d4",
+    "tests/functions-gen2-g4.test.mjs": "66fdac975c0c2fd768ffe9754f580679c6a88fea928608219e88f74272766205",
+    "tests/functions-gen2-g5.test.mjs": "b87b4eafe554b5ef442ef8e7419aa7021e04dac2e21b495333e91c772918d16a",
+    "tests/functions-gen2-g6.test.mjs": "5d1d8ce0c7e93d65aa1a40bfa4f5b5184405444f7e9ce3de753333aba4d876a3",
+    "tests/functions-gen2-g7.test.mjs": "df48adc2dcc618fbafc2169f5b6d651f652e28cb4b627befe18c41542506fed0",
+    "tests/functions-gen2-g8.test.mjs": "0fcc274af6c620db685cac79637ca279f0a6fb4894d56d36fdb132d7f33bab49",
+    "tests/functions-gen2-g9.test.mjs": "bb25d6dbb872a2c585bcfe0d61c0dae2463e3c162c361003ea2f9273bda8c11d",
+    "tests/manual-audit-completion.test.cjs": "2f2a7e19ab266f366c208e0d7a044e66b2c8315b52009725a146c1ca64f3c185",
+    "tests/passkey-performance.test.cjs": "4c3dcfa46b48fd1d74cac014be275cb87bcdc695dad356777200cebb8f6be21a",
+    "tests/passkey-registration-audit.test.cjs": "e7532bd2b74fcc832ecae3f86b4cc91850502a89a33d2a1b424dd247f33d8318",
+    "tests/passkey-server-hardening.test.cjs": "3abba25cc9990c2518e487ad16ad2d7c841ba625ffaaf58d2c36e6203fc7814b",
+    "tests/passkey-transaction-audit.test.cjs": "21f1a6a2274f5d23f2a3fcd2774c431c56dafc35ba453635259160fba34d8cce",
+    "tests/public-operation-http.test.mjs": "6cd3c22962b08c2910ceea317a5ef3d420ab9d41ff179b6c65877bc14c6b8996",
+    "tests/public-passkey-http.test.mjs": "9a4ccd5eb4520d6d29dd84898bfcb8210aa8edf79bfa2a1722e4ca15e9bb2e9f",
+    "tests/shared-admin-reader.test.cjs": "862d05eefa1fe1e8a1f08a29f7cb3eec11f8bb56e58cb45ec10e675801cb5864",
+    "functions/src/commerce/domain/v2Runtime.js": "a37834d206f8a0894acddfd2deb184b5852953c232b4803b9db3f2b71fd8bf90"
+  },
+  "versions": {
+    "node": "22.23.2",
+    "next": "16.3.0",
+    "react": "19.2.7",
+    "firebaseAdminRoot": "13.10.0",
+    "firebaseAdminFunctions": "13.10.0"
+  },
+  "documentValidation": {
+    "localLinkTargetsChecked": 203,
+    "missingTargets": 0,
+    "gitDiffCheckPassed": true
+  }
+}

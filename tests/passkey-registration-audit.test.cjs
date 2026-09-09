@@ -28,7 +28,7 @@ test('ordinary customer enrollment remains available; revoked admin claims requi
     await assert.rejects(authorizePasskeyRegistration({ auth: { uid: 'removed-admin', token: { admin: true } } }, {
         readAccess: async () => ({ active: false }), authorizeAdmin: async () => { throw new Error('admin-access-inactive'); },
     }), /admin-access-inactive/);
-    const source = fs.readFileSync(require.resolve('../functions/src/auth/passkeys.js'), 'utf8');
+    const source = fs.readFileSync(require.resolve('../functions/src/auth/passkeyHandlers.cjs'), 'utf8');
     for (const name of ['generatePasskeyRegistrationOptionsHandler', 'verifyPasskeyRegistrationHandler']) {
         const handler = source.slice(source.indexOf(`const ${name} =`));
         assert.ok(handler.indexOf('await authorizePasskeyRegistration(context)') < handler.indexOf('const uid = context.auth.uid'));

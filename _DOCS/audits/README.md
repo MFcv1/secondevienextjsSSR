@@ -7,9 +7,16 @@ Le dossier d'audit reste une photographie historique antérieure à cette livrai
 
 Créé le 5 septembre 2026 à la demande du propriétaire du projet.
 
-**Dernier audit enregistré : [7 septembre 2026 — interactions et fiabilité](2026-09-07-audit-interactions/README.md).**
-Le dossier daté contient la synthèse accessible, les deux rapports, les preuves,
-le patch et une photographie du code et des tests à la clôture.
+**Dernier audit enregistré : [9 septembre 2026 — mutualisation, cache et capacité](2026-09-09-mutualisation/README.md).**
+Inventaire des 158 Functions, usage 24 h/7 j/30 j, sonde galerie/CDN,
+ressources, coûts et plan proposé ; aucune infrastructure modifiée.
+Après clarification du budget : [plan à un seul service public chaud](2026-09-09-mutualisation/PLAN_PUBLIC_CHAUD.md),
+galerie et connexions ensemble, 512 MiB, un maintien public et max 3 proposé,
+admin min 0. [Suite d'implémentation](2026-09-09-mutualisation/INTEGRATION_PASSKEYS.md) :
+deux anciens maintiens passkey retirés dans le cloud ; handlers Next locaux,
+transport partagé non activé. Elle est distincte de l'audit initial en lecture seule.
+Le [diagnostic admin précédent](2026-09-09-chargements-admin/README.md)
+conserve les preuves et validations des correctifs locaux non déployés.
 
 Ce dossier contient les nouvelles campagnes d’audit. Les contrats applicables
 restent dans les chapitres de [_DOCS](../README.md) ; les conclusions d’un audit
@@ -23,6 +30,8 @@ de chaque défaut après correction.
 
 | Campagne | Périmètre | Livrables | Statut |
 | --- | --- | --- | --- |
+| Mutualisation, 2026-09-09 | Galerie/CDN, identité, lecteurs admin et inventaire de toutes les Functions | [Rapport](2026-09-09-mutualisation/README.md), [plan](2026-09-09-mutualisation/PLAN_IMPLEMENTATION.md), [inventaire](2026-09-09-mutualisation/INVENTAIRE.md) | Audit en lecture seule ; alternatives chiffrées, non implémentées |
+| Chargements admin, 2026-09-09 | Six vues commerciales des captures et points d'entrée des autres onglets | [Rapport et preuves](2026-09-09-chargements-admin/README.md) | Démarrages à froid confirmés ; correctifs ciblés locaux, non déployés ; gains après correctif non mesurés |
 | Interactions, 2026-09-07 | Navigation, panier/favoris, checkout/Stripe, emails, espace client, back-office et sources analytics | [Relecture intégrale et correctifs](RELECTURE_INTEGRALE_INTERACTIONS_2026-09-07.md), [448 fichiers](preuves/interactions-2026-09-07-relecture-integrale.json), [validations](preuves/interactions-2026-09-07-relecture-validations.json), [première passe](AUDIT_INTERACTIONS_2026-09-07.md) | 448 fichiers relus intégralement ; 109 sources modifiées/ajoutées dans la relecture ; 591 tests réussis ; zéro erreur ESLint ; non déployé |
 | Backend, 2026-09-05 | Firebase/Next, données admin, coût, capacité, fiabilité | [Rapport](AUDIT_BACKEND_2026-09-05.md), [lots proposés](PLAN_BACKEND_2026-09-05.md), [inventaire](preuves/backend-2026-09-05-inventaire.json), [reproductions](preuves/backend-2026-09-05-reproductions.cjs) | Audit livré ; défauts ouverts ; aucun correctif déployé |
 | Qualification back-office, 2026-09-05 | Parcours réels admin cliente, concordance, cache/reconnexion et suivi devis borné | [Rapport et preuves locales](QUALIFICATION_BACKOFFICE_2026-09-05.md) | Qualification partielle ; réserves de présentation ; BA-01 à BA-13 non clos ; aucun correctif ni déploiement |

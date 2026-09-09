@@ -33,6 +33,14 @@ en base. Une absence de `orderNumber` se degrade en `Référence indisponible`.
 
 ## 2. Flux d'achat
 
+Transport partagé livré sur sandbox : checkout create/resume, paiement par lien et aperçu
+promotionnel utilisent des handlers communs à Next et aux anciens wrappers.
+La recette Stripe test reste à faire. Les contrôles métier demeurent serveur, indépendants
+du transport ; aucun retry inter-transport après résultat ambigu. Webhooks, PDF,
+annulations/refunds et travaux de fond restent spécialisés. Le tirage newsletter
+n'est jamais déclenché au survol/visibilité ; seul son code peut être préchargé.
+[Livraison et qualification restante](../audits/2026-09-09-mutualisation/LIVRAISON_SANDBOX.md).
+
 Contrats supplémentaires du code local relu le 2026-09-07, non déployés :
 
 - Une ligne de panier possède un identifiant unique dans une création de

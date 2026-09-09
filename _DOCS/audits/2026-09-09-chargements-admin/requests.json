@@ -1,0 +1,184 @@
+[
+  {
+    "httpRequest": {
+      "latency": "1.323720763s",
+      "requestMethod": "POST",
+      "status": 200
+    },
+    "resource": {
+      "labels": {
+        "service_name": "listpromotioncodesadmingen2"
+      }
+    },
+    "timestamp": "2026-09-09T14:44:45.581935Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "5.526639774s",
+      "requestMethod": "OPTIONS",
+      "status": 204
+    },
+    "resource": {
+      "labels": {
+        "service_name": "listpromotioncodesadmingen2"
+      }
+    },
+    "timestamp": "2026-09-09T14:44:39.626516Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "1.053841463s",
+      "requestMethod": "POST",
+      "status": 200
+    },
+    "resource": {
+      "labels": {
+        "service_name": "listcustomerreturnrequestsadminv2gen2"
+      }
+    },
+    "timestamp": "2026-09-09T14:44:33.056575Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.819828336s",
+      "requestMethod": "POST",
+      "status": 200
+    },
+    "resource": {
+      "labels": {
+        "service_name": "listreturnsadminv2gen2"
+      }
+    },
+    "timestamp": "2026-09-09T14:44:31.775201Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "2.254824348s",
+      "requestMethod": "OPTIONS",
+      "status": 204
+    },
+    "resource": {
+      "labels": {
+        "service_name": "listcustomerreturnrequestsadminv2gen2"
+      }
+    },
+    "timestamp": "2026-09-09T14:44:30.285521Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "1.238288643s",
+      "requestMethod": "OPTIONS",
+      "status": 204
+    },
+    "resource": {
+      "labels": {
+        "service_name": "listreturnsadminv2gen2"
+      }
+    },
+    "timestamp": "2026-09-09T14:44:30.283864Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.922079951s",
+      "requestMethod": "POST",
+      "status": 200
+    },
+    "resource": {
+      "labels": {
+        "service_name": "getmanualinvoiceworkspaceadmingen2"
+      }
+    },
+    "timestamp": "2026-09-09T14:44:11.855783Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "1.226040213s",
+      "requestMethod": "OPTIONS",
+      "status": 204
+    },
+    "resource": {
+      "labels": {
+        "service_name": "getmanualinvoiceworkspaceadmingen2"
+      }
+    },
+    "timestamp": "2026-09-09T14:44:10.437396Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.448587896s",
+      "requestMethod": "POST",
+      "status": 200
+    },
+    "resource": {
+      "labels": {
+        "service_name": "listadminpaymentlinksgen2"
+      }
+    },
+    "timestamp": "2026-09-09T14:44:10.369736Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "3.855699294s",
+      "requestMethod": "OPTIONS",
+      "status": 204
+    },
+    "resource": {
+      "labels": {
+        "service_name": "listadminpaymentlinksgen2"
+      }
+    },
+    "timestamp": "2026-09-09T14:44:06.193915Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.860629220s",
+      "requestMethod": "POST",
+      "status": 200
+    },
+    "resource": {
+      "labels": {
+        "service_name": "listquoterequestsadmingen2"
+      }
+    },
+    "timestamp": "2026-09-09T14:43:53.815788Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "1.232970332s",
+      "requestMethod": "OPTIONS",
+      "status": 204
+    },
+    "resource": {
+      "labels": {
+        "service_name": "listquoterequestsadmingen2"
+      }
+    },
+    "timestamp": "2026-09-09T14:43:52.370233Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.912428830s",
+      "requestMethod": "POST",
+      "status": 200
+    },
+    "resource": {
+      "labels": {
+        "service_name": "listordersadminv2gen2"
+      }
+    },
+    "timestamp": "2026-09-09T14:43:33.328020Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "1.263954681s",
+      "requestMethod": "OPTIONS",
+      "status": 204
+    },
+    "resource": {
+      "labels": {
+        "service_name": "listordersadminv2gen2"
+      }
+    },
+    "timestamp": "2026-09-09T14:43:31.672098Z"
+  }
+]

@@ -220,7 +220,10 @@ test('les parcours OTP et commandes utilisent le meme runtime sans transport dir
         'functions/src/auth/guestCheckoutOtp.js',
         'functions/src/email/orderEmails.js'
     ]) {
-        const source = fs.readFileSync(path.join(root, relativePath), 'utf8');
+        let source = fs.readFileSync(path.join(root, relativePath), 'utf8');
+        if (relativePath.includes('/auth/')) {
+            source += '\n' + fs.readFileSync(path.join(root, relativePath.replace(/\.js$/, 'Handlers.cjs')), 'utf8');
+        }
         assert.match(source, /getTransactionalEmailRuntime/);
         assert.match(source, /TRANSACTIONAL_EMAIL_SECRETS/);
         assert.match(source, /idempotencyKey:/);
