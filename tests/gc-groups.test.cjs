@@ -3,6 +3,32 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { createMemory } = require('./helpers/inactivityMemory.cjs');
 const { gcGroup, markGcGroup, createGcWork } = require('../functions/src/catalog/gcGroups.cjs');
+const { enqueueMediaCandidates, mediaCandidateId } = require('../functions/src/catalog/mediaGarbageCollection');
+test('un retrait après cohorte terminée renouvelle la quarantaine sans multiplier les doublons actifs', async () => {
+    const priorMode = process.env.CATALOG_GC_MODE;
+    process.env.CATALOG_GC_MODE = 'grouped_dry_run';
+    try {
+        for (const state of ['scheduled', 'running', 'succeeded']) {
+            const f = createMemory(), path = 'furniture/example/detail.webp';
+            const id = mediaCandidateId(path), oldGroup = gcGroup('media', 86400000);
+            f.records.set(`sys_catalog_media_gc/${id}`, { path, generation: '123', state: 'pending', gcGroupId: oldGroup.id });
+            f.records.set(`sys_catalog_gc_groups/${oldGroup.id}`, { maintenanceWork: { state } });
+            const now = new Date('2026-09-10T12:00:00Z');
+            const result = await enqueueMediaCandidates({ db: f.db, now: () => now,
+                bucket: { file: () => ({ getMetadata: async () => [{ generation: '123' }] }) } }, { paths: [path, path] });
+            assert.equal(result.queued, state === 'succeeded' ? 1 : 0);
+            if (state === 'succeeded') {
+                const candidate = f.records.get(`sys_catalog_media_gc/${id}`);
+                assert.equal(candidate.notBefore.getTime(), now.getTime() + 90 * 86400000);
+                assert.notEqual(candidate.gcGroupId, oldGroup.id);
+                assert.ok(f.records.get(`sys_catalog_gc_groups/${candidate.gcGroupId}`).dirtyToken);
+            } else assert.equal(f.metrics.writes, 0);
+        }
+    } finally {
+        if (priorMode === undefined) delete process.env.CATALOG_GC_MODE;
+        else process.env.CATALOG_GC_MODE = priorMode;
+    }
+});
 test('quarantaine réelle de 90 jours : relais bornés, puis arrêt sans suppression', async () => {
     const f = createMemory(); let now = Date.parse('2026-09-10T12:00:00Z'), inspections = 0;
     const group = gcGroup('media', now + 90 * 86400000), queue = new Map();

@@ -56,11 +56,21 @@ async function enqueueMediaCandidates(dependencies, input) {
     }
     return db.runTransaction(async (transaction) => {
         const snapshots = await Promise.all(candidates.map(({ reference }) => transaction.get(reference)));
+        const priorGroupIds = process.env.CATALOG_GC_MODE === 'grouped_dry_run'
+            ? [...new Set(snapshots.map(snapshot => snapshot.data()?.gcGroupId).filter(Boolean))] : [];
+        const priorGroups = new Map(await Promise.all(priorGroupIds.map(async id =>
+            [id, (await transaction.get(db.doc(`sys_catalog_gc_groups/${id}`))).data()])));
         let queued = 0;
         const groups = new Map();
         candidates.forEach(({ reference, value }, index) => {
             const existing = snapshots[index].exists ? snapshots[index].data() : null;
-            if (existing && String(existing.generation || '') === String(value.generation || '')) return;
+            if (existing && String(existing.generation || '') === String(value.generation || '')) {
+                const completedGroup = priorGroups.get(existing.gcGroupId)?.maintenanceWork?.state === 'succeeded';
+                // A retained file can be attached and removed again without a
+                // Storage generation change. That new removal starts a fresh
+                // quarantine; duplicates while a cohort is active stay coalesced.
+                if (!value.generation || existing.state !== 'pending' || !completedGroup) return;
+            }
             if (process.env.CATALOG_GC_MODE === 'grouped_dry_run') {
                 const group = gcGroup('media', value.notBefore.getTime());
                 value.gcGroupId = group.id; groups.set(group.id, group);
