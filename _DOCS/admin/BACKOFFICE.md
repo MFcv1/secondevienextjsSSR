@@ -44,6 +44,21 @@ du 9 septembre. Premier relevé Google en attente ; état de publication dans le
 
 ## Chargements et anticipation de navigation
 
+Correctif du 11 septembre (A-039, Hosting sandbox `build-2026-09-10-007`) : le délai de lecture
+Stats/Data signale une absence de confirmation serveur après quinze secondes,
+sans supprimer l'écoute Firestore. Une réponse serveur tardive rétablit
+l'affichage automatiquement. Un snapshot local ne désarme pas ce délai et
+ne masque pas une erreur déjà signalée. Aucun polling ni nouvelle connexion
+périodique n'est ajouté ; pause et purge suivent toujours visibilité et droits.
+Stats/Data ont été requalifiés dans Safari avec confirmation serveur, sans
+relance manuelle. La cause du blocage Safari initial reste non prouvée.
+
+Le registre des liens isole les anciennes entrées qui ne respectent pas le
+contrat de lien de paiement et signale leur présence. Une telle entrée ne
+doit pas empêcher le chargement des liens valides ou des choix de création.
+Les erreurs HMAC/configuration restent bloquantes ; les entrées invalides ne
+reçoivent aucune action de paiement.
+
 Transport partagé activé sur sandbox : dix lecteurs de premières pages/détails utilisent
 `readAdminSharedGen2`, service séparé min 0/max 1, sans résultat privé conservé côté
 serveur. App Check, claim/registre actif/AAL2 revérifiés à chaque appel. Le flag

@@ -1,15 +1,25 @@
 // Dependency-injected channel: navigation subscribers do not own the network listener.
-export function createAnalyticsChannel(listen, validate) {
+export function createAnalyticsChannel(listen, validate, {
+    responseTimeoutMs = 15_000,
+    scheduleResponseTimeout = setTimeout,
+    cancelResponseTimeout = clearTimeout
+} = {}) {
     const empty = Object.freeze({ status: 'idle', data: null });
     let state = empty;
     let owner = null;
     let stop = null;
+    let responseTimer = null;
     let epoch = 0;
     let highWater = null;
     const subscribers = new Set();
     const publish = next => { state = next; subscribers.forEach(fn => fn()); };
+    const clearResponseTimeout = () => {
+        if (responseTimer !== null) cancelResponseTimeout(responseTimer);
+        responseTimer = null;
+    };
     const clear = () => {
         epoch += 1;
+        clearResponseTimeout();
         stop?.(); stop = null; highWater = null;
         publish(empty);
     };
@@ -22,8 +32,17 @@ export function createAnalyticsChannel(listen, validate) {
             if (!owner || stop) return;
             const currentEpoch = ++epoch;
             publish({ status: state.data ? 'cached' : 'loading', data: state.data });
+            clearResponseTimeout();
+            responseTimer = scheduleResponseTimeout(() => {
+                responseTimer = null;
+                if (currentEpoch !== epoch) return;
+                // Report the delay without cancelling Firestore's pending response.
+                publish({ status: 'error', data: null });
+            }, responseTimeoutMs);
             const accept = snapshot => {
                 if (currentEpoch !== epoch) return;
+                if (snapshot.metadata?.fromCache && state.status === 'error') return;
+                if (!snapshot.metadata?.fromCache) clearResponseTimeout();
                 // An empty local cache is not proof that the server document is missing.
                 if (snapshot.metadata?.fromCache && snapshot.docs?.length !== 2) {
                     publish({ status: state.data ? 'cached' : 'loading', data: state.data });
@@ -45,14 +64,21 @@ export function createAnalyticsChannel(listen, validate) {
             };
             try {
                 stop = listen(accept, () => {
-                    if (currentEpoch === epoch) publish({ status: 'error', data: null });
+                    if (currentEpoch === epoch) {
+                        clearResponseTimeout();
+                        publish({ status: 'error', data: null });
+                    }
                 });
-            } catch { publish({ status: 'error', data: null }); }
+            } catch {
+                clearResponseTimeout();
+                publish({ status: 'error', data: null });
+            }
         },
         pause() {
-            epoch += 1; stop?.(); stop = null;
+            epoch += 1; clearResponseTimeout(); stop?.(); stop = null;
             if (state.data) publish({ status: 'cached', data: state.data });
         },
+        retry() { this.pause(); this.start(); },
         clear() { owner = null; clear(); }
     };
 }

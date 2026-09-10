@@ -1,5 +1,17 @@
 # État du projet
 
+11 septembre, reprise finale — [recette Safari et preuves](audits/2026-09-10-recette-evenements/README.md) :
+A-038 clôturé par abandon explicitement autorisé, incertitude conservée et aucun
+renvoi ; contrôle commerce healthy. Publication smoke affichée puis archivée,
+lien C147 créé/annulé, paiement Stripe test C148 confirmé côté client et admin.
+Commande payée conservée, stock consommé normalement. Stats/Data requalifiés
+sur Hosting `build-2026-09-10-007`, avec récupération des réponses tardives.
+Deux lecteurs de liens corrigés pour isoler des fixtures invalides ; 14 anciens
+jobs toujours PAUSED. 153 tests commerce, 34 tests lecteurs/résolution et
+68 tests maintenances réussis (groupes partiellement recoupés), build Node 22
+réussi. Phase d'observation utilisateur possible ; courses cloud, remboursements
+et échéances longues ne sont pas tous requalifiés par cette passe.
+
 10 septembre, 19:36 Paris — [fin des cinq scans fixes livrée](infra/MAINTENANCE_GROUPES_LIVRAISON_2026-09-10.md) :
 181 Functions ACTIVE, 14 anciens jobs tous PAUSED ; retrait des 74 démarrages
 fixes/jour restants. Sources `3395482`, correctifs catalogue `2da3f3a` et GC `ac18942`, Hosting

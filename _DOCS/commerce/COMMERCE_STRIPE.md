@@ -436,6 +436,10 @@ exactement-un envoi si l'accuse est perdu apres acceptation: cet etat devient
 `delivery_unknown` sans retry automatique. Une garantie fournisseur plus forte
 attend Resend ou un provider avec idempotence effective.
 
+Pour une copie de document client ambiguë, suivre la
+[résolution opérateur sur preuve](RESOLUTION_COPIE_DOCUMENT_AMBIGUE.md).
+L’outil ne renvoie aucun message et ne permet pas de conclure sur un timeout seul.
+
 Une erreur provider non reprenable comme Gmail `EAUTH` devient
 `dead_letter` des la premiere tentative. La sante d'exploitation compte les
 outbox `failed` et `dead_letter`; le statut admin et le script de fenetre

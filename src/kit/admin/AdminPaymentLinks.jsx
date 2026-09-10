@@ -111,6 +111,7 @@ export default function AdminPaymentLinks({ darkMode, items = [], mutationsEnabl
       setState((current) => ({
         status: 'ready',
         links: cursor ? [...current.links, ...(result.links || []).filter((row) => !current.links.some((old) => old.orderId === row.orderId))] : result.links || [],
+        invalidEntries: cursor ? [...(current.invalidEntries || []), ...(result.invalidEntries || [])] : result.invalidEntries || [],
         nextCursor: result.nextCursor || null,
         supportsReference: typeof result.hasMore === 'boolean',
         setup: result.setup || null,
@@ -416,6 +417,7 @@ export default function AdminPaymentLinks({ darkMode, items = [], mutationsEnabl
 
           {state.supportsReference && <form className="flex gap-2 p-4" onSubmit={(event) => { event.preventDefault(); void refresh({ reference: reference.trim() || null }); }}><input className="min-h-11 min-w-0 flex-1 rounded-xl border border-stone-300 bg-transparent px-3 text-sm dark:border-white/10" aria-label="Référence exacte de commande" placeholder="C142" value={reference} onChange={(event) => setReference(event.target.value)} /><button type="submit" className="px-3 text-xs font-bold">Rechercher</button></form>}
           {state.nextCursor && <button type="button" className="min-h-11 px-4 text-xs font-bold" disabled={state.status === 'loading'} onClick={() => refresh({ cursor: state.nextCursor, reference: appliedReference })}>Charger la suite des liens</button>}
+          {state.invalidEntries?.length > 0 && <div className="p-5"><Notice darkMode={darkMode} tone="error">{state.invalidEntries.length} demande(s) ancienne(s) nécessitent une vérification. Les liens valides restent disponibles.</Notice></div>}
           {state.status === 'loading' ? (
             <div className={`flex min-h-40 items-center justify-center gap-3 text-sm font-semibold ${surfaces.muted}`}>
               <Loader2 className="animate-spin" size={16} /> Chargement…

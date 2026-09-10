@@ -3,10 +3,15 @@ import { collection, doc, documentId, limit, onSnapshot, orderBy, query, startAf
 import { db } from '../config/firebase';
 
 const empty = Object.freeze({ status: 'idle', sessions: [], more: false, loadingMore: false, historyPage: 0 });
-let state = empty, owner = null, stop = null, historyStop = null, generation = 0, pageGeneration = 0;
+let state = empty, owner = null, stop = null, historyStop = null, responseTimer = null, generation = 0, pageGeneration = 0;
 let recent = new Map(), historical = new Map(), recentCursor = null, historyCursor = null;
 let pageCursors = [];
 const subscribers = new Set();
+const RESPONSE_TIMEOUT_MS = 15_000;
+function clearResponseTimeout() {
+    if (responseTimer !== null) clearTimeout(responseTimer);
+    responseTimer = null;
+}
 function emit(patch = {}) {
     const merged = new Map([...historical, ...recent]);
     state = { ...state, sessions: [...merged.values()].sort((a, b) => b.lastActivityAt - a.lastActivityAt || b.id.localeCompare(a.id)), ...patch };
@@ -21,7 +26,7 @@ function valid(document) {
     return value;
 }
 function clear() {
-    generation++; pageGeneration++; stop?.(); stop = null; historyStop?.(); historyStop = null;
+    generation++; pageGeneration++; clearResponseTimeout(); stop?.(); stop = null; historyStop?.(); historyStop = null;
     recent = new Map(); historical = new Map(); recentCursor = null; historyCursor = null; pageCursors = []; state = empty;
     subscribers.forEach(fn => fn());
 }
@@ -55,8 +60,17 @@ export const liveSessionsChannel = {
         if (!owner || stop) return;
         const epoch = generation;
         emit({ status: state.sessions.length ? 'cached' : 'loading' });
+        clearResponseTimeout();
+        responseTimer = setTimeout(() => {
+            responseTimer = null;
+            if (epoch !== generation) return;
+            // A slow response must not disable the SDK's automatic recovery.
+            emit({ status: 'error', sessions: [] });
+        }, RESPONSE_TIMEOUT_MS);
         stop = onSnapshot(sessionsQuery(), { includeMetadataChanges: true }, snapshot => {
             if (epoch !== generation) return;
+            if (snapshot.metadata.fromCache && state.status === 'error') return;
+            if (!snapshot.metadata.fromCache) clearResponseTimeout();
             if (snapshot.metadata.fromCache && snapshot.empty && recent.size) {
                 emit({ status: 'cached' }); return;
             }
@@ -66,14 +80,20 @@ export const liveSessionsChannel = {
                 emit({ status: snapshot.metadata.fromCache ? 'cached' : 'ready',
                     ...(!state.historyPage ? { more: snapshot.size === 10 } : {}) });
             } catch { emit({ status: 'error', sessions: [] }); }
-        }, () => { if (epoch === generation) emit({ status: 'error', sessions: [] }); });
+        }, () => {
+            if (epoch === generation) {
+                clearResponseTimeout();
+                emit({ status: 'error', sessions: [] });
+            }
+        });
         if (state.historyPage) openHistory(state.historyPage);
     },
     pause() {
         generation++; pageGeneration++;
-        stop?.(); stop = null; historyStop?.(); historyStop = null;
+        clearResponseTimeout(); stop?.(); stop = null; historyStop?.(); historyStop = null;
         emit({ status: state.status === 'error' ? 'error' : 'cached', loadingMore: false });
     },
+    retry() { this.pause(); this.start(); },
     older() {
         if (!owner || !state.more || state.loadingMore || state.status === 'error') return;
         const cursor = state.historyPage ? historyCursor : recentCursor;

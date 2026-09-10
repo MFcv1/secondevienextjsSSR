@@ -1,7 +1,7 @@
 # Registre temporaire des anomalies de recette commerce
 
-Derniere mise a jour: 2026-08-24
-Statut: `OUVERT_APRES_RECETTE_CHROME`
+Derniere mise a jour: 2026-09-10
+Statut: `OUVERT_APRES_RECETTE_SAFARI`
 Campagne: [RECETTE_CLIENT_ADMIN.md](_DOCS/quality/RECETTE_CLIENT_ADMIN.md)
 Echeance de fusion et suppression: 2026-08-06
 
@@ -9,7 +9,9 @@ Revue documentaire: 2026-09-04. L'echeance ci-dessus est historique et
 depassee ; aucune anomalie n'est fermee par ce rangement. Commencer par la
 synthese, puis lire uniquement le detail et la derniere preuve du sujet vise.
 Les journaux dates conservent volontairement les etats intermediaires.
-Les suivis non clos de cette serie sont A-010 (externe) et A-033 (requalification).
+Les suivis non clos de cette serie sont A-010 (externe), A-033
+(requalification), A-038 (resolution operateur requise) et A-039
+(chargement admin a diagnostiquer).
 Les nouveaux constats HRT sont suivis separement dans
 [la recette humaine](_DOCS/quality/RECETTE_HUMAINE_SANDBOX.md).
 
@@ -67,6 +69,8 @@ Les nouveaux constats HRT sont suivis separement dans
 | A-035 | Archivage commande | `MAJEURE` | `FERMEE` | L'archive durable est exclue de la liste active et ne repropose plus de mutation |
 | A-036 | E-mails M03-M13 | `BLOQUANTE` | `FERMEE` | Les 14 messages M03-M13 ont ete repris une fois et retrouves dans les deux boites exactes |
 | A-037 | Supervision outbox | `MAJEURE` | `FERMEE` | Le statut integre les echecs live; apres reprise, tous les compteurs sont a zero etat `healthy` |
+| A-038 | Livraison documentaire | `BLOQUANTE` | `OUVERTE` | Une copie client reste `delivery_unknown`; le preflight commerce est correctement a `stop` |
+| A-039 | Stats et Data | `MAJEURE` | `OUVERTE` | Les deux vues restent en chargement dans Safari malgré une session admin AAL2 valide |
 
 Severites:
 
@@ -2241,6 +2245,134 @@ de code.
   la fenetre reste `CLOSED`, `v2_fixture`, mutations `read_only`, paiement
   offline `off`, sans run actif. `operationsStatus=healthy` et les dix
   compteurs, dont `failedOutbox` et `deadLetterOutbox`, valent tous zero.
+
+### A-038 - Une livraison ambigue residuelle maintient le preflight commerce a stop
+
+- statut: `CLOTUREE_PAR_ABANDON_AUTORISE` le 11 septembre 2026
+- Décision finale : propriétaire autorise explicitement l'abandon sans renvoi.
+  Transaction opérateur appliquée à la seule copie ciblée : `suppressed_stale`,
+  tentative 1 conservée, erreur et date d'incertitude conservées, aucun `sentAt`.
+  Le rapprochement manuel borné revient `healthy`, compteurs à zéro. La
+  livraison historique reste inconnue ; ce n'est pas une attestation d'envoi.
+  Les constats ci-dessous retracent la période antérieure à cette décision.
+- severite: `BLOQUANTE`
+- phase: preflight de recette commerce et supervision outbox
+- environnement: sandbox / Safari / controles cloud en lecture seule
+- `runId`: `run_recette_evenements_20260910_safari01`
+- attendu: avant toute commande ou lien de paiement de recette, le statut
+  d'exploitation est `healthy` et tous les compteurs live sont a zero.
+- observe: le script officiel de statut confirme `v2_all/v2`, Stripe test et
+  paiement offline desactive, mais renvoie `operationsStatus=stop` avec
+  `deliveryUnknown=1`; les autres compteurs sont nuls.
+- fait durable confirme: une copie de document client creee le 8 septembre est
+  passee `delivery_unknown` apres le debut de sa premiere tentative, avec la
+  classe `GMAIL_DELIVERY_UNKNOWN`. Elle n'a ni identifiant fournisseur certain,
+  ni lease, ni prochaine tentative, ni maintenance ouverte. L'incident objet
+  et l'incident agrege d'exploitation sont ouverts.
+- impact: le garde-fou evite correctement de poursuivre une recette commerce
+  sur un etat ambigu. Les commandes, reservations et liens de paiement n'ont
+  pas ete crees pendant cette campagne. Un renvoi aveugle pourrait produire
+  une double livraison.
+- hypothese: la coupure peut s'etre produite avant ou apres acceptation par le
+  fournisseur. Cette recette ne permet pas de trancher.
+- preuve manquante: journal/provider cible permettant de savoir si le message
+  a ete accepte. L'absence d'identifiant fournisseur ne prouve pas l'absence
+  de livraison.
+- correction minimale proposee: qualifier cet objet unique, puis appliquer la
+  procedure operateur versionnee de resolution ambigue sans renvoi automatique.
+  Relancer uniquement le rapprochement borne et exiger ensuite
+  `operationsStatus=healthy`, tous les compteurs live a zero et les deux
+  incidents fermes. Aucun patch applicatif n'est justifie avant d'avoir prouve
+  une cause de code.
+- preuve detaillee: [audit de recette du 10 septembre](./_DOCS/audits/2026-09-10-recette-evenements/README.md).
+- correctif operateur local du 10 septembre : outil dedie aux copies client,
+  preuve obligatoire, transaction avec controle de version et aucun renvoi.
+  Sept tests locaux reussis et plan prepare contre l'objet reel en lecture
+  seule. [Procedure et limites](./_DOCS/commerce/RESOLUTION_COPIE_DOCUMENT_AMBIGUE.md).
+  Aucune preuve de livraison obtenue et aucune resolution cloud appliquee :
+  l'anomalie reste ouverte. Le `stop` concerne la supervision et le preflight,
+  pas une fermeture automatique du checkout `v2_all/v2`.
+- qualification complementaire: les logs de l'execution portent uniquement
+  `GMAIL_DELIVERY_UNKNOWN`, `responseCode=null`, `ETIMEDOUT` et `command=CONN`;
+  aucun accuse fournisseur n'est disponible. A 19:12:20 UTC, version et
+  empreinte de l'objet correspondent encore au plan prive. L'autorisation
+  ciblee de rechercher le message dans Gmail cliente n'a pas ete recue pendant
+  cette reprise; aucune boite n'a ete consultee et aucune commande `apply`
+  executee.
+
+### A-040 - Une fixture historique invalide bloque le registre des liens
+
+- statut : `CORRIGEE_ET_REQUALIFIEE`, 11 septembre 2026, sandbox.
+- Cause : `qualification_event_1789040468223` porte le canal
+  `admin_payment_link` sans structure de lien valide. La sérialisation de
+  cette ligne faisait échouer toute la liste et masquait aussi le formulaire.
+- Correction : isolation explicite des entrées invalides dans la page,
+  avertissement visible et conservation des liens valides. Les erreurs de
+  secret/configuration ne sont pas absorbées. Fixture conservée sans mutation.
+- Preuves : 7 tests du domaine et 153 tests unitaires commerce réussis ; deux
+  fonctions de lecture ciblées déployées et Hosting `build-2026-09-10-007`.
+  Safari permet ensuite création et annulation de C147, état durable annulé,
+  suivi terminal et stock restauré. Rapport dans l'audit du 10 septembre.
+
+### A-039 - Stats et Data restent en chargement dans Safari
+
+- Qualification finale du 11 septembre : Hosting `build-2026-09-10-007`,
+  reconnexion Google admin/AAL2 puis rechargement de `/admin` ; Stats et Data
+  confirment leurs données serveur sans Actualiser. Correctif de récupération
+  tardive déployé. Statut final : `CORRIGEE_ET_REQUALIFIEE` pour la lecture et
+  sa récupération ; la cause du silence Safari historique reste indéterminée.
+  Les mentions ouvertes/non déployées ci-dessous sont des relevés antérieurs.
+
+- Contre-test du 11 septembre vers 01:26 Europe/Paris : Safari placé au premier
+  plan par le propriétaire ; compte admin attendu et AAL2 confirmés. Stats et
+  Data chargent automatiquement, données confirmées serveur, y compris après
+  rechargement complet. Aucun clic Actualiser. Blocage non reproduit dans ces
+  conditions sur la version déjà déployée ; cause initiale non établie et
+  correctifs locaux du délai toujours non déployés.
+
+- Relecture du 11 septembre : deux défauts du correctif de délai reproduits
+  localement puis corrigés : cache local annulant le délai avant confirmation
+  serveur, et délai supprimant l'écoute au lieu de laisser arriver la réponse.
+  Neuf tests ciblés réussis, dont réponse tardive sans clic ni nouvel abonnement,
+  cache vide et pause/reprise. Correctif local non déployé.
+- Contre-test navigateur avant ce correctif : Stats et Data chargent
+  automatiquement dans Chrome avec le compte super-admin connecté ; KPI et
+  résumés confirmés serveur, sessions en direct. Cela ne qualifie pas le compte
+  admin Safari. L'accès à Safari via l'outil de contrôle échoue avant lecture
+  de fenêtre (`timeoutReached`) ; aucun réglage modifié. Cause initiale Safari
+  toujours non démontrée, anomalie non clôturée.
+
+- statut: `OUVERTE`
+- severite: `MAJEURE`
+- phase: back-office, lecteurs Stats et Data
+- environnement: sandbox / Safari / Hosting
+  `secondevie-next-sandbox-build-2026-09-10-005`
+- `runId`: `run_recette_evenements_20260910_safari01`
+- identite confirmee: compte admin de recette, role Administrateur et
+  authentification forte confirmee; le compte client n'a pas ete utilise.
+- attendu: Stats et Data affichent leurs projections, ou un etat d'erreur
+  explicite avec une reprise bornee.
+- observe: Stats reste sur `Chargement des statistiques…`; Data reste sur
+  `Chargement des résumés serveur…` et `Chargement des sessions…`. Une
+  navigation entre les vues, un Actualiser Data et un rechargement unique de
+  `/admin` ne changent pas le resultat. Mon compte, Performance, Incidents,
+  Liens de paiement et Publication chargent dans la meme session.
+- fait cloud distinct: les trois groupes analytics attendus ont tous termine
+  `succeeded` en une tentative a 18:55/19:00 UTC et leur queue est vide. Les
+  projections relues par Admin SDK existent; l'interface en chargement ne
+  constitue pas une absence de donnees.
+- hypothese: les lecteurs directs Firestore `onSnapshot` ne recoivent ni
+  snapshot ni erreur dans cette session Safari. Le code local courant affiche
+  une erreur lorsqu'elle arrive, mais ne borne pas un transport silencieux.
+  Cela ne prouve pas encore la cause du comportement deploye.
+- preuve manquante: trace reseau/console Safari expurgee distinguant Auth,
+  App Check, WebChannel et validation du snapshot, puis reproduction sur une
+  session admin fraiche.
+- correction minimale proposee: diagnostiquer d'abord le transport, puis
+  fournir un timeout visible et une reprise bornee aux deux canaux si le cas
+  silencieux est confirme. Aucun patch ni deploiement effectue pendant cette
+  recette.
+- preuve detaillee: [audit de recette du 10 septembre](./_DOCS/audits/2026-09-10-recette-evenements/README.md).
 
 ### A-030 - Un favori historique masque sa disponibilite catalogue
 

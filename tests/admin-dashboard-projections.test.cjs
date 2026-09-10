@@ -183,7 +183,11 @@ test('le chemin Stats est borne, listener-driven et sans fallback couteux', () =
     assert.match(dashboard, /admin-dashboard-strong-auth-to-kpi/);
     assert.match(read('functions/src/observability/businessEvents.js'), /admin_dashboard_projection_completed/);
     assert.doesNotMatch(dashboard, /analytics_sessions|limit\(366\)|loadAdminDashboardCoreData/);
-    assert.doesNotMatch(island, /getCommerceOperationsStatusAdmin|preloadAdminCommerceData|preloadAdminInvoicesData/);
+    assert.doesNotMatch(island, /getCommerceOperationsStatusAdmin/);
+    assert.doesNotMatch(dashboard, /preloadAdminCommerceData|preloadAdminInvoicesData/);
+    // Navigation preparation is now intentional, after the initial Stats result.
+    // Its bounded lifecycle is exercised by admin-preload-queue.test.mjs.
+    assert.match(island, /initialReadyGeneration !== cacheGeneration\) return undefined/);
     assert.doesNotMatch(dashboard, /Santé commerce/);
 });
 

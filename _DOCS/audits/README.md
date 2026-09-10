@@ -7,7 +7,15 @@ Le dossier d'audit reste une photographie historique antérieure à cette livrai
 
 Créé le 5 septembre 2026 à la demande du propriétaire du projet.
 
-**Dernier audit enregistré : [10 septembre 2026 — stabilité et consommation des fonctions](2026-09-10-stabilite-fonctions/README.md).**
+**Dernier audit enregistré : [10 septembre 2026 — recette des parcours et maintenances événementielles](2026-09-10-recette-evenements/README.md).**
+Reprise du 11 septembre : A-038 abandonné explicitement sans renvoi, contrôle
+commerce `healthy`. Safari confirme Stats/Data avec données serveur, publication
+puis archivage du smoke, lien C147 créé/annulé et paiement Stripe test C148
+confirmé côté client et admin. Hosting `build-2026-09-10-007` déployé, deux
+lecteurs de liens corrigés. Les 14 anciens jobs restent `PAUSED`.
+Les limites et les observations historiques sont conservées dans le rapport.
+
+**Audit précédent : [10 septembre 2026 — stabilité et consommation des fonctions](2026-09-10-stabilite-fonctions/README.md).**
 Inventaire des 172 fonctions, cinq jobs périodiques actifs (74 lancements/jour),
 reprises encore dépendantes des contrôles horaires, 82 tests et limites de la
 comparaison coûts/sessions sur une semaine. Aucun runtime ni cloud modifié.
@@ -15,7 +23,7 @@ Suite livrée le même jour : [suppression des cinq horaires fixes](../infra/MAI
 181 Functions ACTIVE, 14 anciens jobs PAUSED et Hosting `build-2026-09-10-005`.
 L'audit initial reste une photographie antérieure à cette bascule.
 
-**Audit précédent : [9 septembre 2026 — mutualisation, cache et capacité](2026-09-09-mutualisation/README.md).**
+**Audit du 9 septembre 2026 : [mutualisation, cache et capacité](2026-09-09-mutualisation/README.md).**
 Inventaire des 158 Functions, usage 24 h/7 j/30 j, sonde galerie/CDN,
 ressources, coûts et plan proposé ; aucune infrastructure modifiée.
 Après clarification du budget : [plan à un seul service public chaud](2026-09-09-mutualisation/PLAN_PUBLIC_CHAUD.md),

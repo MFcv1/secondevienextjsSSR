@@ -44,8 +44,10 @@ test('listener owner shares recent rows, replaces history, propagates removals a
     const listeners = [];
     const source = readFileSync(new URL('../src/kit/admin/liveSessionsChannel.js', import.meta.url), 'utf8')
         .replace(/^import .*;$/gm, '').replaceAll('export ', '') + '\nglobalThis.channel = liveSessionsChannel;';
+    const timers = [];
     const context = { db: {}, collection: (...args) => args, doc: (...args) => args, documentId: () => '__name__',
         limit: n => ({ limit: n }), orderBy: (...args) => args, query: (...args) => args, startAfter: cursor => cursor,
+        setTimeout: fn => { timers.push(fn); return timers.length; }, clearTimeout: () => {},
         onSnapshot: (q, ...args) => { const callbacks = args.filter(v => typeof v === 'function'); const listener = { q, next: callbacks[0], error: callbacks[1], stopped: false }; listeners.push(listener); return () => { listener.stopped = true; }; } };
     vm.runInNewContext(source, context);
     const channel = context.channel;
@@ -68,4 +70,34 @@ test('listener owner shares recent rows, replaces history, propagates removals a
     channel.clear(); listeners[2].next(snapshot(20, 10));
     assert.equal(channel.getSnapshot().sessions.length, 0);
     assert.ok(listeners.every(v => v.stopped));
+});
+
+test('live sessions keeps its listener through cache and timeout, then recovers automatically', () => {
+    const listeners = [], timers = new Map();
+    let timerId = 0;
+    const source = readFileSync(new URL('../src/kit/admin/liveSessionsChannel.js', import.meta.url), 'utf8')
+        .replace(/^import .*;$/gm, '').replaceAll('export ', '') + '\nglobalThis.channel = liveSessionsChannel;';
+    const context = { db: {}, collection: (...args) => args, doc: (...args) => args, documentId: () => '__name__',
+        limit: n => ({ limit: n }), orderBy: (...args) => args, query: (...args) => args, startAfter: cursor => cursor,
+        setTimeout: fn => { timers.set(++timerId, fn); return timerId; }, clearTimeout: id => timers.delete(id),
+        onSnapshot: (q, ...args) => { const callbacks = args.filter(v => typeof v === 'function');
+            const listener = { q, next: callbacks[0], error: callbacks[1], stopped: false };
+            listeners.push(listener); return () => { listener.stopped = true; }; } };
+    vm.runInNewContext(source, context);
+    const channel = context.channel;
+    channel.setOwner('admin'); channel.start();
+    listeners[0].next({ docs: [], size: 0, empty: true, metadata: { fromCache: true } });
+    assert.equal(timers.size, 1);
+    timers.values().next().value();
+    assert.equal(channel.getSnapshot().status, 'error');
+    assert.equal(listeners[0].stopped, false);
+    listeners[0].next({ docs: [], size: 0, empty: true, metadata: { fromCache: true } });
+    assert.equal(channel.getSnapshot().status, 'error');
+    listeners[0].next({ docs: [], size: 0, empty: true, metadata: { fromCache: false } });
+    assert.equal(channel.getSnapshot().status, 'ready');
+    assert.equal(listeners.length, 1);
+    channel.retry();
+    assert.equal(listeners.length, 2);
+    assert.equal(channel.getSnapshot().status, 'loading');
+    channel.clear();
 });

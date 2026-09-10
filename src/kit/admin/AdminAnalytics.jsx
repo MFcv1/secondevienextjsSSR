@@ -5,7 +5,7 @@ import { Smartphone, Monitor, Globe, Trash2, AlertCircle, ChevronDown, ChevronRi
 
 import { getCallableFunction } from '../config/firebaseLazy';
 import { dataPerformance, recordDataServerTimings, startDataPerformance } from './adminAnalyticsPerformance';
-import { ANALYTICS_REALTIME_ENABLED, useAnalyticsRealtime } from './adminAnalyticsRealtime';
+import { ANALYTICS_REALTIME_ENABLED, analyticsChannel, useAnalyticsRealtime } from './adminAnalyticsRealtime';
 import { realtimeOverview } from './adminAnalyticsRealtimeStore';
 import { useLiveSessions, liveSessionsChannel, listenSessionDetail } from './liveSessionsChannel';
 import { isSessionOnline, LIVE_PRESENCE_MS } from './liveSessionPresence';
@@ -997,7 +997,12 @@ const AdminAnalytics = ({ darkMode = false, items = [], onLoadCatalog }) => {
 
     const refreshAnalytics = useCallback(async () => {
         performanceTraceRef.current = startDataPerformance('refresh');
-        if (ANALYTICS_REALTIME_ENABLED) { setLiveNow(Date.now()); return; }
+        if (ANALYTICS_REALTIME_ENABLED) {
+            analyticsChannel.retry();
+            liveSessionsChannel.retry();
+            setLiveNow(Date.now());
+            return;
+        }
         await Promise.all([
             loadOverview({ force: true }),
             loadSessions({ incremental: sessions.length > 0 })

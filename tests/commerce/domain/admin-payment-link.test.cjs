@@ -19,6 +19,20 @@ const {
 const SECRET = 'test-payment-link-secret-with-at-least-thirty-two-characters';
 const NOW = '2026-08-01T10:00:00.000Z';
 
+test('un ancien document invalide ne masque pas les liens valides et reste signalé', () => {
+    const { makeOrder } = require('../fixtures/order-v2.cjs');
+    const { serializeAdminPage } = require('../../../functions/src/commerce/domain/adminPaymentLinkCoordinator');
+    const valid = makeOrder();
+    valid.id = 'ord_valid_payment_link';
+    valid.checkout.channel = ADMIN_PAYMENT_LINK_CHANNEL;
+    valid.checkout.paymentLink = paymentLinkState();
+    const docs = [{ id: valid.id, data: () => valid }, { id: 'ord_invalid', data: () => ({ checkout: { channel: ADMIN_PAYMENT_LINK_CHANNEL } }) }];
+    const result = serializeAdminPage(docs, { siteUrl: 'https://example.test', tokenSecret: SECRET, nowMillis: Date.parse(NOW) });
+    assert.equal(result.links.length, 1);
+    assert.deepEqual(result.invalidEntries, [{ orderId: 'ord_invalid', reason: 'invalid_payment_link_order' }]);
+    assert.throws(() => serializeAdminPage(docs, { siteUrl: 'https://example.test', tokenSecret: '', nowMillis: Date.parse(NOW) }));
+});
+
 function paymentLinkState() {
     return createPaymentLinkState({
         actorUid: 'admin_test_123',

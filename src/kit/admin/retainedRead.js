@@ -14,12 +14,23 @@ export function createReadLease({ start, pause, delay = 30_000, schedule = setTi
   };
 }
 
-export function createRetainedRead(listen, { visibility = () => globalThis.document, ...leaseOptions } = {}) {
-  let value = null, failure = null, stop = null, epoch = 0;
+export function createRetainedRead(listen, {
+  visibility = () => globalThis.document,
+  responseTimeoutMs = 15_000,
+  scheduleResponseTimeout = setTimeout,
+  cancelResponseTimeout = clearTimeout,
+  ...leaseOptions
+} = {}) {
+  let value = null, failure = null, stop = null, responseTimer = null, epoch = 0;
   const subscribers = new Set();
   const publish = () => subscribers.forEach(({ next, error }) => failure ? error(failure) : value && next(value));
+  const clearResponseTimeout = () => {
+    if (responseTimer !== null) cancelResponseTimeout(responseTimer);
+    responseTimer = null;
+  };
   const pause = () => {
     epoch++;
+    clearResponseTimeout();
     stop?.(); stop = null;
     if (value) value = { ...value, docs: value.docs, size: value.size,
       ...(value.exists ? { exists: value.exists.bind(value), data: value.data.bind(value) } : {}),
@@ -29,8 +40,19 @@ export function createRetainedRead(listen, { visibility = () => globalThis.docum
   const start = () => {
     if (stop || !subscribers.size) return;
     const generation = ++epoch;
+    clearResponseTimeout();
+    responseTimer = scheduleResponseTimeout(() => {
+      responseTimer = null;
+      if (epoch !== generation) return;
+      // Keep the existing listener so a late server response recovers the view.
+      value = null;
+      failure = Object.assign(new Error('ADMIN_REALTIME_TIMEOUT'), { code: 'ADMIN_REALTIME_TIMEOUT' });
+      publish();
+    }, responseTimeoutMs);
     stop = listen(snapshot => {
       if (epoch !== generation) return;
+      if (snapshot.metadata?.fromCache && failure) return;
+      if (!snapshot.metadata?.fromCache) clearResponseTimeout();
       if (value && snapshot.metadata?.fromCache &&
           (snapshot.size === 0 || (snapshot.exists && !snapshot.exists()))) {
         // The local SDK cache may be empty after an offline restart. Only a
@@ -43,6 +65,7 @@ export function createRetainedRead(listen, { visibility = () => globalThis.docum
       value = snapshot; failure = null; publish();
     }, error => {
       if (epoch !== generation) return;
+      clearResponseTimeout();
       value = null; failure = error; publish();
     });
   };

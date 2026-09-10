@@ -61,3 +61,59 @@ test('Data : reprise conserve les KPI connus, attend serveur et rejette une anci
   assert.equal(channel.getSnapshot().status,'ready');
   channel.setOwner('admin-b'); assert.equal(channel.getSnapshot().data,null);
 });
+
+test('Stats et Data attendent le serveur malgré le cache vide et récupèrent sans relance', () => {
+  let statsTimer, statsStops = 0;
+  const statsCallbacks = [];
+  const read = createRetainedRead((next, error) => {
+    statsCallbacks.push({ next, error });
+    return () => { statsStops++; };
+  }, {
+    visibility: () => null,
+    scheduleResponseTimeout: fn => { statsTimer = fn; return 1; },
+    cancelResponseTimeout: () => { statsTimer = null; },
+  });
+  const failures = [];
+  const received = [];
+  read.subscribe(value => received.push(value), error => failures.push(error.code));
+  statsCallbacks[0].next({ docs: [], size: 0, metadata: { fromCache: true } });
+  assert.equal(typeof statsTimer, 'function');
+  statsTimer();
+  assert.deepEqual(failures, ['ADMIN_REALTIME_TIMEOUT']);
+  assert.equal(statsStops, 0);
+  statsCallbacks[0].next({ docs: [], size: 0, metadata: { fromCache: true } });
+  assert.equal(received.length, 1);
+  statsCallbacks[0].next({ docs: [], size: 0, metadata: { fromCache: false } });
+  assert.equal(received.at(-1).metadata.fromCache, false);
+  assert.equal(statsCallbacks.length, 1);
+  read.retry();
+  assert.equal(statsCallbacks.length, 2);
+  read.clear();
+
+  let dataTimer, dataStops = 0;
+  const dataCallbacks = [];
+  const channel = createAnalyticsChannel((next, error) => {
+    dataCallbacks.push({ next, error });
+    return () => { dataStops++; };
+  }, snapshot => snapshot, {
+    scheduleResponseTimeout: fn => { dataTimer = fn; return 1; },
+    cancelResponseTimeout: () => { dataTimer = null; },
+  });
+  channel.setOwner('admin');
+  channel.start();
+  dataCallbacks[0].next({ docs: [], metadata: { fromCache: true } });
+  assert.equal(typeof dataTimer, 'function');
+  dataTimer();
+  assert.equal(channel.getSnapshot().status, 'error');
+  assert.equal(dataStops, 0);
+  dataCallbacks[0].next({ docs: [], metadata: { fromCache: true } });
+  assert.equal(channel.getSnapshot().status, 'error');
+  dataCallbacks[0].next({
+    metadata: { fromCache: false },
+    recent: { epoch: 'retry', revision: 1 },
+    history: { epoch: 'retry', revision: 1 },
+  });
+  assert.equal(channel.getSnapshot().status, 'ready');
+  assert.equal(dataCallbacks.length, 1);
+  channel.clear();
+});

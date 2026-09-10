@@ -152,6 +152,21 @@ function serializeAdminOrder(order, { siteUrl, tokenSecret, nowMillis }) {
     };
 }
 
+function serializeAdminPage(documents, options) {
+    const links = [], invalidEntries = [];
+    for (const document of documents) {
+        const order = { ...document.data(), id: document.id };
+        try { assertPaymentLinkOrder(order); }
+        catch {
+            invalidEntries.push({ orderId: document.id, reason: 'invalid_payment_link_order' });
+            continue;
+        }
+        // Configuration/token failures must still fail the read, not hide every row.
+        links.push(serializeAdminOrder(order, options));
+    }
+    return { links, invalidEntries };
+}
+
 function createAdminPaymentLinkCoordinator({
     db,
     refs,
@@ -407,15 +422,12 @@ function createAdminPaymentLinkCoordinator({
         }
         const snapshot = await query.limit(pageSize + (paginated ? 1 : 0)).get();
         const documents = snapshot.docs.slice(0, pageSize);
-        const links = documents.map((document) => serializeAdminOrder({
-            id: document.id,
-            ...document.data()
-        }, {
+        const { links, invalidEntries } = serializeAdminPage(documents, {
             siteUrl,
             tokenSecret,
             nowMillis: clock.nowMillis()
-        }));
-        return paginated ? { links, hasMore: snapshot.size > pageSize, nextCursor: snapshot.size > pageSize ? documents.at(-1).id : null } : links;
+        });
+        return paginated ? { links, invalidEntries, hasMore: snapshot.size > pageSize, nextCursor: snapshot.size > pageSize ? documents.at(-1).id : null } : links;
     }
 
     async function mutateActiveOrder({
@@ -651,5 +663,6 @@ function createAdminPaymentLinkCoordinator({
 module.exports = {
     createAdminPaymentLinkCoordinator,
     normalizeEmail,
+    serializeAdminPage,
     serializePublicOrder
 };
