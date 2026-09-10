@@ -10,7 +10,14 @@ const args = Object.fromEntries(process.argv.slice(2).map(arg => {
 }));
 if (args.project !== 'secondevienextjsssr' || args.env !== 'sandbox') throw Error('Explicit sandbox project required');
 const target = { kind: args.kind, id: args.id };
-const app = admin.initializeApp({ projectId: args.project, credential: admin.credential.applicationDefault() });
+const identities = { link: 'admin-payment-link-expiry', payment: 'commerce-operations-reconciler',
+    inbox: 'commerce-operations-reconciler', session: 'analytics-runtime',
+    compaction: 'analytics-runtime', archive: 'analytics-runtime', publication: 'product-publication-worker' };
+if (!Object.hasOwn(identities, target.kind)) throw Error('Unknown repair kind');
+// User ADC has no service-account email. Cloud Tasks must use the same private
+// invoker as the domain trigger, with the operator's existing actAs permission.
+const app = admin.initializeApp({ projectId: args.project, credential: admin.credential.applicationDefault(),
+    serviceAccountId: `${identities[target.kind]}@${args.project}.iam.gserviceaccount.com` });
 try {
     const db = app.firestore(), ref = reference(db, target);
     const work = (await ref.get()).data()?.[fieldFor(target.kind)];

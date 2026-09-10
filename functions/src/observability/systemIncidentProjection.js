@@ -5,6 +5,7 @@ const admin = require('firebase-admin');
 const { onMessagePublished } = require('firebase-functions/v2/pubsub');
 const { normalizeEntry } = require('./systemIncidents');
 const { appendOccurrence } = require('../../helpers/incidentWindows.cjs');
+const { maintenanceAlertEntry } = require('../../helpers/maintenanceAlert.cjs');
 
 const REGION = 'europe-west1';
 const PROJECT_ID = 'secondevienextjsssr';
@@ -76,8 +77,9 @@ function toLoggingEntry(rawEntry) {
     };
 }
 
-function isProjectableLogEntry(rawEntry, normalized) {
+function isProjectableLogEntry(rawEntry, normalized, transportAlert = false) {
     if (!rawEntry || !normalized?.timestamp) return false;
+    if (transportAlert) return normalized.event === 'maintenance_transport_alert';
     if (rawEntry.httpRequest && Number(rawEntry.httpRequest.status) < 500) return false;
     if (/monitoring\.googleapis\.com%2FViolation(?:Open|AutoResolve)Eventv1/.test(String(rawEntry.logName || ''))) return false;
     if (!['cloud_run_revision', 'cloud_function'].includes(String(rawEntry.resource?.type || ''))) return false;
@@ -97,6 +99,9 @@ function eventIdFor(normalized) {
 }
 
 function logsExplorerUrl(normalized) {
+    if (normalized.event === 'maintenance_transport_alert') {
+        return `https://console.cloud.google.com/logs/query;query=${encodeURIComponent(`labels.violation_id="${normalized.id}"`)}?project=${PROJECT_ID}`;
+    }
     const filters = [];
     if (normalized.logName) filters.push(`logName="${normalized.logName}"`);
     if (normalized.id) filters.push(`insertId="${normalized.id}"`);
@@ -143,10 +148,12 @@ function buildIncidentFeed(current, normalized, eventAt, now, latestFields) {
 
 async function projectSystemIncidentMessage(message, dependencies = {}) {
     const database = dependencies.database || admin.firestore();
-    const rawEntry = parseMessageJson(message);
+    const parsed = parseMessageJson(message);
+    const transportAlert = maintenanceAlertEntry(parsed);
+    const rawEntry = transportAlert || parsed;
     const loggingEntry = toLoggingEntry(rawEntry);
     const normalized = loggingEntry ? normalizeEntry(loggingEntry) : null;
-    if (!isProjectableLogEntry(rawEntry, normalized)) {
+    if (!isProjectableLogEntry(rawEntry, normalized, Boolean(transportAlert))) {
         return { projected: false, reason: 'filtered' };
     }
 
