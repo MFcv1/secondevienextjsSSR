@@ -9,7 +9,10 @@ admin.initializeApp();
 const { loadReaderTarget, resolveReaderTarget } = require('./src/admin/readerEntrypoint');
 const readerName = resolveReaderTarget(process.env);
 const readerTarget = loadReaderTarget(readerName);
-if (readerName === 'captureProjectCostsGen2') {
+if (['stripeWebhookV2', 'stripeConnectWebhookV2'].includes(readerName)) {
+    // Existing Gen2 services retain these entry points across source-only updates.
+    exports[readerName] = require('./src/commerce/v2Webhooks')[readerName];
+} else if (readerName === 'captureProjectCostsGen2') {
     exports.captureProjectCostsGen2 = require('./src/billing/projectCosts').captureProjectCostsGen2;
 } else if (readerTarget) {
     exports[readerName] = readerTarget;
