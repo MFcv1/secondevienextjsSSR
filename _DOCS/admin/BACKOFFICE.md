@@ -31,8 +31,9 @@ Le lecteur a précédé le projecteur (un ancien lecteur strict refuse les nouve
 Un éventuel réamorçage historique exige sa qualification sandbox et ses preuves
 de complétude ; il n’est pas exécuté par ce correctif.
 Voir les [preuves et limites de livraison](DATA_GRAPHIQUES_LIVRAISON_2026-09-10.md).
-Complément local après constat du graphique vide : conservation de l’historique
-incomplet dans le nouveau découpage, non déployée à ce stade.
+Complément livré après constat du graphique vide : commit `9f496b6`, hosting
+`build-2026-09-10-004` à 100 %. Le lecteur livré conserve les 26 sessions sur
+7 jours et les 214 sur l’année avec le découpage historique disponible.
 
 ## Coûts du projet
 

@@ -1,5 +1,26 @@
 # Graphiques Data — livraison staging du 10 septembre 2026
 
+## Complément historique livré à 16:10 UTC
+
+Commit `9f496b6` : conservation des barres historiques tant que les nouvelles
+tranches ne couvrent pas toutes les sessions de chaque jour/mois. Hosting seul,
+`build-2026-09-10-004` READY et servi à 100 %, rollout réussi. Archive source
+téléchargée et lecteur comparé au commit par SHA-256 : correspondance exacte.
+Exécution de ce lecteur livré sur les projections cloud : 7 barres non nulles,
+26 sessions sur 7 jours ; 12 créneaux mensuels dont 4 non nuls, 214 sessions
+sur l’année. Aucun historique n’a été inventé ou réécrit.
+
+26 tests Node 22 réussis, lint et build local réussis ; Cloud Build
+`107ac2ff-5be1-4d06-bf93-e9d184214c57` SUCCESS. HTTP 200 sur `/`, `/admin` et
+`/api/catalog/version`, deployment ID `sv-mtvpzujf-5d289d4248bc` cohérent sur
+les deux pages, ISR 300 et admin no-store conservés. Pas de nouvelle recette
+visuelle admin connectée. Aucune Function, rule ni donnée modifiée par ce lot.
+Retour arrière identifié : `build-2026-09-10-003`, non exercé.
+Preuve : `logs/analytics-history-hosting-20260910/verified.json` (hors Git).
+
+Les sections suivantes décrivent la livraison initiale et sa limite historique,
+corrigée par ce complément.
+
 Autorisation : commit et déploiement staging demandés par l’utilisateur.
 Projet `secondevienextjsssr`, backend `secondevie-next-sandbox`, aucune production.
 
