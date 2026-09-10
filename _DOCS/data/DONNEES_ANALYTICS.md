@@ -667,7 +667,7 @@ Ce chapitre remplace les anciens plans de migration et constitue la seule refere
 
 ## 12. Diagnostic Data et raccordement temps reel
 
-Extension locale du graphique (10 septembre, non déployée) : les mêmes documents
+Extension du graphique (livrée en sandbox le 10 septembre, commit `c24db68`) : les mêmes documents
 conservent aussi `quarterday` (32 tranches maximum dans `recent`, 8 jours Paris)
 et `tenday` (39 tranches maximum dans `history`, 13 mois). Les anneaux restent
 sous 256 Kio chacun, sans nouvelle collection ni écoute. Chaque contribution

@@ -19,10 +19,12 @@ L’ancien format reste lisible par jour/mois avec une mention explicite.
 historique fin n’est inventé lors d’une mise à niveau. Les infobulles indiquent
 les bornes des tranches. Le détail incomplet est signalé sous le titre.
 
-Correctif local du 10 septembre : non déployé. Livraison coordonnée du lecteur
-et du projecteur nécessaire (un ancien lecteur strict refuse les nouveaux champs).
+Correctif livré en sandbox le 10 septembre : commit `c24db68`, App Hosting
+`build-2026-09-10-002`, puis agrégateur `00014-xen`.
+Le lecteur a précédé le projecteur (un ancien lecteur strict refuse les nouveaux champs).
 Un éventuel réamorçage historique exige sa qualification sandbox et ses preuves
 de complétude ; il n’est pas exécuté par ce correctif.
+Voir les [preuves et limites de livraison](DATA_GRAPHIQUES_LIVRAISON_2026-09-10.md).
 
 ## Coûts du projet
 
