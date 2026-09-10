@@ -107,7 +107,7 @@ const G10_WEBHOOK_SECRETS = Object.freeze([
   'STRIPE_WH_SECRET_G10=STRIPE_WH_SECRET_G10:1',
   'STRIPE_CONNECT_WH_SECRET_G10=STRIPE_CONNECT_WH_SECRET_G10:1'
 ]);
-const g10Webhook = ({ name, entryPoint }) => Object.freeze({
+const g10Webhook = ({ name: _name, entryPoint }) => Object.freeze({
   create: true,
   g10: true,
   triggerType: 'http-public',
@@ -208,6 +208,35 @@ const commerceTaskTarget = ({ name, runtimeServiceAccount, secrets, maxAttempts 
 });
 const DASHBOARD_EVENT_TARGETS = Object.freeze({
   ...Object.fromEntries([
+    ['scheduleCommerceReconciliationGen2', 'sys_commerce_reconciliation/{day}', 'commerce-operations-reconciler'],
+    ['scheduleCatalogGcGroupGen2', 'sys_catalog_gc_groups/{groupId}', 'catalog-builder'],
+    ['onCatalogGcPointersWrittenGen2', 'sys_catalog_publication/{catalogId}', 'catalog-builder']
+  ].map(([name, documentPathPattern, identity]) => [name, Object.freeze({ ...dashboardEventTarget({ name, documentPathPattern,
+    runtimeServiceAccount: `${identity}@secondevienextjsssr.iam.gserviceaccount.com` }),
+    environmentVariables: ['FUNCTION_SIGNATURE_TYPE=cloudevent'], cpu: '1', memory: '512Mi', timeout: '540s' })])),
+  ...Object.fromEntries([
+    ['dispatchCommerceReconciliationGen2', 'commerce-operations-reconciler'],
+    ['dispatchCatalogGcGroupGen2', 'catalog-builder']
+  ].map(([name, identity]) => [name, Object.freeze({ ...commerceTaskTarget({ name,
+    runtimeServiceAccount: `${identity}@secondevienextjsssr.iam.gserviceaccount.com`, secrets: [], maxAttempts: 20 }),
+    cpu: '1', timeout: '540s', queueMaxDispatchesPerSecond: 1 })])),
+  registerCatalogReleaseGcGen2: Object.freeze({ create: true, triggerType: 'event', region: 'europe-west4', runtime: 'nodejs22',
+    entryPoint: 'registerCatalogReleaseGcGen2', eventType: 'google.cloud.storage.object.v1.finalized',
+    eventFilters: 'type=google.cloud.storage.object.v1.finalized,bucket=secondevienextjsssr-catalog-europe-west4',
+    expectedEventFilters: { bucket: 'secondevienextjsssr-catalog-europe-west4' }, triggerLocation: 'europe-west4',
+    triggerServiceAccount: 'functions-eventarc-invoker@secondevienextjsssr.iam.gserviceaccount.com',
+    runtimeServiceAccount: 'catalog-builder@secondevienextjsssr.iam.gserviceaccount.com', buildServiceAccount: G8_BUILD_SERVICE_ACCOUNT,
+    environmentVariables: ['FUNCTION_SIGNATURE_TYPE=cloudevent'], retry: true, cpu: '1', memory: '512Mi', timeout: '540s',
+    concurrency: '1', minInstances: '0', maxInstances: '1', ingressSettings: 'all' }),
+  scheduleCatalogCycleGen2: Object.freeze({ ...dashboardEventTarget({
+    name: 'scheduleCatalogCycleGen2', documentPathPattern: 'sys_catalog_publication/{catalogId}',
+    runtimeServiceAccount: 'catalog-builder@secondevienextjsssr.iam.gserviceaccount.com'
+  }), environmentVariables: ['FUNCTION_SIGNATURE_TYPE=cloudevent'], cpu: '1', timeout: '540s', memory: '512Mi' }),
+  dispatchCatalogCycleGen2: Object.freeze({ ...commerceTaskTarget({
+    name: 'dispatchCatalogCycleGen2', runtimeServiceAccount: 'catalog-builder@secondevienextjsssr.iam.gserviceaccount.com',
+    secrets: [], maxAttempts: 20
+  }), cpu: '1', timeout: '540s', queueMaxDispatchesPerSecond: 1 }),
+  ...Object.fromEntries([
     ['schedulePaymentLinkExpiryGen2', 'dispatchPaymentLinkExpiryGen2', 'orders/{orderId}', 'admin-payment-link-expiry'],
     ['scheduleInboxCheckGen2', 'dispatchInboxCheckGen2', 'commerce_webhook_inbox/{inboxId}', 'commerce-operations-reconciler'],
     ['schedulePaymentCheckGen2', 'dispatchPaymentCheckGen2', 'orders/{orderId}', 'commerce-operations-reconciler'],
@@ -261,13 +290,17 @@ const DASHBOARD_EVENT_TARGETS = Object.freeze({
     name: 'dispatchCommerceOutboxTaskGen2',
     runtimeServiceAccount: 'commerce-outbox-dispatcher@secondevienextjsssr.iam.gserviceaccount.com',
     secrets: G9_OUTBOX_SECRETS,
-    maxAttempts: 1
+    maxAttempts: 20
   }),
+  onCommerceCheckoutExpiryWrittenGen2: Object.freeze({ ...dashboardEventTarget({
+    name: 'onCommerceCheckoutExpiryWrittenGen2', documentPathPattern: 'orders/{orderId}',
+    runtimeServiceAccount: 'commerce-reservation-expiry@secondevienextjsssr.iam.gserviceaccount.com'
+  }), environmentVariables: ['FUNCTION_SIGNATURE_TYPE=cloudevent'] }),
   dispatchCommerceReservationExpiryTaskGen2: commerceTaskTarget({
     name: 'dispatchCommerceReservationExpiryTaskGen2',
     runtimeServiceAccount: 'commerce-reservation-expiry@secondevienextjsssr.iam.gserviceaccount.com',
     secrets: G8_STRIPE_SECRET,
-    maxAttempts: 3
+    maxAttempts: 20
   })
 });
 const g9Http = ({

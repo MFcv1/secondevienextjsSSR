@@ -26,7 +26,7 @@ function createMemory() {
             const value = await callback({
                 get: async ref => { if (writes.length) throw Error('READ_AFTER_WRITE'); return read(ref); },
                 create: (ref, data) => { if (records.has(ref.path)) throw Error('ALREADY_EXISTS'); writes.push([ref.path, data]); },
-                set: (ref, data) => writes.push([ref.path, data]),
+                set: (ref, data, options) => writes.push([ref.path, options?.merge ? { ...records.get(ref.path), ...data } : data]),
                 update: (ref, data) => { if (!records.has(ref.path)) throw Error('MISSING'); writes.push([ref.path, { ...records.get(ref.path), ...data }]); },
                 delete: ref => writes.push([ref.path, undefined])
             });

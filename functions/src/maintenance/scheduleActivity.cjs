@@ -1,7 +1,7 @@
 'use strict';
 const { getFunctions } = require('firebase-admin/functions');
 const { createActivityMaintenance, planWrite } = require('./activityMaintenanceCore.cjs');
-const taskNames = { link: 'dispatchPaymentLinkExpiryGen2', publication: 'dispatchPublicationCheckGen2', session: 'dispatchAnalyticsInactivityGen2', sessionGroup: 'dispatchAnalyticsInactivityGroupGen2', compaction: 'dispatchAnalyticsCompactionGen2', archive: 'dispatchAnalyticsArchiveGen2', inbox: 'dispatchInboxCheckGen2', payment: 'dispatchPaymentCheckGen2' };
+const taskNames = { finance: 'dispatchCommerceReconciliationGen2', gc: 'dispatchCatalogGcGroupGen2', catalog: 'dispatchCatalogCycleGen2', outbox: 'dispatchCommerceOutboxTaskGen2', reservation: 'dispatchCommerceReservationExpiryTaskGen2', link: 'dispatchPaymentLinkExpiryGen2', publication: 'dispatchPublicationCheckGen2', session: 'dispatchAnalyticsInactivityGen2', sessionGroup: 'dispatchAnalyticsInactivityGroupGen2', compaction: 'dispatchAnalyticsCompactionGen2', archive: 'dispatchAnalyticsArchiveGen2', inbox: 'dispatchInboxCheckGen2', payment: 'dispatchPaymentCheckGen2' };
 async function scheduleActivity(plan) {
     if (process.env.ACTIVITY_MAINTENANCE_ENABLED !== 'true' || !plan) return { outcome: 'ignored' };
     return createActivityMaintenance({

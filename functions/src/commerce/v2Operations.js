@@ -469,6 +469,17 @@ async function buildHealth(projection) {
     }, { evaluatedAt: new Date().toISOString() });
 }
 
+let requestedHealth = null;
+async function healthOnExplicitRead(projection) {
+    const key = projection?.projectionHash || 'unverified';
+    if (requestedHealth?.key === key && requestedHealth.until > Date.now()) return requestedHealth.promise;
+    const promise = buildHealth({ divergences: new Array(projection?.divergenceCount ?? 1) });
+    const entry = { key, until: Date.now() + 60000, promise };
+    requestedHealth = entry;
+    try { return await promise; }
+    catch (error) { if (requestedHealth === entry) requestedHealth = null; throw error; }
+}
+
 async function persistHealthIncidents(health) {
     const batch = db.batch();
     for (const [code, count] of Object.entries(health.counters)) {
@@ -560,7 +571,7 @@ async function persistFinancialRollups(facts, projection, builtAt) {
     };
 }
 
-async function runOperationsRebuild() {
+async function runOperationsRebuild({ includeHealth = true } = {}) {
     const builtAt = new Date().toISOString();
     const baseProjection = await buildProjectionFromRollups(builtAt);
     const [absoluteOrders, projectedOrdersSnapshot, projectedFinanceSnapshot] = await Promise.all([
@@ -600,6 +611,7 @@ async function runOperationsRebuild() {
         rebuilt: false,
         factCount: projection.factCount
     };
+    if (!includeHealth) return { projection, documents, financialRollups };
     const health = await buildHealth(projection);
     await Promise.all([
         db.doc('sys_commerce_operations/current').set({
@@ -824,7 +836,20 @@ const getCommerceOperationsStatusAdmin = regionalFunctions()
             buildAdminFinancialDaily(),
             buildLiveOutboxFailureCounters()
         ]);
-        const operationsData = operations.exists ? operations.data() : null;
+        const storedOperations = operations.exists ? operations.data() : null;
+        let currentProjection = storedOperations?.projection;
+        if (process.env.COMMERCE_RECONCILIATION_MODE === 'grouped') {
+            const [projection, attention] = await Promise.all([
+                db.doc('commerce_financial_projections/current').get(),
+                db.collection('sys_commerce_reconciliation').where('maintenanceWork.state', '==', 'needs_attention').limit(1).get()
+            ]);
+            const value = projection.data();
+            currentProjection = { projectionHash: `${value?.projectionHash || 'missing'}:${attention.empty}`,
+                divergenceCount: (value?.divergences?.length ?? 1) + (attention.empty ? 0 : 1) };
+        }
+        const operationsData = storedOperations && process.env.COMMERCE_RECONCILIATION_MODE === 'grouped'
+            ? { ...storedOperations, ...await healthOnExplicitRead(currentProjection) }
+            : storedOperations;
         const storedEffective = effectiveCommerceHealth(operationsData);
         const hasLiveOutboxFailure = Object.values(liveOutboxFailures)
             .some((count) => count > 0);

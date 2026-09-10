@@ -60,6 +60,10 @@ dans la photographie de l'audit décrivent sa clôture antérieure à cette livr
 
 ## Suivis à consulter uniquement pour leur chantier
 
+- [Terminer les cinq contrôles périodiques](infra/PLAN_FIN_MAINTENANCE_PERIODIQUE.md) :
+  plan relu du 10 septembre, reprises commerce/catalogue et contrôles finance/GC
+  regroupés après activité ; tests et bascule par lot, pas encore implémenté.
+
 - [Contrôles d'inactivité analytics par groupes](data/PLAN_INACTIVITE_ANALYTICS_GROUPES.md) :
   activé en sandbox le 10 septembre, présence conservée, migration sans scan ;
   [livraison et limites](data/INACTIVITE_GROUPES_CLOUD_2026-09-10.md),

@@ -1,5 +1,7 @@
 'use strict';
 
+const { withOutboxMaintenance } = require('./outboxMaintenance');
+
 const crypto = require('node:crypto');
 const { hashPayload } = require('./idempotency');
 
@@ -81,7 +83,7 @@ function buildOutboxIntent({
         throw effectError('COMMERCE_OUTBOX_NOT_BEFORE_INVALID');
     }
     const outboxId = deterministicEffectId([effectId, template, recipientRole, 'email']);
-    return {
+    return withOutboxMaintenance({
         schemaVersion: 2,
         outboxId,
         effectId,
@@ -105,7 +107,7 @@ function buildOutboxIntent({
         createdAt: now,
         sentAt: null,
         purgeAt: null
-    };
+    });
 }
 
 module.exports = {

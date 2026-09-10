@@ -7,10 +7,14 @@ const { fieldFor } = require('../functions/src/maintenance/durableWork.cjs');
 const args = Object.fromEntries(process.argv.slice(2).map(arg => {
     const [key, ...value] = arg.replace(/^--/, '').split('='); return [key, value.join('=') || true];
 }));
-const collections = { link: 'orders', payment: 'orders', session: 'analytics_sessions', inbox: 'commerce_webhook_inbox' };
+const collections = { catalog: 'sys_catalog_publication', outbox: 'commerce_outbox', reservation: 'orders', link: 'orders', payment: 'orders', session: 'analytics_sessions', inbox: 'commerce_webhook_inbox' };
 if (args.project !== 'secondevienextjsssr' || args.env !== 'sandbox' || !Object.hasOwn(collections, args.kind)) throw Error('Explicit bounded sandbox kind required');
 if (args.after && !/^[A-Za-z0-9_-]{1,160}$/.test(args.after)) throw Error('Invalid cursor');
 if (args.execute && (args.confirm !== 'BOOTSTRAP_EVENT_MAINTENANCE' || typeof args.backup !== 'string')) throw Error('Confirmation and a new backup path required');
+// Explicit migration plans the new ownership even while producer defaults
+// remain legacy. Deploy and qualify consumers before executing this command.
+if (['outbox', 'reservation'].includes(args.kind)) process.env.COMMERCE_EVENT_MAINTENANCE_MODE = 'durable';
+if (args.kind === 'catalog') process.env.CATALOG_EVENT_MAINTENANCE_MODE = 'durable';
 const app = admin.initializeApp({ projectId: args.project, credential: admin.credential.applicationDefault() });
 try {
     const db = app.firestore();

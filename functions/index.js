@@ -162,15 +162,18 @@ const {
     dispatchCommerceOutboxTaskGen2,
     dispatchCommerceReservationExpiryTaskGen2,
     onCommerceOutboxWrittenGen2,
+    onCommerceCheckoutExpiryWrittenGen2,
     onCommerceReservationWrittenGen2
 } = require('./src/commerce/commerceEventDispatch');
 exports.dispatchCommerceOutboxTaskGen2 = dispatchCommerceOutboxTaskGen2;
 exports.dispatchCommerceReservationExpiryTaskGen2 = dispatchCommerceReservationExpiryTaskGen2;
 exports.onCommerceOutboxWrittenGen2 = onCommerceOutboxWrittenGen2;
+exports.onCommerceCheckoutExpiryWrittenGen2 = onCommerceCheckoutExpiryWrittenGen2;
 exports.onCommerceReservationWrittenGen2 = onCommerceReservationWrittenGen2;
 
 // ── OBSERVABILITE METIER ET TIMELINE ADMIN ──────────────
 Object.assign(exports, require('./src/maintenance/activityMaintenance'));
+Object.assign(exports, require('./src/commerce/commerceReconciliation'));
 
 const {
     journalCommerceIncidentGen2,
@@ -426,6 +429,8 @@ exports.onCatalogSourceWrite = onCatalogSourceWrite;
 exports.dispatchCatalogBuild = dispatchCatalogBuild;
 exports.dispatchCatalogRevalidation = dispatchCatalogRevalidation;
 exports.catalogReconciler = catalogReconciler;
+Object.assign(exports, require('./src/catalog/catalogCycle'));
+Object.assign(exports, require('./src/catalog/groupedGarbageCollection'));
 exports.catalogMediaGarbageCollector = catalogMediaGarbageCollector;
 exports.getCatalogPublicationStatusGen2 = getCatalogPublicationStatusGen2;
 exports.rebuildCatalogSnapshotGen2 = rebuildCatalogSnapshotGen2;

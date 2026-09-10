@@ -190,6 +190,8 @@
     }
   ],
   "fieldOverrides": [
+    { "collectionGroup": "sys_commerce_reconciliation", "fieldPath": "expireAt", "ttl": true, "indexes": [] },
+    { "collectionGroup": "sys_catalog_gc_groups", "fieldPath": "expireAt", "ttl": true, "indexes": [] },
     { "collectionGroup": "analytics_inactivity_groups", "fieldPath": "*", "indexes": [] },
     { "collectionGroup": "analytics_inactivity_groups", "fieldPath": "expireAt", "ttl": true, "indexes": [] },
     {

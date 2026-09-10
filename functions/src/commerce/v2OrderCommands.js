@@ -1,4 +1,5 @@
 'use strict';
+const { runCommerceTransaction } = require('./domain/reconciliationActivity.cjs');
 
 const admin = require('firebase-admin');
 const functions = require('firebase-functions/v1');
@@ -32,7 +33,7 @@ function commandRepository() {
     const db = admin.firestore();
     return createOrderCommandRepository({
         db: {
-            runTransaction: (run) => db.runTransaction(run)
+            runTransaction: (run) => runCommerceTransaction(db, run)
         },
         refs: refs(db),
         clock: { now: () => new Date().toISOString() }

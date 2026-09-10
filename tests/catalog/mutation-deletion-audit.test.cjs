@@ -17,6 +17,7 @@ test('product deletion creates a new catalog revision even with the last write t
             if (name === 'firebase-admin') return { firestore: { FieldValue: { serverTimestamp: () => new Date(1000) } } };
             if (name === './mutationClassifier') return classifier;
             if (name === './publicationState') return publication;
+            if (name === './catalogCycle.cjs') return require('../../functions/src/catalog/catalogCycle.cjs');
             if (name === './structuredLog') return { catalogLog() {} };
             throw new Error(name);
         }
@@ -29,7 +30,8 @@ test('product deletion creates a new catalog revision even with the last write t
             set: (ref, value) => records.set(ref.path, { ...records.get(ref.path), ...value })
         })
     };
-    const deps = { db, enqueue: async () => ({ scheduled: true }), now: () => new Date(1000), logger() {} };
+    const tasks = new Set();
+    const deps = { db, enqueue: async input => { tasks.add(input.taskId); return { scheduled: true }; }, now: () => new Date(1000), logger() {} };
     const product = { status: 'published', name: 'Meuble', stock: 1 };
     const identity = { appId: 'secondevie', productId: 'product-one', mutationVersion: '123:456' };
     const write = await exported.exports.recordCatalogMutation(deps, { ...identity, eventId: 'created', before: null, after: product });
@@ -41,4 +43,10 @@ test('product deletion creates a new catalog revision even with the last write t
     assert.notEqual(removed.mutationHash, write.mutationHash);
     assert.equal(replay.revision, 2);
     assert.equal(replay.result, 'duplicate');
+    for (let i = 0; i < 100; i++) await exported.exports.recordCatalogMutation(deps, {
+        ...identity, eventId: `burst-${i}`, mutationVersion: `burst-${i}`,
+        before: { ...product, stock: i + 1 }, after: { ...product, stock: i + 2 }
+    });
+    assert.equal(tasks.size, 1, '100 mutations rapprochées partagent un seul identifiant de build');
+    assert.equal(records.get(publication.CONTROL_DOCUMENT).desiredRevision, 102);
 });

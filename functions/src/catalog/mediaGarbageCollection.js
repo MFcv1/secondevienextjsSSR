@@ -17,6 +17,7 @@ const { CATALOG_BUILDER_SERVICE_ACCOUNT, CATALOG_MEDIA_GC_COMMIT, CATALOG_SNAPSH
 const MEDIA_GRACE_MS = 90 * 24 * 60 * 60 * 1000;
 const MEDIA_GC_REGION = 'europe-west1';
 const MEDIA_GC_BATCH_SIZE = 25;
+const { gcGroup, markGcGroup } = require('./gcGroups.cjs');
 
 function mediaCandidateId(path) {
     return crypto.createHash('sha256').update(path).digest('hex');
@@ -56,12 +57,18 @@ async function enqueueMediaCandidates(dependencies, input) {
     return db.runTransaction(async (transaction) => {
         const snapshots = await Promise.all(candidates.map(({ reference }) => transaction.get(reference)));
         let queued = 0;
+        const groups = new Map();
         candidates.forEach(({ reference, value }, index) => {
             const existing = snapshots[index].exists ? snapshots[index].data() : null;
             if (existing && String(existing.generation || '') === String(value.generation || '')) return;
+            if (process.env.CATALOG_GC_MODE === 'grouped_dry_run') {
+                const group = gcGroup('media', value.notBefore.getTime());
+                value.gcGroupId = group.id; groups.set(group.id, group);
+            }
             transaction.set(reference, value);
             queued += 1;
         });
+        for (const group of groups.values()) markGcGroup(transaction, db, group);
         return { queued };
     });
 }
@@ -124,7 +131,7 @@ async function runMediaGarbageCollection(dependencies, input = {}) {
         logger = catalogLog
     } = dependencies;
     const dryRun = input.commit !== true || CATALOG_MEDIA_GC_COMMIT !== 'true';
-    const candidates = await db.collection('sys_catalog_media_gc')
+    const candidates = input.candidates || await db.collection('sys_catalog_media_gc')
         .where('state', '==', 'pending')
         .where('notBefore', '<=', now())
         .limit(MEDIA_GC_BATCH_SIZE)

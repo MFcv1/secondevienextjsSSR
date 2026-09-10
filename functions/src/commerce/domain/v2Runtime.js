@@ -1,4 +1,5 @@
 'use strict';
+const { runCommerceTransaction } = require('./reconciliationActivity.cjs');
 
 const crypto = require('node:crypto');
 const {
@@ -129,7 +130,7 @@ function createCancellationRuntime({
     }
     const refs = createRefs(db, appId);
     const database = {
-        runTransaction: (run) => db.runTransaction(run)
+        runTransaction: (run) => runCommerceTransaction(db, run)
     };
     const checkoutRepository = createCheckoutRepository({
         db: database,
@@ -187,7 +188,7 @@ function createCheckoutRuntime({
     }
     const refs = createRefs(db, appId);
     const database = {
-        runTransaction: (run) => db.runTransaction(run)
+        runTransaction: (run) => runCommerceTransaction(db, run)
     };
     const checkoutRepository = createCheckoutRepository({
         db: database,
@@ -240,7 +241,7 @@ function createReservationExpiryRuntime({
     }
     const refs = createRefs(db, appId);
     const database = {
-        runTransaction: (run) => db.runTransaction(run)
+        runTransaction: (run) => runCommerceTransaction(db, run)
     };
     const checkoutRepository = createCheckoutRepository({
         db: database,
@@ -311,7 +312,7 @@ function createAdminPaymentLinkRuntime({
     const refs = createRefs(db, appId);
     const database = {
         collection: (path) => db.collection(path),
-        runTransaction: (run) => db.runTransaction(run)
+        runTransaction: (run) => runCommerceTransaction(db, run)
     };
     const ids = {
         orderId: () => `ord_${crypto.randomUUID()}`,
@@ -371,7 +372,7 @@ function createRefundRuntime({
     }
     const refs = createRefs(db, appId);
     const database = {
-        runTransaction: (run) => db.runTransaction(run)
+        runTransaction: (run) => runCommerceTransaction(db, run)
     };
     const repository = createRefundRepository({
         db: database,
@@ -408,7 +409,7 @@ function createReturnRuntime({
     return Object.freeze({
         returns: createReturnRepository({
             db: {
-                runTransaction: (run) => db.runTransaction(run)
+                runTransaction: (run) => runCommerceTransaction(db, run)
             },
             refs,
             clock
@@ -514,7 +515,7 @@ function createCommerceV2Runtime({
     }
     const refs = createRefs(db, appId);
     const database = {
-        runTransaction: (run) => db.runTransaction(run)
+        runTransaction: (run) => runCommerceTransaction(db, run)
     };
     const ids = {
         orderId: () => `ord_${crypto.randomUUID()}`,

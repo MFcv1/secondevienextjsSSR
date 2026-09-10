@@ -13,6 +13,8 @@ const {
 } = require('../../helpers/secrets');
 const { createOutboxRuntime } = require('./v2Operations');
 const { reservationExpiryRuntime } = require('./v2ReservationExpiry');
+const { createOutboxMaintenanceRuntime } = require('./domain/outboxMaintenanceRuntime');
+const { createReservationMaintenanceRuntime } = require('./domain/reservationMaintenance');
 const {
     outboxSchedule,
     reservationSchedule,
@@ -45,6 +47,16 @@ async function enqueueOnce(queueName, data, options) {
 }
 
 async function enqueueOutboxWrite(event) {
+    const priorWork = event.data?.before?.data()?.maintenanceWork;
+    const work = event.data?.after?.data()?.maintenanceWork;
+    if (work?.kind === 'outbox') {
+        if (work.state === 'needs_attention' && priorWork?.state !== 'needs_attention') {
+            logger.error('maintenance_lifecycle', { kind: 'outbox', state: work.state,
+                event: 'maintenance_needs_attention', correlationId: work.operationId, operationId: work.operationId, result: work.result });
+        }
+        if (work.state !== 'pending' || (priorWork?.version === work.version && priorWork?.generation === work.generation)) return null;
+        return outboxMaintenanceRuntime().schedule(work);
+    }
     const before = event.data?.before?.exists ? outboxSchedule(event.data.before.data()) : null;
     const after = event.data?.after?.exists ? outboxSchedule(event.data.after.data()) : null;
     if (!after || sameSchedule(before, after)) return null;
@@ -68,6 +80,8 @@ async function enqueueReservationWrite(event) {
     const before = event.data?.before?.exists ? reservationSchedule(event.data.before.data()) : null;
     const after = event.data?.after?.exists ? reservationSchedule(event.data.after.data()) : null;
     if (!after || sameSchedule(before, after)) return null;
+    const order = (await admin.firestore().doc(`orders/${after.orderId}`).get()).data();
+    if (order?.reservationExpiryWork?.kind === 'reservation' || order?.maintenanceWork?.kind === 'link') return null;
     const reservationId = String(event.params.reservationId || '');
     if (!reservationId || after.orderId.length < 8) {
         throw new Error('COMMERCE_RESERVATION_EVENT_INVALID');
@@ -91,8 +105,14 @@ async function enqueueReservationWrite(event) {
 }
 
 async function dispatchOutboxTask(request) {
+    if (request.data?.schemaVersion === 2) {
+        if (request.data.kind !== 'outbox') throw new Error('COMMERCE_OUTBOX_TASK_INVALID');
+        return outboxMaintenanceRuntime().dispatch(request);
+    }
     const outboxId = String(request.data?.outboxId || '');
     if (!outboxId) throw new Error('COMMERCE_OUTBOX_TASK_INVALID');
+    const owned = await admin.firestore().doc(`commerce_outbox/${outboxId}`).get();
+    if (owned.data()?.maintenanceWork?.kind === 'outbox') return { outcome: 'superseded', outboxId };
     try {
         return await createOutboxRuntime().worker.process(outboxId, {
             expectedAttemptCount: request.data?.attemptCount,
@@ -119,11 +139,25 @@ async function dispatchOutboxTask(request) {
     }
 }
 
+function outboxMaintenanceRuntime() {
+    return createOutboxMaintenanceRuntime({ db: admin.firestore(), worker: { process: (...args) => createOutboxRuntime().worker.process(...args) },
+        enqueue: (_kind, data, options) => enqueueOnce(OUTBOX_TASK, data, { ...options, dispatchDeadlineSeconds: 300 }),
+        observe: (state, fields) => logger[state === 'needs_attention' || state === 'dispatch_failed' ? 'error' : 'info'](
+            'maintenance_lifecycle', { event: `maintenance_${state}`, correlationId: fields.operationId, state, ...fields })
+    });
+}
+
 async function dispatchReservationTask(request) {
+    if (request.data?.schemaVersion === 2) {
+        if (request.data.kind !== 'reservation') throw new Error('COMMERCE_RESERVATION_TASK_INVALID');
+        return reservationMaintenanceRuntime().dispatch(request);
+    }
     const input = request.data || {};
     const reservationId = String(input.reservationId || '');
     const orderId = String(input.orderId || '');
     if (!reservationId || orderId.length < 8) throw new Error('COMMERCE_RESERVATION_TASK_INVALID');
+    const owner = (await admin.firestore().doc(`orders/${orderId}`).get()).data();
+    if (owner?.reservationExpiryWork?.kind === 'reservation' || owner?.maintenanceWork?.kind === 'link') return { outcome: 'superseded' };
     const snapshot = await admin.firestore().doc(`inventory_reservations/${reservationId}`).get();
     if (!snapshot.exists) return { outcome: 'stale', reservationId };
     const reservation = snapshot.data();
@@ -142,6 +176,21 @@ async function dispatchReservationTask(request) {
         id: reservationId,
         data: reservation
     });
+}
+
+function reservationMaintenanceRuntime() {
+    return createReservationMaintenanceRuntime({ db: admin.firestore(), worker: { process: (...args) => reservationExpiryRuntime().expiryWorker.process(...args) },
+        enqueue: (_kind, data, options) => enqueueOnce(RESERVATION_TASK, data, { ...options, dispatchDeadlineSeconds: 300 }),
+        observe: (state, fields) => logger[state === 'needs_attention' || state === 'dispatch_failed' ? 'error' : 'info'](
+            'maintenance_lifecycle', { event: `maintenance_${state}`, correlationId: fields.operationId, state, ...fields }) });
+}
+
+async function enqueueCheckoutExpiryWrite(event) {
+    const before = event.data?.before?.data()?.reservationExpiryWork;
+    const work = event.data?.after?.data()?.reservationExpiryWork;
+    if (work?.kind !== 'reservation' || work.state !== 'pending'
+        || (before?.version === work.version && before?.generation === work.generation)) return null;
+    return reservationMaintenanceRuntime().schedule(work);
 }
 
 const eventOptions = (document, serviceAccount) => ({
@@ -167,6 +216,10 @@ const onCommerceReservationWrittenGen2 = onDocumentWritten(
     enqueueReservationWrite
 );
 
+const onCommerceCheckoutExpiryWrittenGen2 = onDocumentWritten(
+    eventOptions('orders/{orderId}', RESERVATION_SERVICE_ACCOUNT), enqueueCheckoutExpiryWrite
+);
+
 const dispatchCommerceOutboxTaskGen2 = onTaskDispatched({
     region: REGION,
     serviceAccount: OUTBOX_SERVICE_ACCOUNT,
@@ -178,7 +231,7 @@ const dispatchCommerceOutboxTaskGen2 = onTaskDispatched({
     maxInstances: 1,
     memory: '512MiB',
     timeoutSeconds: 300,
-    retryConfig: { maxAttempts: 1, minBackoffSeconds: 10, maxBackoffSeconds: 60, maxDoublings: 2 },
+    retryConfig: { maxAttempts: 20, minBackoffSeconds: 10, maxBackoffSeconds: 120, maxDoublings: 3 },
     rateLimits: { maxConcurrentDispatches: 1, maxDispatchesPerSecond: 2 }
 }, dispatchOutboxTask);
 
@@ -193,11 +246,13 @@ const dispatchCommerceReservationExpiryTaskGen2 = onTaskDispatched({
     maxInstances: 1,
     memory: '512MiB',
     timeoutSeconds: 300,
-    retryConfig: { maxAttempts: 3, minBackoffSeconds: 10, maxBackoffSeconds: 120, maxDoublings: 3 },
+    retryConfig: { maxAttempts: 20, minBackoffSeconds: 10, maxBackoffSeconds: 120, maxDoublings: 3 },
     rateLimits: { maxConcurrentDispatches: 1, maxDispatchesPerSecond: 2 }
 }, dispatchReservationTask);
 
 module.exports = {
+    onCommerceCheckoutExpiryWrittenGen2,
+    enqueueCheckoutExpiryWrite,
     dispatchCommerceOutboxTaskGen2,
     dispatchCommerceReservationExpiryTaskGen2,
     dispatchOutboxTask,

@@ -612,6 +612,18 @@ service cloud.firestore {
     match /sys_analytics_maintenance/{docId} {
       allow read, write: if false;
     }
+    match /sys_commerce_reconciliation/{docId} {
+      allow read, write: if false;
+    }
+    match /sys_commerce_reconciliation_watermark/{docId} {
+      allow read, write: if false;
+    }
+    match /sys_catalog_release_gc/{docId} {
+      allow read, write: if false;
+    }
+    match /sys_catalog_gc_groups/{docId} {
+      allow read, write: if false;
+    }
 
     match /sales_stats_daily/{docId} {
       allow read: if isStrongArtisan();

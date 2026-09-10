@@ -1,5 +1,25 @@
 # État du projet
 
+10 septembre — après l'audit, demande de terminer l'optimisation avant le gel :
+[plan des cinq contrôles restants](infra/PLAN_FIN_MAINTENANCE_PERIODIQUE.md) rédigé
+et relu. Cible : plus de scans fixes dans ces cinq domaines, reprises justifiées
+par les objets et contrôles regroupés. Inclut résultats fournisseur ambigus,
+fraîcheur santé/finance, protections GC et relais des échéances à 90 jours.
+Implémentation locale engagée pour outbox/réservations et cycles catalogue,
+avec tests de panne, doublons et concurrence, complétée par finance regroupée
+et cohortes GC exclusivement dry-run. 378 tests locaux, 7 tests émulateur et
+build production réussis. Nouveaux producteurs désactivés par défaut ; modes
+Hosting préparés pour activation après livraison des consommateurs. Qualification cloud et
+migration encore ouvertes ; aucun scheduler suspendu, aucun déploiement dans
+cette étape. Détails et gates dans le plan.
+
+10 septembre — [audit de stabilité des fonctions](audits/2026-09-10-stabilite-fonctions/README.md) :
+172 ACTIVE, 11 queues RUNNING, cinq jobs périodiques actifs (74 lancements/jour).
+Recommandation : révision stable pendant la semaine de recette ; ne pas retirer
+les reprises horaires commerce/catalogue sans remplacement qualifié. 82 tests
+réussis, aucun changement runtime. Coûts du projet mensuels : pas de corrélation
+quotidienne automatique sur une semaine.
+
 10 septembre — [regroupement des contrôles d'inactivité analytics](data/PLAN_INACTIVITE_ANALYTICS_GROUPES.md) :
 activé sur le sandbox pour la phase de test demandée : trois producteurs en mode
 groupé/quatre partitions, deux nouveaux contrôles privés, Hosting

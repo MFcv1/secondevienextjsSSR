@@ -6,7 +6,8 @@ for (const key of ['GOOGLE_APPLICATION_CREDENTIALS', 'FIREBASE_TOKEN', 'CLOUDSDK
     if (process.env[key]) throw new Error('Cloud credentials forbidden in Emulator gate');
 }
 const project = 'demo-secondevie-events';
-const testFile = process.argv.includes('--grouped') ? 'tests/grouped-inactivity-emulator.test.cjs' : 'tests/durable-maintenance-emulator.test.cjs';
+const testFile = process.argv.includes('--final-maintenance') ? 'tests/final-maintenance-emulator.test.cjs tests/durable-maintenance-emulator.test.cjs'
+    : process.argv.includes('--grouped') ? 'tests/grouped-inactivity-emulator.test.cjs' : 'tests/durable-maintenance-emulator.test.cjs';
 const result = spawnSync(process.execPath, [require.resolve('firebase-tools/lib/bin/firebase.js'),
     'emulators:exec', '--only', 'firestore', '--project', project,
     `"${process.execPath}" --test ${testFile}`

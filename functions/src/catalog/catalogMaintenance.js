@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const { cycleIntent } = require('./catalogCycle.cjs');
 const admin = require('firebase-admin');
 const { getFunctions } = require('firebase-admin/functions');
 const functions = require('firebase-functions/v1');
@@ -230,13 +231,13 @@ const rollbackCatalogSnapshot = regionalFunctions()
                 const controlSnap = await transaction.get(controlRef);
                 const state = controlSnap.exists ? controlSnap.data() : {};
                 if (isRollbackActive(state, Date.now())) throw new Error('ROLLBACK_ALREADY_RUNNING');
-                transaction.set(controlRef, buildRollbackPreparationUpdate(state, {
+                transaction.set(controlRef, { ...cycleIntent(state), ...buildRollbackPreparationUpdate(state, {
                     token: rollbackToken,
                     owner: context.auth?.uid || 'catalog-maintenance',
                     targetName,
                     target: targetObject.value,
                     updatedAt: new Date()
-                }), { merge: true });
+                }) }, { merge: true });
             });
             await waitForBuildFence(controlRef, rollbackToken);
 
@@ -427,6 +428,7 @@ const rebuildCatalogSnapshot = regionalFunctions()
             ) + 1;
             transaction.set(controlRef, {
                 mode: 'active',
+                ...cycleIntent(state),
                 stateVersion: nextStateVersion(state),
                 dirty: true,
                 desiredRevision: nextRevision,

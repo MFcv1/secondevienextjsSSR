@@ -1,5 +1,7 @@
 'use strict';
 
+const { withOutboxMaintenance } = require('./outboxMaintenance');
+
 function outboxError(code) {
     const error = new Error(code);
     error.code = code;
@@ -66,7 +68,7 @@ function createOutboxRepository({ db, refs }) {
                 if (!snapshotExists(snapshot)) throw outboxError('COMMERCE_OUTBOX_MISSING');
                 const entry = snapshot.data();
                 assertFence(entry, leaseToken, nowMillis);
-                transaction.set(ref, { ...entry, deliveryStartedAt: nowMillis });
+                transaction.set(ref, withOutboxMaintenance({ ...entry, deliveryStartedAt: nowMillis }, outboxId));
             });
         },
         async claim(outboxId, lease) {
@@ -74,7 +76,7 @@ function createOutboxRepository({ db, refs }) {
             return db.runTransaction(async (transaction) => {
                 const snapshot = await transaction.get(ref);
                 if (!snapshotExists(snapshot)) throw outboxError('COMMERCE_OUTBOX_MISSING');
-                const next = claim(snapshot.data(), lease);
+                const next = withOutboxMaintenance(claim(snapshot.data(), lease), outboxId);
                 transaction.set(ref, next);
                 return next;
             });
@@ -104,8 +106,9 @@ function createOutboxRepository({ db, refs }) {
                     sentAt,
                     purgeAt
                 };
-                transaction.set(ref, next);
-                return next;
+                const tracked = withOutboxMaintenance(next, outboxId);
+                transaction.set(ref, tracked);
+                return tracked;
             });
         },
 
@@ -134,8 +137,9 @@ function createOutboxRepository({ db, refs }) {
                     suppressedAt,
                     purgeAt
                 };
-                transaction.set(ref, next);
-                return next;
+                const tracked = withOutboxMaintenance(next, outboxId);
+                transaction.set(ref, tracked);
+                return tracked;
             });
         },
 
@@ -166,8 +170,9 @@ function createOutboxRepository({ db, refs }) {
                     deliveryStartedAt: null,
                     lastError: String(errorMessage || 'unknown').slice(0, 500)
                 };
-                transaction.set(ref, next);
-                return next;
+                const tracked = withOutboxMaintenance(next, outboxId);
+                transaction.set(ref, tracked);
+                return tracked;
             });
         },
 
@@ -192,8 +197,9 @@ function createOutboxRepository({ db, refs }) {
                     lastError: String(errorMessage || 'gmail_delivery_unknown').slice(0, 500),
                     deliveryUnknownAt: observedAt
                 };
-                transaction.set(ref, next);
-                return next;
+                const tracked = withOutboxMaintenance(next, outboxId);
+                transaction.set(ref, tracked);
+                return tracked;
             });
         }
     });

@@ -13,6 +13,7 @@ const { validateImpactPlan } = require('./impactPlan');
 const { catalogLog } = require('./structuredLog');
 const { CATALOG_BUILDER_SERVICE_ACCOUNT, CATALOG_REVALIDATION_URL } = require('./catalogConfig');
 const { CATEGORY_ALIASES } = require('./catalogRoutes');
+const { cycleIntent } = require('./catalogCycle.cjs');
 
 const CATALOG_REVALIDATION_HMAC_SECRET = defineSecret('CATALOG_REVALIDATION_HMAC_SECRET');
 const REVALIDATION_REGION = 'europe-west1';
@@ -34,6 +35,7 @@ async function markCatalogRevalidationFailure(db, input, error, now = () => new 
         const failureCount = Math.max(0, Number(state.revalidationFailureCount || 0)) + 1;
         const failedAt = now();
         transaction.set(controlRef, {
+            ...cycleIntent(state, failedAt.getTime(), computeRevalidationRetryNotBefore(failureCount, failedAt).getTime()),
             buildState: 'degraded',
             stateVersion: nextStateVersion(state),
             ...(servedFailure
@@ -387,7 +389,7 @@ const dispatchCatalogRevalidation = onTaskDispatched(
                 endpoint: CATALOG_REVALIDATION_URL
             }, request.data || {});
         } catch (error) {
-            await markCatalogRevalidationFailure(admin.firestore(), request.data || {}, error).catch(() => null);
+            await markCatalogRevalidationFailure(admin.firestore(), request.data || {}, error);
             throw error;
         }
     }

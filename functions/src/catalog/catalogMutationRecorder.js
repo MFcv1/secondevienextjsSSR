@@ -8,6 +8,7 @@ const {
     nextStateVersion
 } = require('./publicationState');
 const { catalogLog } = require('./structuredLog');
+const { cycleIntent } = require('./catalogCycle.cjs');
 
 function hashEventId(eventId) {
     return crypto.createHash('sha256').update(String(eventId || '')).digest('hex');
@@ -65,7 +66,10 @@ async function recordCatalogMutation(dependencies, input) {
             nowMs: timestamp.getTime(),
             publicFields: classification.changedPublicFields
         });
-        const taskId = taskIdForRevision(revision, quietUntil);
+        const pendingAt = state.queuedFor?.toDate?.() || (state.queuedFor instanceof Date ? state.queuedFor : null);
+        const reuseBatch = state.dirty && state.queuedTaskName && pendingAt?.getTime() > timestamp.getTime();
+        const queuedFor = reuseBatch ? pendingAt : quietUntil;
+        const taskId = reuseBatch ? state.queuedTaskName : taskIdForRevision(revision, queuedFor);
         const ledger = {
             schemaVersion: 1,
             eventHash,
@@ -78,13 +82,14 @@ async function recordCatalogMutation(dependencies, input) {
             assignedRevision: revision,
             dispatchState: 'pending',
             taskName: taskId,
-            queuedFor: quietUntil,
+            queuedFor,
             createdAt: timestamp,
             processedAt: null,
             expireAt: new Date(timestamp.getTime() + (7 * 24 * 60 * 60 * 1000))
         };
         transaction.set(ledgerRef, ledger);
         transaction.set(controlRef, {
+            ...cycleIntent(state, timestamp.getTime()),
             ...(!controlSnap.exists ? initialPublicationState(timestamp) : {}),
             stateVersion: nextStateVersion(state),
             dirty: true,
@@ -92,12 +97,12 @@ async function recordCatalogMutation(dependencies, input) {
             dirtySince,
             quietUntil,
             queuedTaskName: taskId,
-            queuedFor: quietUntil,
+            queuedFor,
             buildState: 'queued',
             lastMutationAt: timestamp,
             updatedAt: timestamp
         }, { merge: true });
-        return { duplicate: false, revision, quietUntil, taskId, ledger };
+        return { duplicate: false, revision, quietUntil: queuedFor, taskId, ledger };
     });
 
     const enqueueResult = await enqueue({

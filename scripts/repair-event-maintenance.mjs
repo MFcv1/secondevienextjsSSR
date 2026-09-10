@@ -11,6 +11,8 @@ const args = Object.fromEntries(process.argv.slice(2).map(arg => {
 if (args.project !== 'secondevienextjsssr' || args.env !== 'sandbox') throw Error('Explicit sandbox project required');
 const target = { kind: args.kind, id: args.id };
 const identities = { link: 'admin-payment-link-expiry', payment: 'commerce-operations-reconciler',
+    catalog: 'catalog-builder', outbox: 'commerce-outbox-dispatcher', reservation: 'commerce-reservation-expiry',
+    finance: 'commerce-operations-reconciler', gc: 'catalog-builder',
     inbox: 'commerce-operations-reconciler', session: 'analytics-runtime', sessionGroup: 'analytics-runtime',
     compaction: 'analytics-runtime', archive: 'analytics-runtime', publication: 'product-publication-worker' };
 if (!Object.hasOwn(identities, target.kind)) throw Error('Unknown repair kind');

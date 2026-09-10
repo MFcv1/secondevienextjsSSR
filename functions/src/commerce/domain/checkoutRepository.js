@@ -455,6 +455,7 @@ function createCheckoutRepository({ db, refs, ids, clock }) {
                 });
             }
             order = require('../../maintenance/durableWork.cjs').linkIntent(order, orderId);
+            order = require('./reservationMaintenance').withReservationMaintenance(order, orderId);
             if (checkoutChannel !== 'admin_payment_link') order = require('../../maintenance/durableWork.cjs').paymentIntent(order, orderId, Date.parse(clock.now()));
             transaction.set(refs.order(orderId), order);
             transaction.set(orderNumberCounterRef, {

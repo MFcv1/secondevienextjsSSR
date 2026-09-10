@@ -6,6 +6,18 @@ runConfig:
   memoryMiB: 512
 
 env:
+  - variable: COMMERCE_EVENT_MAINTENANCE_MODE
+    value: "durable"
+    availability: [RUNTIME]
+  - variable: COMMERCE_RECONCILIATION_MODE
+    value: "grouped"
+    availability: [RUNTIME]
+  - variable: CATALOG_EVENT_MAINTENANCE_MODE
+    value: "durable"
+    availability: [RUNTIME]
+  - variable: CATALOG_GC_MODE
+    value: "grouped_dry_run"
+    availability: [RUNTIME]
   - variable: PROJECT_COSTS_CONNECTED
     value: "true"
     availability: [RUNTIME]

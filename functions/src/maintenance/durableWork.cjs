@@ -6,8 +6,8 @@ const FIELD = 'maintenanceWork';
 const INACTIVITY_MS = 35 * 60000;
 const LEASE_MS = 10 * 60000; // Greater than the 540s handler deadline.
 const MAX_ATTEMPTS = 5;
-const collections = Object.freeze({ link: 'orders', payment: 'orders', session: 'analytics_sessions', sessionGroup: 'analytics_inactivity_groups', publication: 'product_publication_sessions', inbox: 'commerce_webhook_inbox', compaction: 'sys_analytics_maintenance', archive: 'sys_analytics_maintenance' });
-const fieldFor = kind => kind === 'payment' ? 'paymentWatchWork' : FIELD;
+const collections = Object.freeze({ gc: 'sys_catalog_gc_groups', finance: 'sys_commerce_reconciliation', catalog: 'sys_catalog_publication', reservation: 'orders', outbox: 'commerce_outbox', link: 'orders', payment: 'orders', session: 'analytics_sessions', sessionGroup: 'analytics_inactivity_groups', publication: 'product_publication_sessions', inbox: 'commerce_webhook_inbox', compaction: 'sys_analytics_maintenance', archive: 'sys_analytics_maintenance' });
+const fieldFor = kind => ({ payment: 'paymentWatchWork', reservation: 'reservationExpiryWork' }[kind] || FIELD);
 const digest = value => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 
 function intent(kind, id, due, version = due) {
@@ -71,7 +71,7 @@ async function writeCompactionIntent(tx, db, day, now = Date.now(), archiveAt = 
     tx.set(ref, { [FIELD]: intent('compaction', day, due), expireAt: new Date(now + 400 * 86400000) }, { merge: true });
 }
 
-function createDurableWork({ db, enqueue, execute, now = Date.now, token = randomUUID, observe = () => {}, repairAudit = null }) {
+function createDurableWork({ db, enqueue, execute, now = Date.now, token = randomUUID, observe = () => {}, repairAudit = null, completionDue = null }) {
     async function schedule(work) {
         if (!work || !runnable(work) || work.state === 'running') return { outcome: 'ignored' };
         const ref = reference(db, work);
@@ -122,13 +122,17 @@ function createDurableWork({ db, enqueue, execute, now = Date.now, token = rando
         try { result = await execute({ ...request, data: { ...work, schemaVersion: 1 }, durable: true, workLease: acquired.lease }); }
         catch (error) { failure = error; }
         const next = await db.runTransaction(async tx => {
-            const value = (await tx.get(ref)).data()?.[field];
+            const document = (await tx.get(ref)).data();
+            const value = document?.[field];
             // A paid order, extension, fresh inbox lease or competing worker wins.
             if (!same(value, work) || value.lease !== lease) return null;
             if (value.leaseUntil <= now()) throw Error('WORK_LEASE_EXPIRED');
+            const changedDue = !failure && !Number.isSafeInteger(result?.due) && completionDue
+                ? completionDue(document, result, now()) : null;
+            const continuationDue = Number.isSafeInteger(result?.due) ? result.due : changedDue;
             let updated = { ...value, lease: null, leaseUntil: null, updatedAt: now() };
             if (failure) updated = { ...updated, state: value.attempt >= MAX_ATTEMPTS ? 'needs_attention' : 'retry_wait', result: 'execution_failed' };
-            else if (Number.isSafeInteger(result?.due)) updated = { ...updated, state: 'pending', due: result.due, generation: value.generation + 1, attempt: 0, result: 'deferred' };
+            else if (Number.isSafeInteger(continuationDue)) updated = { ...updated, state: 'pending', due: continuationDue, generation: value.generation + 1, attempt: 0, result: 'deferred' };
             else updated = { ...updated, state: result?.outcome === 'attention' ? 'needs_attention' : result?.outcome === 'stale' ? 'superseded' : 'succeeded', result: String(result?.outcome || 'completed').slice(0, 80), completedAt: now() };
             tx.update(ref, { [field]: updated,
                 ...(value.kind === 'sessionGroup' && updated.state === 'succeeded'
@@ -152,7 +156,8 @@ function createDurableWork({ db, enqueue, execute, now = Date.now, token = rando
             if (!['pending', 'scheduled', 'retry_wait', 'needs_attention', 'running'].includes(value.state)) throw Error('WORK_REPAIR_TERMINAL');
             if (value.state === 'running' && value.leaseUntil > now()) throw Error('WORK_LEASE_BUSY');
             // Financial side effects stay fenced by the domain handler, not by this delivery ID.
-            const updated = { ...value, generation: value.generation + 1, state: 'pending', attempt: 0, lease: null, leaseUntil: null, repairedAt: now() };
+            const updated = { ...value, generation: value.generation + 1, state: 'pending', attempt: 0, lease: null, leaseUntil: null, repairedAt: now(),
+                ...(value.kind === 'catalog' ? { recoveries: 0 } : {}) };
             if (repairAudit) repairAudit(tx, value, updated);
             tx.update(ref, { [field]: updated });
             return updated;
