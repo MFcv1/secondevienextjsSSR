@@ -268,7 +268,9 @@ function catalogReleaseIdentityMatches(state, identity = {}) {
 function needsCatalogRevalidation(state, pointer) {
     if (!pointer?.manifestSha256 || !Number(pointer.revision)) return false;
     return Number(state?.revalidatedRevision || 0) !== Number(pointer.revision)
-        || String(state?.revalidatedManifestSha256 || '') !== String(pointer.manifestSha256);
+        || String(state?.revalidatedManifestSha256 || '') !== String(pointer.manifestSha256)
+        || (state?.invalidationState != null && state.invalidationState !== 'accepted')
+        || (state?.servedState != null && state.servedState !== 'observed');
 }
 
 function cleanError(error) {

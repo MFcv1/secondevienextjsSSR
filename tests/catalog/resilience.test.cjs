@@ -222,6 +222,17 @@ test('rollback conserve le high-water mark et force la revalidation de l identit
   assert.equal(needsCatalogRevalidation(update, target), true);
 });
 
+test('une identité déjà vérifiée ne masque pas une invalidation ou observation incomplète', () => {
+  const pointer = { revision: 41, manifestSha256: 'a'.repeat(64) };
+  const state = { revalidatedRevision: 41, revalidatedManifestSha256: pointer.manifestSha256,
+    invalidationState: 'accepted', servedState: 'observed' };
+  assert.equal(needsCatalogRevalidation(state, pointer), false);
+  for (const patch of [{ invalidationState: 'failed' }, { servedState: 'failed' },
+    { invalidationState: 'pending' }, { servedState: 'pending' }]) {
+    assert.equal(needsCatalogRevalidation({ ...state, ...patch }, pointer), true);
+  }
+});
+
 test('seuls les modes active et paused ont un effet', () => {
   const now = new Date('2026-07-18T00:00:00.000Z');
   const active = { ...initialPublicationState(now), mode: 'active', dirty: true, desiredRevision: 1 };
