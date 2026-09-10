@@ -2,12 +2,27 @@
 
 ## Graphique Data
 
-Le graphique visiteurs partage le même calcul de largeur sur toutes les périodes :
-chaque point reçu occupe un créneau égal, la barre remplit le créneau moins un
-espace de 18 %, plafonné à 8 px (4 px sur mobile). Aucun plafond fixe de largeur
-ne tasse les barres à gauche. Survol et dates suivent le centre des créneaux ;
-la dernière date est affichée, les zéros reçus restent consultables au survol.
-Ce réglage visuel ne modifie ni les agrégats ni les créneaux renvoyés par la source.
+Le graphique visiteurs conserve l’axe calendaire complet : 60 minutes, 24 heures,
+28 tranches de 6 heures sur 7 jours, 30 jours, 36 tranches sur 12 mois
+(1–10, 11–20, 21–fin du mois) ; « Tout » couvre les années de l’historique, limitées à 50.
+Les créneaux sans trafic restent à leur place. Avant la couverture connue,
+une absence reste inconnue, sans zéro ni infobulle inventés.
+Les bâtons sont centrés dans leur créneau et plafonnés à 42 px.
+La séparation vaut 8 % du créneau, plafonnée à 2 px ; le plafond de largeur
+peut augmenter cet espace sur un graphique très large.
+Survol et dates suivent le centre des créneaux ; la dernière date est affichée.
+Les KPI conservent leur déduplication sur la période. Les détails sont produits
+par le projecteur existant, sans requête ni écoute supplémentaire. Les tranches
+suivent Europe/Paris, y compris les changements d’heure ; le futur reste vide.
+L’ancien format reste lisible par jour/mois avec une mention explicite.
+`detailCoverageStartMs` distingue la couverture des nouveaux détails : aucun
+historique fin n’est inventé lors d’une mise à niveau. Les infobulles indiquent
+les bornes des tranches. Le détail incomplet est signalé sous le titre.
+
+Correctif local du 10 septembre : non déployé. Livraison coordonnée du lecteur
+et du projecteur nécessaire (un ancien lecteur strict refuse les nouveaux champs).
+Un éventuel réamorçage historique exige sa qualification sandbox et ses preuves
+de complétude ; il n’est pas exécuté par ce correctif.
 
 ## Coûts du projet
 

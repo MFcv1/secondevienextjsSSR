@@ -91,13 +91,14 @@ const TrafficChart = ({ data, darkMode, valueLabel = 'visite', animationKey = 0 
         return ticks;
     }, [maxVal, isMobile]);
 
-    // Chaque créneau occupe la même largeur, sans plafond qui tasse les barres à gauche.
+    // Créneaux réguliers ; bâtons fins centrés, même quand le trafic est faible.
     const barMetrics = useMemo(() => {
         const total = data.length;
         const slotW = total ? Math.max(0, chartW) / total : 0;
-        const gap = Math.min(isMobile ? 4 : 8, slotW * 0.18);
-        return { slotW, barW: slotW - gap, gap, total };
-    }, [data.length, chartW, isMobile]);
+        const gap = Math.min(2, slotW * 0.08);
+        const barW = Math.min(42, slotW - gap);
+        return { slotW, barW, gap: slotW - barW, total };
+    }, [data.length, chartW]);
 
     // Labels X — espacement intelligent selon la taille
     const xLabelInterval = useMemo(() => {
@@ -280,7 +281,7 @@ const TrafficChart = ({ data, darkMode, valueLabel = 'visite', animationKey = 0 
             </svg>
 
             {/* ── Tooltip flottant (ancré au-dessus de la barre) ── */}
-            {tooltipInfo && (
+            {tooltipInfo && tooltipInfo.d.visites !== null && (
                 <div style={{
                     position: 'absolute',
                     left: tooltipInfo.x,
@@ -314,7 +315,7 @@ const TrafficChart = ({ data, darkMode, valueLabel = 'visite', animationKey = 0 
                         fontSize: isMobile ? '9px' : '10px',
                         color: '#78716c', fontWeight: 700, marginBottom: '1px'
                     }}>
-                        {tooltipInfo.d.name}
+                        {tooltipInfo.d.tooltipLabel || tooltipInfo.d.name}
                     </div>
                     <div style={{
                         position: 'relative', zIndex: 1,
@@ -1172,7 +1173,7 @@ const AdminAnalytics = ({ darkMode = false, items = [], onLoadCatalog }) => {
                 <div className="flex items-center justify-between mb-8">
                     <div>
                         <h3 className={`text-[10px] font-black uppercase tracking-[0.3em] ${darkMode ? 'text-white/40' : 'text-stone-400'}`}>Evolution des visiteurs</h3>
-                        <p className="mt-1 text-[9px] font-bold text-stone-500">Chaque barre deduplique les visiteurs dans son creneau.</p>
+                        <p className="mt-1 text-[9px] font-bold text-stone-500">{analyticsStats.chartDescription || 'Chaque barre déduplique les visiteurs dans son créneau.'}</p>
                     </div>
                 </div>
                 <div className="h-[240px] md:h-[320px] w-full">

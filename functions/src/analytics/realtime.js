@@ -12,7 +12,9 @@ const SIZE = 1024;
 const RANKS = 64;
 const MAX_BYTES = 256 * 1024;
 const FIELDS = ['sessions', 'duration', 'bounces', 'mobile'];
-const LIMITS = { minute: 61, hour: 25, day: 31, month: 13, year: 50 };
+const LIMITS = { minute: 61, hour: 25, quarterday: 32, day: 31, tenday: 39, month: 13, year: 50 };
+const hourFormatter = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Paris', hour: '2-digit', hourCycle: 'h23' });
+const tendayKey = day => `${day.slice(0, 8)}${Number(day.slice(8)) <= 10 ? '01' : Number(day.slice(8)) <= 20 ? '11' : '21'}`;
 const formatter = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit'
 });
@@ -24,7 +26,9 @@ function dateKey(ms) {
 function keysFor(ms) {
     const day = dateKey(ms);
     return [`minute_${Math.floor(ms / MINUTE)}`, `hour_${Math.floor(ms / HOUR)}`,
-        `day_${day}`, `month_${day.slice(0, 7)}`, `year_${day.slice(0, 4)}`];
+        `day_${day}`, `month_${day.slice(0, 7)}`, `year_${day.slice(0, 4)}`,
+        `quarterday_${day}-${Math.floor(Number(hourFormatter.format(ms)) / 6)}`,
+        `tenday_${tendayKey(day)}`];
 }
 function hash(value) { return crypto.createHash('sha256').update(JSON.stringify(value)).digest('hex'); }
 function millis(value) {
@@ -111,6 +115,8 @@ function summaryBucket(bucket) {
 }
 function retained(key, now) {
     const [kind, value] = key.split('_');
+    if (kind === 'quarterday') return value.slice(0, 10) >= new Date(Date.parse(`${dateKey(now)}T12:00:00Z`) - 7 * DAY).toISOString().slice(0, 10) && value.slice(0, 10) <= dateKey(now);
+    if (kind === 'tenday') return retained(`month_${value.slice(0, 7)}`, now);
     if (kind === 'minute') return Number(value) >= Math.floor(now / MINUTE) - 60 && Number(value) <= Math.floor(now / MINUTE);
     if (kind === 'hour') return Number(value) >= Math.floor(now / HOUR) - 24 && Number(value) <= Math.floor(now / HOUR);
     if (kind === 'day') return value >= new Date(Date.parse(`${dateKey(now)}T12:00:00Z`) - 30 * DAY).toISOString().slice(0, 10) && value <= dateKey(now);
@@ -122,9 +128,9 @@ function retained(key, now) {
     return kind === 'year';
 }
 function updateSummaries(recent, history, changes, now) {
-    const documents = [recent, history].map(doc => ({ ...doc, buckets: { ...doc.buckets } }));
+    const documents = [recent, history].map(doc => ({ ...doc, detailCoverageStartMs: doc.detailCoverageStartMs ?? now, buckets: { ...doc.buckets } }));
     for (const [key, bucket] of changes) {
-        const target = key.startsWith('minute_') || key.startsWith('hour_') ? documents[0] : documents[1];
+        const target = /^(minute|hour|quarterday)_/.test(key) ? documents[0] : documents[1];
         target.buckets[key] = summaryBucket(bucket);
     }
     for (const doc of documents) {
@@ -213,6 +219,7 @@ function buildSeed({ epoch, mutableSinceMs, coverageStartMs, historyComplete = f
     const ledgers = new Map();
     const records = new Map();
     const excludedIds = new Set(exclusions);
+    let detailCoverageStartMs = coverageStartMs;
     for (const entry of sessions) {
         if (records.has(entry.id)) throw new Error('DATA_SEED_DUPLICATE');
         records.set(entry.id, entry);
@@ -229,7 +236,8 @@ function buildSeed({ epoch, mutableSinceMs, coverageStartMs, historyComplete = f
         const startedAtMs = Date.parse(`${c.dateKey}T12:00:00Z`);
         if (!Number.isFinite(startedAtMs) || dateKey(startedAtMs) !== c.dateKey
             || startedAtMs > now - 2 * DAY || !/^[a-f0-9]{64}$/.test(c.subject)) throw new Error('DATA_RECENT_FACT_REQUIRES_SOURCE');
-        const prepared = { startedAtMs, keys: keysFor(startedAtMs), point: point(c.subject) };
+        const prepared = { startedAtMs, keys: keysFor(startedAtMs).filter(key => !/^(minute|hour|quarterday)_/.test(key)), point: point(c.subject) };
+        detailCoverageStartMs = Math.max(detailCoverageStartMs, startedAtMs + DAY);
         for (const field of FIELDS) {
             if (!Number.isSafeInteger(c[field]) || c[field] < 0) throw new Error('DATA_SEED_FACT');
             prepared[field] = c[field];
@@ -253,7 +261,8 @@ function buildSeed({ epoch, mutableSinceMs, coverageStartMs, historyComplete = f
         if (!/^\d{4}-\d{2}-\d{2}$/.test(day.dateKey) || day.dateKey >= dateKey(mutableSinceMs) || seenDays.has(day.dateKey)) throw new Error('DATA_SEED_OVERLAP');
         if (typeof day.uniqueHll !== 'string' || Buffer.from(day.uniqueHll, 'base64').length !== SIZE) throw new Error('DATA_SEED_SKETCH');
         seenDays.add(day.dateKey);
-        for (const key of [`day_${day.dateKey}`, `month_${day.dateKey.slice(0, 7)}`, `year_${day.dateKey.slice(0, 4)}`]) {
+        detailCoverageStartMs = Math.max(detailCoverageStartMs, Date.parse(`${day.dateKey}T12:00:00Z`) + DAY);
+        for (const key of [`day_${day.dateKey}`, `month_${day.dateKey.slice(0, 7)}`, `year_${day.dateKey.slice(0, 4)}`, `tenday_${tendayKey(day.dateKey)}`]) {
             const bucket = { ...zero(), ...buckets.get(key) };
             for (const field of FIELDS) {
                 if (!Number.isSafeInteger(day[field]) || day[field] < 0) throw new Error('DATA_BASELINE_COUNTER');
@@ -264,7 +273,7 @@ function buildSeed({ epoch, mutableSinceMs, coverageStartMs, historyComplete = f
             buckets.set(key, bucket);
         }
     }
-    const common = { schemaVersion: 1, epoch, revision: 0, coverageStartMs, historyComplete, generatedAtMs: now, buckets: {} };
+    const common = { schemaVersion: 1, epoch, revision: 0, coverageStartMs, detailCoverageStartMs: Math.min(now, detailCoverageStartMs), historyComplete, generatedAtMs: now, buckets: {} };
     const [recent, history] = updateSummaries(common, common, buckets, now);
     return { control: { schemaVersion: 1, epoch, mode: 'paused', bootstrapComplete: false, mutableSinceMs },
         recent, history, buckets: Object.fromEntries(buckets), ledgers: Object.fromEntries(ledgers) };

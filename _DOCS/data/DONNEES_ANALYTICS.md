@@ -667,6 +667,19 @@ Ce chapitre remplace les anciens plans de migration et constitue la seule refere
 
 ## 12. Diagnostic Data et raccordement temps reel
 
+Extension locale du graphique (10 septembre, non déployée) : les mêmes documents
+conservent aussi `quarterday` (32 tranches maximum dans `recent`, 8 jours Paris)
+et `tenday` (39 tranches maximum dans `history`, 13 mois). Les anneaux restent
+sous 256 Kio chacun, sans nouvelle collection ni écoute. Chaque contribution
+ajoute deux buckets transactionnels : 13 lectures / 10 écritures sur une création,
+contre 11 / 8 auparavant ; le rejeu reste à 4 lectures / 0 écriture.
+Les histogrammes réversibles et le ledger existants portent aussi ces détails.
+`detailCoverageStartMs` marque leur couverture certaine, indépendamment des KPI.
+Les anciens faits quotidiens alimentent les tiers de mois, jamais de fausses
+heures ; la couverture fine de l’amorçage reste conservatrice après ces faits.
+Une mise à niveau sans réamorçage ne promet aucun détail antérieur à son premier
+événement. Voir le [contrat du graphique](../admin/BACKOFFICE.md#graphique-data).
+
 Extension P2/P3, producteur qualifie en shadow sandbox P4 le 4 septembre:
 `functions/src/analytics/realtime.js` materialise les
 creations, corrections d'identite/device et fermetures a partir de la source

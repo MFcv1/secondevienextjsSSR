@@ -82,11 +82,11 @@ test('reversible sketch preserves duplicate visitors and restores after admin wi
     assert.ok(Buffer.from(zero.uniqueHll, 'base64').every(value => value === 0));
     assert.throws(() => changeBucket(zero, first, null), /COUNTER_INVALID/);
 });
-test('replay is 4 reads / 0 writes, new contribution 11 reads / 8 writes, no scans', async () => {
+test('replay is 4 reads / 0 writes, new contribution 13 reads / 10 writes, no scans', async () => {
     const memory = prepared();
     memory.docs.set('analytics_sessions/a', session());
     assert.equal(await projectSession('a', memory.db, now), 'created');
-    assert.deepEqual(memory.costs(), { reads: 11, writes: 8 });
+    assert.deepEqual(memory.costs(), { reads: 13, writes: 10 });
     memory.reset();
     assert.equal(await projectSession('a', memory.db, now), 'noop');
     assert.deepEqual(memory.costs(), { reads: 4, writes: 0 });
@@ -94,6 +94,61 @@ test('replay is 4 reads / 0 writes, new contribution 11 reads / 8 writes, no sca
     for (const period of ['1h', '1j', '7j', '1mois', '1ans', 'tout']) {
         assert.equal(realtimeOverview(data, period, now).kpis.totalSessions, 1);
     }
+});
+test('sparse traffic retains every calendar slot without inventing missing history', () => {
+    const data = seed([{ id: 's', data: session(), updateTime: version }]);
+    for (const [period, count] of Object.entries({ '1h': 60, '1j': 24, '7j': 28, '1mois': 30, '1ans': 36, tout: 1 })) {
+        const overview = realtimeOverview(data, period, now);
+        assert.equal(overview.chartData.length, count, period);
+        assert.equal(overview.chartData.filter(point => point.visites > 0).length, 1, period);
+        assert.equal(overview.chartData.findLast(point => point.sessions > 0).sessions, 1, period);
+        assert.equal(overview.kpis.totalSessions, 1, period);
+        assert.ok(overview.chartData.every((point, index, points) => index === 0 || point.timestamp > points[index - 1].timestamp));
+    }
+    assert.equal(realtimeOverview(data, '1h', now).chartData[0].visites, 0);
+    assert.equal(realtimeOverview(data, '1ans', now).chartData[0].visites, null);
+    assert.equal(realtimeOverview(seed(), '1h', now).chartData.length, 60);
+    // A quiet hour between two occupied hours keeps its actual place on the axis.
+    const spaced = seed([
+        { id: 'a', data: session('a', now - 2 * 3600000), updateTime: version },
+        { id: 'b', data: session('b'), updateTime: version },
+    ]);
+    assert.deepEqual(realtimeOverview(spaced, '1j', now).chartData.slice(-3).map(point => point.sessions), [1, 0, 1]);
+});
+test('six-hour slots preserve actual peaks, deduplicate visitors and keep future slots unknown', () => {
+    const entries = ['2026-09-03T00:10:00Z', '2026-09-03T00:20:00Z', '2026-09-03T11:00:00Z'].map((date, index) => ({
+        id: `s${index}`, data: session('same-visitor', Date.parse(date)), updateTime: version
+    }));
+    const result = realtimeOverview(validateAnalyticsSnapshot(snapshot(seed(entries))), '7j', now);
+    assert.deepEqual(result.chartData.filter(point => point.sessions > 0).map(point => [point.sessions, point.visites]), [[2, 1], [1, 1]]);
+    assert.equal(result.kpis.uniqueVisitors, 1);
+    assert.equal(result.chartData.at(-1).visites, null);
+    assert.match(result.chartData.find(point => point.sessions === 2).tooltipLabel, /00 h – 6 h/);
+});
+test('Paris six-hour slots follow DST and month thirds handle February and year boundaries', () => {
+    for (const [date, expectedHours] of [['2026-03-29T20:00:00Z', 5], ['2026-10-25T20:00:00Z', 7]]) {
+        const at = Date.parse(date);
+        const result = realtimeOverview(seed(), '7j', at).chartData.slice(-4);
+        assert.equal((result[1].timestamp - result[0].timestamp) / 3600000, expectedHours);
+        assert.equal(result[0].name, date.slice(8, 10) + '/' + date.slice(5, 7));
+    }
+    const year = realtimeOverview(seed(), '1ans', Date.parse('2027-02-24T12:00:00Z')).chartData;
+    assert.equal(year.length, 36);
+    assert.match(year.at(-1).tooltipLabel, /du 21 au 28/);
+    assert.equal(year.filter(point => point.name.endsWith('/01')).length, 3);
+});
+test('old summaries stay readable and upgrading never turns missing detail into zero', async () => {
+    const memory = prepared();
+    for (const name of ['recent', 'history']) delete memory.docs.get(`admin_analytics_realtime/${name}`).detailCoverageStartMs;
+    const read = () => validateAnalyticsSnapshot(snapshot({ recent: memory.docs.get('admin_analytics_realtime/recent'), history: memory.docs.get('admin_analytics_realtime/history') }));
+    assert.equal(realtimeOverview(read(), '7j', now).chartData.length, 7);
+    memory.docs.set('analytics_sessions/a', session());
+    await projectSession('a', memory.db, now);
+    const result = realtimeOverview(read(), '7j', now);
+    assert.equal(result.chartData.length, 28);
+    assert.equal(result.chartData[0].visites, null);
+    assert.equal(result.chartData.find(point => point.sessions > 0).sessions, 1);
+    assert.match(result.chartDescription, /partiel/);
 });
 test('TTL preserves history, exclusion removes once, delayed event cannot resurrect', async () => {
     const memory = prepared();
@@ -129,9 +184,11 @@ test('full public rings stay below the 256 KiB budget', () => {
     const recent = {};
     for (let i = 0; i < 61; i++) recent[`minute_${Math.floor(now / 60000) - i}`] = bucket;
     for (let i = 0; i < 25; i++) recent[`hour_${Math.floor(now / 3600000) - i}`] = bucket;
+    for (let i = 0; i < 8; i++) for (let part = 0; part < 4; part++) recent[`quarterday_${new Date(now - i * 86400000).toISOString().slice(0, 10)}-${part}`] = bucket;
     const history = {};
     for (let i = 0; i < 31; i++) history[`day_${new Date(now - i * 86400000).toISOString().slice(0, 10)}`] = bucket;
     for (let i = 0; i < 13; i++) history[`month_${new Date(Date.UTC(2026, 8 - i, 1)).toISOString().slice(0, 7)}`] = bucket;
+    for (let i = 0; i < 13; i++) for (const day of ['01', '11', '21']) history[`tenday_${new Date(Date.UTC(2026, 8 - i, 1)).toISOString().slice(0, 7)}-${day}`] = bucket;
     for (let i = 0; i < 50; i++) history[`year_${2026 - i}`] = bucket;
     base.recent.buckets = recent; base.history.buckets = history;
     validateAnalyticsSnapshot(snapshot(base));
