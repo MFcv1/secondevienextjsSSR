@@ -520,6 +520,15 @@ d'un indicateur d'intention, pas du registre commercial autoritaire.
 
 ## 8. Retention
 
+Évolution locale du 10 septembre, non activée : intentions de clôture dans les
+sessions et intentions atomiques de consolidation/archivage dans
+`sys_analytics_maintenance`. Deux documents au plus par jour concerné, champ
+`expireAt` à 400 jours avec TTL déclaré, accès client toujours interdit.
+L'archivage cible un jour existant après fin du jour + 75 jours, avec relais de
+28 jours pour respecter Cloud Tasks. Le bootstrap historique, le TTL cloud et
+le retrait du scheduler restent à qualifier ; la cadence déployée ci-dessous
+reste active. [Contrat et preuves](../infra/EVENEMENTS_IMPLEMENTATION_2026-09-10.md).
+
 Le sandbox applique des bornes explicites a l'ecriture. Les TTL Firestore
 suppriment automatiquement les donnees temporaires arrivees a expiration.
 `maintainAnalyticsGen2`, toutes les quinze minutes, archive d'abord les sessions

@@ -437,7 +437,7 @@ const cleanupProductPublicationSessions = onSchedule({
 });
 
 const reconcileProductPublicationSessions = onSchedule({
-    schedule: 'every 15 minutes',
+    schedule: require('../maintenance/rescueSchedule.cjs').rescueSchedule('every 15 minutes', 'every 60 minutes'),
     region: REGION,
     serviceAccount: PRODUCT_PUBLICATION_RUNTIME_SERVICE_ACCOUNT,
     cpu: 1,

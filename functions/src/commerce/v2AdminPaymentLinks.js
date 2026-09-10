@@ -294,10 +294,11 @@ const expireAdminPaymentLinks = regionalFunctions()
         maxInstances: 1,
         secrets: ADMIN_SECRETS
     })
-    .pubsub.schedule('every 5 minutes')
+    .pubsub.schedule(require('../maintenance/rescueSchedule.cjs').rescueSchedule('every 5 minutes', 'every 24 hours'))
     .onRun(expireAdminPaymentLinksHandler);
 
 module.exports = {
+    expirePaymentLinkById: orderId => runtime().expire(orderId),
     cancelAdminPaymentLink,
     cancelAdminPaymentLinkHandler,
     createAdminPaymentLink,

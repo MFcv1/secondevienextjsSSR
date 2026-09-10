@@ -1,0 +1,14 @@
+{
+  "status": "DURABLE_LOCAL_CANDIDATE_CLOUD_QUALIFICATION_REQUIRED",
+  "project": "secondevienextjsssr",
+  "region": "europe-west1",
+  "activation": { "ACTIVITY_MAINTENANCE_ENABLED": "false", "ACTIVITY_MAINTENANCE_SLOW_RESCUE": "false" },
+  "eventTargets": ["schedulePaymentLinkExpiryGen2", "scheduleInboxCheckGen2", "schedulePaymentCheckGen2", "scheduleAnalyticsCompactionGen2"],
+  "existingEventTargets": ["aggregateAnalyticsSessionGen2"],
+  "taskTargets": ["dispatchPaymentLinkExpiryGen2", "dispatchInboxCheckGen2", "dispatchPaymentCheckGen2", "dispatchAnalyticsInactivityGen2", "dispatchAnalyticsCompactionGen2", "dispatchAnalyticsArchiveGen2"],
+  "schedulerCutoverTargets": ["expireAdminPaymentLinksGen2", "commerceWebhookCoverageWatchdogGen2", "maintainAnalyticsGen2"],
+  "pausedObsoleteSchedulers": ["cleanupProductPublicationSessions", "reconcileProductPublicationSessions"],
+  "excludedPrototypeTargets": ["schedulePublicationCheckGen2", "dispatchPublicationCheckGen2"],
+  "gates": ["committed-and-digested-inputs", "cloud-event-format", "queue-iam-and-private-invocation", "existing-active-documents-seeded", "historical-analytics-archive-seeded", "provider-and-concurrency-recipes", "transport-alert-received-and-repair-exercised", "cost-and-backlog-capacity", "rollback"],
+  "notes": "Nouvelles Functions non déployées. Les deux schedulers d'anciennes publications sont PAUSED le 10 septembre après contrôle cloud sans producteurs ni sessions. Le flag SLOW_RESCUE=true est désormais refusé. Après qualification, désactiver les schedulers migrés : aucun ralentissement périodique n'est la cible. Livrer aussi les producteurs autoritaires (Functions et runtime Next concernés), les index/TTL et les projections Incidents."
+}

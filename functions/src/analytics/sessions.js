@@ -126,7 +126,11 @@ const applySessionMessage = (sessionRef, message, updates) => db.runTransaction(
     const current = snapshot.data();
     if (!isValidSyncToken(current, message.syncToken)) return { success: false, invalidToken: true };
     const result = planSessionMessage(current, message, updates);
-    if (result.updates) transaction.update(sessionRef, result.updates);
+    if (result.updates) transaction.update(sessionRef, { ...result.updates,
+        ...(result.updates.sessionActive === true
+            ? require('../maintenance/durableWork.cjs').sessionIntent(current, Date.now(), sessionRef.id)
+            : current.maintenanceWork ? { maintenanceWork: { ...current.maintenanceWork,
+                state: 'succeeded', result: 'session_closed', lease: null, leaseUntil: null, completedAt: Date.now() } } : {}) });
     const { updates: _updates, ...response } = result;
     return response;
 });
@@ -151,6 +155,7 @@ const tryResumeSession = async ({ sessionId, syncToken, authUid, device, browser
         const current = fresh.data();
         if (!sequenced && current.syncGeneration) return false;
         transaction.update(sessionRef, {
+        ...require('../maintenance/durableWork.cjs').sessionIntent(current, now, sessionRef.id),
         syncGeneration,
         syncSequence: 0,
         lastActivityAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -292,7 +297,9 @@ const initLiveSessionHandler = async (data = {}, context) => {
     };
 
     try {
-        const sessionRef = await db.collection('analytics_sessions').add(sessionData);
+        const sessionRef = db.collection('analytics_sessions').doc();
+        await sessionRef.create({ ...sessionData,
+            ...require('../maintenance/durableWork.cjs').sessionIntent({ type: sessionType }, Date.now(), sessionRef.id) });
         sessionAuthorizationCache.set(sessionRef.id, sessionData.syncTokenHash);
         return {
             success: true,

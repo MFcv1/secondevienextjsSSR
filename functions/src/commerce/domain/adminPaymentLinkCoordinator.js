@@ -380,6 +380,7 @@ function createAdminPaymentLinkCoordinator({
             delete next.id;
             next = applyLegacyProjection(next);
             validateOrderV2(next);
+            next = require('../../maintenance/durableWork.cjs').linkIntent(next, orderId);
             transaction.set(orderRef, next);
         });
         const checkout = await checkoutRepository.loadCheckout({ orderId });

@@ -1,5 +1,17 @@
 # État du projet
 
+10 septembre — [fiabilité des événements](infra/FIABILITE_EVENEMENTS.md) :
+intentions atomiques liens/checkout/inbox/sessions, dispatch durable, tâches
+analytics et compteurs Incidents implémentés localement. Tests locaux,
+concurrence Firestore Emulator et build fixture validés ;
+[rapport et limites](infra/EVENEMENTS_IMPLEMENTATION_2026-09-10.md).
+Cloud : deux schedulers d'anciennes publications PAUSED, après vérification
+de zéro session et de l'absence des producteurs ; 97 lancements/jour retirés.
+Nouvelles Functions non déployées : commit/digest, IAM, livraison, amorçage,
+alertes/réparation, coût et recette fournisseur restent à qualifier. Les
+schedulers liens/watchdog/analytics restent actifs jusqu'à ces preuves.
+Le secours simplement moins fréquent du prototype est désormais refusé.
+
 Synchronisation du 9 septembre : ensemble des changements locaux autorisé pour
 GitHub et App Hosting sandbox. Comparaison avec l'archive du rollout 007 : seule
 modification applicative restante, la géométrie du graphique Data (toutes périodes).

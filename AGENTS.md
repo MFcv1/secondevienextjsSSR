@@ -27,6 +27,12 @@ Lecture ciblée, pas de chargement de toute la documentation :
 3. Consulter [_DOCS/ETAT_PROJET.md](_DOCS/ETAT_PROJET.md) seulement pour
    l'état des chantiers, une reprise globale ou une décision de livraison.
 
+Pour modifier un déclenchement, une reprise ou une maintenance métier, lire le
+[contrat de fiabilité des événements](_DOCS/infra/FIABILITE_EVENEMENTS.md) et son
+[protocole de qualification](_DOCS/quality/QUALIFICATION_EVENEMENTS.md).
+Relier le travail à une opération réelle ; ne pas introduire de scan périodique
+à vide. Prouver dispatch, idempotence, détection d'échec et reprise avant bascule.
+
 Pour une demande sur les **derniers audits**, ouvrir en premier
 [_DOCS/audits/README.md](_DOCS/audits/README.md). Son repère « Dernier audit
 enregistré » mène au dossier daté contenant synthèse, rapports, inventaire,

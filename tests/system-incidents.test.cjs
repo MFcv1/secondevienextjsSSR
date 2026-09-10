@@ -130,7 +130,7 @@ function fakeRoutedLog({ insertId = 'routed-1', httpRequest = null } = {}) {
     };
 }
 
-test('le sink transforme uniquement les erreurs runtime utiles et ignore les request logs', () => {
+test('le sink couvre les erreurs runtime et HTTP 5xx, sans classer les 4xx en panne serveur', () => {
     const raw = fakeRoutedLog();
     const encoded = Buffer.from(JSON.stringify(raw)).toString('base64');
     assert.deepEqual(parseMessageJson({ data: encoded }), raw);
@@ -140,7 +140,11 @@ test('le sink transforme uniquement les erreurs runtime utiles et ignore les req
     assert.doesNotMatch(normalized.stack, /client@example\.com/);
     assert.equal(isProjectableLogEntry(raw, normalized), true);
     const requestLog = fakeRoutedLog({ httpRequest: { status: 500 } });
-    assert.equal(isProjectableLogEntry(requestLog, normalizeEntry(toLoggingEntry(requestLog))), false);
+    assert.equal(isProjectableLogEntry(requestLog, normalizeEntry(toLoggingEntry(requestLog))), true);
+    const refused = fakeRoutedLog({ httpRequest: { status: 403 } });
+    assert.equal(isProjectableLogEntry(refused, normalizeEntry(toLoggingEntry(refused))), false);
+    const noSeverity = { ...raw, severity: 'DEFAULT' };
+    assert.equal(isProjectableLogEntry(noSeverity, normalizeEntry(toLoggingEntry(noSeverity))), true);
 });
 
 test('la projection temps réel est idempotente et ne stocke aucun payload brut', async () => {

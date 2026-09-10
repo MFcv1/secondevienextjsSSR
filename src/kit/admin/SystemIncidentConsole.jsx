@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { windowOccurrences } from '../../../shared/incidentWindows.cjs';
 import {
   AlertCircle,
   Bug,
@@ -21,7 +22,7 @@ const timestampMillis = (value) => {
   return Number.isFinite(millis) ? millis : 0;
 };
 
-const normalizeProjectedIncident = (data) => {
+const normalizeProjectedIncident = (data, start, end) => {
   if (
     data?.schemaVersion !== 1
     || typeof data.fingerprint !== 'string'
@@ -63,7 +64,8 @@ const normalizeProjectedIncident = (data) => {
     revision: latest.revision,
     expected: false,
     retryable: latest.retryable,
-    count: data.occurrenceCount,
+    count: windowOccurrences(data, start, end).count,
+    countComplete: windowOccurrences(data, start, end).complete,
     firstSeen: new Date(timestampMillis(data.firstSeen)).toISOString(),
     lastSeen: latest.timestamp,
     latest,
@@ -81,6 +83,7 @@ const WINDOWS = [
   { value: 72, label: '3 j' },
   { value: 168, label: '7 j' },
 ];
+const formatCount = group => group.count === null ? '—' : `${group.countComplete ? '' : '≥ '}${group.count.toLocaleString('fr-FR')}`;
 
 const formatDate = (value, withDate = true) => {
   const date = new Date(value || 0);
@@ -152,7 +155,7 @@ function IncidentInspector({ group, detail, darkMode, onClose, onOpenOrder }) {
       <div className="max-h-[68vh] overflow-y-auto p-4">
         <section className={`rounded-xl border p-3.5 ${darkMode ? 'border-white/[0.08] bg-black/20' : 'border-black/[0.08] bg-white'}`}>
           <div className="grid grid-cols-2 gap-3 text-xs">
-            <div><p className="text-[10px] text-stone-500">Occurrences</p><p className="mt-1 font-semibold tabular-nums">{group.count}</p></div>
+            <div><p className="text-[10px] text-stone-500">Occurrences dans la fenêtre</p><p className="mt-1 font-semibold tabular-nums">{formatCount(group)}</p></div>
             <div><p className="text-[10px] text-stone-500">Dernière</p><p className="mt-1 font-semibold tabular-nums">{formatDate(group.lastSeen)}</p></div>
             <div><p className="text-[10px] text-stone-500">Fonction</p><p className="mt-1 truncate font-mono text-[10px]">{group.functionName}</p></div>
             <div><p className="text-[10px] text-stone-500">Révision</p><p className="mt-1 truncate font-mono text-[10px]">{group.revision || '—'}</p></div>
@@ -212,6 +215,11 @@ export default function SystemIncidentConsole({ darkMode = false, onOpenOrder, s
   const [query, setQuery] = React.useState('');
   const [selected, setSelected] = React.useState(null);
   const [detail, setDetail] = React.useState({ data: null });
+  const [observedAt, setObservedAt] = React.useState(Date.now);
+  React.useEffect(() => {
+    const timer = setInterval(() => setObservedAt(Date.now()), 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   const openDetail = (group) => {
     setSelected(group);
@@ -220,15 +228,17 @@ export default function SystemIncidentConsole({ darkMode = false, onOpenOrder, s
 
   const groups = React.useMemo(() => {
     const normalized = query.trim().toLowerCase();
-    const minimumTimestamp = Date.now() - (windowHours * 60 * 60 * 1000);
-    const source = (state.data?.incidents || []).map(normalizeProjectedIncident).filter(Boolean).filter((group) => (
+    const end = Math.max(observedAt, timestampMillis(state.data?.updatedAt)) + 1;
+    const minimumTimestamp = end - (windowHours * 60 * 60 * 1000);
+    const source = (state.data?.incidents || []).map(item => normalizeProjectedIncident(item, minimumTimestamp, end)).filter(Boolean).filter((group) => (
       timestampMillis(group.lastSeen) >= minimumTimestamp
+      && (group.count === null || group.count > 0)
       && (severity !== 'critical' || severityTone(group.severity) === 'critical')
     ));
     if (!normalized) return source;
     return source.filter((group) => [group.event, group.errorClass, group.service, group.functionName, group.latest?.correlationId, group.latest?.orderId]
       .filter(Boolean).some((value) => String(value).toLowerCase().includes(normalized)));
-  }, [query, severity, state.data?.incidents, windowHours]);
+  }, [query, severity, state.data?.incidents, state.data?.updatedAt, windowHours, observedAt]);
 
   const surface = darkMode ? 'border-white/10 bg-[#111214]' : 'border-black/10 bg-[#f5f5f7]';
   const control = darkMode ? 'border-white/10 bg-white/[0.05] text-stone-200' : 'border-black/10 bg-white text-stone-700';
@@ -272,7 +282,7 @@ export default function SystemIncidentConsole({ darkMode = false, onOpenOrder, s
 
             {state.status === 'error' && !state.data && <div role="alert" className="p-10 text-center text-sm text-red-500"><AlertCircle className="mx-auto mb-3" size={22} />Données indisponibles. La connexion temps réel sera rétablie automatiquement.</div>}
             {state.status === 'loading' && !state.data && <div className="p-10 text-center text-sm text-stone-500">Connexion au résumé temps réel…</div>}
-            {state.status === 'ready' && groups.length === 0 && <div className="p-12 text-center"><Bug className="mx-auto text-emerald-500" size={24} /><p className="mt-3 text-sm font-semibold">Aucune erreur dans cette fenêtre</p><p className="mt-1 text-xs text-stone-500">Les erreurs identiques apparaîtraient sur une seule ligne avec leur compteur.</p></div>}
+            {state.status === 'ready' && groups.length === 0 && <div className="p-12 text-center"><Bug className="mx-auto text-emerald-500" size={24} /><p className="mt-3 text-sm font-semibold">Aucune erreur dans le résumé disponible</p><p className="mt-1 text-xs text-stone-500">Ce résumé borné ne garantit pas l’absence d’erreurs dans tous les journaux.</p></div>}
 
             <ol className={darkMode ? 'divide-y divide-white/[0.07]' : 'divide-y divide-black/[0.07]'}>
               {groups.map((group) => (
@@ -286,7 +296,7 @@ export default function SystemIncidentConsole({ darkMode = false, onOpenOrder, s
                         <span className="mt-1 block truncate font-mono text-[10px] text-stone-500">{group.functionName} · {group.errorClass}</span>
                       </span>
                     </span>
-                    <span className="text-right font-mono text-xs font-semibold tabular-nums">{group.count.toLocaleString('fr-FR')}</span>
+                    <span className="text-right font-mono text-xs font-semibold tabular-nums">{formatCount(group)}</span>
                     <ChevronRight className="text-stone-500" size={15} />
                   </button>
                 </li>
@@ -310,7 +320,7 @@ export default function SystemIncidentConsole({ darkMode = false, onOpenOrder, s
 
       <div className={`flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2 text-[10px] text-stone-500 ${darkMode ? 'border-white/[0.08]' : 'border-black/[0.08]'}`}>
         <span className="inline-flex items-center gap-1.5"><Layers3 size={12} /> Déduplication : une ligne par origine technique, compteur d’occurrences conservé.</span>
-        <span>{state.data?.incidents?.length ?? 0} erreurs matérialisées · aucun payload brut affiché</span>
+        <span>{state.data?.incidents?.length ?? 0} groupes sur 50 maximum · ≥ : couverture partielle · — : historique indisponible</span>
       </div>
     </div>
   );

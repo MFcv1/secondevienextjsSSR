@@ -37,8 +37,8 @@ const formatDate = (value) => {
 };
 
 const statusTone = (status) => {
-  if (['failed', 'dead_letter', 'delivery_unknown', 'blocked', 'open'].includes(status)) return 'danger';
-  if (['processing', 'review', 'needs_review', 'pending'].includes(status)) return 'warning';
+  if (['failed', 'dead_letter', 'delivery_unknown', 'blocked', 'open', 'needs_attention'].includes(status)) return 'danger';
+  if (['processing', 'review', 'needs_review', 'pending', 'scheduled', 'running', 'retry_wait'].includes(status)) return 'warning';
   if (['succeeded', 'sent', 'safe', 'processed', 'resolved'].includes(status)) return 'success';
   return 'neutral';
 };

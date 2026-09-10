@@ -7,6 +7,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { rescueSchedule } from '../functions/src/maintenance/rescueSchedule.cjs';
 
 export const EXPECTED_PROJECT = 'secondevienextjsssr';
 export const EXPECTED_CODEBASE = 'main';
@@ -206,6 +207,25 @@ const commerceTaskTarget = ({ name, runtimeServiceAccount, secrets, maxAttempts 
   secrets
 });
 const DASHBOARD_EVENT_TARGETS = Object.freeze({
+  ...Object.fromEntries([
+    ['schedulePaymentLinkExpiryGen2', 'dispatchPaymentLinkExpiryGen2', 'orders/{orderId}', 'admin-payment-link-expiry'],
+    ['scheduleInboxCheckGen2', 'dispatchInboxCheckGen2', 'commerce_webhook_inbox/{inboxId}', 'commerce-operations-reconciler'],
+    ['schedulePaymentCheckGen2', 'dispatchPaymentCheckGen2', 'orders/{orderId}', 'commerce-operations-reconciler'],
+    [null, 'dispatchAnalyticsArchiveGen2', null, 'analytics-runtime'],
+    ['schedulePublicationCheckGen2', 'dispatchPublicationCheckGen2', 'product_publication_sessions/{sessionId}', 'product-publication-worker'],
+    [null, 'dispatchAnalyticsInactivityGen2', null, 'analytics-runtime'],
+    ['scheduleAnalyticsCompactionGen2', 'dispatchAnalyticsCompactionGen2', 'sys_analytics_maintenance/{day}', 'analytics-runtime']
+  ].flatMap(([eventName, taskName, documentPathPattern, identity]) => {
+    const runtimeServiceAccount = `${identity}@secondevienextjsssr.iam.gserviceaccount.com`;
+    const common = { cpu: '1', memory: '512Mi', timeout: '540s', environmentVariableNames: ['ACTIVITY_MAINTENANCE_ENABLED'] };
+    return [
+      ...(eventName ? [[eventName, Object.freeze({ ...dashboardEventTarget({ name: eventName, documentPathPattern, runtimeServiceAccount }), ...common,
+        environmentVariables: ['FUNCTION_SIGNATURE_TYPE=cloudevent'] })]] : []),
+      [taskName, Object.freeze({ ...commerceTaskTarget({ name: taskName, runtimeServiceAccount,
+        secrets: identity === 'admin-payment-link-expiry' ? G9_PAYMENT_LINK_SECRETS : [], maxAttempts: 10 }), ...common,
+        queueMaxDispatchesPerSecond: 1, queueMinBackoff: '30s', queueMaxBackoff: '600s', queueMaxDoublings: 4 })]
+    ];
+  })),
   projectNewsletterSubscriberGen2: dashboardEventTarget({
     name: 'projectNewsletterSubscriberGen2',
     documentPathPattern: 'newsletter_subscribers/{subscriberId}',
@@ -336,7 +356,8 @@ const G9_GEN2_TARGETS = Object.freeze({
   expireAdminPaymentLinksGen2: g9Http({
     name: 'expireAdminPaymentLinksGen2', triggerType: 'http-scheduler',
     runtimeServiceAccount: 'admin-payment-link-expiry@secondevienextjsssr.iam.gserviceaccount.com',
-    memory: '512Mi', timeout: '300s', schedule: 'every 5 minutes', secrets: G9_PAYMENT_LINK_SECRETS
+    memory: '512Mi', timeout: '300s', schedule: rescueSchedule('every 5 minutes', 'every 24 hours'), secrets: G9_PAYMENT_LINK_SECRETS,
+    expectedSchedulerSchedules: ['every 5 minutes', 'every 24 hours']
   })
 });
 const g7Http = ({ name, triggerType = 'http-callable', memory = '256Mi', timeout = '60s', secrets = [] }) => Object.freeze({
@@ -905,14 +926,16 @@ export const GCLOUD_GEN2_TARGETS = Object.freeze({
     maxInstances: '1',
     ingressSettings: 'all',
     schedulerJob: 'firebase-schedule-maintainAnalyticsGen2-europe-west1',
-    schedule: 'every 15 minutes',
+    schedule: rescueSchedule('every 15 minutes', 'every 24 hours'),
+    expectedSchedulerSchedules: ['every 15 minutes', 'every 24 hours'],
     timeZone: 'Europe/Paris',
     schedulerServiceAccount: 'analytics-runtime@secondevienextjsssr.iam.gserviceaccount.com',
     schedulerAttemptDeadline: '540s',
     schedulerUpdateRequired: false
   }),
   aggregateAnalyticsSessionGen2: Object.freeze({
-    updateEnvironmentVariables: ['ANALYTICS_REALTIME_ENABLED=true'],
+    updateEnvironmentVariables: ['ANALYTICS_REALTIME_ENABLED=true',
+      ...(process.env.ACTIVITY_MAINTENANCE_ENABLED === undefined ? [] : [`ACTIVITY_MAINTENANCE_ENABLED=${process.env.ACTIVITY_MAINTENANCE_ENABLED === 'true'}`])],
     triggerType: 'event',
     region: 'europe-west1',
     runtime: 'nodejs22',
@@ -1115,7 +1138,8 @@ export const GCLOUD_GEN2_TARGETS = Object.freeze({
     entryPoint: 'reconcileProductPublicationSessions',
     functionUrl: 'https://europe-west1-secondevienextjsssr.cloudfunctions.net/reconcileProductPublicationSessions',
     schedulerJob: 'firebase-schedule-reconcileProductPublicationSessions-europe-west1',
-    schedule: 'every 15 minutes',
+    schedule: rescueSchedule('every 15 minutes', 'every 60 minutes'),
+    expectedSchedulerSchedules: ['every 15 minutes', 'every 60 minutes'],
     timeZone: 'UTC',
     expectedSchedulerServiceAccount: '231220287936-compute@developer.gserviceaccount.com',
     schedulerServiceAccount: 'product-publication-worker@secondevienextjsssr.iam.gserviceaccount.com',

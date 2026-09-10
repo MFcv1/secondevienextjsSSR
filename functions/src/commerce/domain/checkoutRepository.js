@@ -454,6 +454,8 @@ function createCheckoutRepository({ db, refs, ids, clock }) {
                     updatedAt: now
                 });
             }
+            order = require('../../maintenance/durableWork.cjs').linkIntent(order, orderId);
+            if (checkoutChannel !== 'admin_payment_link') order = require('../../maintenance/durableWork.cjs').paymentIntent(order, orderId, Date.parse(clock.now()));
             transaction.set(refs.order(orderId), order);
             transaction.set(orderNumberCounterRef, {
                 schemaVersion: 1,
@@ -590,6 +592,7 @@ function createCheckoutRepository({ db, refs, ids, clock }) {
                 validateOrderV2(nextOrder);
             }
             transaction.set(attemptRef, nextAttempt);
+            nextOrder = require('../../maintenance/durableWork.cjs').paymentIntent(nextOrder, nextAttempt.orderId, Date.parse(clock.now()));
             if (nextOrder !== order) transaction.set(orderRef, nextOrder);
             return nextAttempt;
         });

@@ -15,8 +15,8 @@ const envArg = [...args].find((arg) => arg.startsWith('--env='))?.split('=')[1] 
 const destination = `pubsub.googleapis.com/projects/${PROJECT_ID}/topics/${TOPIC}`;
 const filter = [
   '(resource.type="cloud_run_revision" OR resource.type="cloud_function")',
-  '(severity>=ERROR OR (jsonPayload.event="function_failed" AND jsonPayload.expected=false))',
-  'NOT httpRequest:*',
+  '(severity>=ERROR OR httpRequest.status>=500 OR textPayload=~"(^|\\n)([A-Za-z]*Error:|Unhandled error)" OR (jsonPayload.event="function_failed" AND jsonPayload.expected=false))',
+  '(NOT httpRequest:* OR httpRequest.status>=500)',
   'NOT resource.labels.service_name="projectsystemincidentgen2"',
   'NOT resource.labels.function_name="projectSystemIncidentGen2"',
   'logName!="projects/secondevienextjsssr/logs/monitoring.googleapis.com%2FViolationOpenEventv1"',

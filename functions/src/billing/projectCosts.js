@@ -3,7 +3,7 @@ const { onMessagePublished } = require('firebase-functions/v2/pubsub');
 const admin = require('firebase-admin');
 const { parseBudgetMessage, mergeCosts } = require('./projectCostsCore.cjs');
 
-exports.captureProjectCostsGen2 = onMessagePublished({
+const captureProjectCostsFirebaseHandler = onMessagePublished({
     topic: 'project-costs-budget', region: 'europe-west1', memory: '256MiB',
     cpu: 'gcf_gen1', concurrency: 1, minInstances: 0, maxInstances: 1,
     timeoutSeconds: 30, retry: true,
@@ -30,3 +30,7 @@ exports.captureProjectCostsGen2 = onMessagePublished({
         if (next) transaction.set(ref, next);
     });
 });
+// gcloud's legacy event signature and native CloudEvent both reach the same SDK handler.
+exports.captureProjectCostsGen2 = Object.assign((payload, context) => captureProjectCostsFirebaseHandler(
+    require('../../helpers/gcloudPubsubEvent.cjs').pubsubCloudEvent(payload, context)
+), captureProjectCostsFirebaseHandler);

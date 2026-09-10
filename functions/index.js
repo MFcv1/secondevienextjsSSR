@@ -167,6 +167,8 @@ exports.onCommerceOutboxWrittenGen2 = onCommerceOutboxWrittenGen2;
 exports.onCommerceReservationWrittenGen2 = onCommerceReservationWrittenGen2;
 
 // ── OBSERVABILITE METIER ET TIMELINE ADMIN ──────────────
+Object.assign(exports, require('./src/maintenance/activityMaintenance'));
+
 const {
     journalCommerceIncidentGen2,
     journalFinancialFactGen2,

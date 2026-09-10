@@ -319,6 +319,19 @@ async function buildOrderDiagnostic(db, orderId) {
             attemptCount: data.attemptCount
         }));
     }
+    for (const work of [order.maintenanceWork, order.paymentWatchWork, ...historicalWebhooks.map(doc => doc.data()?.maintenanceWork)]) {
+        if (work?.schemaVersion !== 1 || !['link', 'inbox', 'payment'].includes(work.kind)) continue;
+        events.push(timelineEvent({
+            id: `maintenance:${work.operationId}`,
+            type: { link: 'Suivi · Expiration du lien', inbox: 'Suivi · Traitement du webhook', payment: 'Suivi · Résultat du checkout' }[work.kind],
+            at: work.completedAt || work.updatedAt || work.scheduledAt
+                ? new Date(work.completedAt || work.updatedAt || work.scheduledAt) : order.createdAt,
+            source: 'échéance liée à l’action', status: work.state,
+            severity: work.state === 'needs_attention' ? 'error' : 'info',
+            correlationId: work.operationId, attemptCount: work.attempt,
+            detail: Number.isFinite(work.due) ? `Échéance : ${new Date(work.due).toISOString()}` : null
+        }));
+    }
     for (const doc of businessEvents.docs) {
         const data = doc.data();
         if (events.some((entry) => data.source?.ref && entry.id.endsWith(data.source.ref.split('/').pop()))) continue;
@@ -339,6 +352,11 @@ async function buildOrderDiagnostic(db, orderId) {
         || [facts, movements, outbox, incidents].some(snapshot => snapshot.size >= 50)
         || historicalWebhooks.length >= 20;
     const recovery = recoveryAssessment(order, incidents.docs, outbox.docs);
+    if (order.maintenanceWork?.state === 'needs_attention') {
+        recovery.status = 'review';
+        recovery.label = 'Travail différé à vérifier';
+        recovery.reasons = [...recovery.reasons, 'L’expiration du lien a atteint sa limite de reprises. Vérifier son état avant toute relance.'];
+    }
     if (sourceCapped && recovery.status === 'safe') {
         recovery.status = 'review';
         recovery.label = 'Diagnostic partiel';

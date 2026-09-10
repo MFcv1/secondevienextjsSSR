@@ -4,6 +4,7 @@ const crypto = require('node:crypto');
 const admin = require('firebase-admin');
 const { onMessagePublished } = require('firebase-functions/v2/pubsub');
 const { normalizeEntry } = require('./systemIncidents');
+const { appendOccurrence } = require('../../helpers/incidentWindows.cjs');
 
 const REGION = 'europe-west1';
 const PROJECT_ID = 'secondevienextjsssr';
@@ -55,7 +56,9 @@ function deriveTextPayload(textPayload) {
 
 function toLoggingEntry(rawEntry) {
     if (!rawEntry || typeof rawEntry !== 'object') return null;
-    const data = rawEntry.jsonPayload && typeof rawEntry.jsonPayload === 'object'
+    const data = Number(rawEntry.httpRequest?.status) >= 500
+        ? { event: 'http_server_error', errorClass: `HTTP_${rawEntry.httpRequest.status}`, summary: `Réponse serveur ${rawEntry.httpRequest.status}`, expected: false }
+        : rawEntry.jsonPayload && typeof rawEntry.jsonPayload === 'object'
         ? rawEntry.jsonPayload
         : deriveTextPayload(rawEntry.textPayload || rawEntry.protoPayload?.status?.message);
     return {
@@ -65,7 +68,7 @@ function toLoggingEntry(rawEntry) {
             logName: rawEntry.logName,
             receiveTimestamp: rawEntry.receiveTimestamp,
             resource: rawEntry.resource,
-            severity: rawEntry.severity,
+            severity: Number(rawEntry.httpRequest?.status) >= 500 ? 'ERROR' : rawEntry.severity,
             timestamp: rawEntry.timestamp,
             trace: rawEntry.trace,
             labels: rawEntry.labels
@@ -75,11 +78,12 @@ function toLoggingEntry(rawEntry) {
 
 function isProjectableLogEntry(rawEntry, normalized) {
     if (!rawEntry || !normalized?.timestamp) return false;
-    if (rawEntry.httpRequest) return false;
+    if (rawEntry.httpRequest && Number(rawEntry.httpRequest.status) < 500) return false;
     if (/monitoring\.googleapis\.com%2FViolation(?:Open|AutoResolve)Eventv1/.test(String(rawEntry.logName || ''))) return false;
     if (!['cloud_run_revision', 'cloud_function'].includes(String(rawEntry.resource?.type || ''))) return false;
     if (normalized.expected === true || EXPECTED_ERROR_CLASSES.has(normalized.errorClass)) return false;
     return severityRank(normalized.severity) >= severityRank('ERROR')
+        || /(?:^|\n)(?:[A-Za-z]*Error:|Unhandled error)/.test(String(rawEntry.textPayload || ''))
         || (normalized.event === 'function_failed' && normalized.expected === false);
 }
 
@@ -125,6 +129,7 @@ function buildIncidentFeed(current, normalized, eventAt, now, latestFields) {
         fingerprint: normalized.fingerprint,
         expected: false,
         occurrenceCount: Math.max(0, Number(previous?.occurrenceCount) || 0) + 1,
+        ...appendOccurrence(previous, eventAt, now),
         firstSeen: admin.firestore.Timestamp.fromMillis(
             Math.min(timestampMillis(previous?.firstSeen) || eventAt, eventAt)
         ),

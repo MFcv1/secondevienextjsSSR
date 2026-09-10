@@ -99,6 +99,7 @@ Schémas, minimisation, rétention : [Données](_DOCS/data/DONNEES_ANALYTICS.md)
 | Responsabilité | Source |
 | --- | --- |
 | Exports locaux Functions | `functions/index.js` |
+| Maintenance liée à l'activité | `functions/src/maintenance/`, `deploy/activity-maintenance-candidate.json` ; intentions/dispatch/reprise, [contrat événementiel](_DOCS/infra/FIABILITE_EVENEMENTS.md) et [preuves](_DOCS/infra/EVENEMENTS_IMPLEMENTATION_2026-09-10.md) |
 | Lecteurs admin partagés | `functions/src/admin/sharedReader.cjs`, `shared/adminReaderTransport.mjs` ; nouvelle cible min 0, transport désactivé |
 | Noms réellement appelés par le client | `src/kit/config/functionTargets.js` |
 | Région/runtime/sécurité/secrets | `functions/helpers/runtime.js`, `security.js`, `secrets.js` |

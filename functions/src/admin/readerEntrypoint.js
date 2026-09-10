@@ -27,6 +27,14 @@ const LEGACY_READERS = {
 };
 
 function loadReaderTarget(target) {
+    if (['schedulePaymentLinkExpiryGen2', 'dispatchPaymentLinkExpiryGen2',
+        'scheduleInboxCheckGen2', 'dispatchInboxCheckGen2',
+        'schedulePaymentCheckGen2', 'dispatchPaymentCheckGen2',
+        'schedulePublicationCheckGen2', 'dispatchPublicationCheckGen2',
+        'dispatchAnalyticsInactivityGen2', 'dispatchAnalyticsArchiveGen2',
+        'scheduleAnalyticsCompactionGen2', 'dispatchAnalyticsCompactionGen2'].includes(target)) {
+        return require('../maintenance/activityMaintenance')[target];
+    }
     if (target === 'readAdminSharedGen2') return require('./sharedReader.cjs').loadSharedAdminReader();
     if (MODULE_READERS[target]) return require(MODULE_READERS[target])[target];
     const legacyReader = LEGACY_READERS[target];

@@ -1,6 +1,7 @@
 'use strict';
 
 const crypto = require('node:crypto');
+const { inboxIntent } = require('../../maintenance/durableWork.cjs');
 
 const INBOX_STATUSES = Object.freeze(['received', 'processing', 'processed', 'failed', 'dead_letter']);
 
@@ -36,7 +37,7 @@ function createInboxEntry({ event, scope, accountId = null, payloadHash, clock }
         ? clock.nowMillis()
         : Date.parse(now);
     if (!Number.isSafeInteger(nowMillis)) throw inboxError('COMMERCE_CLOCK_REQUIRED');
-    return {
+    return inboxIntent({
         schemaVersion: 2,
         inboxId: inboxIdFor(scope, accountId, event.id),
         eventId: event.id,
@@ -58,7 +59,7 @@ function createInboxEntry({ event, scope, accountId = null, payloadHash, clock }
         lastError: null,
         receivedAt: now,
         processedAt: null
-    };
+    });
 }
 
 function claimInbox(entry, { leaseToken, nowMillis, leaseMs }) {
@@ -73,13 +74,13 @@ function claimInbox(entry, { leaseToken, nowMillis, leaseMs }) {
     if (!['received', 'failed'].includes(entry.status) && !expired) {
         throw inboxError('COMMERCE_INBOX_NOT_CLAIMABLE');
     }
-    return {
+    return inboxIntent({
         ...entry,
         status: 'processing',
         leaseToken,
         processingUntil: nowMillis + leaseMs,
         attemptCount: entry.attemptCount + 1
-    };
+    });
 }
 
 function assertInboxFence(entry, leaseToken, nowMillis) {
@@ -96,7 +97,7 @@ function assertInboxFence(entry, leaseToken, nowMillis) {
 
 function markInboxProcessed(entry, { leaseToken, nowMillis, processedAt }) {
     assertInboxFence(entry, leaseToken, nowMillis);
-    return {
+    return inboxIntent({
         ...entry,
         status: 'processed',
         leaseToken: null,
@@ -105,7 +106,7 @@ function markInboxProcessed(entry, { leaseToken, nowMillis, processedAt }) {
         lastError: null,
         processedAt,
         purgeAt: new Date(nowMillis + (180 * 24 * 60 * 60 * 1000))
-    };
+    });
 }
 
 function markInboxFailed(entry, {
@@ -118,14 +119,14 @@ function markInboxFailed(entry, {
     assertInboxFence(entry, leaseToken, nowMillis);
     const deadLetter = entry.attemptCount >= maxAttempts;
     const delay = Math.min(baseBackoffMs * (2 ** Math.max(0, entry.attemptCount - 1)), 60 * 60 * 1000);
-    return {
+    return inboxIntent({
         ...entry,
         status: deadLetter ? 'dead_letter' : 'failed',
         leaseToken: null,
         processingUntil: null,
         nextAttemptAt: deadLetter ? null : nowMillis + delay,
         lastError: String(errorMessage || 'unknown').slice(0, 500)
-    };
+    });
 }
 
 module.exports = {

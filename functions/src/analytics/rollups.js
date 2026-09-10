@@ -28,7 +28,7 @@ const RUNTIME = Object.freeze({
 });
 const SCHEDULE_RUNTIME = Object.freeze({
     region: REGION,
-    schedule: 'every 15 minutes',
+    schedule: require('../maintenance/rescueSchedule.cjs').rescueSchedule('every 15 minutes', 'every 24 hours'),
     timeZone: 'Europe/Paris',
     retryCount: 0,
     cpu: 'gcf_gen1',
@@ -407,6 +407,7 @@ async function materializeSessionFact(sessionId, _session, db = admin.firestore(
             contribution,
             previousFact?.contribution || null
         );
+        await require('../maintenance/durableWork.cjs').writeCompactionIntent(transaction, db, contribution.dateKey, Date.now(), utcDayBounds(contribution.dateKey).end + ARCHIVE_AFTER_DAYS * DAY_MS);
         transaction.set(shardRef, {
             ...nextShard,
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -496,6 +497,7 @@ async function removeMaterializedSessionFact(sessionId, db = admin.firestore()) 
         }
         const rebuilt = rebuildShardFromFacts(date, shardId, documents, sessionId);
         const shardRef = db.doc(`analytics_rollup_days/${date}/summary_shards/${shardId}`);
+        await require('../maintenance/durableWork.cjs').writeCompactionIntent(transaction, db, date, Date.now(), utcDayBounds(date).end + ARCHIVE_AFTER_DAYS * DAY_MS);
         if (Number(rebuilt.sessions || 0) === 0) transaction.delete(shardRef);
         else transaction.set(shardRef, {
             ...rebuilt,
@@ -1174,6 +1176,14 @@ const aggregateAnalyticsSessionFirebaseHandler = onDocumentWritten(
     async (event) => {
         const before = event.data?.before?.exists ? event.data.before.data() : null;
         const after = event.data?.after?.exists ? event.data.after.data() : null;
+        await require('../maintenance/scheduleActivity.cjs').scheduleSessionActivity(event.params.sessionId, before, after);
+        const withoutMaintenance = value => {
+            if (!value) return value;
+            const { maintenanceWork: _work, ...business } = value;
+            return business;
+        };
+        // Dispatch bookkeeping does not change live analytics or session facts.
+        if (before && after && JSON.stringify(withoutMaintenance(before)) === JSON.stringify(withoutMaintenance(after))) return;
         await require('./liveSessions').projectLiveSession(event.params.sessionId);
         if (process.env.ANALYTICS_REALTIME_ENABLED === 'true') {
             const realtime = require('./realtime');
@@ -1253,5 +1263,6 @@ module.exports = {
     rebuildShardFromFacts,
     materializeDashboardInsights,
     mergeHll,
-    sessionDetail
+    sessionDetail,
+    utcDayBounds
 };

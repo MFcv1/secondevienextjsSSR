@@ -133,7 +133,7 @@ const exported = {
     }),
     expireAdminPaymentLinksGen2: scheduled({
         schedulerName: 'expireAdminPaymentLinks',
-        schedule: 'every 5 minutes',
+        schedule: require('../maintenance/rescueSchedule.cjs').rescueSchedule('every 5 minutes', 'every 24 hours'),
         serviceAccount: 'admin-payment-link-expiry@secondevienextjsssr.iam.gserviceaccount.com',
         secrets: PAYMENT_LINK_SECRETS,
         handler: paymentLinks.expireAdminPaymentLinksHandler

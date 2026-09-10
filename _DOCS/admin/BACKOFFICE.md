@@ -228,6 +228,14 @@ Une empreinte stable `service +
 function + event + errorClass + premiere frame` conserve le nombre, la premiere
 occurrence et la derniere occurrence sans scan global.
 
+Évolution locale du 10 septembre, non déployée : le sink inclut les HTTP 5xx
+et les exceptions stderr sans severity ; la console compte les occurrences
+dans la fenêtre choisie via un historique borné (512 timestamps/groupe), au
+lieu d'afficher le total historique. `≥` signifie couverture partielle et `—`
+historique indisponible. Le résumé reste limité à 50 groupes et n'est pas
+exhaustif. La timeline commande inclut le suivi des tâches lien/checkout/inbox.
+[Implémentation, preuves et bascule](../infra/EVENEMENTS_IMPLEMENTATION_2026-09-10.md).
+
 La liste ne renvoie que des champs allowlistes. E-mail, telephone, adresse,
 headers, cookies, tokens, secrets, corps de requete/reponse et payloads provider
 ne sont jamais projetes. La pile et le message sont expurges; aucun payload brut
