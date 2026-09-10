@@ -1,5 +1,11 @@
 # État du projet
 
+10 septembre — [regroupement des contrôles d'inactivité analytics](data/PLAN_INACTIVITE_ANALYTICS_GROUPES.md) :
+code local implémenté, mode individuel conservé par défaut, aucun déploiement.
+Transactions Firestore et simulations comparatives validées ; présence inchangée.
+[Mesures, périmètre vérifié et gates restantes](data/INACTIVITE_GROUPES_IMPLEMENTATION_2026-09-10.md).
+Gain monétaire, capacité cloud et bascule restent non qualifiés.
+
 10 septembre — [fiabilité des événements](infra/FIABILITE_EVENEMENTS.md) :
 10 nouvelles Functions ACTIVE, 17 Functions existantes mises à jour,
 producteurs Next et console livrés sur App Hosting `build-2026-09-10-001`.

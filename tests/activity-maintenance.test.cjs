@@ -112,7 +112,7 @@ test('the abandoned slow-scan candidate cannot be activated', () => {
 
 test('deployed task definitions isolate domains, preserve private invocation and bounded retries', () => {
     const endpoints = require('../functions/src/maintenance/activityMaintenance');
-    assert.equal(Object.keys(endpoints).length, 12);
+    assert.equal(Object.keys(endpoints).length, 14);
     for (const [name, fn] of Object.entries(endpoints)) {
         assert.equal(fn.__endpoint.minInstances, 0);
         assert.equal(fn.__endpoint.maxInstances, 1);

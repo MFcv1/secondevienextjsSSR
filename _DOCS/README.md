@@ -60,6 +60,9 @@ dans la photographie de l'audit décrivent sa clôture antérieure à cette livr
 
 ## Suivis à consulter uniquement pour leur chantier
 
+- [Contrôles d'inactivité analytics par groupes](data/PLAN_INACTIVITE_ANALYTICS_GROUPES.md) :
+  implémentation locale du 10 septembre, présence conservée, migration sans scan ;
+  [mesures et gates cloud restantes](data/INACTIVITE_GROUPES_IMPLEMENTATION_2026-09-10.md).
 - [Fiabilité des événements](infra/FIABILITE_EVENEMENTS.md) : plan technique relu
   le 10 septembre, cible sans scan métier à vide et suivi du cycle de vie ;
   [implémentation et preuves](infra/EVENEMENTS_IMPLEMENTATION_2026-09-10.md),

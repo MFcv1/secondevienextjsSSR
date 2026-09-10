@@ -1,5 +1,21 @@
 # Donnees, Firestore et analytics
 
+## Inactivité regroupée — ajout local du 2026-09-10
+
+[Plan et contrat](PLAN_INACTIVITE_ANALYTICS_GROUPES.md),
+[implémentation, mesures et gates](INACTIVITE_GROUPES_IMPLEMENTATION_2026-09-10.md).
+Le mode individuel reste la valeur par défaut ; aucune activation cloud dans ce lot.
+Le mode groupé inscrit atomiquement un pointeur `inactivityGroup` dans la session et
+une intention durable dans `analytics_inactivity_groups`. Créneaux UTC de 5 minutes,
+35 minutes sans signal avant clôture, pages de 100 sessions actives indexées.
+Les déplacements techniques ne recalculent pas les projections ; fermeture et
+dernier signal conservent les faits métier. Présence 60 s / absence 150 s inchangée.
+Groupes privés, TTL 14 jours seulement après succès ; aucune nouvelle liste de
+visiteurs dupliquée ni scan périodique. Migration explicite pour changer de propriétaire.
+
+Les observations datées ci-dessous décrivent leurs révisions respectives ; pour
+l'état livré le 10 septembre, consulter le [rapport cloud](../infra/EVENEMENTS_CLOUD_2026-09-10.md).
+
 Relecture du 2026-09-05 : l’[audit backend](../audits/AUDIT_BACKEND_2026-09-05.md)
 reproduit une course sync/beacon dans la source et une régression des anciens
 faits analytics (BA-03/BA-04). La relecture transactionnelle des nouvelles

@@ -177,11 +177,21 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "sessionActive", "order": "ASCENDING" },
+        { "fieldPath": "inactivityGroup.groupId", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "analytics_sessions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "sessionActive", "order": "ASCENDING" },
         { "fieldPath": "lastActivityAt", "order": "ASCENDING" }
       ]
     }
   ],
   "fieldOverrides": [
+    { "collectionGroup": "analytics_inactivity_groups", "fieldPath": "*", "indexes": [] },
+    { "collectionGroup": "analytics_inactivity_groups", "fieldPath": "expireAt", "ttl": true, "indexes": [] },
     {
       "collectionGroup": "sys_analytics_maintenance",
       "fieldPath": "expireAt",

@@ -1179,7 +1179,7 @@ const aggregateAnalyticsSessionFirebaseHandler = onDocumentWritten(
         await require('../maintenance/scheduleActivity.cjs').scheduleSessionActivity(event.params.sessionId, before, after);
         const withoutMaintenance = value => {
             if (!value) return value;
-            const { maintenanceWork: _work, ...business } = value;
+            const { maintenanceWork: _work, inactivityGroup: _group, ...business } = value;
             return business;
         };
         // Dispatch bookkeeping does not change live analytics or session facts.

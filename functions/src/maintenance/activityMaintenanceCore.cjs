@@ -89,8 +89,8 @@ function createActivityMaintenance({ db, enqueue, expireLink, finalizePublicatio
         if (input.kind === 'session') {
             const result = await db.runTransaction(async tx => {
                 const snap = await tx.get(ref), data = snap.data();
-                if (!snap.exists || !activeSession(data)) return { outcome: 'stale' };
-                const due = millis(data.lastActivityAt) + INACTIVITY_MS;
+                if (!snap.exists || !activeSession(data) || data.inactivityGroup?.mode === 'grouped') return { outcome: 'stale' };
+                const due = Math.ceil(millis(data.lastActivityAt)) + INACTIVITY_MS;
                 if (due > now()) return { outcome: 'deferred', due };
                 tx.update(ref, { sessionActive: false, finalizedBy: 'inactivity_task', finalizedAt: serverTimestamp() });
                 return { outcome: 'finalized' };

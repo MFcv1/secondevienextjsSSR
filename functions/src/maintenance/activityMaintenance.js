@@ -8,7 +8,7 @@ const { createActivityMaintenance, planWrite, millis } = require('./activityMain
 const { taskNames } = require('./scheduleActivity.cjs');
 const { createDurableWork, fieldFor } = require('./durableWork.cjs');
 const REGION = 'europe-west1';
-const accounts = { link: 'admin-payment-link-expiry', publication: 'product-publication-worker', session: 'analytics-runtime', compaction: 'analytics-runtime', archive: 'analytics-runtime', inbox: 'commerce-operations-reconciler', payment: 'commerce-operations-reconciler' };
+const accounts = { link: 'admin-payment-link-expiry', publication: 'product-publication-worker', session: 'analytics-runtime', sessionGroup: 'analytics-runtime', compaction: 'analytics-runtime', archive: 'analytics-runtime', inbox: 'commerce-operations-reconciler', payment: 'commerce-operations-reconciler' };
 const enabled = () => process.env.ACTIVITY_MAINTENANCE_ENABLED === 'true';
 const account = kind => `${accounts[kind]}@secondevienextjsssr.iam.gserviceaccount.com`;
 const options = kind => ({ region: REGION, serviceAccount: account(kind), cpu: 1, concurrency: 1, minInstances: 0, maxInstances: 1, memory: '512MiB', timeoutSeconds: 540 });
@@ -30,7 +30,9 @@ function runtime() {
             await rollups.materializeDashboardInsights();
         }
     });
-    const durable = createDurableWork({ db: admin.firestore(), enqueue, execute: engine.dispatch,
+    const grouped = require('./groupedInactivity.cjs').createGroupedInactivity({ db: admin.firestore(), serverTimestamp: () => admin.firestore.FieldValue.serverTimestamp() });
+    const durable = createDurableWork({ db: admin.firestore(), enqueue,
+        execute: request => request.data.kind === 'sessionGroup' ? grouped.dispatch(request) : engine.dispatch(request),
         observe: (state, data) => {
             const method = ['needs_attention', 'dispatch_failed'].includes(state) ? 'error' : 'info';
             logger[method]('maintenance_lifecycle', { event: `maintenance_${state}`, correlationId: data.operationId, kind: data.kind, attempt: data.attempt || 0 });
@@ -42,6 +44,7 @@ for (const [kind, document, name, param] of [
     ['link', 'orders/{orderId}', 'schedulePaymentLinkExpiryGen2', 'orderId'],
     ['publication', 'product_publication_sessions/{sessionId}', 'schedulePublicationCheckGen2', 'sessionId'],
     ['session', null, null, null],
+    ['sessionGroup', 'analytics_inactivity_groups/{groupId}', 'scheduleAnalyticsInactivityGroupGen2', 'groupId'],
     ['archive', null, null, null],
     ['inbox', 'commerce_webhook_inbox/{inboxId}', 'scheduleInboxCheckGen2', 'inboxId'],
     ['payment', 'orders/{orderId}', 'schedulePaymentCheckGen2', 'orderId'],
@@ -68,7 +71,7 @@ for (const [kind, document, name, param] of [
             if (a.state !== 'pending' || (a.version === b?.version && a.generation === b?.generation && b?.state === 'pending')) return;
             return runtime().durable.schedule(a);
         }
-        if (['inbox', 'compaction', 'payment'].includes(kind)) return; // Only persisted intents; no bookkeeping self-loop.
+        if (['inbox', 'compaction', 'payment', 'sessionGroup'].includes(kind)) return; // Only persisted intents; no bookkeeping self-loop.
         const plan = planWrite(kind, event.params[param], before, after, millis(event.data.after.updateTime || event.time));
         const result = await runtime().schedule(plan);
         if (plan) logger.info('activity_maintenance_scheduled', { kind, outcome: result.outcome });

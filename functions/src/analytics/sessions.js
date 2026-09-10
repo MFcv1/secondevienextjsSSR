@@ -11,6 +11,7 @@ const { onCall, onRequest } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
 const crypto = require('crypto');
 const { planSessionMessage, legacySessionProtocolAllowed } = require('./sessionSequence');
+const { trackingPatch } = require('../maintenance/groupedInactivity.cjs');
 const { getSiteUrl } = require('../../helpers/config');
 const {
     canResumeSession,
@@ -127,10 +128,7 @@ const applySessionMessage = (sessionRef, message, updates) => db.runTransaction(
     if (!isValidSyncToken(current, message.syncToken)) return { success: false, invalidToken: true };
     const result = planSessionMessage(current, message, updates);
     if (result.updates) transaction.update(sessionRef, { ...result.updates,
-        ...(result.updates.sessionActive === true
-            ? require('../maintenance/durableWork.cjs').sessionIntent(current, Date.now(), sessionRef.id)
-            : current.maintenanceWork ? { maintenanceWork: { ...current.maintenanceWork,
-                state: 'succeeded', result: 'session_closed', lease: null, leaseUntil: null, completedAt: Date.now() } } : {}) });
+        ...await trackingPatch(transaction, db, sessionRef.id, current, result.updates.sessionActive === true, Date.now()) });
     const { updates: _updates, ...response } = result;
     return response;
 });
@@ -155,7 +153,7 @@ const tryResumeSession = async ({ sessionId, syncToken, authUid, device, browser
         const current = fresh.data();
         if (!sequenced && current.syncGeneration) return false;
         transaction.update(sessionRef, {
-        ...require('../maintenance/durableWork.cjs').sessionIntent(current, now, sessionRef.id),
+        ...await trackingPatch(transaction, db, sessionRef.id, current, true, Date.now()),
         syncGeneration,
         syncSequence: 0,
         lastActivityAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -298,8 +296,10 @@ const initLiveSessionHandler = async (data = {}, context) => {
 
     try {
         const sessionRef = db.collection('analytics_sessions').doc();
-        await sessionRef.create({ ...sessionData,
-            ...require('../maintenance/durableWork.cjs').sessionIntent({ type: sessionType }, Date.now(), sessionRef.id) });
+        await db.runTransaction(async transaction => {
+            const tracking = await trackingPatch(transaction, db, sessionRef.id, { type: sessionType }, true, Date.now());
+            transaction.create(sessionRef, { ...sessionData, ...tracking });
+        });
         sessionAuthorizationCache.set(sessionRef.id, sessionData.syncTokenHash);
         return {
             success: true,

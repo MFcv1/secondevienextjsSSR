@@ -17,6 +17,16 @@ const {
 const ROOT = path.resolve(__dirname, '..');
 const read = (relativePath) => fs.readFileSync(path.join(ROOT, relativePath), 'utf8');
 
+test('group ownership and delayed closure preserve historical analytics across calendar boundaries', () => {
+    for (const startedAt of ['2026-09-30T21:59:59Z', '2026-10-25T00:59:59Z', '2026-12-31T23:59:59Z']) {
+        const session = { startedAt: Date.parse(startedAt), duration: 123, journeyCount: 4, sessionActive: true };
+        const expected = contributionFor('visitor', session);
+        assert.deepEqual(contributionFor('visitor', { ...session, inactivityGroup: { mode: 'grouped', groupId: 'first' } }), expected);
+        assert.deepEqual(contributionFor('visitor', { ...session, sessionActive: false, finalizedBy: 'inactivity_group',
+            finalizedAt: session.startedAt + 40 * 60000, inactivityGroup: { mode: 'grouped', groupId: 'next' } }), expected);
+    }
+});
+
 test('les visiteurs uniques restent fusionnables sans conserver leur identifiant', () => {
     let first = null;
     let second = null;

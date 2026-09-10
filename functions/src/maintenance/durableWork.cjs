@@ -6,7 +6,7 @@ const FIELD = 'maintenanceWork';
 const INACTIVITY_MS = 35 * 60000;
 const LEASE_MS = 10 * 60000; // Greater than the 540s handler deadline.
 const MAX_ATTEMPTS = 5;
-const collections = Object.freeze({ link: 'orders', payment: 'orders', session: 'analytics_sessions', publication: 'product_publication_sessions', inbox: 'commerce_webhook_inbox', compaction: 'sys_analytics_maintenance', archive: 'sys_analytics_maintenance' });
+const collections = Object.freeze({ link: 'orders', payment: 'orders', session: 'analytics_sessions', sessionGroup: 'analytics_inactivity_groups', publication: 'product_publication_sessions', inbox: 'commerce_webhook_inbox', compaction: 'sys_analytics_maintenance', archive: 'sys_analytics_maintenance' });
 const fieldFor = kind => kind === 'payment' ? 'paymentWatchWork' : FIELD;
 const digest = value => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 
@@ -119,7 +119,7 @@ function createDurableWork({ db, enqueue, execute, now = Date.now, token = rando
         if (!acquired) return { outcome: 'superseded' };
         if (acquired.exhausted) { observe('needs_attention', { operationId: acquired.operationId, kind: acquired.kind }); return { outcome: 'attention' }; }
         let result, failure;
-        try { result = await execute({ ...request, data: { ...work, schemaVersion: 1 }, durable: true }); }
+        try { result = await execute({ ...request, data: { ...work, schemaVersion: 1 }, durable: true, workLease: acquired.lease }); }
         catch (error) { failure = error; }
         const next = await db.runTransaction(async tx => {
             const value = (await tx.get(ref)).data()?.[field];
@@ -130,7 +130,9 @@ function createDurableWork({ db, enqueue, execute, now = Date.now, token = rando
             if (failure) updated = { ...updated, state: value.attempt >= MAX_ATTEMPTS ? 'needs_attention' : 'retry_wait', result: 'execution_failed' };
             else if (Number.isSafeInteger(result?.due)) updated = { ...updated, state: 'pending', due: result.due, generation: value.generation + 1, attempt: 0, result: 'deferred' };
             else updated = { ...updated, state: result?.outcome === 'attention' ? 'needs_attention' : result?.outcome === 'stale' ? 'superseded' : 'succeeded', result: String(result?.outcome || 'completed').slice(0, 80), completedAt: now() };
-            tx.update(ref, { [field]: updated });
+            tx.update(ref, { [field]: updated,
+                ...(value.kind === 'sessionGroup' && updated.state === 'succeeded'
+                    ? { expireAt: new Date(now() + 14 * 86400000) } : {}) });
             return updated;
         });
         if (!next) { if (failure) throw failure; return { outcome: 'superseded' }; }

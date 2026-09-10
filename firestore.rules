@@ -552,6 +552,9 @@ service cloud.firestore {
     }
 
     // Analytics Sessions
+    match /analytics_inactivity_groups/{groupId} {
+      allow read, write: if false;
+    }
     match /analytics_sessions/{docId} {
       allow read, write: if false; // Lecture admin via callable projetee uniquement
     }

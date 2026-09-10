@@ -11,7 +11,7 @@ const args = Object.fromEntries(process.argv.slice(2).map(arg => {
 if (args.project !== 'secondevienextjsssr' || args.env !== 'sandbox') throw Error('Explicit sandbox project required');
 const target = { kind: args.kind, id: args.id };
 const identities = { link: 'admin-payment-link-expiry', payment: 'commerce-operations-reconciler',
-    inbox: 'commerce-operations-reconciler', session: 'analytics-runtime',
+    inbox: 'commerce-operations-reconciler', session: 'analytics-runtime', sessionGroup: 'analytics-runtime',
     compaction: 'analytics-runtime', archive: 'analytics-runtime', publication: 'product-publication-worker' };
 if (!Object.hasOwn(identities, target.kind)) throw Error('Unknown repair kind');
 // User ADC has no service-account email. Cloud Tasks must use the same private

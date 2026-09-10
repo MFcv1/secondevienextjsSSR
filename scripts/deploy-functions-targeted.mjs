@@ -214,6 +214,7 @@ const DASHBOARD_EVENT_TARGETS = Object.freeze({
     [null, 'dispatchAnalyticsArchiveGen2', null, 'analytics-runtime'],
     ['schedulePublicationCheckGen2', 'dispatchPublicationCheckGen2', 'product_publication_sessions/{sessionId}', 'product-publication-worker'],
     [null, 'dispatchAnalyticsInactivityGen2', null, 'analytics-runtime'],
+    ['scheduleAnalyticsInactivityGroupGen2', 'dispatchAnalyticsInactivityGroupGen2', 'analytics_inactivity_groups/{groupId}', 'analytics-runtime'],
     ['scheduleAnalyticsCompactionGen2', 'dispatchAnalyticsCompactionGen2', 'sys_analytics_maintenance/{day}', 'analytics-runtime']
   ].flatMap(([eventName, taskName, documentPathPattern, identity]) => {
     const runtimeServiceAccount = `${identity}@secondevienextjsssr.iam.gserviceaccount.com`;
