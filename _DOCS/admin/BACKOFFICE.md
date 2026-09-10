@@ -15,6 +15,12 @@ Les KPI conservent leur déduplication sur la période. Les détails sont produi
 par le projecteur existant, sans requête ni écoute supplémentaire. Les tranches
 suivent Europe/Paris, y compris les changements d’heure ; le futur reste vide.
 L’ancien format reste lisible par jour/mois avec une mention explicite.
+Le lecteur conserve également cet affichage lorsque les nouveaux détails
+ne couvrent pas toutes les sessions de chaque jour (7 j) ou mois (1 an).
+La présence de `detailCoverageStartMs` ne suffit jamais à remplacer l’historique.
+La comparaison porte sur les sessions de chaque groupe, pas sur la somme des
+visiteurs uniques, qui peuvent revenir dans plusieurs créneaux. Le passage au
+détail est automatique quand tous les groupes concordent ; les KPI restent identiques.
 `detailCoverageStartMs` distingue la couverture des nouveaux détails : aucun
 historique fin n’est inventé lors d’une mise à niveau. Les infobulles indiquent
 les bornes des tranches. Le détail incomplet est signalé sous le titre.
@@ -25,6 +31,8 @@ Le lecteur a précédé le projecteur (un ancien lecteur strict refuse les nouve
 Un éventuel réamorçage historique exige sa qualification sandbox et ses preuves
 de complétude ; il n’est pas exécuté par ce correctif.
 Voir les [preuves et limites de livraison](DATA_GRAPHIQUES_LIVRAISON_2026-09-10.md).
+Complément local après constat du graphique vide : conservation de l’historique
+incomplet dans le nouveau découpage, non déployée à ce stade.
 
 ## Coûts du projet
 

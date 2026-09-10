@@ -137,12 +137,26 @@ function slotStart(day, hour = 0) {
 function detailedTimeline(data, period, days, months, now) {
     const weekly = period === '7j';
     const doc = weekly ? data.recent : data.history;
-    if (doc.detailCoverageStartMs === undefined) return {
-        chartDescription: `Historique disponible par ${weekly ? 'jour' : 'mois'} ; détail ${weekly ? 'par tranche de 6 heures' : 'par tiers de mois'} pas encore disponible.`
+    const fallback = {
+        chartGranularity: weekly ? 'day' : 'month',
+        chartDescription: `Une barre par ${weekly ? 'jour' : 'mois'} : toutes les visites enregistrées sont conservées. Le détail ${weekly ? 'par tranche de 6 heures' : 'par tiers de mois'} sera affiché dès qu’il couvre ces visites.`
     };
+    if (doc.detailCoverageStartMs === undefined) return fallback;
     const slots = weekly
         ? days.flatMap(day => [0, 6, 12, 18].map((hour, index) => ({ key: `quarterday_${day}-${index}`, timestamp: slotStart(day, hour), day, hour })))
         : months.flatMap(month => ['01', '11', '21'].map(date => ({ key: `tenday_${month}-${date}`, timestamp: slotStart(`${month}-${date}`), day: `${month}-${date}` })));
+    // A coverage marker only dates the new collector; it does not migrate the
+    // old visits. Compare each calendar group before replacing the legacy chart.
+    // Never compare summed unique visitors: a visitor may span several slots.
+    const groups = weekly ? days : months;
+    const groupSize = weekly ? 4 : 3;
+    const incomplete = groups.some((group, index) => {
+        const parent = data.history.buckets[`${weekly ? 'day' : 'month'}_${group}`];
+        const detailedSessions = slots.slice(index * groupSize, (index + 1) * groupSize)
+            .reduce((sum, slot) => sum + (doc.buckets[slot.key]?.sessions || 0), 0);
+        return detailedSessions !== (parent?.sessions || 0);
+    });
+    if (incomplete) return fallback;
     const chartData = slots.map(({ key, timestamp, day, hour }) => {
         const bucket = doc.buckets[key];
         const known = doc.detailCoverageStartMs !== undefined && timestamp >= doc.detailCoverageStartMs && timestamp <= now;
@@ -152,7 +166,7 @@ function detailedTimeline(data, period, days, months, now) {
             sessions: bucket?.sessions ?? value, visites: bucket ? estimate(registers(bucket.uniqueHll)) : value, ips: 0 };
     });
     const complete = doc.detailCoverageStartMs !== undefined && slots[0].timestamp >= doc.detailCoverageStartMs;
-    return { chartData, chartDescription: `${weekly ? '4 barres par jour · tranches de 6 heures' : '3 barres par mois · du 1 au 10, du 11 au 20 et du 21 à la fin du mois'}. Chaque barre déduplique les visiteurs.${complete ? '' : ' Détail historique partiel : les créneaux inconnus restent vides.'}` };
+    return { chartData, chartGranularity: weekly ? 'quarterday' : 'tenday', chartDescription: `${weekly ? '4 barres par jour · tranches de 6 heures' : '3 barres par mois · du 1 au 10, du 11 au 20 et du 21 à la fin du mois'}. Chaque barre déduplique les visiteurs.${complete ? '' : ' Détail historique partiel : les créneaux inconnus restent vides.'}` };
 }
 export function realtimeOverview(data, period, now = Date.now()) {
     if (!data) return null;

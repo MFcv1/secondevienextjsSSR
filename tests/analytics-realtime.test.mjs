@@ -150,6 +150,50 @@ test('old summaries stay readable and upgrading never turns missing detail into 
     assert.equal(result.chartData.find(point => point.sessions > 0).sessions, 1);
     assert.match(result.chartDescription, /partiel/);
 });
+test('migration preserves historical bars even when the new collector has a coverage marker', () => {
+    const base = seed([
+        { id: 'old', data: session('old', now - 86400000), updateTime: version },
+        { id: 'new', data: session('new'), updateTime: version }
+    ]);
+    const previousKpis = realtimeOverview(base, '7j', now).kpis;
+    for (const doc of [base.recent, base.history]) {
+        doc.detailCoverageStartMs = now;
+        for (const key of Object.keys(doc.buckets)) if (/^(quarterday|tenday)_/.test(key)) delete doc.buckets[key];
+    }
+    for (const [period, count, granularity] of [['7j', 7, 'day'], ['1ans', 12, 'month']]) {
+        const result = realtimeOverview(validateAnalyticsSnapshot(snapshot(base)), period, now);
+        assert.equal(result.chartData.length, count);
+        assert.equal(result.chartGranularity, granularity);
+        assert.equal(result.chartData.reduce((sum, point) => sum + (point.sessions || 0), 0), 2);
+        assert.ok(result.chartData.some(point => point.visites > 0));
+        assert.match(result.chartDescription, /toutes les visites/);
+    }
+    assert.deepEqual(realtimeOverview(base, '7j', now).kpis, previousKpis);
+});
+test('a few new visits do not hide older traffic; full detail automatically restores fine bars', () => {
+    const base = seed([
+        { id: 'old', data: session('repeat', now - 86400000), updateTime: version },
+        { id: 'new', data: session('repeat'), updateTime: version }
+    ]);
+    const key = keysFor(now - 86400000).find(key => key.startsWith('quarterday_'));
+    const historical = base.recent.buckets[key];
+    delete base.recent.buckets[key];
+    assert.equal(realtimeOverview(base, '7j', now).chartGranularity, 'day');
+    base.recent.buckets[key] = historical;
+    const restored = realtimeOverview(base, '7j', now);
+    assert.equal(restored.chartGranularity, 'quarterday');
+    assert.equal(restored.chartData.length, 28);
+    assert.equal(restored.kpis.uniqueVisitors, 1);
+    assert.equal(restored.chartData.reduce((sum, point) => sum + (point.visites || 0), 0), 2);
+});
+test('matching global session totals cannot mask detail assigned to the wrong calendar group', () => {
+    const base = seed([{ id: 'old', data: session('old', now - 86400000), updateTime: version }]);
+    const oldKey = keysFor(now - 86400000).find(key => key.startsWith('quarterday_'));
+    const newKey = keysFor(now).find(key => key.startsWith('quarterday_'));
+    base.recent.buckets[newKey] = base.recent.buckets[oldKey];
+    delete base.recent.buckets[oldKey];
+    assert.equal(realtimeOverview(base, '7j', now).chartGranularity, 'day');
+});
 test('TTL preserves history, exclusion removes once, delayed event cannot resurrect', async () => {
     const memory = prepared();
     memory.docs.set('analytics_sessions/a', session());
