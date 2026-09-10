@@ -1,6 +1,7 @@
 # Terminer la maintenance sans scans fixes
 
-10 septembre 2026 — **implémentation locale en cours, aucune bascule cloud**.
+10 septembre 2026 — **livré sur le sandbox ; cinq scans suspendus à 19:36 Paris**.
+[Versions, qualification, limites et retour arrière](MAINTENANCE_GROUPES_LIVRAISON_2026-09-10.md).
 Source examinée : HEAD `211ff63`, après activation de l'inactivité groupée.
 [Audit des cinq contrôles](../audits/2026-09-10-stabilite-fonctions/README.md),
 [socle durable](FIABILITE_EVENEMENTS.md),
@@ -21,27 +22,27 @@ depuis la relecture du plan sont conservés).
   revalidation non avalé, rollback/reconstruction manuels armés. Une rafale partage
   l'identifiant du build encore à venir. La clôture recontrôle l'état catalogue
   dans sa transaction pour préserver une mutation concurrente.
-- Scripts locaux : trois nouvelles cibles de déploiement (expiration checkout,
-  planificateur et worker cycle catalogue), adaptation des deux queues commerce,
-  bootstrap paginé et reprise versionnée étendus. La génération de politiques
-  inclut ces queues ; **aucune politique cloud modifiée dans cette étape**.
-- Lot 4 local : marqueurs journée et watermark global dans les transactions
+- Scripts : neuf nouvelles cibles déployées, adaptation des deux queues commerce,
+  bootstrap et reprise versionnée étendus. Cinq politiques de transport mises
+  à jour pour couvrir les nouvelles queues et six abonnements Eventarc.
+- Lot 4 : marqueurs journée et watermark global dans les transactions
   autoritaires des runtimes checkout, annulation, paiement, refund, retour et
   commandes admin. Comparaison indépendante des faits du jour aux rollups et des
   commandes aux projections ; contrôle concurrent rejeté si le watermark change.
   Journées comptables UTC conservées, rendez-vous à 03:17 Paris le lendemain,
   rattrapage tardif regroupé à cinq minutes. Santé lue explicitement et partagée
   une minute par instance ; aucun faux rafraîchissement permanent d'un ancien relevé.
-- Lot 5 local : cohortes médias marquées avec les candidats, registre releases
+- Lot 5 : cohortes médias marquées avec les candidats, registre releases
   alimenté par finalisation Storage relivrable, pages de 25, relais au plus à
   28 jours, reprise des protections lors d'une nouvelle version/changement de
   pointeur. Worker exclusivement dry-run, sans chemin de suppression automatique.
   Une activation destructive future exigerait le fence publication/suppression
   et rattachement média : **elle n'est pas livrée ni activable par ce worker**.
 
-Les nouveaux producteurs d'intentions restent désactivés par défaut : activation
-explicite `COMMERCE_EVENT_MAINTENANCE_MODE=durable` et
-`CATALOG_EVENT_MAINTENANCE_MODE=durable`. Les objets déjà migrés gardent leur
+Les nouveaux producteurs d'intentions sont désactivés par défaut dans le code ; activation
+explicite déployée `COMMERCE_EVENT_MAINTENANCE_MODE=durable`,
+`CATALOG_EVENT_MAINTENANCE_MODE=durable`, `COMMERCE_RECONCILIATION_MODE=grouped`
+et `CATALOG_GC_MODE=grouped_dry_run`. Les objets déjà migrés gardent leur
 propriétaire si le mode est retiré. Déployer et qualifier les consommateurs,
 leurs queues privées et leurs alertes **avant** les producteurs (Functions et
 runtime Hosting concernés), puis migrer les objets existants avec sauvegarde.
@@ -54,11 +55,17 @@ commerce, catalogue, socle durable, inactivité groupée et opérations événem
 Sept tests supplémentaires réussissent sur l'émulateur Firestore, dont vraies
 transactions concurrentes/avortées, watermark concurrent, ambiguïté outbox et
 continuation GC. Build Next de production réussi (55 pages).
-La simulation de sept jours n'est pas sept jours observés en cloud.
-Les gates ci-dessous restent ouvertes : injection de
-pannes aux frontières Storage/CAS réelles, preuve IAM/transport/alertes sandbox,
-inventaire et migration des objets legacy. **Ne suspendre aucun des cinq scans
-sur la seule base des tests unitaires.** Aucun commit ni déploiement effectué.
+La qualification cloud a révélé un cas supplémentaire : identité catalogue déjà
+vérifiée mais invalidation/observation incomplète. Corrigé dans `2da3f3a`, avec
+64 tests catalogue/cycle/GC réussis après corrections (deux nouveaux cas), puis reprise
+réelle réussie du catalogue. Les archives des 52 cibles déployées concordent avec
+les sources préparées. Hosting `build-2026-09-10-005` SUCCEEDED.
+Le correctif `ac18942` réarme une nouvelle quarantaine quand un média conservé
+est de nouveau retiré après la fin de sa cohorte, même à génération Storage identique.
+Migration et parcours cloud terminés avant suspension des cinq scans ; détails
+des scénarios effectivement exécutés dans la livraison liée ci-dessus.
+La simulation de sept jours n'est pas sept jours observés en cloud ; les courses
+Stripe restent testées localement, sans nouvel achat Stripe dans cette passe.
 
 ## Décision, en mots simples
 
@@ -98,7 +105,7 @@ recevoir sa livraison déjà programmée une fois ; il ne repart pas en boucle.
    bloquées. Relier l'incident à l'objet et à sa génération. Reprise opérateur
    explicite/versionnée, sans ressusciter de travail terminé ni rejouer un effet ambigu.
 6. Nouvelles collections uniquement avec rules privées, indexes et rétention.
-   Succès techniques : rétention 14 jours proposée, audit de reprise 180 jours ;
+  Groupes finance/GC terminaux : rétention 400 jours, audit de reprise 180 jours ;
    besoins métier et travaux en attention gardent leur conservation actuelle.
    TTL sert à retirer une preuve terminale, jamais à déclencher une action métier.
 7. Préserver queues et identités par domaine. Ne pas faire une méga-fonction avec
@@ -277,18 +284,21 @@ uniformiser ces durées. Le mode cloud observé est dry-run : cet état reste co
   une liste complète de chemins. Regroupement quotidien de candidats, pages de 25
   initialement, continuation seulement si la page suivante existe.
 - Pour les releases, créer un registre technique de versions réellement produites
-  avec état candidate/protected/pending-delete/deleted et génération Storage ;
-  finalisation de build et événement Storage rejouable couvrent le crash entre
+  avec génération Storage et suivi candidat ; les protections sont relues lors
+  du dry-run. L'événement Storage rejouable couvre le crash entre
   création Storage et enregistrement. Un import initial borné couvre l'existant.
 - Une publication, un changement de pointeur ou la fin d'une période de grâce
   réveille le groupe concerné. Une release protégée parce qu'elle est parmi les
   dix dernières devient dormante ; la prochaine publication réexamine les anciennes
   protections. Ne pas revérifier quotidiennement une release dont rien ne change.
-- Préparer des lots explicites. Revalider références source, pointeurs, générations
+- Le worker livré inspecte des lots explicites sans suppression. Pour une future
+  activation destructive, revalider références source, pointeurs, générations
   et rétention avant suppression. Un lease commun aux mutations de pointeurs/rollback
   et au marquage pending-delete empêche une version de redevenir courante entre
   contrôle et suppression. Un callback de suppression utilise ifGenerationMatch.
   Même protection contre le rattachement d'un média déjà marqué pour suppression.
+  Ces fences destructifs ne sont pas implémentés : le mode commit n'existe pas
+  dans le nouveau worker, conformément au périmètre dry-run de cette livraison.
 - Retenir une version en cas de doute ; rapport opérateur pour protection incohérente.
   Aucune suppression commerciale réelle dans la qualification : fixtures locales,
   dry-run cloud, backup et quarantaine restent obligatoires pour tout futur commit GC.

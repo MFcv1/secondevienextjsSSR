@@ -1,20 +1,20 @@
 # État du projet
 
-10 septembre — après l'audit, demande de terminer l'optimisation avant le gel :
-[plan des cinq contrôles restants](infra/PLAN_FIN_MAINTENANCE_PERIODIQUE.md) rédigé
-et relu. Cible : plus de scans fixes dans ces cinq domaines, reprises justifiées
-par les objets et contrôles regroupés. Inclut résultats fournisseur ambigus,
-fraîcheur santé/finance, protections GC et relais des échéances à 90 jours.
-Implémentation locale engagée pour outbox/réservations et cycles catalogue,
-avec tests de panne, doublons et concurrence, complétée par finance regroupée
-et cohortes GC exclusivement dry-run. 378 tests locaux, 7 tests émulateur et
-build production réussis. Nouveaux producteurs désactivés par défaut ; modes
-Hosting préparés pour activation après livraison des consommateurs. Qualification cloud et
-migration encore ouvertes ; aucun scheduler suspendu, aucun déploiement dans
-cette étape. Détails et gates dans le plan.
+10 septembre, 19:36 Paris — [fin des cinq scans fixes livrée](infra/MAINTENANCE_GROUPES_LIVRAISON_2026-09-10.md) :
+181 Functions ACTIVE, 14 anciens jobs tous PAUSED ; retrait des 74 démarrages
+fixes/jour restants. Sources `3395482`, correctifs catalogue `2da3f3a` et GC `ac18942`, Hosting
+`build-2026-09-10-005` SUCCEEDED. Outbox/réservations/cycle catalogue durables,
+finance par journée modifiée, médias/versions par cohortes, GC exclusivement
+dry-run. 378 tests initiaux, 64 tests catalogue/cycle/GC après correction dont deux nouveaux,
+7 tests émulateur et build production réussis. Parcours cloud qualifiés, 96 faits
+financiers historiques vérifiés sans divergence, 672 candidats médias regroupés
+en cinq échéances. Aucun nouvel achat Stripe ni e-mail réel dans cette passe.
+Analytics groupée préservée. Sources déployées comparées, routes publiques et
+protection des API admin vérifiées. [Plan](infra/PLAN_FIN_MAINTENANCE_PERIODIQUE.md).
 
 10 septembre — [audit de stabilité des fonctions](audits/2026-09-10-stabilite-fonctions/README.md) :
-172 ACTIVE, 11 queues RUNNING, cinq jobs périodiques actifs (74 lancements/jour).
+Photographie avant la livraison ci-dessus : 172 ACTIVE, 11 queues RUNNING,
+cinq jobs périodiques actifs (74 lancements/jour).
 Recommandation : révision stable pendant la semaine de recette ; ne pas retirer
 les reprises horaires commerce/catalogue sans remplacement qualifié. 82 tests
 réussis, aucun changement runtime. Coûts du projet mensuels : pas de corrélation

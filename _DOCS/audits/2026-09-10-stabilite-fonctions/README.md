@@ -1,6 +1,8 @@
 # Audit de stabilité et consommation des fonctions — 10 septembre 2026
 
 Suite demandée après cet audit : [plan des cinq optimisations restantes](../../infra/PLAN_FIN_MAINTENANCE_PERIODIQUE.md).
+**Suite livrée : [bascule et preuves du 10 septembre](../../infra/MAINTENANCE_GROUPES_LIVRAISON_2026-09-10.md).**
+Les cinq horaires décrits dans la photographie ci-dessous ont depuis été suspendus.
 La décision utilisateur est de terminer ces optimisations avant le gel proposé
 ci-dessous. Ce rapport conserve les constats de l'audit, pas une instruction
 d'interrompre le chantier suivant.

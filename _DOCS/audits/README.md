@@ -11,6 +11,9 @@ Créé le 5 septembre 2026 à la demande du propriétaire du projet.
 Inventaire des 172 fonctions, cinq jobs périodiques actifs (74 lancements/jour),
 reprises encore dépendantes des contrôles horaires, 82 tests et limites de la
 comparaison coûts/sessions sur une semaine. Aucun runtime ni cloud modifié.
+Suite livrée le même jour : [suppression des cinq horaires fixes](../infra/MAINTENANCE_GROUPES_LIVRAISON_2026-09-10.md),
+181 Functions ACTIVE, 14 anciens jobs PAUSED et Hosting `build-2026-09-10-005`.
+L'audit initial reste une photographie antérieure à cette bascule.
 
 **Audit précédent : [9 septembre 2026 — mutualisation, cache et capacité](2026-09-09-mutualisation/README.md).**
 Inventaire des 158 Functions, usage 24 h/7 j/30 j, sonde galerie/CDN,
