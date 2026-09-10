@@ -16,6 +16,8 @@ test('transport notification reaches the incident normalizer without copying arb
     assert.ok(!JSON.stringify(raw).includes('sensitive@example.test'));
     assert.ok(!JSON.stringify(raw).includes('do not copy'));
     assert.equal(eventIdFor(value), eventIdFor(normalizeEntry(toLoggingEntry(maintenanceAlertEntry(message)))));
+    const reopened = { incident: { ...message.incident, started_at: message.incident.started_at + 300 } };
+    assert.notEqual(eventIdFor(value), eventIdFor(normalizeEntry(toLoggingEntry(maintenanceAlertEntry(reopened)))));
     assert.ok(decodeURIComponent(logsExplorerUrl(value)).includes('labels.violation_id="0.test_alert"'));
 });
 test('closed, foreign, malformed and unrelated notifications cannot invent incidents', () => {

@@ -1,9 +1,11 @@
 # Qualification empirique du cycle des événements
 
 10 septembre 2026. Protocole du [plan technique](../infra/FIABILITE_EVENEMENTS.md).
-**Matrice à qualifier par lot ; aucune qualification du nouveau transport cloud acquise.**
+**Matrice à qualifier par lot ; les preuves restent propres à chaque scénario.**
 Les [résultats d'implémentation](../infra/EVENEMENTS_IMPLEMENTATION_2026-09-10.md)
 distinguent tests locaux, Emulator et retrait cloud des anciens schedulers.
+La [qualification cloud du même jour](../infra/EVENEMENTS_CLOUD_2026-09-10.md)
+consigne les scénarios effectivement exercés et les gates encore ouvertes.
 Les 230 tests locaux du prototype précédent ne prouvent pas les nouvelles garanties.
 Commandes et restrictions : [QUALITE_TESTS.md](QUALITE_TESTS.md).
 

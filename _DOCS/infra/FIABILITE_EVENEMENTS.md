@@ -1,15 +1,15 @@
 # Fiabilité des événements — décision et plan d'implémentation
 
 Relecture technique du 10 septembre 2026. **Direction validée pour
-implémentation ; retrait des schedulers non qualifié.** Ce contrat remplace les
+implémentation ; qualification et retrait décidés par domaine.** Ce contrat remplace les
 choix de secours périodiques du [prototype](MAINTENANCE_EVENEMENTIELLE.md).
 Suivi : [état du projet](../ETAT_PROJET.md). Preuves attendues :
 [protocole de qualification](../quality/QUALIFICATION_EVENEMENTS.md).
 
 Implémentation, preuves locales et changements cloud :
-[rapport du 10 septembre](EVENEMENTS_IMPLEMENTATION_2026-09-10.md).
-Ce rapport distingue les anciennes publications retirées du service et les
-nouveaux traitements encore à qualifier dans le cloud.
+[rapport local du 10 septembre](EVENEMENTS_IMPLEMENTATION_2026-09-10.md), puis
+[livraison et qualification cloud](EVENEMENTS_CLOUD_2026-09-10.md).
+Le second rapport porte l'état actuel des scans et les limites restantes.
 
 ## Objectif et limite de la garantie
 

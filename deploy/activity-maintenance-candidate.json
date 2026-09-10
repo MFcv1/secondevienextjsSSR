@@ -1,14 +1,15 @@
 {
-  "status": "DURABLE_LOCAL_CANDIDATE_CLOUD_QUALIFICATION_REQUIRED",
+  "status": "SANDBOX_EVENT_CUTOVER_APPLIED",
   "project": "secondevienextjsssr",
   "region": "europe-west1",
-  "activation": { "ACTIVITY_MAINTENANCE_ENABLED": "false", "ACTIVITY_MAINTENANCE_SLOW_RESCUE": "false" },
+  "activation": { "ACTIVITY_MAINTENANCE_ENABLED": "true", "ACTIVITY_MAINTENANCE_SLOW_RESCUE": "false" },
   "eventTargets": ["schedulePaymentLinkExpiryGen2", "scheduleInboxCheckGen2", "schedulePaymentCheckGen2", "scheduleAnalyticsCompactionGen2"],
   "existingEventTargets": ["aggregateAnalyticsSessionGen2"],
   "taskTargets": ["dispatchPaymentLinkExpiryGen2", "dispatchInboxCheckGen2", "dispatchPaymentCheckGen2", "dispatchAnalyticsInactivityGen2", "dispatchAnalyticsCompactionGen2", "dispatchAnalyticsArchiveGen2"],
   "schedulerCutoverTargets": ["expireAdminPaymentLinksGen2", "commerceWebhookCoverageWatchdogGen2", "maintainAnalyticsGen2"],
   "pausedObsoleteSchedulers": ["cleanupProductPublicationSessions", "reconcileProductPublicationSessions"],
+  "pausedMigratedSchedulers": ["expireAdminPaymentLinksGen2", "commerceWebhookCoverageWatchdogGen2", "maintainAnalyticsGen2"],
   "excludedPrototypeTargets": ["schedulePublicationCheckGen2", "dispatchPublicationCheckGen2"],
   "gates": ["committed-and-digested-inputs", "cloud-event-format", "queue-iam-and-private-invocation", "existing-active-documents-seeded", "historical-analytics-archive-seeded", "provider-and-concurrency-recipes", "transport-alert-received-and-repair-exercised", "cost-and-backlog-capacity", "rollback"],
-  "notes": "Nouvelles Functions non déployées. Les deux schedulers d'anciennes publications sont PAUSED le 10 septembre après contrôle cloud sans producteurs ni sessions. Le flag SLOW_RESCUE=true est désormais refusé. Après qualification, désactiver les schedulers migrés : aucun ralentissement périodique n'est la cible. Livrer aussi les producteurs autoritaires (Functions et runtime Next concernés), les index/TTL et les projections Incidents."
+  "notes": "Bascule confirmée le 10 septembre à 12:56 UTC : cinq scans PAUSED, six queues RUNNING, expiration Stripe test sur fixture et continuité analytics/observateurs vérifiées sans scans. 577 lancements programmés/jour retirés ; aucune économie monétaire mesurée. Ne pas réactiver les anciens exports schedulers hors retour arrière explicite. Voir _DOCS/infra/EVENEMENTS_CLOUD_2026-09-10.md pour les preuves et limites. Ce fichier reste un inventaire, pas une autorisation générale de déploiement."
 }

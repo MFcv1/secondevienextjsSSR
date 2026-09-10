@@ -1,16 +1,19 @@
 # État du projet
 
 10 septembre — [fiabilité des événements](infra/FIABILITE_EVENEMENTS.md) :
-intentions atomiques liens/checkout/inbox/sessions, dispatch durable, tâches
-analytics et compteurs Incidents implémentés localement. Tests locaux,
-concurrence Firestore Emulator et build fixture validés ;
-[rapport et limites](infra/EVENEMENTS_IMPLEMENTATION_2026-09-10.md).
-Cloud : deux schedulers d'anciennes publications PAUSED, après vérification
-de zéro session et de l'absence des producteurs ; 97 lancements/jour retirés.
-Nouvelles Functions non déployées : commit/digest, IAM, livraison, amorçage,
-alertes/réparation, coût et recette fournisseur restent à qualifier. Les
-schedulers liens/watchdog/analytics restent actifs jusqu'à ces preuves.
-Le secours simplement moins fréquent du prototype est désormais refusé.
+10 nouvelles Functions ACTIVE, 17 Functions existantes mises à jour,
+producteurs Next et console livrés sur App Hosting `build-2026-09-10-001`.
+Transport privé, reprise auditée, inactivité, observateurs commerce et amorçage
+de 51 jours analytics exercés dans le sandbox. Performance : aucun écart de
+volume Gen2 avec Monitoring sur 24 h/7 j/30 j aux mêmes bornes.
+[Rapport cloud, état des scans et limites](infra/EVENEMENTS_CLOUD_2026-09-10.md).
+Les cinq anciens scans sont PAUSED : **577 lancements programmés/jour retirés**.
+Expiration Stripe test sur une unité technique qualifiée : annulation et
+libération de réservation, stock restauré. Inactivité, consolidation et
+observateurs commerce vérifiés après arrêt des scans. Le coût global et la
+capacité en rafale restent à mesurer ; la recette admin navigateur n'est pas
+qualifiée par cette preuve d'infrastructure.
+Le secours simplement moins fréquent est refusé ; aucun scan lent ajouté.
 
 Synchronisation du 9 septembre : ensemble des changements locaux autorisé pour
 GitHub et App Hosting sandbox. Comparaison avec l'archive du rollout 007 : seule

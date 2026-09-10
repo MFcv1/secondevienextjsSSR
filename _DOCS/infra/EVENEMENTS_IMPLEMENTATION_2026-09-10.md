@@ -4,6 +4,12 @@ Contrat : [fiabilité des événements](FIABILITE_EVENEMENTS.md).
 Tests : [qualification empirique](../quality/QUALIFICATION_EVENEMENTS.md).
 Candidat : [manifeste ciblé](../../deploy/activity-maintenance-candidate.json).
 
+**État actualisé :** les nouveaux services et les producteurs sont désormais
+déployés dans le sandbox. Lire le [rapport cloud du même jour](EVENEMENTS_CLOUD_2026-09-10.md)
+pour les révisions, recettes, bascules et gates restantes. Les sections suivantes
+conservent la photographie locale **antérieure à cette livraison** : leurs
+mentions « non déployé » ou « à qualifier » ne décrivent pas l'état cloud actuel.
+
 ## Résultat local
 
 Le moteur `functions/src/maintenance/durableWork.cjs` conserve l'intention,

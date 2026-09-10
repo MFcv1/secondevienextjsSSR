@@ -23,6 +23,7 @@ export function buildMaintenanceMonitoring({ channels, subscriptions }) {
         metricPolicy('Retard de tâche', `${scope} AND metric.type="cloudtasks.googleapis.com/queue/task_attempt_delays"`, 'ALIGN_PERCENTILE_99', 300000),
         metricPolicy('Événement non acquitté', `resource.type="pubsub_subscription" AND metric.type="pubsub.googleapis.com/subscription/oldest_unacked_message_age" AND (${subscriptions.map(id => `resource.labels.subscription_id="${id}"`).join(' OR ')})`, 'ALIGN_MAX', 600),
         { ...base, displayName: 'Seconde Vie - Événements - Queue interrompue', conditions: [{ displayName: 'Queue suspendue, supprimée ou purgée', conditionMatchedLog: {
+            labelExtractors: { queue: 'EXTRACT(protoPayload.resourceName)' },
             filter: `protoPayload.serviceName="cloudtasks.googleapis.com" AND protoPayload.methodName=("google.cloud.tasks.v2.CloudTasks.PauseQueue" OR "google.cloud.tasks.v2.CloudTasks.DeleteQueue" OR "google.cloud.tasks.v2.CloudTasks.PurgeQueue") AND (${queues.map(id => `protoPayload.resourceName="projects/${PROJECT}/locations/europe-west1/queues/${id}"`).join(' OR ')})`
         } }], alertStrategy: { notificationRateLimit: { period: '300s' }, autoClose: '86400s' } }
     ];

@@ -63,6 +63,7 @@ dans la photographie de l'audit décrivent sa clôture antérieure à cette livr
 - [Fiabilité des événements](infra/FIABILITE_EVENEMENTS.md) : plan technique relu
   le 10 septembre, cible sans scan métier à vide et suivi du cycle de vie ;
   [implémentation et preuves](infra/EVENEMENTS_IMPLEMENTATION_2026-09-10.md),
+  [livraison et qualification cloud](infra/EVENEMENTS_CLOUD_2026-09-10.md),
   [qualification empirique](quality/QUALIFICATION_EVENEMENTS.md).
   Le [prototype local antérieur](infra/MAINTENANCE_EVENEMENTIELLE.md) conserve
   ses preuves locales mais ses secours périodiques sont abandonnés comme cible.
