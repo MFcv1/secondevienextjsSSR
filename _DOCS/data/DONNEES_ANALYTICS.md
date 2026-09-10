@@ -1,10 +1,11 @@
 # Donnees, Firestore et analytics
 
-## Inactivité regroupée — ajout local du 2026-09-10
+## Inactivité regroupée — contrat du 2026-09-10
 
 [Plan et contrat](PLAN_INACTIVITE_ANALYTICS_GROUPES.md),
 [implémentation, mesures et gates](INACTIVITE_GROUPES_IMPLEMENTATION_2026-09-10.md).
-Le mode individuel reste la valeur par défaut ; aucune activation cloud dans ce lot.
+Le mode individuel reste la valeur par défaut du code. Le sandbox est explicitement
+activé en mode groupé/quatre partitions : [livraison](INACTIVITE_GROUPES_CLOUD_2026-09-10.md).
 Le mode groupé inscrit atomiquement un pointeur `inactivityGroup` dans la session et
 une intention durable dans `analytics_inactivity_groups`. Créneaux UTC de 5 minutes,
 35 minutes sans signal avant clôture, pages de 100 sessions actives indexées.

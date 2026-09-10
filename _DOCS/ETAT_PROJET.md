@@ -1,10 +1,13 @@
 # État du projet
 
 10 septembre — [regroupement des contrôles d'inactivité analytics](data/PLAN_INACTIVITE_ANALYTICS_GROUPES.md) :
-code local implémenté, mode individuel conservé par défaut, aucun déploiement.
-Transactions Firestore et simulations comparatives validées ; présence inchangée.
-[Mesures, périmètre vérifié et gates restantes](data/INACTIVITE_GROUPES_IMPLEMENTATION_2026-09-10.md).
-Gain monétaire, capacité cloud et bascule restent non qualifiés.
+activé sur le sandbox pour la phase de test demandée : trois producteurs en mode
+groupé/quatre partitions, deux nouveaux contrôles privés, Hosting
+`build-2026-09-10-003` SUCCEEDED. Trois cas réels Firestore → Tasks réussis,
+durées conservées, fixtures retirées ; cinq anciens scans toujours PAUSED.
+[Livraison et retour arrière](data/INACTIVITE_GROUPES_CLOUD_2026-09-10.md),
+[mesures locales](data/INACTIVITE_GROUPES_IMPLEMENTATION_2026-09-10.md).
+Coût monétaire complet et capacité soutenue restent à mesurer.
 
 10 septembre — [fiabilité des événements](infra/FIABILITE_EVENEMENTS.md) :
 10 nouvelles Functions ACTIVE, 17 Functions existantes mises à jour,

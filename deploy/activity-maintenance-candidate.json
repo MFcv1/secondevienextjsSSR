@@ -5,6 +5,15 @@
   "activation": { "ACTIVITY_MAINTENANCE_ENABLED": "true", "ACTIVITY_MAINTENANCE_SLOW_RESCUE": "false" },
   "eventTargets": ["schedulePaymentLinkExpiryGen2", "scheduleInboxCheckGen2", "schedulePaymentCheckGen2", "scheduleAnalyticsCompactionGen2"],
   "existingEventTargets": ["aggregateAnalyticsSessionGen2"],
+  "groupedAnalytics": {
+    "status": "SANDBOX_ACTIVE_TEST_PHASE_20260910",
+    "mode": "grouped",
+    "partitions": 4,
+    "eventTarget": "scheduleAnalyticsInactivityGroupGen2",
+    "taskTarget": "dispatchAnalyticsInactivityGroupGen2",
+    "report": "_DOCS/data/INACTIVITE_GROUPES_CLOUD_2026-09-10.md",
+    "retainIndividualQueue": true
+  },
   "taskTargets": ["dispatchPaymentLinkExpiryGen2", "dispatchInboxCheckGen2", "dispatchPaymentCheckGen2", "dispatchAnalyticsInactivityGen2", "dispatchAnalyticsCompactionGen2", "dispatchAnalyticsArchiveGen2"],
   "schedulerCutoverTargets": ["expireAdminPaymentLinksGen2", "commerceWebhookCoverageWatchdogGen2", "maintainAnalyticsGen2"],
   "pausedObsoleteSchedulers": ["cleanupProductPublicationSessions", "reconcileProductPublicationSessions"],

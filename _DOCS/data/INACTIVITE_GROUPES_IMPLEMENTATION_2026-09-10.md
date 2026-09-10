@@ -1,6 +1,7 @@
 # Inactivité analytics par groupes — implémentation et preuves locales
 
-10 septembre 2026. État : **code local implémenté et testé ; non déployé**.
+10 septembre 2026. Ce rapport décrit la qualification locale avant livraison.
+**Depuis : activé en sandbox**, voir le [rapport cloud](INACTIVITE_GROUPES_CLOUD_2026-09-10.md).
 [Plan relu](PLAN_INACTIVITE_ANALYTICS_GROUPES.md),
 [contrat données](DONNEES_ANALYTICS.md),
 [état cloud antérieur](../infra/EVENEMENTS_CLOUD_2026-09-10.md).
@@ -59,7 +60,7 @@ sans voler la responsabilité des sessions existantes. Le retour arrière des se
 groupées actives exige la migration explicite. Ne pas désactiver le flag global
 maintenance ni suspendre la queue individuelle tant que des sessions en dépendent.
 
-Inventaire ciblé, **aucune cible déployée par ce lot** :
+Inventaire ciblé préparé dans ce lot local, livré ensuite selon le rapport cloud :
 
 | Cible | Modification |
 | --- | --- |

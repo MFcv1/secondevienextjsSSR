@@ -1,6 +1,7 @@
 # Analytics — plan de vérification des sessions par groupes
 
-10 septembre 2026. **Implémentation locale, activation cloud non effectuée.**
+10 septembre 2026. **Implémenté et activé en sandbox pour la phase de test.**
+[Livraison, décision d'activation et limites](INACTIVITE_GROUPES_CLOUD_2026-09-10.md).
 Résultats et gates restantes : [rapport d'implémentation](INACTIVITE_GROUPES_IMPLEMENTATION_2026-09-10.md).
 Demande : réduire le coût du contrôle d'inactivité lorsque les visites augmentent,
 en conservant la présence visible dans l'admin et les résultats Data.
