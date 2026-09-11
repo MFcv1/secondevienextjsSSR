@@ -4,6 +4,19 @@
 
 ### Reprise autorisée du 11 septembre — recette ciblée réussie
 
+- Dernière vérification des logs : A-041 découvert puis réparé. Le compteur
+  incidents était à zéro contre deux contributions encore actives. Sauvegarde
+  privée, réparation du compteur depuis 24 registres, sans modification des
+  incidents ; reprises automatiques HTTP 204 à 00:02:08 et 00:03:03 UTC,
+  compteur final zéro. Trois tests opérateur et lint réussis. Aucun scan ajouté.
+- Cycle catalogue final 350 : désiré, publié et servi concordants, maintenance
+  `succeeded/completed`, queue vide. Trois erreurs de revalidation pendant les
+  changements avaient signalé une route encore ancienne ; les reprises ont
+  réellement confirmé la nouvelle version avant de se terminer.
+- Commit applicatif `ffadb9f` intégré en avance rapide sur `main`. Sources des
+  cinq lecteurs/UI modifiés comparées octet à octet avec l'archive Hosting
+  déployée : identiques. Hosting 007 prêt et trafic 100 %. L'outil opérateur de
+  réparation ajouté après cette livraison ne fait pas partie du runtime web.
 - **A-038 clôturé par abandon**, après décision explicite du propriétaire.
   Outbox `ae8620032bfb743d135909e685ad1c86aad2c8fd586976feae5211b8df70247b`
   en `suppressed_stale`, tentative 1 et incertitude conservées, aucun `sentAt`,
@@ -38,9 +51,12 @@
   vérifiée dans ce scénario. La commande payée est conservée, sans remboursement
   ni remise en vente artificielle.
 - Le suivi paiement est `succeeded/checkout_terminal`. Le suivi d'expiration
-  de réservation conserve son unique échéance initiale à 02:03 Europe/Paris :
-  le consommateur vérifie l'état payé et doit terminer sans réarmement. Ce
-  réveil lié à une vraie réservation ne constitue pas un scan périodique.
+  a exécuté son unique échéance initiale à 02:03 Europe/Paris : état final
+  `superseded/stale`, tentative 1, queue vide, commande toujours payée. Aucun
+  réarmement. Ce réveil lié à une vraie réservation n'est pas un scan périodique.
+- Dernier préflight à 02:04 Europe/Paris : `v2_all/v2`, offline off,
+  `operationsStatus=healthy`, tous les compteurs live à zéro. Compteur incidents
+  également zéro après ses deux reprises automatiques.
 - **Hosting `secondevie-next-sandbox-build-2026-09-10-007` déployé.** Après
   nouvelle connexion Google admin dans Safari et rechargement, Stats affiche
   « KPI · Synchronisés », Data « Synchronisé avec le serveur » et les sessions

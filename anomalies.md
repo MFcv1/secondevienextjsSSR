@@ -2314,6 +2314,22 @@ de code.
   Safari permet ensuite création et annulation de C147, état durable annulé,
   suivi terminal et stock restauré. Rapport dans l'audit du 10 septembre.
 
+### A-041 - Le compteur incidents diverge de ses contributions acquittées
+
+- 11 septembre : `journalCommerceIncidentGen2` répète des 500
+  `ADMIN_INCIDENT_SUMMARY_INVALID` lors des clôtures A-038. Le compteur contient
+  zéro alors que deux registres sont encore actifs : appliquer les clôtures
+  produirait un nombre négatif. Les incidents métier sont déjà fermés.
+- Correction opérateur bornée : sauvegarde privée, comptage de 24 registres,
+  restauration transactionnelle du compteur à deux, versions contrôlées.
+  Aucun incident ni registre modifié ; les reprises existantes doivent ensuite
+  appliquer leurs clôtures et atteindre zéro. Trois tests de comptage, bornes
+  et concurrence réussis. Origine historique de la divergence non prouvée.
+- Procédure : [résolution documentaire et compteur](./_DOCS/commerce/RESOLUTION_COPIE_DOCUMENT_AMBIGUE.md).
+- statut : `REPAREE_ET_REQUALIFIEE`. Reprises automatiques du journal à
+  00:02:08 et 00:03:03 UTC le 11 septembre : HTTP 204 ; compteur revenu à zéro.
+  Aucun nouvel échec sur ces reprises. Aucun incident métier fermé artificiellement.
+
 ### A-039 - Stats et Data restent en chargement dans Safari
 
 - Qualification finale du 11 septembre : Hosting `build-2026-09-10-007`,

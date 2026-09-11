@@ -112,6 +112,30 @@ d’identifiant fournisseur. Une répétition identique ne réécrit pas l’obj
 pas le présenter comme une fermeture automatique du checkout : le contrôle
 commerce observé reste `v2_all/v2`.
 
+### Compteur et registre d'incidents incohérents
+
+`ADMIN_INCIDENT_SUMMARY_INVALID` peut signaler un compteur ne correspondant
+plus aux contributions déjà acquittées dans `admin_incident_projections`.
+Ne pas borner les nombres négatifs à zéro et ne pas fermer les incidents
+pour masquer le défaut. L'outil opérateur `scripts/repair-incident-summary.mjs`
+recalcule uniquement le compteur depuis ces contributions (maximum 100),
+sauvegarde compteur et registres en fichier privé, puis vérifie leurs versions
+dans une transaction. Aucun incident métier ni registre n'est réécrit. Les
+événements de fermeture encore en attente peuvent ensuite appliquer leur delta.
+
+Sous Node 22 avec les credentials sandbox du workflow autorisé :
+
+```sh
+node scripts/with-env.mjs .env.sandbox node scripts/repair-incident-summary.mjs plan secondevienextjsssr
+node scripts/with-env.mjs .env.sandbox node scripts/repair-incident-summary.mjs apply secondevienextjsssr <sauvegarde-privee-inexistante.json>
+```
+
+Relire ensuite le compteur, les contributions et les reprises du journal.
+Le 11 septembre, le plan a trouvé 24 contributions, dont deux critiques
+actives, face à un compteur à zéro. La réparation a restauré deux, sans
+réouvrir aucun incident métier. L'origine historique de l'écart n'est pas
+prouvée ; cela ne justifie aucun rapprochement périodique supplémentaire.
+
 ## Validation du correctif
 
 ```sh

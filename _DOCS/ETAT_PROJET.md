@@ -11,6 +11,11 @@ jobs toujours PAUSED. 153 tests commerce, 34 tests lecteurs/résolution et
 68 tests maintenances réussis (groupes partiellement recoupés), build Node 22
 réussi. Phase d'observation utilisateur possible ; courses cloud, remboursements
 et échéances longues ne sont pas tous requalifiés par cette passe.
+Dernier contrôle à 02:04 : réservation C148 terminée sans réarmement, queue
+vide et commande toujours payée. Écart du compteur incidents A-041 réparé
+depuis ses registres, puis deux reprises automatiques réussies ; compteur zéro
+et préflight commerce healthy. Commit applicatif `ffadb9f` sur `main`, sources
+UI identiques à l'archive Hosting servie.
 
 10 septembre, 19:36 Paris — [fin des cinq scans fixes livrée](infra/MAINTENANCE_GROUPES_LIVRAISON_2026-09-10.md) :
 181 Functions ACTIVE, 14 anciens jobs tous PAUSED ; retrait des 74 démarrages
