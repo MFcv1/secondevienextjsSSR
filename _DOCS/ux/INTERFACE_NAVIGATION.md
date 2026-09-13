@@ -49,11 +49,18 @@ Le retour au récapitulatif est bloqué pendant la soumission bancaire. La galer
 consomme `focusProduct` après révélation du meuble, conserve les autres paramètres
 et le scroll, retire le liseré après cinq secondes et nettoie le timer au démontage.
 
-Le panier utilise une seule frontiere asynchrone: `LazyCartPanelIsland` charge
-`CartPanelIsland`, qui embarque directement son `CartSidebar`. Le shell
-instantane reste visible pendant ce chargement puis cede la place a un panneau
-deja executable; ne pas remettre une seconde importation dynamique autour de
-`CartSidebar`, qui recreerait un intervalle sans panneau notamment sur Safari.
+Le panier utilise une seule frontière asynchrone : `LazyCartPanelIsland` charge
+`CartPanelIsland`, qui embarque directement `CartPageView`. Le shell instantané
+et la vue complète partagent `CartSurface`, sans deuxième importation dynamique.
+Le panier couvre tout le viewport, sur mobile comme sur ordinateur, avec un
+défilement unique et sa propre navigation de sortie. Il reste ouvert depuis les
+actions panier existantes, sans changement de route avant `/checkout`.
+Le dialogue natif contient le focus, rend l'arrière-plan inerte et gère Échap ;
+la fermeture restaure le focus et libère le scroll de la page. Les safe areas
+sont préservées. Le montant se révèle chiffre par chiffre et les sections au
+scroll ; le mode de mouvement réduit affiche immédiatement tous les contenus.
+Les états chargement, panier vide et erreur de lecture restent distincts.
+Une suppression échouée conserve sa ligne et permet de réessayer.
 
 ## 3. Mega menu desktop
 
@@ -292,7 +299,9 @@ src/kit/marketplace/PremiumMegaMenuIsland.jsx
 src/kit/marketplace/HeaderAccountIsland.jsx
 src/kit/marketplace/LazyCartPanelIsland.jsx
 src/kit/marketplace/CartPanelIsland.jsx
-src/kit/commerce/CartSidebar.jsx
+src/kit/commerce/CartPageView.jsx
+src/kit/commerce/CartSurface.jsx
+src/kit/commerce/CartPage.module.css
 src/kit/marketplace/ProductDetailShellIsland.jsx
 app/GalleryMobileShellIsland.jsx
 app/ViewportHeightSyncIsland.jsx

@@ -91,7 +91,7 @@ test('unverified social proof and unavailable payment promises fail closed', asy
     read('src/kit/vitrine/AboutServerView.jsx'),
     read('src/kit/marketplace/ProductSectionsServer.jsx'),
     read('src/kit/shared/CustomerTestimonialsCarousel.jsx'),
-    read('src/kit/commerce/CartSidebar.jsx'),
+    read('src/kit/commerce/CartPageView.jsx'),
     read('src/kit/marketplace/FooterServer.jsx'),
     read('src/kit/marketplace/SupportChatPanel.jsx'),
     read('src/kit/layout/GlobalMenuDesktop.jsx'),

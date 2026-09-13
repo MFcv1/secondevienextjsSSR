@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { ShoppingBag } from 'lucide-react';
-import CartSidebar from '../commerce/CartSidebar';
+import CartPageView from '../commerce/CartPageView';
 import { getDb, getFirebaseAuth, loadFirestoreModule } from '../config/firebaseLazy';
 import { useAuthState } from '../contexts/AuthContext';
 import {
@@ -55,18 +55,21 @@ export default function CartPanelIsland({ className = '', darkMode = false, onRe
   const [interacted, setInteracted] = useState(false);
   const [isCartPrimed, setIsCartPrimed] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [cartLoading, setCartLoading] = useState(false);
+  const [cartLoadError, setCartLoadError] = useState('');
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   const primeCart = useCallback(() => {
-    CartSidebar.preload?.();
     setIsCartPrimed(true);
   }, []);
 
   useEffect(() => {
+    setCartLoadError('');
     if (!user) {
+      setCartLoading(false);
       setCartItems(readGuestCart());
       return undefined;
     }
@@ -74,6 +77,7 @@ export default function CartPanelIsland({ className = '', darkMode = false, onRe
     let cancelled = false;
     let unsubscribe = null;
     setCartItems([]);
+    setCartLoading(true);
 
     Promise.all([getDb(), loadFirestoreModule()])
       .then(([db, { collection, onSnapshot, query }]) => {
@@ -81,17 +85,27 @@ export default function CartPanelIsland({ className = '', darkMode = false, onRe
         unsubscribe = onSnapshot(
           query(collection(db, 'users', user.uid, 'cart')),
           (snap) => {
-            if (!cancelled) setCartItems(snap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() })));
+            if (!cancelled) {
+              setCartItems(snap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() })));
+              setCartLoading(false);
+              setCartLoadError('');
+            }
           },
           (error) => {
             if (cancelled) return;
             setCartItems([]);
+            setCartLoading(false);
+            setCartLoadError('Votre panier n’a pas pu être chargé. Fermez-le puis actualisez la page pour réessayer.');
             console.error('Cart sync error:', error);
           }
         );
       })
       .catch((error) => {
-        if (!cancelled) console.error('Cart sync error:', error);
+        if (!cancelled) {
+          setCartLoading(false);
+          setCartLoadError('Votre panier n’a pas pu être chargé. Fermez-le puis actualisez la page pour réessayer.');
+          console.error('Cart sync error:', error);
+        }
       });
 
     return () => {
@@ -257,16 +271,16 @@ export default function CartPanelIsland({ className = '', darkMode = false, onRe
       </button>
 
       {mounted && typeof document !== 'undefined' && (isCartPrimed || interacted || isOpen) ? createPortal(
-        <CartSidebar
+        <CartPageView
           isOpen={isOpen}
           onClose={() => setIsOpen(false)}
           cartItems={cartItems}
           onRemoveItem={removeFromCart}
           totalPrice={totalPrice}
           onCheckout={goToCheckout}
-          interacted={interacted}
           darkMode={darkMode}
-          activeDesignId="architectural"
+          loading={cartLoading}
+          loadError={cartLoadError}
         />,
         document.body
       ) : null}

@@ -41,7 +41,7 @@ commerce dans `src/kit/commerce/`.
 | Images | `src/utils/imageUtils.js`, `AdminForm` → variantes/metadata Storage ; GC en quarantaine | [Images](_DOCS/images/IMAGES_MEDIA.md) |
 | Navigation | `app/layout.jsx`, `ViewportHeightSyncIsland`, `RouteTransitionIsland`, menu/header ; `ProductReturnRestoreIsland` restaure galerie/catégorie | [Interface](_DOCS/ux/INTERFACE_NAVIGATION.md) |
 | Connexion | `LegacyLoginModalFullIsland` → `AuthContext` / `authStore` → `functions/src/auth/` ; `HeaderAccountIsland` révèle le lien admin sans redirection imposée | [Auth](_DOCS/security/AUTHENTIFICATION.md) |
-| Panier/achat | `guestCart.js` / panier UID → `CheckoutView` → `checkoutController.js` / `checkoutRecovery.js` → `v2Checkout.js` → domaine commerce → Stripe → inbox/webhook → état durable | [Commerce](_DOCS/commerce/COMMERCE_STRIPE.md) |
+| Panier/achat | `CartPanelIsland` → `CartPageView` / `CartSurface`, `guestCart.js` / panier UID → `CheckoutView` → `checkoutController.js` / `checkoutRecovery.js` → `v2Checkout.js` → domaine commerce → Stripe → inbox/webhook → état durable | [Commerce](_DOCS/commerce/COMMERCE_STRIPE.md) |
 | Client | `MyOrdersView.jsx` → `v2OrderQueries.js` + signal de commandes borné ; `v2DocumentDelivery.js` / `v2CustomerReturnRequests.js` | [Espace client](_DOCS/client/ESPACE_CLIENT.md) |
 | Vente/retour | `AdminOrders`, `components/orders/`, `AdminReturns` → commandes/refund/return v2 → Stripe et mouvements idempotents séparés | [Admin](_DOCS/admin/BACKOFFICE.md) |
 | Lien de paiement | `AdminPaymentLinks` → `v2AdminPaymentLinks.js` → commande/hold/PI v2 → route privée `/payer/…` | [Commerce](_DOCS/commerce/COMMERCE_STRIPE.md) |

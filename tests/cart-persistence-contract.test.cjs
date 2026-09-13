@@ -30,13 +30,13 @@ test('lazy cart handoff does not process an add event twice once the panel is mo
   assert.ok(lazyCartPanel.includes('}, [CartPanel, ensureCartPanel]);'));
 });
 
-test('lazy cart handoff resolves the visible sidebar in a single async boundary', () => {
+test('lazy cart handoff resolves the full-screen cart in a single async boundary', () => {
   const cartPanel = source('src/kit/marketplace/CartPanelIsland.jsx');
   const lazyCartPanel = source('src/kit/marketplace/LazyCartPanelIsland.jsx');
 
   assert.ok(lazyCartPanel.includes("import('./CartPanelIsland')"));
-  assert.ok(cartPanel.includes("import CartSidebar from '../commerce/CartSidebar';"));
-  assert.equal(cartPanel.includes("dynamic(() => import('../commerce/CartSidebar')"), false);
+  assert.ok(cartPanel.includes("import CartPageView from '../commerce/CartPageView';"));
+  assert.equal(cartPanel.includes("dynamic(() => import('../commerce/CartPageView')"), false);
 });
 
 test('paid checkout keeps the success confirmation visible after cart cleanup', () => {

@@ -135,7 +135,7 @@ Spécification, matrice et limites : [reconstruction ciblée](RECONSTRUCTION_PAR
 
 Composants principaux:
 
-- `CartSidebar` pour le panneau;
+- `CartPageView` et `CartSurface` pour le panier plein écran;
 - `guestCart.js` pour la persistance visiteur et l'handoff;
 - `CheckoutView` pour adresse, livraison et creation de commande;
 - `CheckoutStripeModal` pour l'ecran Stripe plein viewport et le suivi durable
@@ -539,7 +539,8 @@ preuves financieres durables; elles sont suivies dans
 ## 11. Fichiers structurants
 
 ```text
-src/kit/commerce/CartSidebar.jsx
+src/kit/commerce/CartPageView.jsx
+src/kit/commerce/CartSurface.jsx
 src/kit/commerce/CheckoutView.jsx
 src/kit/commerce/CheckoutStripeModal.jsx
 src/kit/commerce/CheckoutPaymentStep.jsx
