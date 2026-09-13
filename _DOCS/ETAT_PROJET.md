@@ -3,8 +3,12 @@
 13 septembre — [suite du chargement des images](images/CHARGEMENT_IMAGES_IMPLEMENTATION_2026-09-13.md):
 file commune bornee, priorite aux cartes courantes, gestes tactiles distingues,
 fiche sans bascule vers une photo non prete, miniatures allegees et correction
-des formats d'upload. Reparation des trois imports PNG et livraison Hosting
-en cours. Recette reservee a l'utilisateur, sans tests automatiques de l'agent.
+des formats d'upload. Trois imports PNG corriges: 19 photos/152 variantes,
+publication confirmee dans le catalogue 353, anciens fichiers conserves.
+Commit `91effbf`, Hosting `build-2026-09-13-004` livre a 100 %, deployment ID
+`sv-mu06cs5f-eaa2bd00f6e6`; minimum service 1 confirme. Lint et construction
+cloud reussis. Recette reservee a l'utilisateur, sans tests automatiques de
+l'agent; modifications preexistantes du devis exclues, aucun push.
 
 13 septembre — [préchargement des fiches galerie/catégories](images/PRECHARGEMENT_GALERIE_2026-09-13.md) :
 galerie ordinateur réparée (observer sur un conteneur `display: contents`, 0 carte

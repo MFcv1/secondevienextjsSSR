@@ -54,7 +54,14 @@ Lint cible et `git diff --check`; construction assuree par App Hosting.
 Tests de contrat adaptes mais non executes a la demande de l'utilisateur.
 Aucun test navigateur, E2E, mesure FPS ou comparaison visuelle automatique.
 Les modifications preexistantes du devis et de `src/index.css` sont exclues.
-Statut du rollout et de la publication a completer apres livraison.
+Code commite: `91effbf`, branche `codex/product-image-loading-20260913`.
+Hosting livre depuis une worktree propre de ce commit:
+`build-2026-09-13-004`, construction READY et deploiement termine.
+Lecture technique apres livraison: `/` HTTP 200, deployment ID
+`sv-mu06cs5f-eaa2bd00f6e6`; revision Cloud Run
+`secondevie-next-sandbox-build-2026-09-13-004` a 100 % du trafic, minimum
+service toujours 1. Aucun push Git ni deploiement Functions.
+Cette confirmation de version ne constitue pas une recette navigateur.
 
 Le service Cloud Run a ete relu: `run.googleapis.com/minScale=1` au niveau
 service; revision active initiale `build-2026-09-13-003` a 100 % du trafic.
