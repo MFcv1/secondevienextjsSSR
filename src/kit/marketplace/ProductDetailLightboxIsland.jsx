@@ -139,8 +139,8 @@ export default function ProductDetailLightboxIsland({
     let cancelled = false;
     const timerId = window.setTimeout(() => {
       preloadImage(zoomSrc, { priority: 'auto', decode: true })
-        .then(() => {
-          if (!cancelled) setFullSrc(zoomSrc);
+        .then((image) => {
+          if (!cancelled && image?.naturalWidth) setFullSrc(zoomSrc);
         })
         .catch(() => null);
     }, 420);

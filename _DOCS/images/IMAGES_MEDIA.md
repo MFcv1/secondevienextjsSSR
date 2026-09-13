@@ -65,19 +65,23 @@ Principes:
 - metadata et ratio connus avant chargement pour eviter le CLS;
 - toutes les images differees conservent un `src` reel et le lazy loading natif; l'ancien activateur `data-cold-scroll-deferred-*` n'existe plus, y compris dans le footer;
 - cartes galerie/categorie: aucun blur ni placeholder visible; la zone reste transparente et laisse voir le fond normal du site, l'image est masquee jusqu'a `img.decode()`, puis apparait nette avec un fade-in de 360 ms;
-- precharger uniquement l'image principale reellement probable.
+- prioriser la premiere image probable, puis les miniatures et les voisines de la fiche ouverte.
 
 Politique courante:
 
 - galerie en haut: hero prioritaire, cartes produit lazy;
 - categorie directe: premiere rangee bornee en `eager/high`, suivantes lazy;
 - `Petits Prix`: `src/srcSet` toujours presents dans le HTML, lazy natif, aucun injecteur sequentiel;
-- warmup partage: concurrence maximale 2, `detailFast` avant clic, route prefetchee seulement sur hover/focus/press;
+- warmup partage via `productImageLoader.js`: 2 transferts speculatifs sur mobile, 3 sur ordinateur, une place supplementaire pour une action explicite; promotion en vol et decodage sequentiel;
 - cartes visibles: la racine d'observation suit le vrai conteneur de scroll (viewport pour les categories et la galerie ordinateur, `#marketplaceGalleryScroll` pour la galerie mobile) — [correctif du 2026-09-13](PRECHARGEMENT_GALERIE_2026-09-13.md);
-- fond flou et miniatures de fiche: URLs uniques via `getProductDetailThumbSrc`, jointes aux cartes (`detailThumbs`); carte proche = fond flou, scroll arrete/survol/pression = toutes les miniatures, file dediee de 4 sans decodage;
+- fond flou et miniatures: `getProductDetailThumbSrc` choisit `thumb320`, `thumb384`, puis les replis historiques; URLs jointes aux cartes (`detailThumbs`), prefixe commun compact dans le DOM;
+- cartes visibles/proches: selection reordonnee au scroll, marge de 250 px, 8 candidates au plus; aucune demande explicite de decodage pendant ce prechargement; decodages speculatifs suspendus pendant le scroll;
+- pause de 450 ms: les deux cartes centrales visibles a 60 % preparent leur route et leurs miniatures; survol stable/focus/appui reel gardent la priorite; un geste tactile de defilement n'est pas un appui;
 - une pression vers un produit annule les warmups speculatifs encore en file pour que les cartes survolees precedemment ne concurrencent pas la navigation choisie;
 - Save-Data et reseaux 2G: aucune anticipation speculative;
-- nouvelle version catalogue: cache logique de warmup et routes prefetchees vide avant `router.refresh()`;
+- nouvelle version catalogue: files et registre des routes vides, observateurs reconstruits; cartes ajoutees et URLs modifiees suivies sans polling;
+- cache d'images chargees borne a 32 entrees mobile/64 ordinateur, attente a 48 telechargements et 16 decodages; delais maximum 20 s de chargement et 5 s de decodage, puis nouvelle tentative possible;
+- fiche: charger les deux voisines en premier, avec decodage, puis les autres une par une sans decodage; arreter la preparation au demontage et en arriere-plan; ne jamais faire sortir l'ancienne photo avant que la nouvelle soit prete, erreur visible et bouton Reessayer;
 - medias historiques sans variante recente: ordre de fallback conserve, sans suppression implicite.
 
 ## 4. Upload admin
@@ -88,6 +92,12 @@ cree qu'une fois tous les uploads termines; une erreur Storage laisse donc le
 catalogue intact au lieu de produire un brouillon sans photo. L'ordre des
 medias reste celui du formulaire et les metadata ratio/couleur/blur sont
 conservees avec les URLs finales.
+
+La conversion verifie le type reel du Blob. Si WebP n'est pas disponible,
+elle utilise JPEG avec extension et type coherents; un echec des deux formats
+interrompt l'upload. Le recadrage conserve aussi le type reel. La reparation
+bornee des trois imports PNG de septembre est decrite dans
+[la livraison du 13 septembre](CHARGEMENT_IMAGES_IMPLEMENTATION_2026-09-13.md).
 
 Les huit largeurs ne sont pas huit telechargements publics: le `srcset` laisse
 le navigateur choisir une seule ressource selon largeur et densite. Elles

@@ -1,5 +1,5 @@
 import { ArrowUpRight } from 'lucide-react';
-import { PRODUCT_CARD_IMAGE_SIZES } from '../../utils/imageUtils';
+import { PRODUCT_CARD_IMAGE_SIZES, encodeProductThumbWarmups } from '../../utils/imageUtils';
 
 const getDimensions = (metadata) => {
   const width = Math.max(1, Number(metadata?.width) || 768);
@@ -50,7 +50,7 @@ export default function ProductCardMediaServer({
     <span
       className="product-card-media-surface block h-full w-full"
       data-product-media-warmup={warmupSrc || undefined}
-      data-product-thumbs-warmup={thumbWarmupSrcs.length ? thumbWarmupSrcs.join(' ') : undefined}
+      data-product-thumbs-warmup={thumbWarmupSrcs.length ? encodeProductThumbWarmups(thumbWarmupSrcs) : undefined}
       data-product-media-state="loading"
     >
       <picture className={pictureClassName}>

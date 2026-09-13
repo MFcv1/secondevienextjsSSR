@@ -1,3 +1,6 @@
+import { preloadImage, clearQueuedImageLoads } from './productImageLoader.js';
+export { preloadImage, pauseSpeculativeProductImages, clearQueuedImageLoads } from './productImageLoader.js';
+
 /**
  * Compresses and converts an image file to WebP format client-side.
  * @param {File} file - The original image file (JPEG, PNG, etc.)
@@ -26,23 +29,7 @@ export const compressImage = (file, quality = 0.8, maxWidth = 1920) => {
 
                 const canvas = drawDownscaled(img, width, height);
 
-                canvas.toBlob(
-                    (blob) => {
-                        if (!blob) {
-                            reject(new Error('Canvas is empty'));
-                            return;
-                        }
-                        // Create a new file with .webp extension
-                        const newName = file.name.replace(/\.[^/.]+$/, "") + ".webp";
-                        const compressedFile = new File([blob], newName, {
-                            type: 'image/webp',
-                            lastModified: Date.now(),
-                        });
-                        resolve(compressedFile);
-                    },
-                    'image/webp',
-                    quality
-                );
+                canvasToWebpFile(canvas, file.name, quality).then(resolve, reject);
             };
 
             img.onerror = (error) => reject(error);
@@ -51,9 +38,6 @@ export const compressImage = (file, quality = 0.8, maxWidth = 1920) => {
         reader.onerror = (error) => reject(error);
     });
 };
-
-const imageLoadCache = new Map();
-const imageDecodeCache = new Map();
 
 export const PRODUCT_IMAGE_VARIANT_SPECS = [
     { key: 'thumb320', width: 320, quality: 0.73, folder: 'thumbnails' },
@@ -107,10 +91,24 @@ const drawDownscaled = (image, targetWidth, targetHeight) => {
     return canvas;
 };
 
-const canvasToWebpFile = (canvas, sourceName, quality) => new Promise((resolve, reject) => {
+// Some browsers fall back to PNG. Preserve the real format and use JPEG for
+// photographic furniture images rather than uploading megabytes of disguised PNG.
+export const canvasToWebpFile = (canvas, sourceName, quality) => new Promise((resolve, reject) => {
     canvas.toBlob((blob) => {
         if (!blob) {
             reject(new Error('Canvas is empty'));
+            return;
+        }
+        if (blob.type !== 'image/webp') {
+            canvas.toBlob((jpeg) => {
+                if (!jpeg || jpeg.type !== 'image/jpeg') {
+                    reject(new Error('Ce navigateur ne peut pas compresser cette photo. Essayez un autre navigateur.'));
+                    return;
+                }
+                resolve(new File([jpeg], `${String(sourceName || 'image').replace(/\.[^/.]+$/, '')}.jpg`, {
+                    type: 'image/jpeg', lastModified: Date.now(),
+                }));
+            }, 'image/jpeg', quality);
             return;
         }
         resolve(new File(
@@ -216,8 +214,6 @@ export const getImageFileMetadata = (file) => {
         reader.readAsDataURL(file);
     });
 };
-
-const getImageLoadCacheKey = (src) => src || '';
 
 const asArray = (value) => Array.isArray(value) ? value.filter(Boolean) : [];
 
@@ -407,64 +403,36 @@ export const getProductCardImage = (item) => {
     };
 };
 
-export const preloadImage = (src, options = {}) => {
-    if (!src || typeof window === 'undefined') return Promise.resolve(null);
-
-    const decode = options.decode !== false;
-    const cacheKey = getImageLoadCacheKey(`${src}|${options.srcSet || ''}|${options.sizes || ''}`, options);
-    let loadPromise = imageLoadCache.get(cacheKey);
-
-    if (!loadPromise) {
-        loadPromise = new Promise((resolve, reject) => {
-            const image = new Image();
-            if (options.priority && 'fetchPriority' in image) {
-                image.fetchPriority = options.priority;
-            }
-            image.decoding = options.decoding || 'async';
-            if (options.sizes) image.sizes = options.sizes;
-            if (options.srcSet) image.srcset = options.srcSet;
-            image.onload = () => resolve(image);
-            image.onerror = reject;
-            image.src = src;
-        }).catch((error) => {
-            imageLoadCache.delete(cacheKey);
-            imageDecodeCache.delete(cacheKey);
-            throw error;
-        });
-
-        imageLoadCache.set(cacheKey, loadPromise);
-    }
-
-    if (!decode) return loadPromise;
-
-    let decodePromise = imageDecodeCache.get(cacheKey);
-    if (!decodePromise) {
-        decodePromise = loadPromise.then(async (image) => {
-            if (typeof image.decode === 'function') {
-                try {
-                    await image.decode();
-                } catch {
-                    // The image has already loaded; decode failures should not block display.
-                }
-            }
-            return image;
-        }).catch((error) => {
-            imageDecodeCache.delete(cacheKey);
-            throw error;
-        });
-        imageDecodeCache.set(cacheKey, decodePromise);
-    }
-
-    return decodePromise;
-};
-
 // Meme ordre que le fond flou et le rail de miniatures de la fiche produit :
 // une URL prechargee depuis une carte est exactement celle que la fiche demande.
 export const getProductDetailThumbSrc = (image) => (
-    image?.thumb || image?.card || image?.medium || image?.src || image?.large || image?.full || ''
+    image?.thumb320 || image?.thumb384 || image?.thumb || image?.card || image?.medium || image?.src || image?.large || image?.full || ''
 );
 
 export const PRODUCT_DETAIL_THUMBS_MAX = 16;
+
+// Keep the shared Storage URL prefix once per card. Decode is lossless and
+// still accepts the old space-separated manifest during a rolling deployment.
+export const encodeProductThumbWarmups = (srcs) => {
+    const values = [...new Set(srcs.filter(Boolean))].slice(0, PRODUCT_DETAIL_THUMBS_MAX);
+    if (!values.length) return '';
+    let prefix = values[0];
+    for (const src of values.slice(1)) {
+        let length = 0;
+        while (length < prefix.length && prefix[length] === src[length]) length += 1;
+        prefix = prefix.slice(0, length);
+    }
+    return JSON.stringify([prefix, values.map((src) => src.slice(prefix.length))]);
+};
+
+export const decodeProductThumbWarmups = (value = '') => {
+    if (!value.startsWith('[')) return value.split(' ').filter(Boolean).slice(0, PRODUCT_DETAIL_THUMBS_MAX);
+    try {
+        const [prefix, suffixes] = JSON.parse(value);
+        if (typeof prefix !== 'string' || !Array.isArray(suffixes)) return [];
+        return suffixes.filter((src) => typeof src === 'string').slice(0, PRODUCT_DETAIL_THUMBS_MAX).map((src) => prefix + src);
+    } catch { return []; }
+};
 
 // Les cartes du catalogue ne portent que la premiere photo ; le serveur y joint
 // `detailThumbs`, les miniatures de toutes les photos de la meme release.
@@ -472,13 +440,8 @@ export const getProductDetailThumbSrcs = (item) => {
     const thumbs = Array.isArray(item?.detailThumbs) && item.detailThumbs.length
         ? item.detailThumbs
         : getProductImageItems(item).map(getProductDetailThumbSrc);
-    return thumbs.filter((src) => typeof src === 'string' && src).slice(0, PRODUCT_DETAIL_THUMBS_MAX);
+    return [...new Set(thumbs.filter((src) => typeof src === 'string' && src))].slice(0, PRODUCT_DETAIL_THUMBS_MAX);
 };
-
-const imageWarmupQueue = [];
-const imageWarmupPromises = new Map();
-let activeImageWarmups = 0;
-export const MAX_CONCURRENT_IMAGE_WARMUPS = 2;
 
 const shouldSkipSpeculativeImageWarmup = () => {
     if (typeof navigator === 'undefined') return false;
@@ -486,105 +449,38 @@ const shouldSkipSpeculativeImageWarmup = () => {
     return Boolean(connection?.saveData || /(^|-)2g$/.test(connection?.effectiveType || ''));
 };
 
-const pumpImageWarmups = () => {
-    while (activeImageWarmups < MAX_CONCURRENT_IMAGE_WARMUPS && imageWarmupQueue.length) {
-        const task = imageWarmupQueue.shift();
-        activeImageWarmups += 1;
-        preloadImage(task.src, {
-            priority: task.intent === 'press' ? 'high' : 'auto',
-            sizes: PRODUCT_DETAIL_IMAGE_SIZES,
-            decode: true,
-        })
-            .then(task.resolve, task.reject)
-            .finally(() => {
-                activeImageWarmups = Math.max(0, activeImageWarmups - 1);
-                pumpImageWarmups();
-            });
-    }
-};
-
 export const scheduleProductImageWarmup = (src, { intent = 'visible' } = {}) => {
     if (!src || typeof window === 'undefined') return Promise.resolve(null);
     if (intent !== 'press' && shouldSkipSpeculativeImageWarmup()) return Promise.resolve(null);
-    const existing = imageWarmupPromises.get(src);
-    if (existing) return existing;
-    const promise = new Promise((resolve, reject) => {
-        const task = { src, intent, resolve, reject };
-        if (intent === 'press') imageWarmupQueue.unshift(task);
-        else imageWarmupQueue.push(task);
-        pumpImageWarmups();
-    }).catch((error) => {
-        imageWarmupPromises.delete(src);
-        throw error;
+    return preloadImage(src, {
+        owner: 'gallery-image', priority: intent === 'press' ? 'high' : 'auto',
+        decode: intent === 'press' || intent === 'hover',
     });
-    imageWarmupPromises.set(src, promise);
-    return promise;
 };
 
 export const clearQueuedProductImageWarmups = () => {
-    while (imageWarmupQueue.length) {
-        const task = imageWarmupQueue.shift();
-        imageWarmupPromises.delete(task?.src);
-        task?.resolve?.(null);
-    }
+    clearQueuedImageLoads('gallery-image');
 };
 
 export const clearProductImageWarmups = () => {
     clearQueuedProductImageWarmups();
-    imageWarmupPromises.clear();
-};
-
-// File distincte pour les miniatures (~30 Ko) : elles ne doivent pas retarder
-// les grandes images de fiche. Mise en cache HTTP seulement, sans decodage.
-const thumbWarmupQueue = [];
-const thumbWarmupStates = new Map();
-let activeThumbWarmups = 0;
-export const MAX_CONCURRENT_THUMB_WARMUPS = 4;
-
-const pumpThumbWarmups = () => {
-    while (activeThumbWarmups < MAX_CONCURRENT_THUMB_WARMUPS && thumbWarmupQueue.length) {
-        const task = thumbWarmupQueue.shift();
-        thumbWarmupStates.set(task.src, 'loading');
-        activeThumbWarmups += 1;
-        preloadImage(task.src, { priority: task.priority, decode: false })
-            .then(() => thumbWarmupStates.set(task.src, 'done'))
-            .catch(() => thumbWarmupStates.delete(task.src))
-            .finally(() => {
-                activeThumbWarmups = Math.max(0, activeThumbWarmups - 1);
-                pumpThumbWarmups();
-            });
-    }
 };
 
 export const scheduleProductThumbWarmups = (srcs, { intent = 'visible' } = {}) => {
     if (typeof window === 'undefined' || !Array.isArray(srcs) || !srcs.length) return;
     const urgent = intent === 'press';
     if (!urgent && shouldSkipSpeculativeImageWarmup()) return;
-    const pending = srcs.filter((src) => src && !['loading', 'done'].includes(thumbWarmupStates.get(src)));
-    if (!pending.length) return;
-
-    if (urgent) {
-        const promoted = new Set(pending);
-        for (let index = thumbWarmupQueue.length - 1; index >= 0; index -= 1) {
-            if (promoted.has(thumbWarmupQueue[index].src)) thumbWarmupQueue.splice(index, 1);
-        }
-        thumbWarmupQueue.unshift(...pending.map((src) => ({ src, priority: 'high' })));
-    } else {
-        pending
-            .filter((src) => thumbWarmupStates.get(src) !== 'queued')
-            .forEach((src) => thumbWarmupQueue.push({ src, priority: 'low' }));
-    }
-    pending.forEach((src) => thumbWarmupStates.set(src, 'queued'));
-    pumpThumbWarmups();
+    [...new Set(srcs)].forEach((src) => {
+        preloadImage(src, { owner: 'gallery-thumb', priority: urgent ? 'high' : 'low', decode: false });
+    });
 };
 
 export const clearQueuedProductThumbWarmups = () => {
-    while (thumbWarmupQueue.length) thumbWarmupStates.delete(thumbWarmupQueue.shift().src);
+    clearQueuedImageLoads('gallery-thumb');
 };
 
 export const clearProductThumbWarmups = () => {
     clearQueuedProductThumbWarmups();
-    thumbWarmupStates.clear();
 };
 
 const createImage = (url) =>
@@ -657,17 +553,5 @@ export const getCroppedImg = async (imageSrc, pixelCrop, rotation = 0, maxDimens
     }
 
     // Return as Blob
-    return new Promise((resolve, reject) => {
-        finalCanvas.toBlob(
-            (blob) => {
-                if (!blob) {
-                    reject(new Error('Canvas is empty'));
-                    return;
-                }
-                resolve(blob);
-            },
-            'image/webp',
-            0.85
-        );
-    });
+    return canvasToWebpFile(finalCanvas, 'cropped', 0.85);
 };

@@ -469,7 +469,9 @@ test('images, categorie, warmup et navigation respectent le contrat unifie', () 
   assert.doesNotMatch(`${productMediaFlow}\n${imageUtils}`, /deferImagesUntilCalm|data-image-loaded|data-image-cold|data-cold-scroll-deferred/);
   assert.doesNotMatch(marketplace, /data-cold-scroll-deferred|deferred-section-(?:placeholder|reveal)|footer-delivery-image-in/);
   assert.equal((gridActions.match(/new Image\(/g) || []).length, 0);
-  assert.match(imageUtils, /MAX_CONCURRENT_IMAGE_WARMUPS = 2/);
+  const imageLoader = read('src/utils/productImageLoader.js');
+  assert.match(imageLoader, /compact\(\) \? 2 : 3/);
+  assert.match(imageLoader, /limit\(\) \+ \(urgent \? 1 : 0\)/);
   assert.match(imageUtils, /export const clearQueuedProductImageWarmups/);
   assert.match(gridActions, /clearQueuedProductImageWarmups\(\);\s*warmupProduct/);
   assert.ok((gridActions.match(/clearQueuedProductImageWarmups\(\)/g) || []).length >= 2);
@@ -488,11 +490,15 @@ test('images, categorie, warmup et navigation respectent le contrat unifie', () 
   assert.match(productShell, /const getBackdropSrc = getProductDetailThumbSrc;/);
   assert.match(media, /data-product-thumbs-warmup=/);
   assert.match(gridActions, /scheduleProductThumbWarmups\(intent === 'visible' \? thumbs\.slice\(0, 1\) : thumbs/);
-  assert.match(imageUtils, /MAX_CONCURRENT_THUMB_WARMUPS = 4/);
+  assert.match(imageUtils, /owner: 'gallery-thumb'/);
+  assert.match(imageLoader, /queue\.length > 48/);
+  assert.match(imageLoader, /compact\(\) \? 32 : 64/);
   assert.match(read('src/lib/server/materializedCatalog.js'), /detailThumbs: detailThumbsById\.get\(product\.id\)/);
   assert.match(imageUtils, /saveData/);
   assert.match(imageUtils, /\(\^\|-\)2g\$/);
-  assert.match(gridActions, /intent === 'hover' \|\| intent === 'press'/);
+  assert.match(gridActions, /intent === 'hover' \|\| intent === 'press' \|\| intent === 'dwell'/);
+  assert.doesNotMatch(productShell, /IMAGE_SWITCH_DECODE_BUDGET_MS|Promise\.race/);
+  assert.match(productShell, /hasPrimaryImagePainted && navTransition\.direction/);
   assert.doesNotMatch(`${marketplace}\n${layout}`, /window\.location\.assign/);
   assert.doesNotMatch(marketplace, /<a[^>]+href=["']\/(?![#])/);
   assert.match(marketplace, /href=\{`tel:/);

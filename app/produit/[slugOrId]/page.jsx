@@ -6,7 +6,7 @@ import {
 } from '../../../src/lib/server/products';
 import { publicEnv } from '../../../src/lib/server/env';
 import { getProductUrl } from '../../../src/utils/slug';
-import { getProductDisplayImageSrc, getProductImageItems } from '../../../src/utils/imageUtils';
+import { getProductDisplayImageSrc, getProductImageItems, getProductDetailThumbSrc } from '../../../src/utils/imageUtils';
 import {
   buildBreadcrumbJsonLd,
   buildProductJsonLd
@@ -36,7 +36,7 @@ const getInitialDetailImagePreloads = (product) => {
       priority: 'high'
     },
     {
-      href: primary?.thumb || '',
+      href: getProductDetailThumbSrc(primary),
       priority: 'low'
     }
   ]

@@ -1,5 +1,11 @@
 # État du projet
 
+13 septembre — [suite du chargement des images](images/CHARGEMENT_IMAGES_IMPLEMENTATION_2026-09-13.md):
+file commune bornee, priorite aux cartes courantes, gestes tactiles distingues,
+fiche sans bascule vers une photo non prete, miniatures allegees et correction
+des formats d'upload. Reparation des trois imports PNG et livraison Hosting
+en cours. Recette reservee a l'utilisateur, sans tests automatiques de l'agent.
+
 13 septembre — [préchargement des fiches galerie/catégories](images/PRECHARGEMENT_GALERIE_2026-09-13.md) :
 galerie ordinateur réparée (observer sur un conteneur `display: contents`, 0 carte
 vue) ; fond flouté et miniatures préchargés depuis les cartes (`detailThumbs`).

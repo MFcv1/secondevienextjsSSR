@@ -1197,7 +1197,8 @@ const AdminForm = ({
   const handleCropComplete = async (croppedBlob) => {
     const itemId = cropperConfig.itemId;
     if (!itemId) return;
-    const croppedFile = new File([croppedBlob], `cropped_${Date.now()}.webp`, { type: 'image/webp' });
+    const croppedType = croppedBlob.type === 'image/jpeg' ? 'image/jpeg' : 'image/webp';
+    const croppedFile = new File([croppedBlob], `cropped_${Date.now()}.${croppedType === 'image/jpeg' ? 'jpg' : 'webp'}`, { type: croppedType });
     const metadata = await getImageFileMetadata(croppedFile);
 
     const newItems = galleryItems.map(item => {

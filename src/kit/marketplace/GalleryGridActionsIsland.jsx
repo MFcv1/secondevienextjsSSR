@@ -9,6 +9,8 @@ import {
   clearQueuedProductThumbWarmups,
   scheduleProductImageWarmup,
   scheduleProductThumbWarmups,
+  pauseSpeculativeProductImages,
+  decodeProductThumbWarmups,
 } from '../../utils/imageUtils';
 import {
   getCurrentWishlistUser,
@@ -16,19 +18,19 @@ import {
   setWishlistItem,
 } from './wishlistState';
 
-const prefetchedRoutes = new Set();
+const prefetchedRoutes = new Map();
 const SCROLL_HOVER_WARMUP_COOLDOWN_MS = 420;
 const HOVER_WARMUP_INTENT_MS = 160;
 const PRODUCT_CARD_IMAGE_SELECTOR = 'img[data-product-image-state]';
 const GALLERY_INTERNAL_SCROLL_QUERY = '(max-width: 1023px)';
 const DWELL_WARMUP_DELAY_MS = 450;
 const DWELL_VISIBLE_RATIO = 0.6;
-const DWELL_WARMUP_MAX_CARDS_COMPACT = 4;
-const DWELL_WARMUP_MAX_CARDS_WIDE = 8;
+const DWELL_WARMUP_MAX_CARDS_COMPACT = 2;
+const DWELL_WARMUP_MAX_CARDS_WIDE = 4;
 
-const readThumbWarmups = (card) => (
+const readThumbWarmups = (card) => decodeProductThumbWarmups(
   card.querySelector('[data-product-thumbs-warmup]')?.dataset.productThumbsWarmup || ''
-).split(' ').filter(Boolean);
+);
 
 // La galerie ne defile dans #marketplaceGalleryScroll que sous 1024px. Au-dela,
 // ce conteneur est en `display: contents` : sans boite, un IntersectionObserver
@@ -103,16 +105,21 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
   }, []);
 
   const warmupProduct = useCallback((card, intent = 'hover') => {
-    if (!card || (intent !== 'press' && shouldSkipSoftWarmup())) return;
+    if (!card || (intent !== 'press' && (document.hidden || shouldSkipSoftWarmup()))) return;
     const productUrl = card.dataset.productUrl || '';
-    const shouldPrefetchRoute = intent === 'hover' || intent === 'press';
+    const shouldPrefetchRoute = intent === 'hover' || intent === 'press' || intent === 'dwell';
     const warmupSrc = card.querySelector('[data-product-media-warmup]')?.dataset.productMediaWarmup || '';
 
-    if (shouldPrefetchRoute && productUrl && !prefetchedRoutes.has(productUrl)) {
-      prefetchedRoutes.add(productUrl);
+    if (shouldPrefetchRoute && productUrl && Date.now() - (prefetchedRoutes.get(productUrl) || 0) > 60000) {
+      const requestedAt = Date.now();
+      prefetchedRoutes.set(productUrl, requestedAt);
+      if (prefetchedRoutes.size > 32) prefetchedRoutes.delete(prefetchedRoutes.keys().next().value);
       try {
-        router.prefetch(productUrl);
+        router.prefetch(productUrl, { onInvalidate: () => {
+          if (prefetchedRoutes.get(productUrl) === requestedAt) prefetchedRoutes.delete(productUrl);
+        } });
       } catch {
+        prefetchedRoutes.delete(productUrl);
         // Links remain normal navigation if prefetch is unavailable.
       }
     }
@@ -139,6 +146,7 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
 
     const markScrollIntent = () => {
       lastScrollIntentAtRef.current = Date.now();
+      cancelPendingHoverWarmup();
     };
 
     const onClick = (event) => {
@@ -198,14 +206,33 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
       }, HOVER_WARMUP_INTENT_MS);
     };
 
+    let touchIntent = null;
     const onPointerDown = (event) => {
       const link = event.target.closest?.('[data-gallery-product-link]');
+      if (event.pointerType === 'touch' || event.pointerType === 'pen') {
+        cancelPendingHoverWarmup();
+        touchIntent = link ? { link, x: event.clientX, y: event.clientY, id: event.pointerId } : null;
+        return;
+      }
       if (link) {
         cancelPendingHoverWarmup();
         clearQueuedProductThumbWarmups();
         clearQueuedProductImageWarmups();
         warmupProduct(link.closest('[data-gallery-product-card]'), 'press');
       }
+    };
+
+    const onPointerMove = (event) => {
+      if (touchIntent && (Math.abs(event.clientX - touchIntent.x) > 10 || Math.abs(event.clientY - touchIntent.y) > 10)) touchIntent = null;
+    };
+    const onPointerCancel = () => { touchIntent = null; };
+    const onPointerUp = (event) => {
+      const intent = touchIntent;
+      touchIntent = null;
+      if (!intent || intent.id !== event.pointerId || !intent.link.contains(event.target)) return;
+      clearQueuedProductThumbWarmups();
+      clearQueuedProductImageWarmups();
+      warmupProduct(intent.link.closest('[data-gallery-product-card]'), 'press');
     };
 
     const onFocusIn = (event) => {
@@ -232,7 +259,9 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
     document.addEventListener('error', onProductImageError, true);
     document.addEventListener('pointerover', onPointerOver, { passive: true });
     document.addEventListener('pointerdown', onPointerDown, { passive: true });
-    document.addEventListener('touchstart', onPointerDown, { passive: true });
+    document.addEventListener('pointermove', onPointerMove, { passive: true });
+    document.addEventListener('pointerup', onPointerUp, { passive: true });
+    document.addEventListener('pointercancel', onPointerCancel, { passive: true });
     document.addEventListener('focusin', onFocusIn);
     window.addEventListener('wheel', markScrollIntent, { passive: true });
     window.addEventListener('scroll', markScrollIntent, { passive: true });
@@ -249,7 +278,9 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
       document.removeEventListener('error', onProductImageError, true);
       document.removeEventListener('pointerover', onPointerOver);
       document.removeEventListener('pointerdown', onPointerDown);
-      document.removeEventListener('touchstart', onPointerDown);
+      document.removeEventListener('pointermove', onPointerMove);
+      document.removeEventListener('pointerup', onPointerUp);
+      document.removeEventListener('pointercancel', onPointerCancel);
       document.removeEventListener('focusin', onFocusIn);
       window.removeEventListener('wheel', markScrollIntent);
       window.removeEventListener('scroll', markScrollIntent);
@@ -270,34 +301,75 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
     let idleId = 0;
     let timeoutId = 0;
     let dwellTimerId = 0;
+    let nearTimerId = 0;
     let observer = null;
     let dwellObserver = null;
     const wellVisibleCards = new Set();
+    const nearCards = new Set();
+    const observedCards = new Set();
+
+    const sortedCards = (cards) => {
+      const root = getVisibleWarmupRoot(surface);
+      const bounds = root ? root.getBoundingClientRect() : { top: 0, height: window.innerHeight };
+      const center = bounds.top + bounds.height / 2;
+      return Array.from(cards).filter((card) => card.isConnected && card.getClientRects().length)
+        .map((card) => {
+          const rect = card.getBoundingClientRect();
+          return { card, distance: Math.abs(rect.top + rect.height / 2 - center) };
+        })
+        .sort((a, b) => a.distance - b.distance).map(({ card }) => card);
+    };
+    const warmupNearCards = () => {
+      nearTimerId = 0;
+      if (cancelled || document.hidden) return;
+      clearQueuedProductImageWarmups();
+      clearQueuedProductThumbWarmups();
+      sortedCards(nearCards).slice(0, 8).forEach((card) => warmupProduct(card, 'visible'));
+    };
 
     // Scroll arrete sur des cartes bien visibles : la personne regarde ces
     // pieces, on amorce toutes leurs miniatures en partant du centre de
     // l'ecran. Rien n'est lance pendant le defilement lui-meme.
     const warmupDwelledCards = () => {
       dwellTimerId = 0;
-      if (cancelled || !wellVisibleCards.size) return;
-      const root = getVisibleWarmupRoot(surface);
-      const bounds = root ? root.getBoundingClientRect() : { top: 0, height: window.innerHeight };
-      const centerY = bounds.top + (bounds.height / 2);
+      if (cancelled || document.hidden || !wellVisibleCards.size) return;
       const compactViewport = window.matchMedia?.(GALLERY_INTERNAL_SCROLL_QUERY).matches;
-      Array.from(wellVisibleCards)
-        .filter((card) => card.isConnected)
-        .map((card) => {
-          const rect = card.getBoundingClientRect();
-          return { card, distance: Math.abs(rect.top + (rect.height / 2) - centerY) };
-        })
-        .sort((a, b) => a.distance - b.distance)
+      sortedCards(wellVisibleCards)
         .slice(0, compactViewport ? DWELL_WARMUP_MAX_CARDS_COMPACT : DWELL_WARMUP_MAX_CARDS_WIDE)
-        .forEach(({ card }) => warmupProduct(card, 'dwell'));
+        .forEach((card, index) => warmupProduct(card, index < 2 ? 'dwell' : 'visible'));
     };
 
     const scheduleDwellWarmup = () => {
       if (dwellTimerId) window.clearTimeout(dwellTimerId);
       dwellTimerId = window.setTimeout(warmupDwelledCards, DWELL_WARMUP_DELAY_MS);
+    };
+
+    const onScroll = () => {
+      pauseSpeculativeProductImages(180);
+      // Throttle selection, not the native scrolling or visible card downloads.
+      if (!nearTimerId) nearTimerId = window.setTimeout(warmupNearCards, 120);
+      scheduleDwellWarmup();
+    };
+
+    const selector = surface === 'category'
+      ? '[data-category-native-view] [data-gallery-product-card]'
+      : '[data-ssr-gallery] [data-gallery-product-card]';
+    const syncCards = () => {
+      if (!observer || !dwellObserver) return;
+      for (const card of observedCards) {
+        if (card.isConnected) continue;
+        observer.unobserve(card);
+        dwellObserver.unobserve(card);
+        observedCards.delete(card);
+        nearCards.delete(card);
+        wellVisibleCards.delete(card);
+      }
+      document.querySelectorAll(selector).forEach((card) => {
+        if (observedCards.has(card)) return;
+        observedCards.add(card);
+        observer.observe(card);
+        dwellObserver.observe(card);
+      });
     };
 
     const setupObserver = () => {
@@ -307,25 +379,20 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
       observer = null;
       dwellObserver = null;
       wellVisibleCards.clear();
-      const selector = surface === 'category'
-        ? '[data-category-native-view] [data-gallery-product-card]'
-        : '[data-ssr-gallery] [data-gallery-product-card]';
-      const cards = Array.from(document.querySelectorAll(selector))
-        .filter((card) => card.querySelector('[data-product-media-warmup]')?.dataset.productMediaWarmup);
-
-      if (!cards.length) return;
+      nearCards.clear();
+      observedCards.clear();
       const root = getVisibleWarmupRoot(surface);
 
       observer = new IntersectionObserver((entries) => {
         entries.forEach((entry) => {
-          if (!entry.isIntersecting) return;
           const card = entry.target;
-          observer?.unobserve(card);
-          warmupProduct(card, 'visible');
+          if (entry.isIntersecting) nearCards.add(card);
+          else nearCards.delete(card);
         });
+        if (!nearTimerId) nearTimerId = window.setTimeout(warmupNearCards, 60);
       }, {
         root,
-        rootMargin: '100% 0px',
+        rootMargin: '250px 0px',
         threshold: 0.01,
       });
 
@@ -340,10 +407,7 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
         threshold: [0, DWELL_VISIBLE_RATIO],
       });
 
-      cards.forEach((card) => {
-        observer.observe(card);
-        dwellObserver.observe(card);
-      });
+      syncCards();
     };
 
     if (typeof window.requestIdleCallback === 'function') {
@@ -357,15 +421,35 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
     const scrollRegionQuery = surface === 'gallery' ? window.matchMedia?.(GALLERY_INTERNAL_SCROLL_QUERY) : null;
     scrollRegionQuery?.addEventListener?.('change', setupObserver);
     // Capture : recoit aussi le scroll interne de la galerie mobile.
-    document.addEventListener('scroll', scheduleDwellWarmup, { capture: true, passive: true });
+    document.addEventListener('scroll', onScroll, { capture: true, passive: true });
+    const mutations = new MutationObserver(() => {
+      syncCards();
+      if (!nearTimerId) nearTimerId = window.setTimeout(warmupNearCards, 120);
+      scheduleDwellWarmup();
+    });
+    const grid = document.querySelector(surface === 'category' ? '[data-category-native-view]' : '[data-ssr-gallery]');
+    if (grid) mutations.observe(grid, { childList: true, subtree: true, attributes: true,
+      attributeFilter: ['data-product-media-warmup', 'data-product-thumbs-warmup'] });
+    window.addEventListener('sv:catalog-version-changed', setupObserver);
+    const onVisibility = () => {
+      if (document.hidden) {
+        clearQueuedProductImageWarmups();
+        clearQueuedProductThumbWarmups();
+      } else { warmupNearCards(); scheduleDwellWarmup(); }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
 
     return () => {
       cancelled = true;
       scrollRegionQuery?.removeEventListener?.('change', setupObserver);
-      document.removeEventListener('scroll', scheduleDwellWarmup, { capture: true });
+      document.removeEventListener('scroll', onScroll, { capture: true });
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('sv:catalog-version-changed', setupObserver);
+      mutations.disconnect();
       if (idleId && typeof window.cancelIdleCallback === 'function') window.cancelIdleCallback(idleId);
       if (timeoutId) window.clearTimeout(timeoutId);
       if (dwellTimerId) window.clearTimeout(dwellTimerId);
+      if (nearTimerId) window.clearTimeout(nearTimerId);
       observer?.disconnect();
       dwellObserver?.disconnect();
       clearQueuedProductImageWarmups();
