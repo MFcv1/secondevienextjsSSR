@@ -86,6 +86,15 @@ Politique courante:
 
 ## 4. Upload admin
 
+Affinage tactile du 13 septembre apres recette: transition mobile 100 ms avec
+translation entrante de 8 px, couche precedente opaque. Seuil de swipe borne a
+48 px (12 % de la largeur). Un nouvel appui leve immediatement la suppression
+du clic suivant un swipe; appui immobile (12 px de tolerance) ouvre le zoom au
+relachement. Clavier conserve. Cartes: appui court <= 450 ms active le Link
+existant une fois; clic natif suivant consomme, mouvement/scroll/multitouch
+annulent cette activation anticipee. Rafraichissement galerie: seuil de 10 px
+avant interception. Recette utilisateur requise, aucune mesure FPS de l'agent.
+
 Pour une creation neuve, `AdminForm` prepare les variantes WebP bornees puis
 les envoie sur les chemins catalogue historiques. Le document meuble n'est
 cree qu'une fois tous les uploads termines; une erreur Storage laisse donc le

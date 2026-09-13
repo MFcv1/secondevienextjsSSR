@@ -62,6 +62,16 @@ Retour arriere Hosting vers `build-2026-09-13-004`.
 
 ### Fichiers historiques
 
+Deuxieme retour utilisateur: desktop satisfaisant; mobile encore lent et
+appuis parfois doubles. Ajustement: fondu 100 ms + 8 px dans le sens du swipe,
+seuil de glissement plus court, suppression du verrou temporel de 420 ms pour
+le zoom. Nouveau geste independant du precedent; appui court sur carte active
+le Link au relachement avec dedoublonnage du clic navigateur. Petites derives
+tolerees a 12 px; scroll, annulation et multitouch abandonnent l'appui.
+Le pull-to-refresh en haut de galerie attend 10 px avant preventDefault.
+Lint cible et diff check reussis; aucun test automatise/navigateur. Livraison
+de cet ajustement tactile en cours; rollback possible vers la version 005.
+
 `scripts/repair-product-image-formats.cjs` est borne aux trois IDs fautifs
 du catalogue actuel (ils different de certains IDs cites dans l'audit initial).
 Preparation sans ecriture cloud: 19 photos, 152 variantes, encodage WebP

@@ -97,7 +97,7 @@ export default function GalleryMobileShellIsland() {
       const touch = event.touches[0];
       const pullY = touch.clientY - state.startY;
       const driftX = Math.abs(touch.clientX - state.startX);
-      if (pullY <= 0 || driftX > pullY * 0.85) {
+      if (pullY <= 10 || driftX > pullY * 0.85) {
         setIndicator(0, false);
         return;
       }

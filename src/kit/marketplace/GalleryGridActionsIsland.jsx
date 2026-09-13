@@ -209,11 +209,22 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
     };
 
     let touchIntent = null;
+    let activatedTouchLink = null;
+    const consumeTouchClick = (event) => {
+      if (!event.isTrusted || !event.detail || !activatedTouchLink) return;
+      if (event.target.closest?.('[data-gallery-product-link]') !== activatedTouchLink.link) return;
+      if (performance.now() - activatedTouchLink.at > 700) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      activatedTouchLink = null;
+    };
     const onPointerDown = (event) => {
+      activatedTouchLink = null;
+      if (event.isPrimary === false) { touchIntent = null; return; }
       const link = event.target.closest?.('[data-gallery-product-link]');
       if (event.pointerType === 'touch' || event.pointerType === 'pen') {
         cancelPendingHoverWarmup();
-        touchIntent = link ? { link, x: event.clientX, y: event.clientY, id: event.pointerId } : null;
+        touchIntent = link ? { link, x: event.clientX, y: event.clientY, id: event.pointerId, at: performance.now() } : null;
         return;
       }
       if (link) {
@@ -225,16 +236,23 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
     };
 
     const onPointerMove = (event) => {
-      if (touchIntent && (Math.abs(event.clientX - touchIntent.x) > 10 || Math.abs(event.clientY - touchIntent.y) > 10)) touchIntent = null;
+      if (touchIntent && (event.pointerId !== touchIntent.id
+          || Math.hypot(event.clientX - touchIntent.x, event.clientY - touchIntent.y) > 12)) touchIntent = null;
     };
     const onPointerCancel = () => { touchIntent = null; };
     const onPointerUp = (event) => {
       const intent = touchIntent;
       touchIntent = null;
       if (!intent || intent.id !== event.pointerId || !intent.link.contains(event.target)) return;
+      if (performance.now() - intent.at > 450
+          || Math.hypot(event.clientX - intent.x, event.clientY - intent.y) > 12) return;
       clearQueuedProductThumbWarmups();
       clearQueuedProductImageWarmups();
       warmupProduct(intent.link.closest('[data-gallery-product-card]'), 'press');
+      // Use the existing Link click path as soon as a short, stationary touch
+      // ends. Ignore its subsequent browser click so navigation happens once.
+      activatedTouchLink = { link: intent.link, at: performance.now() };
+      intent.link.click();
     };
 
     const onFocusIn = (event) => {
@@ -257,6 +275,8 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
     authUserRef.current = getCurrentWishlistUser();
 
     document.addEventListener('click', onClick);
+    document.addEventListener('click', consumeTouchClick, true);
+    document.addEventListener('scroll', onPointerCancel, { capture: true, passive: true });
     document.addEventListener('load', onProductImageLoad, true);
     document.addEventListener('error', onProductImageError, true);
     document.addEventListener('pointerover', onPointerOver, { passive: true });
@@ -276,6 +296,8 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
     return () => {
       cancelPendingHoverWarmup();
       document.removeEventListener('click', onClick);
+      document.removeEventListener('click', consumeTouchClick, true);
+      document.removeEventListener('scroll', onPointerCancel, true);
       document.removeEventListener('load', onProductImageLoad, true);
       document.removeEventListener('error', onProductImageError, true);
       document.removeEventListener('pointerover', onPointerOver);

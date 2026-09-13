@@ -232,6 +232,7 @@ export default function ProductDetailShellIsland({
   const [imageError, setImageError] = useState(null);
   const [imageRetry, setImageRetry] = useState(0);
   const [underlayImg, setUnderlayImg] = useState(null);
+  const [photoDirection, setPhotoDirection] = useState(0);
   const [sharpSrcs, setSharpSrcs] = useState({});
   const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
   const [isSummaryLiked, setIsSummaryLiked] = useState(false);
@@ -401,6 +402,7 @@ export default function ProductDetailShellIsland({
     if (!options.retry && nextIndex === navigationImgRef.current && nextIndex === activeImgRef.current) return false;
 
     navigationImgRef.current = nextIndex;
+    setPhotoDirection(options.direction || 0);
     clearQueuedImageLoads('product-navigation');
     const requestId = imageSwitchRequestRef.current + 1;
     imageSwitchRequestRef.current = requestId;
@@ -811,10 +813,18 @@ export default function ProductDetailShellIsland({
   const handleProductZoomKeyDown = useCallback((event) => {
     if (event.key !== 'Enter' && event.key !== ' ') return;
     event.preventDefault();
+    suppressImageClickRef.current = false;
     openProductLightbox();
   }, [openProductLightbox]);
 
   const onPointerDown = (event) => {
+    if (event.isPrimary === false) {
+      imageDragStateRef.current.pointerId = null;
+      suppressImageClickRef.current = true;
+      return;
+    }
+    // A new touch is a new intent, even immediately after a swipe.
+    suppressImageClickRef.current = false;
     swipeRef.current = { x: event.clientX, y: event.clientY };
     touchStateRef.current = {
       startX: event.clientX,
@@ -845,6 +855,7 @@ export default function ProductDetailShellIsland({
     const dy = event.clientY - drag.startY;
     drag.dx = dx;
     drag.dy = dy;
+    if (Math.hypot(dx, dy) > 12) suppressImageClickRef.current = true;
 
     const now = performance.now();
     const dt = now - drag.lastT;
@@ -872,12 +883,14 @@ export default function ProductDetailShellIsland({
   };
 
   const onImagePointerCancel = () => {
+    suppressImageClickRef.current = true;
     imageDragStateRef.current.pointerId = null;
     imageDragStateRef.current.axis = null;
   };
 
   const onPointerUp = (event) => {
     const drag = imageDragStateRef.current;
+    if (drag.pointerId === null || (event.pointerId != null && event.pointerId !== drag.pointerId)) return;
     const axis = drag.axis;
     drag.pointerId = null;
     const dx = event.clientX - swipeRef.current.x;
@@ -885,12 +898,9 @@ export default function ProductDetailShellIsland({
 
     if (axis === 'x' && safeImages.length > 1 && !isMobilePanelOpen && !isLightboxOpen) {
       const flick = Math.abs(drag.velocity) > 0.45 && Math.abs(dx) > 24;
-      const shouldCommit = Math.abs(dx) > drag.width * 0.18 || flick;
+      const shouldCommit = Math.abs(dx) > Math.min(48, drag.width * 0.12) || flick;
       if (shouldCommit) {
         suppressImageClickRef.current = true;
-        window.setTimeout(() => {
-          suppressImageClickRef.current = false;
-        }, 420);
         if (dx < 0) goNext(event);
         else goPrevious(event);
         return;
@@ -898,6 +908,14 @@ export default function ProductDetailShellIsland({
       return;
     }
 
+    if (!suppressImageClickRef.current && Math.hypot(dx, dy) <= 12
+        && (event.pointerType === 'touch' || event.pointerType === 'pen')
+        && !isMobilePanelOpen && !isLightboxOpen) {
+      openProductLightbox();
+      // Consume only this gesture's synthetic click, not the following touch.
+      suppressImageClickRef.current = true;
+      return;
+    }
 
     if (Math.abs(dy) > 58 && Math.abs(dy) > Math.abs(dx) * 1.2 && dy < 0) {
       setIsMobilePanelOpen(true);
@@ -1131,6 +1149,7 @@ export default function ProductDetailShellIsland({
                         className={`product-detail-mobile-image product-detail-mobile-image-layer--current ${hasPrimaryImagePainted && underlayImg != null ? imageMotion.reveal : ''} object-cover select-none`}
                         style={{
                           ...mainImageVisibilityStyle,
+                          '--photo-entry': `${photoDirection * 8}px`,
                           zIndex: 2,
                           width: '100%',
                           height: '100%',
