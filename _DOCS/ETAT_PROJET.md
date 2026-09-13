@@ -1,5 +1,13 @@
 # État du projet
 
+13 septembre — [préchargement des fiches galerie/catégories](images/PRECHARGEMENT_GALERIE_2026-09-13.md) :
+galerie ordinateur réparée (observer sur un conteneur `display: contents`, 0 carte
+vue) ; fond flouté et miniatures préchargés depuis les cartes (`detailThumbs`).
+Panier plein écran préexistant commité (`621f4da`). Hosting `build-2026-09-13-003`
+SUCCEEDED, `sv-mu02qx5w-ebb336d956bf` ; commits `58f44cf`, `621f4da`, `83ab615`
+non poussés. 65 tests et build réussis ; vrai mobile et revue panier à faire ;
+trois produits aux variantes PNG lourdes restent lents.
+
 11 septembre, reprise finale — [recette Safari et preuves](audits/2026-09-10-recette-evenements/README.md) :
 A-038 clôturé par abandon explicitement autorisé, incertitude conservée et aucun
 renvoi ; contrôle commerce healthy. Publication smoke affichée puis archivée,

@@ -79,7 +79,9 @@ pas un déploiement. Signaler et corriger les contradictions du périmètre trai
   Storage via les helpers/API same-origin, jamais Firestore en fallback.
 - Préchargement des cartes : galerie et catégories partagent
   `GalleryGridActionsIsland` ; la racine d'observation suit le vrai conteneur
-  de scroll. [Correctif galerie du 2026-09-13](_DOCS/images/PRECHARGEMENT_GALERIE_2026-09-13.md).
+  de scroll ; fond flouté et miniatures de fiche utilisent les URLs de
+  `getProductDetailThumbSrc`, jointes aux cartes (`detailThumbs`).
+  [Chantier et audit du 2026-09-13](_DOCS/images/PRECHARGEMENT_GALERIE_2026-09-13.md).
 - Pointeurs `current/previous/last-known-good` relus frais ; seules les
   releases immuables sont cachées. Publication CAS, plan d'impact et
   revalidation HMAC ; signal catalogue borné, sans polling permanent.
