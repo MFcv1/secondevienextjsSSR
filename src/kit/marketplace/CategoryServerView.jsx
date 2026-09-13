@@ -1,7 +1,7 @@
 import { ChevronDown, Grid3X3, LayoutGrid, List, SlidersHorizontal, X } from 'lucide-react';
 import Link from 'next/link';
 import { getCategoryUrl, getProductUrl } from '../../utils/slug';
-import { getProductCardImage, getProductDetailThumbSrcs, getProductDisplayImageSrc, getProductImageItems } from '../../utils/imageUtils';
+import { getProductCardImage, getProductDetailThumbSrcs, getProductDetailImageSrcs, getProductDisplayImageSrc, getProductImageItems } from '../../utils/imageUtils';
 import { getProductStockAmount, getPurchaseUnavailableLabel, isPurchasable, isSoldOut, shouldRequestQuote } from '../commerce/purchasability';
 import CategoryControlsIsland from './CategoryControlsIsland';
 import GalleryGridActionsIsland from './GalleryGridActionsIsland';
@@ -74,6 +74,7 @@ const CategoryProductCard = ({ item, priority = false, darkMode = false }) => {
           priority={priority}
           warmupSrc={warmup.src}
           thumbWarmupSrcs={getProductDetailThumbSrcs(item)}
+          detailWarmupSrcs={getProductDetailImageSrcs(item)}
           imageClassName="product-card-image h-full w-full object-cover"
         />
 

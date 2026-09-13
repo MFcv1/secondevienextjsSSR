@@ -76,12 +76,12 @@ Politique courante:
 - cartes visibles: la racine d'observation suit le vrai conteneur de scroll (viewport pour les categories et la galerie ordinateur, `#marketplaceGalleryScroll` pour la galerie mobile) — [correctif du 2026-09-13](PRECHARGEMENT_GALERIE_2026-09-13.md);
 - fond flou et miniatures: `getProductDetailThumbSrc` choisit `thumb320`, `thumb384`, puis les replis historiques; URLs jointes aux cartes (`detailThumbs`), prefixe commun compact dans le DOM;
 - cartes visibles/proches: selection reordonnee au scroll, marge de 250 px, 8 candidates au plus; aucune demande explicite de decodage pendant ce prechargement; decodages speculatifs suspendus pendant le scroll;
-- pause de 450 ms: les deux cartes centrales visibles a 60 % preparent leur route et leurs miniatures; survol stable/focus/appui reel gardent la priorite; un geste tactile de defilement n'est pas un appui;
+- pause de 240 ms: les cartes visibles a 60 % (2 mobile, 5 ordinateur) preparent toutes leurs miniatures puis leurs photos de detail par tours, une photo par meuble. Les deux cartes centrales preparent aussi leur route. Un nouveau scroll annule la suite des tours; Save-Data/2G les desactive. Les URLs `detailImages` proviennent du meme snapshot complet, prefixe compact dans le DOM;
 - une pression vers un produit annule les warmups speculatifs encore en file pour que les cartes survolees precedemment ne concurrencent pas la navigation choisie;
 - Save-Data et reseaux 2G: aucune anticipation speculative;
 - nouvelle version catalogue: files et registre des routes vides, observateurs reconstruits; cartes ajoutees et URLs modifiees suivies sans polling;
 - cache d'images chargees borne a 32 entrees mobile/64 ordinateur, attente a 48 telechargements et 16 decodages; delais maximum 20 s de chargement et 5 s de decodage, puis nouvelle tentative possible;
-- fiche: charger les deux voisines en premier, avec decodage, puis les autres une par une sans decodage; arreter la preparation au demontage et en arriere-plan; ne jamais faire sortir l'ancienne photo avant que la nouvelle soit prete, erreur visible et bouton Reessayer;
+- fiche: charger les deux voisines en premier, avec decodage, puis les autres une par une sans decodage; arreter la preparation au demontage et en arriere-plan. Selection immediate avec miniature provisoire si la photo de detail n'est pas chargee; remplacement apres decodage et uniquement pour la selection courante. Derniere photo peinte conservee dessous. Mobile: fondu entrant 160 ms, ancienne photo opaque, aucun drag/retour arriere superpose; mouvement reduit respecte. Erreur visible et bouton Reessayer;
 - medias historiques sans variante recente: ordre de fallback conserve, sans suppression implicite.
 
 ## 4. Upload admin

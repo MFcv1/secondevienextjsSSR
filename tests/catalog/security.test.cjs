@@ -493,12 +493,12 @@ test('images, categorie, warmup et navigation respectent le contrat unifie', () 
   assert.match(imageUtils, /owner: 'gallery-thumb'/);
   assert.match(imageLoader, /queue\.length > 48/);
   assert.match(imageLoader, /compact\(\) \? 32 : 64/);
-  assert.match(read('src/lib/server/materializedCatalog.js'), /detailThumbs: detailThumbsById\.get\(product\.id\)/);
+  assert.match(read('src/lib/server/materializedCatalog.js'), /detailImages: getProductDetailImageSrcs\(product\)/);
   assert.match(imageUtils, /saveData/);
   assert.match(imageUtils, /\(\^\|-\)2g\$/);
   assert.match(gridActions, /intent === 'hover' \|\| intent === 'press' \|\| intent === 'dwell'/);
   assert.doesNotMatch(productShell, /IMAGE_SWITCH_DECODE_BUDGET_MS|Promise\.race/);
-  assert.match(productShell, /hasPrimaryImagePainted && navTransition\.direction/);
+  assert.match(productShell, /hasPrimaryImagePainted && underlayImg != null \? imageMotion\.reveal/);
   assert.doesNotMatch(`${marketplace}\n${layout}`, /window\.location\.assign/);
   assert.doesNotMatch(marketplace, /<a[^>]+href=["']\/(?![#])/);
   assert.match(marketplace, /href=\{`tel:/);

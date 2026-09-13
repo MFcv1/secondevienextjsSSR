@@ -1,5 +1,10 @@
 # État du projet
 
+13 septembre — suite de la recette images: correction molette/miniature
+provisoire, fondu mobile sans retour arriere, preparation des albums des cartes
+visibles par tours bornes. [Details](images/CHARGEMENT_IMAGES_IMPLEMENTATION_2026-09-13.md).
+Lint sans erreur; recette manuelle reservee a l'utilisateur. Livraison en cours.
+
 13 septembre — [suite du chargement des images](images/CHARGEMENT_IMAGES_IMPLEMENTATION_2026-09-13.md):
 file commune bornee, priorite aux cartes courantes, gestes tactiles distingues,
 fiche sans bascule vers une photo non prete, miniatures allegees et correction

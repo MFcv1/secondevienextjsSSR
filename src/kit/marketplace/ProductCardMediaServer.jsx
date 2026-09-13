@@ -40,6 +40,7 @@ export default function ProductCardMediaServer({
   pictureClassName = 'block h-full w-full',
   warmupSrc = '',
   thumbWarmupSrcs = [],
+  detailWarmupSrcs = [],
   draggable = false,
 } = {}) {
   if (!cardImage?.src) return null;
@@ -51,6 +52,7 @@ export default function ProductCardMediaServer({
       className="product-card-media-surface block h-full w-full"
       data-product-media-warmup={warmupSrc || undefined}
       data-product-thumbs-warmup={thumbWarmupSrcs.length ? encodeProductThumbWarmups(thumbWarmupSrcs) : undefined}
+      data-product-images-warmup={detailWarmupSrcs.length ? encodeProductThumbWarmups(detailWarmupSrcs) : undefined}
       data-product-media-state="loading"
     >
       <picture className={pictureClassName}>

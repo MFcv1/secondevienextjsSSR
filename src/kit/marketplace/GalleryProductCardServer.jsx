@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { getProductUrl } from '../../utils/slug';
-import { getProductCardImage, getProductDetailThumbSrcs, getProductDisplayImageSrc, getProductImageItems } from '../../utils/imageUtils';
+import { getProductCardImage, getProductDetailThumbSrcs, getProductDetailImageSrcs, getProductDisplayImageSrc, getProductImageItems } from '../../utils/imageUtils';
 import { getProductPriceAmount, getProductStockAmount, getPurchaseUnavailableLabel, isPurchasable, isSoldOut, shouldRequestQuote } from '../commerce/purchasability';
 import { Heart, Plus } from 'lucide-react';
 import ProductCardMediaServer, { ProductCardHoverOverlay, ProductSoldBadge } from './ProductCardMediaServer';
@@ -76,6 +76,7 @@ export default function GalleryProductCardServer({
             priority={priority}
             warmupSrc={warmupSrc}
             thumbWarmupSrcs={getProductDetailThumbSrcs(item)}
+            detailWarmupSrcs={getProductDetailImageSrcs(item)}
             imageClassName="product-card-image h-full w-full object-cover"
           />
 

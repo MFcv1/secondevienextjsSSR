@@ -31,6 +31,32 @@ de l'agent sur ce lot. La recette n'est pas declaree reussie par le code.
 
 ## Reparation des fichiers
 
+### Ajustement apres recette utilisateur (meme jour)
+
+L'utilisateur constate une ouverture nettement meilleure mais un swipe avec
+retour arriere et une molette qui attend au debut. Correction suivante:
+
+- Selection de photo immediate, miniature provisoire si necessaire, puis photo
+  de detail decodee. Une reponse ancienne ne peut plus remplacer la selection.
+  La derniere photo effectivement peinte reste dessous pendant l'attente.
+- Mobile: fondu entrant de 160 ms, sans deplacement/retour a l'origine ni sortie
+  transparente de l'ancienne photo. Le geste choisit la photo au relachement;
+  la photo ne suit plus le doigt. Mouvement reduit respecte.
+- Galerie/categories: apres 240 ms de pause, toutes les miniatures et les
+  photos de detail des cartes visibles (jusqu'a 5 ordinateur/2 mobile, 16 photos
+  par produit). Tours equitables, une photo par meuble, dans la file commune
+  2/3 transferts; aucun decodage explicite de tout l'album pendant la galerie.
+  Un nouveau scroll annule les tours suivants. Save-Data/2G restent respectes.
+- URLs de detail derivees du snapshot complet, compactees par prefixe dans le
+  DOM. Ce supplement augmente le HTML; le cout reseau depend des meubles vus.
+  Ni nouvelle lecture Firestore ni changement de serveur/CDN.
+
+Lint cible sans erreur, contrat statique adapte sans execution. Aucune recette
+navigateur ni mesure FPS par l'agent. Livraison de cet ajustement a consigner
+ci-dessous; retour arriere Hosting vers `build-2026-09-13-004`.
+
+### Fichiers historiques
+
 `scripts/repair-product-image-formats.cjs` est borne aux trois IDs fautifs
 du catalogue actuel (ils different de certains IDs cites dans l'audit initial).
 Preparation sans ecriture cloud: 19 photos, 152 variantes, encodage WebP

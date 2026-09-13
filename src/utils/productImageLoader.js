@@ -12,6 +12,12 @@ const compact = () => !window.matchMedia?.('(min-width: 1024px)').matches;
 const limit = () => compact() ? 2 : 3;
 const cacheLimit = () => compact() ? 32 : 64;
 
+// Readiness hint only: the mounted image still confirms its own decoded paint.
+export const getLoadedProductImage = (src) => {
+  const entry = entries.get(`${src}||`);
+  return entry?.state === 'loaded' && entry.image?.naturalWidth ? entry.image : null;
+};
+
 const prune = () => {
   for (const [key, entry] of entries) {
     if (entries.size <= cacheLimit()) break;

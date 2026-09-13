@@ -11,6 +11,8 @@ import {
   scheduleProductThumbWarmups,
   pauseSpeculativeProductImages,
   decodeProductThumbWarmups,
+  preloadImage,
+  clearQueuedImageLoads,
 } from '../../utils/imageUtils';
 import {
   getCurrentWishlistUser,
@@ -23,10 +25,10 @@ const SCROLL_HOVER_WARMUP_COOLDOWN_MS = 420;
 const HOVER_WARMUP_INTENT_MS = 160;
 const PRODUCT_CARD_IMAGE_SELECTOR = 'img[data-product-image-state]';
 const GALLERY_INTERNAL_SCROLL_QUERY = '(max-width: 1023px)';
-const DWELL_WARMUP_DELAY_MS = 450;
+const DWELL_WARMUP_DELAY_MS = 240;
 const DWELL_VISIBLE_RATIO = 0.6;
 const DWELL_WARMUP_MAX_CARDS_COMPACT = 2;
-const DWELL_WARMUP_MAX_CARDS_WIDE = 4;
+const DWELL_WARMUP_MAX_CARDS_WIDE = 5;
 
 const readThumbWarmups = (card) => decodeProductThumbWarmups(
   card.querySelector('[data-product-thumbs-warmup]')?.dataset.productThumbsWarmup || ''
@@ -307,6 +309,11 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
     const wellVisibleCards = new Set();
     const nearCards = new Set();
     const observedCards = new Set();
+    let detailGeneration = 0;
+    const stopDetailWarmup = () => {
+      detailGeneration += 1;
+      clearQueuedImageLoads('gallery-detail');
+    };
 
     const sortedCards = (cards) => {
       const root = getVisibleWarmupRoot(surface);
@@ -328,15 +335,33 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
     };
 
     // Scroll arrete sur des cartes bien visibles : la personne regarde ces
-    // pieces, on amorce toutes leurs miniatures en partant du centre de
-    // l'ecran. Rien n'est lance pendant le defilement lui-meme.
-    const warmupDwelledCards = () => {
+    // pieces, on amorce leurs miniatures puis leurs photos par tours equitables.
+    // Un nouveau scroll arrete les tours et retire les transferts en attente.
+    const warmupDwelledCards = async () => {
       dwellTimerId = 0;
       if (cancelled || document.hidden || !wellVisibleCards.size) return;
       const compactViewport = window.matchMedia?.(GALLERY_INTERNAL_SCROLL_QUERY).matches;
-      sortedCards(wellVisibleCards)
-        .slice(0, compactViewport ? DWELL_WARMUP_MAX_CARDS_COMPACT : DWELL_WARMUP_MAX_CARDS_WIDE)
-        .forEach((card, index) => warmupProduct(card, index < 2 ? 'dwell' : 'visible'));
+      const cards = sortedCards(wellVisibleCards)
+        .slice(0, compactViewport ? DWELL_WARMUP_MAX_CARDS_COMPACT : DWELL_WARMUP_MAX_CARDS_WIDE);
+      cards.forEach((card, index) => {
+        warmupProduct(card, index < 2 ? 'dwell' : 'visible');
+        scheduleProductThumbWarmups(readThumbWarmups(card), { intent: 'dwell' });
+      });
+      const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+      if (connection?.saveData || /(^|-)2g$/.test(connection?.effectiveType || '')) return;
+      stopDetailWarmup();
+      const generation = detailGeneration;
+      const images = cards.map((card) => decodeProductThumbWarmups(
+        card.querySelector('[data-product-images-warmup]')?.dataset.productImagesWarmup || ''
+      ));
+      // One photo per visible product per round: never fill the queue with a
+      // single product's whole album. Downloads share the global 2/3-slot cap.
+      for (let index = 1; index < Math.max(0, ...images.map((list) => list.length)); index += 1) {
+        if (cancelled || document.hidden || generation !== detailGeneration) return;
+        await Promise.all(images.map((list) => list[index] && preloadImage(list[index], {
+          owner: 'gallery-detail', priority: 'low', decode: false,
+        })));
+      }
     };
 
     const scheduleDwellWarmup = () => {
@@ -345,6 +370,7 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
     };
 
     const onScroll = () => {
+      stopDetailWarmup();
       pauseSpeculativeProductImages(180);
       // Throttle selection, not the native scrolling or visible card downloads.
       if (!nearTimerId) nearTimerId = window.setTimeout(warmupNearCards, 120);
@@ -374,6 +400,7 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
 
     const setupObserver = () => {
       if (cancelled) return;
+      stopDetailWarmup();
       observer?.disconnect();
       dwellObserver?.disconnect();
       observer = null;
@@ -429,10 +456,11 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
     });
     const grid = document.querySelector(surface === 'category' ? '[data-category-native-view]' : '[data-ssr-gallery]');
     if (grid) mutations.observe(grid, { childList: true, subtree: true, attributes: true,
-      attributeFilter: ['data-product-media-warmup', 'data-product-thumbs-warmup'] });
+      attributeFilter: ['data-product-media-warmup', 'data-product-thumbs-warmup', 'data-product-images-warmup'] });
     window.addEventListener('sv:catalog-version-changed', setupObserver);
     const onVisibility = () => {
       if (document.hidden) {
+        stopDetailWarmup();
         clearQueuedProductImageWarmups();
         clearQueuedProductThumbWarmups();
       } else { warmupNearCards(); scheduleDwellWarmup(); }
@@ -441,6 +469,7 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
 
     return () => {
       cancelled = true;
+      stopDetailWarmup();
       scrollRegionQuery?.removeEventListener?.('change', setupObserver);
       document.removeEventListener('scroll', onScroll, { capture: true });
       document.removeEventListener('visibilitychange', onVisibility);

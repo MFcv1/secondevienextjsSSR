@@ -1,5 +1,5 @@
 import { preloadImage, clearQueuedImageLoads } from './productImageLoader.js';
-export { preloadImage, pauseSpeculativeProductImages, clearQueuedImageLoads } from './productImageLoader.js';
+export { preloadImage, getLoadedProductImage, pauseSpeculativeProductImages, clearQueuedImageLoads } from './productImageLoader.js';
 
 /**
  * Compresses and converts an image file to WebP format client-side.
@@ -441,6 +441,12 @@ export const getProductDetailThumbSrcs = (item) => {
         ? item.detailThumbs
         : getProductImageItems(item).map(getProductDetailThumbSrc);
     return [...new Set(thumbs.filter((src) => typeof src === 'string' && src))].slice(0, PRODUCT_DETAIL_THUMBS_MAX);
+};
+
+export const getProductDetailImageSrcs = (item) => {
+    const images = Array.isArray(item?.detailImages) && item.detailImages.length
+        ? item.detailImages : getProductImageItems(item).map((image) => getProductDisplayImageSrc(image));
+    return [...new Set(images.filter((src) => typeof src === 'string' && src))].slice(0, PRODUCT_DETAIL_THUMBS_MAX);
 };
 
 const shouldSkipSpeculativeImageWarmup = () => {

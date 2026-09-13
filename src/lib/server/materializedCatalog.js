@@ -5,7 +5,7 @@ import { getAdminStorage } from './firebaseAdmin';
 import { publicEnv } from './env';
 import catalogValidation from './materializedCatalogValidation.cjs';
 import { createImmutableReleaseCache } from './immutableReleaseCache.mjs';
-import { getProductDetailThumbSrcs } from '../../utils/imageUtils';
+import { getProductDetailThumbSrcs, getProductDetailImageSrcs } from '../../utils/imageUtils';
 
 const SNAPSHOT_ROOT = 'catalog-projection/v1';
 const RELEASE_REVALIDATE_SECONDS = 31536000;
@@ -139,12 +139,15 @@ const isAfterCursor = (product, cursor) => {
 const detailThumbsBySnapshot = new WeakMap();
 
 // Les cartes ne portent que la premiere photo. Pour que la fiche s'ouvre avec
-// son fond flou et ses miniatures deja en cache, on joint aux cartes les seules
-// URLs de miniatures issues du catalogue complet de la meme release.
+// ses photos deja en cache, on joint les URLs de miniatures et de detail
+// issues du catalogue complet de la meme release, sans lecture Firestore.
 const getDetailThumbsById = (snapshot) => {
   let byId = detailThumbsBySnapshot.get(snapshot);
   if (!byId) {
-    byId = new Map((snapshot.full || []).map((product) => [product.id, getProductDetailThumbSrcs(product)]));
+    byId = new Map((snapshot.full || []).map((product) => [product.id, {
+      detailThumbs: getProductDetailThumbSrcs(product),
+      detailImages: getProductDetailImageSrcs(product),
+    }]));
     detailThumbsBySnapshot.set(snapshot, byId);
   }
   return byId;
@@ -168,7 +171,7 @@ export const queryMaterializedCatalog = async ({ scope = 'full', limit = null, c
   return {
     snapshot,
     products: detailThumbsById
-      ? page.map((product) => ({ ...product, detailThumbs: detailThumbsById.get(product.id) || [] }))
+      ? page.map((product) => ({ ...product, ...detailThumbsById.get(product.id) }))
       : page,
     categories: normalizedCategories,
     cursor: cursor || null,
