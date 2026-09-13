@@ -498,7 +498,7 @@ test('images, categorie, warmup et navigation respectent le contrat unifie', () 
   assert.match(imageUtils, /\(\^\|-\)2g\$/);
   assert.match(gridActions, /intent === 'hover' \|\| intent === 'press' \|\| intent === 'dwell'/);
   assert.doesNotMatch(productShell, /IMAGE_SWITCH_DECODE_BUDGET_MS|Promise\.race/);
-  assert.match(productShell, /hasPrimaryImagePainted && underlayImg != null \? imageMotion\.reveal/);
+  assert.match(productShell, /useProductSwipeMotion\(activeImg, hasPrimaryImagePainted\)/);
   assert.doesNotMatch(`${marketplace}\n${layout}`, /window\.location\.assign/);
   assert.doesNotMatch(marketplace, /<a[^>]+href=["']\/(?![#])/);
   assert.match(marketplace, /href=\{`tel:/);

@@ -18,6 +18,7 @@ import {
 } from '../../utils/imageUtils';
 import ProductDetailActionsIsland from './ProductDetailActionsIsland';
 import imageMotion from './ProductImageMotion.module.css';
+import useProductSwipeMotion from './useProductSwipeMotion';
 import RichTextStory from '../shared/RichTextStory';
 import { stripStoryFormatting } from '../../lib/content/storyFormatting';
 import { getCurrentWishlistUser, readWishlistIds, setWishlistItem } from './wishlistState';
@@ -232,7 +233,6 @@ export default function ProductDetailShellIsland({
   const [imageError, setImageError] = useState(null);
   const [imageRetry, setImageRetry] = useState(0);
   const [underlayImg, setUnderlayImg] = useState(null);
-  const [photoDirection, setPhotoDirection] = useState(0);
   const [sharpSrcs, setSharpSrcs] = useState({});
   const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
   const [isSummaryLiked, setIsSummaryLiked] = useState(false);
@@ -241,6 +241,7 @@ export default function ProductDetailShellIsland({
   const [lightboxBaseSrc, setLightboxBaseSrc] = useState('');
   const [lightboxOriginRect, setLightboxOriginRect] = useState(null);
   const [hasPrimaryImagePainted, setHasPrimaryImagePainted] = useState(false);
+  const swipeMotion = useProductSwipeMotion(activeImg, hasPrimaryImagePainted);
   const [cartPanelEvent, setCartPanelEvent] = useState(null);
   const mainImageRef = useRef(null);
   const mobileMainImageRef = useRef(null);
@@ -402,7 +403,6 @@ export default function ProductDetailShellIsland({
     if (!options.retry && nextIndex === navigationImgRef.current && nextIndex === activeImgRef.current) return false;
 
     navigationImgRef.current = nextIndex;
-    setPhotoDirection(options.direction || 0);
     clearQueuedImageLoads('product-navigation');
     const requestId = imageSwitchRequestRef.current + 1;
     imageSwitchRequestRef.current = requestId;
@@ -818,6 +818,7 @@ export default function ProductDetailShellIsland({
   }, [openProductLightbox]);
 
   const onPointerDown = (event) => {
+    swipeMotion.clear();
     if (event.isPrimary === false) {
       imageDragStateRef.current.pointerId = null;
       suppressImageClickRef.current = true;
@@ -878,11 +879,20 @@ export default function ProductDetailShellIsland({
 
     if (drag.axis !== 'x' || safeImages.length <= 1) return;
 
-    // Keep the current photo opaque during the gesture. Only the incoming
-    // layer fades once ready; there is no drag/snap-back/exit animation chain.
+    const currentIndex = activeImgRef.current;
+    const preview = (index) => {
+      const full = getDisplaySrc(safeImages[index], 'mobile');
+      return getLoadedProductImage(full) ? full : getThumbSrc(safeImages[index]) || full;
+    };
+    swipeMotion.move(dx, [
+      preview((currentIndex + safeImages.length - 1) % safeImages.length),
+      activeMobileSrc,
+      preview((currentIndex + 1) % safeImages.length),
+    ]);
   };
 
   const onImagePointerCancel = () => {
+    swipeMotion.settle(0);
     suppressImageClickRef.current = true;
     imageDragStateRef.current.pointerId = null;
     imageDragStateRef.current.axis = null;
@@ -901,10 +911,14 @@ export default function ProductDetailShellIsland({
       const shouldCommit = Math.abs(dx) > Math.min(48, drag.width * 0.12) || flick;
       if (shouldCommit) {
         suppressImageClickRef.current = true;
+        const direction = dx < 0 ? 1 : -1;
+        const target = (activeImgRef.current + direction + safeImages.length) % safeImages.length;
+        swipeMotion.settle(direction, target);
         if (dx < 0) goNext(event);
         else goPrevious(event);
         return;
       }
+      swipeMotion.settle(0);
       return;
     }
 
@@ -1107,8 +1121,19 @@ export default function ProductDetailShellIsland({
               onKeyDown={handleProductZoomKeyDown}
             >
               <div className="product-detail-mobile-image-shadow pointer-events-none drop-shadow-[0_20px_42px_rgba(92,75,57,0.24)]">
-                <div data-fit-mode={activeImageFitMode} className="product-detail-mobile-image-frame" style={mobileDetailImageFrameStyle}>
+                <div ref={swipeMotion.frameRef} data-fit-mode={activeImageFitMode} className="product-detail-mobile-image-frame" style={{ ...mobileDetailImageFrameStyle, ...(swipeMotion.visual ? { height: swipeMotion.visual.height } : {}) }}>
                   <div className="product-detail-mobile-image-clip">
+                    {swipeMotion.visual ? (
+                      <div className={imageMotion.viewport} aria-hidden="true">
+                        <div className={imageMotion.track}>
+                          {swipeMotion.visual.sources.map((src, index) => (
+                            <div key={index} className={imageMotion.slide} style={{ backgroundImage: `url("${swipeMotion.visual.sources[1]}")` }}>
+                              <img src={src} alt="" draggable={false} decoding="async" className={imageMotion.photo} />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
                     {underlayMobileSrc && underlayMobileSrc !== activeMobileSrc ? (
                       <img
                         key={`mobile-under-${underlayMobileSrc}`}
@@ -1146,10 +1171,9 @@ export default function ProductDetailShellIsland({
                         data-product-main-image="true"
                         data-image-index={activeImg}
                         data-fit-mode={activeImageFitMode}
-                        className={`product-detail-mobile-image product-detail-mobile-image-layer--current ${hasPrimaryImagePainted && underlayImg != null ? imageMotion.reveal : ''} object-cover select-none`}
+                        className="product-detail-mobile-image product-detail-mobile-image-layer--current object-cover select-none"
                         style={{
                           ...mainImageVisibilityStyle,
-                          '--photo-entry': `${photoDirection * 8}px`,
                           zIndex: 2,
                           width: '100%',
                           height: '100%',

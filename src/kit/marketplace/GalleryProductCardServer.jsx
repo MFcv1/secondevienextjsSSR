@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import ProductNavigationFeedback from './ProductNavigationFeedback';
 import { getProductUrl } from '../../utils/slug';
 import { getProductCardImage, getProductDetailThumbSrcs, getProductDetailImageSrcs, getProductDisplayImageSrc, getProductImageItems } from '../../utils/imageUtils';
 import { getProductPriceAmount, getProductStockAmount, getPurchaseUnavailableLabel, isPurchasable, isSoldOut, shouldRequestQuote } from '../commerce/purchasability';
@@ -81,6 +82,7 @@ export default function GalleryProductCardServer({
           />
 
           <ProductCardHoverOverlay />
+          <ProductNavigationFeedback />
         </Link>
 
         {soldOut ? <ProductSoldBadge /> : null}

@@ -62,6 +62,17 @@ Retour arriere Hosting vers `build-2026-09-13-004`.
 
 ### Fichiers historiques
 
+Troisieme retour utilisateur: le fondu et son micro-deplacement sont rejetes,
+et une navigation froide parait ne pas reagir. Remplacement par une bande de
+trois photos qui suit directement le doigt, puis calage de 190 ms depuis la
+position atteinte; aucune remise a zero avant changement de photo. L'image
+normale est revelee dessous apres calage et chargement. Nouveau geste et
+annulation nettoient le mouvement precedent; mouvement reduit respecte.
+Les cartes affichent « Ouverture… » via le statut natif du Link Next pendant
+l'attente. Cela donne un retour immediat sur la navigation, sans pretendre
+supprimer le temps reseau. Lint cible et diff check passes; pas de tests
+navigateur/automatiques. Livraison en cours; rollback vers la version 006.
+
 Deuxieme retour utilisateur: desktop satisfaisant; mobile encore lent et
 appuis parfois doubles. Ajustement: fondu 100 ms + 8 px dans le sens du swipe,
 seuil de glissement plus court, suppression du verrou temporel de 420 ms pour

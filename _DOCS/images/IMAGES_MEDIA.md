@@ -86,6 +86,18 @@ Politique courante:
 
 ## 4. Upload admin
 
+Dernier ajustement de la recette du 13 septembre: le fondu mobile est remplace
+par `useProductSwipeMotion`, bande temporaire de trois photos qui suit le doigt
+(transform CSS, aucune mise a jour React par mouvement). Calage de 190 ms au
+relachement, retour a la photo courante si geste insuffisant, nettoyage a
+l'annulation/demontage/nouveau geste. La bande reste jusqu'a la disponibilite
+de la photo normale dessous. Variantes deja chargees ou miniatures; photo
+courante en fond de secours, cadre stabilise pendant le mouvement. Mouvement
+reduit: calage sans transition. Desktop conserve.
+Les liens galerie/categories incluent `ProductNavigationFeedback`, branche
+sur `useLinkStatus` de Next: indicateur « Ouverture… » pendant la navigation
+reelle, sans delai ajoute ni navigation parallele.
+
 Affinage tactile du 13 septembre apres recette: transition mobile 100 ms avec
 translation entrante de 8 px, couche precedente opaque. Seuil de swipe borne a
 48 px (12 % de la largeur). Un nouvel appui leve immediatement la suppression
