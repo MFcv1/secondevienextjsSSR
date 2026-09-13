@@ -69,8 +69,11 @@ le zoom. Nouveau geste independant du precedent; appui court sur carte active
 le Link au relachement avec dedoublonnage du clic navigateur. Petites derives
 tolerees a 12 px; scroll, annulation et multitouch abandonnent l'appui.
 Le pull-to-refresh en haut de galerie attend 10 px avant preventDefault.
-Lint cible et diff check reussis; aucun test automatise/navigateur. Livraison
-de cet ajustement tactile en cours; rollback possible vers la version 005.
+Lint cible et diff check reussis; aucun test automatise/navigateur.
+Commit `340918f`, Hosting `build-2026-09-13-006`, Cloud Build SUCCESS et rollout
+termine. HTTP 200, deployment ID `sv-mu0akf30-a1163ac3c3bc`, revision 006 a
+100 % du trafic, minimum service 1 conserve. Controle commerce relu
+`v2_all/v2/off`. Rollback possible vers la version 005. Aucun push/Functions.
 
 `scripts/repair-product-image-formats.cjs` est borne aux trois IDs fautifs
 du catalogue actuel (ils different de certains IDs cites dans l'audit initial).

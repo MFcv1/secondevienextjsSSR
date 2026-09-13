@@ -1,5 +1,12 @@
 # État du projet
 
+13 septembre — affinage tactile apres retour utilisateur: transition mobile
+100 ms, seuil de swipe raccourci, appuis galerie/zoom traites au relachement,
+suppression de la zone morte de 420 ms apres swipe. Commit `340918f`, Hosting
+`build-2026-09-13-006` a 100 %, deployment ID `sv-mu0akf30-a1163ac3c3bc`.
+Lint/construction reussis, aucun test navigateur; recette utilisateur attendue.
+[Details](images/CHARGEMENT_IMAGES_IMPLEMENTATION_2026-09-13.md).
+
 13 septembre — suite de la recette images: correction molette/miniature
 provisoire, fondu mobile sans retour arriere, preparation des albums des cartes
 visibles par tours bornes. [Details](images/CHARGEMENT_IMAGES_IMPLEMENTATION_2026-09-13.md).
