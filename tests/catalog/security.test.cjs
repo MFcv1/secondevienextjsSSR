@@ -478,6 +478,10 @@ test('images, categorie, warmup et navigation respectent le contrat unifie', () 
     imageUtils.indexOf('const thumbSrcSet'),
   );
   assert.doesNotMatch(cardSrcSetHelper, /primary\?\.medium|primary\?\.large|primary\?\.full/);
+  // Galerie ordinateur : le conteneur en `display: contents` ne peut pas servir de racine.
+  assert.match(gridActions, /root: getVisibleWarmupRoot\(surface\)/);
+  assert.match(gridActions, /display !== 'contents'/);
+  assert.doesNotMatch(gridActions, /root: surface === 'gallery' \? document\.getElementById/);
   assert.match(imageUtils, /saveData/);
   assert.match(imageUtils, /\(\^\|-\)2g\$/);
   assert.match(gridActions, /intent === 'hover' \|\| intent === 'press'/);

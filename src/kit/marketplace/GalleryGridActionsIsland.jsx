@@ -17,6 +17,19 @@ const prefetchedRoutes = new Set();
 const SCROLL_HOVER_WARMUP_COOLDOWN_MS = 420;
 const HOVER_WARMUP_INTENT_MS = 160;
 const PRODUCT_CARD_IMAGE_SELECTOR = 'img[data-product-image-state]';
+const GALLERY_INTERNAL_SCROLL_QUERY = '(max-width: 1023px)';
+
+// La galerie ne defile dans #marketplaceGalleryScroll que sous 1024px. Au-dela,
+// ce conteneur est en `display: contents` : sans boite, un IntersectionObserver
+// qui l'utilise comme racine ne voit aucune carte et rien n'est precharge. On
+// observe alors le viewport, exactement comme sur les categories.
+const getVisibleWarmupRoot = (surface) => {
+  if (surface !== 'gallery') return null;
+  const scrollRegion = document.getElementById('marketplaceGalleryScroll');
+  if (!scrollRegion) return null;
+  const { display, overflowY } = window.getComputedStyle(scrollRegion);
+  return display !== 'contents' && /auto|scroll/.test(overflowY) ? scrollRegion : null;
+};
 
 const getProductMediaSurface = (image) => image.closest?.('[data-product-media-state]');
 
@@ -242,6 +255,8 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
 
     const setupObserver = () => {
       if (cancelled) return;
+      observer?.disconnect();
+      observer = null;
       const selector = surface === 'category'
         ? '[data-category-native-view] [data-gallery-product-card]'
         : '[data-ssr-gallery] [data-gallery-product-card]';
@@ -258,7 +273,7 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
           warmupProduct(card, 'visible');
         });
       }, {
-        root: surface === 'gallery' ? document.getElementById('marketplaceGalleryScroll') : null,
+        root: getVisibleWarmupRoot(surface),
         rootMargin: '100% 0px',
         threshold: 0.01,
       });
@@ -272,8 +287,14 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
       timeoutId = window.setTimeout(setupObserver, 120);
     }
 
+    // Une fenetre redimensionnee de part et d'autre de 1024px change le
+    // conteneur qui defile ; les images deja amorcees restent dedoublonnees.
+    const scrollRegionQuery = surface === 'gallery' ? window.matchMedia?.(GALLERY_INTERNAL_SCROLL_QUERY) : null;
+    scrollRegionQuery?.addEventListener?.('change', setupObserver);
+
     return () => {
       cancelled = true;
+      scrollRegionQuery?.removeEventListener?.('change', setupObserver);
       if (idleId && typeof window.cancelIdleCallback === 'function') window.cancelIdleCallback(idleId);
       if (timeoutId) window.clearTimeout(timeoutId);
       observer?.disconnect();
