@@ -39,6 +39,7 @@ export default function ProductCardMediaServer({
   imageClassName = 'product-card-image h-full w-full object-cover',
   pictureClassName = 'block h-full w-full',
   warmupSrc = '',
+  thumbWarmupSrcs = [],
   draggable = false,
 } = {}) {
   if (!cardImage?.src) return null;
@@ -49,6 +50,7 @@ export default function ProductCardMediaServer({
     <span
       className="product-card-media-surface block h-full w-full"
       data-product-media-warmup={warmupSrc || undefined}
+      data-product-thumbs-warmup={thumbWarmupSrcs.length ? thumbWarmupSrcs.join(' ') : undefined}
       data-product-media-state="loading"
     >
       <picture className={pictureClassName}>

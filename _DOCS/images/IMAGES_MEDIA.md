@@ -74,6 +74,7 @@ Politique courante:
 - `Petits Prix`: `src/srcSet` toujours presents dans le HTML, lazy natif, aucun injecteur sequentiel;
 - warmup partage: concurrence maximale 2, `detailFast` avant clic, route prefetchee seulement sur hover/focus/press;
 - cartes visibles: la racine d'observation suit le vrai conteneur de scroll (viewport pour les categories et la galerie ordinateur, `#marketplaceGalleryScroll` pour la galerie mobile) — [correctif du 2026-09-13](PRECHARGEMENT_GALERIE_2026-09-13.md);
+- fond flou et miniatures de fiche: URLs uniques via `getProductDetailThumbSrc`, jointes aux cartes (`detailThumbs`); carte proche = fond flou, scroll arrete/survol/pression = toutes les miniatures, file dediee de 4 sans decodage;
 - une pression vers un produit annule les warmups speculatifs encore en file pour que les cartes survolees precedemment ne concurrencent pas la navigation choisie;
 - Save-Data et reseaux 2G: aucune anticipation speculative;
 - nouvelle version catalogue: cache logique de warmup et routes prefetchees vide avant `router.refresh()`;

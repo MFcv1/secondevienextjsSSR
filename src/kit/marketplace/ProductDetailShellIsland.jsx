@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import {
   PRODUCT_DETAIL_IMAGE_SIZES,
+  getProductDetailThumbSrc,
   getProductDisplayImageSrc,
   preloadImage,
 } from '../../utils/imageUtils';
@@ -55,9 +56,9 @@ const getMobileDetailImageStyle = (ratio = DEFAULT_PRODUCT_IMAGE_RATIO) => ({
   clipPath: 'inset(0 round 0.75rem)',
 });
 
-const getThumbSrc = (image) => (
-  image?.thumb || image?.card || image?.medium || image?.src || image?.large || image?.full || ''
-);
+// Partage avec les cartes : les miniatures prechargees depuis la galerie ou une
+// categorie sont exactement les URLs affichees ici.
+const getThumbSrc = getProductDetailThumbSrc;
 
 const getDisplaySrc = (image, viewport = 'desktop') => (
   getProductDisplayImageSrc(image, { viewport })
@@ -70,9 +71,7 @@ const getDisplaySrc = (image, viewport = 'desktop') => (
   || ''
 );
 
-const getBackdropSrc = (image) => (
-  image?.thumb || image?.card || image?.medium || image?.src || image?.large || image?.full || ''
-);
+const getBackdropSrc = getProductDetailThumbSrc;
 
 const IMAGE_SWITCH_DECODE_BUDGET_MS = 500;
 const IMAGE_PREWARM_STEP_MS = 140;
@@ -150,7 +149,7 @@ const ProductThumbRail = ({
                     src={thumbSrc}
                     className="w-full h-full object-cover rounded-[4px]"
                     alt={`Apercu ${index + 1}`}
-                    loading={index === activeIndex ? 'eager' : 'lazy'}
+                    loading="eager"
                     decoding="async"
                     fetchPriority={index === activeIndex ? 'auto' : 'low'}
                     sizes={`${mobileThumbSize}px`}
@@ -207,7 +206,7 @@ const ProductThumbRail = ({
                 sizes="58px"
                 className="w-full h-full object-cover select-none pointer-events-none"
                 alt=""
-                loading={index === activeIndex ? 'eager' : 'lazy'}
+                loading="eager"
                 decoding="async"
                 fetchPriority={index === activeIndex ? 'auto' : 'low'}
               />

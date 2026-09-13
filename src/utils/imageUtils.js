@@ -458,6 +458,23 @@ export const preloadImage = (src, options = {}) => {
     return decodePromise;
 };
 
+// Meme ordre que le fond flou et le rail de miniatures de la fiche produit :
+// une URL prechargee depuis une carte est exactement celle que la fiche demande.
+export const getProductDetailThumbSrc = (image) => (
+    image?.thumb || image?.card || image?.medium || image?.src || image?.large || image?.full || ''
+);
+
+export const PRODUCT_DETAIL_THUMBS_MAX = 16;
+
+// Les cartes du catalogue ne portent que la premiere photo ; le serveur y joint
+// `detailThumbs`, les miniatures de toutes les photos de la meme release.
+export const getProductDetailThumbSrcs = (item) => {
+    const thumbs = Array.isArray(item?.detailThumbs) && item.detailThumbs.length
+        ? item.detailThumbs
+        : getProductImageItems(item).map(getProductDetailThumbSrc);
+    return thumbs.filter((src) => typeof src === 'string' && src).slice(0, PRODUCT_DETAIL_THUMBS_MAX);
+};
+
 const imageWarmupQueue = [];
 const imageWarmupPromises = new Map();
 let activeImageWarmups = 0;
@@ -515,6 +532,59 @@ export const clearQueuedProductImageWarmups = () => {
 export const clearProductImageWarmups = () => {
     clearQueuedProductImageWarmups();
     imageWarmupPromises.clear();
+};
+
+// File distincte pour les miniatures (~30 Ko) : elles ne doivent pas retarder
+// les grandes images de fiche. Mise en cache HTTP seulement, sans decodage.
+const thumbWarmupQueue = [];
+const thumbWarmupStates = new Map();
+let activeThumbWarmups = 0;
+export const MAX_CONCURRENT_THUMB_WARMUPS = 4;
+
+const pumpThumbWarmups = () => {
+    while (activeThumbWarmups < MAX_CONCURRENT_THUMB_WARMUPS && thumbWarmupQueue.length) {
+        const task = thumbWarmupQueue.shift();
+        thumbWarmupStates.set(task.src, 'loading');
+        activeThumbWarmups += 1;
+        preloadImage(task.src, { priority: task.priority, decode: false })
+            .then(() => thumbWarmupStates.set(task.src, 'done'))
+            .catch(() => thumbWarmupStates.delete(task.src))
+            .finally(() => {
+                activeThumbWarmups = Math.max(0, activeThumbWarmups - 1);
+                pumpThumbWarmups();
+            });
+    }
+};
+
+export const scheduleProductThumbWarmups = (srcs, { intent = 'visible' } = {}) => {
+    if (typeof window === 'undefined' || !Array.isArray(srcs) || !srcs.length) return;
+    const urgent = intent === 'press';
+    if (!urgent && shouldSkipSpeculativeImageWarmup()) return;
+    const pending = srcs.filter((src) => src && !['loading', 'done'].includes(thumbWarmupStates.get(src)));
+    if (!pending.length) return;
+
+    if (urgent) {
+        const promoted = new Set(pending);
+        for (let index = thumbWarmupQueue.length - 1; index >= 0; index -= 1) {
+            if (promoted.has(thumbWarmupQueue[index].src)) thumbWarmupQueue.splice(index, 1);
+        }
+        thumbWarmupQueue.unshift(...pending.map((src) => ({ src, priority: 'high' })));
+    } else {
+        pending
+            .filter((src) => thumbWarmupStates.get(src) !== 'queued')
+            .forEach((src) => thumbWarmupQueue.push({ src, priority: 'low' }));
+    }
+    pending.forEach((src) => thumbWarmupStates.set(src, 'queued'));
+    pumpThumbWarmups();
+};
+
+export const clearQueuedProductThumbWarmups = () => {
+    while (thumbWarmupQueue.length) thumbWarmupStates.delete(thumbWarmupQueue.shift().src);
+};
+
+export const clearProductThumbWarmups = () => {
+    clearQueuedProductThumbWarmups();
+    thumbWarmupStates.clear();
 };
 
 const createImage = (url) =>

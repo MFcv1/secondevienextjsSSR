@@ -5,6 +5,7 @@ import { getAdminStorage } from './firebaseAdmin';
 import { publicEnv } from './env';
 import catalogValidation from './materializedCatalogValidation.cjs';
 import { createImmutableReleaseCache } from './immutableReleaseCache.mjs';
+import { getProductDetailThumbSrcs } from '../../utils/imageUtils';
 
 const SNAPSHOT_ROOT = 'catalog-projection/v1';
 const RELEASE_REVALIDATE_SECONDS = 31536000;
@@ -135,6 +136,20 @@ const isAfterCursor = (product, cursor) => {
   return cursor.id ? String(product.id).localeCompare(cursor.id) > 0 : false;
 };
 
+const detailThumbsBySnapshot = new WeakMap();
+
+// Les cartes ne portent que la premiere photo. Pour que la fiche s'ouvre avec
+// son fond flou et ses miniatures deja en cache, on joint aux cartes les seules
+// URLs de miniatures issues du catalogue complet de la meme release.
+const getDetailThumbsById = (snapshot) => {
+  let byId = detailThumbsBySnapshot.get(snapshot);
+  if (!byId) {
+    byId = new Map((snapshot.full || []).map((product) => [product.id, getProductDetailThumbSrcs(product)]));
+    detailThumbsBySnapshot.set(snapshot, byId);
+  }
+  return byId;
+};
+
 export const queryMaterializedCatalog = async ({ scope = 'full', limit = null, categories = [], cursor = '' } = {}) => {
   const normalizedCategories = [...new Set(categories.map((value) => String(value || '').trim()).filter(Boolean))].slice(0, 10);
   const parsedCursor = decodeCursor(cursor);
@@ -149,9 +164,12 @@ export const queryMaterializedCatalog = async ({ scope = 'full', limit = null, c
   const boundedLimit = limit ? Math.max(1, Math.min(Number(limit), 120)) : null;
   const hasMore = Boolean(boundedLimit && products.length > boundedLimit);
   const page = boundedLimit ? products.slice(0, boundedLimit) : products;
+  const detailThumbsById = scope === 'cards' ? getDetailThumbsById(snapshot) : null;
   return {
     snapshot,
-    products: page,
+    products: detailThumbsById
+      ? page.map((product) => ({ ...product, detailThumbs: detailThumbsById.get(product.id) || [] }))
+      : page,
     categories: normalizedCategories,
     cursor: cursor || null,
     nextCursor: hasMore && page.length ? encodeCursor(page[page.length - 1]) : null,

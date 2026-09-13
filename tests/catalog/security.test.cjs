@@ -479,9 +479,17 @@ test('images, categorie, warmup et navigation respectent le contrat unifie', () 
   );
   assert.doesNotMatch(cardSrcSetHelper, /primary\?\.medium|primary\?\.large|primary\?\.full/);
   // Galerie ordinateur : le conteneur en `display: contents` ne peut pas servir de racine.
-  assert.match(gridActions, /root: getVisibleWarmupRoot\(surface\)/);
+  assert.match(gridActions, /const root = getVisibleWarmupRoot\(surface\)/);
   assert.match(gridActions, /display !== 'contents'/);
   assert.doesNotMatch(gridActions, /root: surface === 'gallery' \? document\.getElementById/);
+  // Fond flou et miniatures : memes URLs cote carte et cote fiche, file distincte.
+  const productShell = read('src/kit/marketplace/ProductDetailShellIsland.jsx');
+  assert.match(productShell, /const getThumbSrc = getProductDetailThumbSrc;/);
+  assert.match(productShell, /const getBackdropSrc = getProductDetailThumbSrc;/);
+  assert.match(media, /data-product-thumbs-warmup=/);
+  assert.match(gridActions, /scheduleProductThumbWarmups\(intent === 'visible' \? thumbs\.slice\(0, 1\) : thumbs/);
+  assert.match(imageUtils, /MAX_CONCURRENT_THUMB_WARMUPS = 4/);
+  assert.match(read('src/lib/server/materializedCatalog.js'), /detailThumbs: detailThumbsById\.get\(product\.id\)/);
   assert.match(imageUtils, /saveData/);
   assert.match(imageUtils, /\(\^\|-\)2g\$/);
   assert.match(gridActions, /intent === 'hover' \|\| intent === 'press'/);

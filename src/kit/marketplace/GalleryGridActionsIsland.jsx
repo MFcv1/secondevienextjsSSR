@@ -4,8 +4,11 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   clearProductImageWarmups,
+  clearProductThumbWarmups,
   clearQueuedProductImageWarmups,
+  clearQueuedProductThumbWarmups,
   scheduleProductImageWarmup,
+  scheduleProductThumbWarmups,
 } from '../../utils/imageUtils';
 import {
   getCurrentWishlistUser,
@@ -18,6 +21,14 @@ const SCROLL_HOVER_WARMUP_COOLDOWN_MS = 420;
 const HOVER_WARMUP_INTENT_MS = 160;
 const PRODUCT_CARD_IMAGE_SELECTOR = 'img[data-product-image-state]';
 const GALLERY_INTERNAL_SCROLL_QUERY = '(max-width: 1023px)';
+const DWELL_WARMUP_DELAY_MS = 450;
+const DWELL_VISIBLE_RATIO = 0.6;
+const DWELL_WARMUP_MAX_CARDS_COMPACT = 4;
+const DWELL_WARMUP_MAX_CARDS_WIDE = 8;
+
+const readThumbWarmups = (card) => (
+  card.querySelector('[data-product-thumbs-warmup]')?.dataset.productThumbsWarmup || ''
+).split(' ').filter(Boolean);
 
 // La galerie ne defile dans #marketplaceGalleryScroll que sous 1024px. Au-dela,
 // ce conteneur est en `display: contents` : sans boite, un IntersectionObserver
@@ -107,6 +118,11 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
     }
 
     scheduleProductImageWarmup(warmupSrc, { intent }).catch(() => null);
+
+    // Carte simplement visible : fond flou et premiere miniature. Intention
+    // reelle (scroll arrete, survol, focus, pression) : toutes les miniatures.
+    const thumbs = readThumbWarmups(card);
+    scheduleProductThumbWarmups(intent === 'visible' ? thumbs.slice(0, 1) : thumbs, { intent });
   }, [router]);
 
   useEffect(() => {
@@ -186,6 +202,7 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
       const link = event.target.closest?.('[data-gallery-product-link]');
       if (link) {
         cancelPendingHoverWarmup();
+        clearQueuedProductThumbWarmups();
         clearQueuedProductImageWarmups();
         warmupProduct(link.closest('[data-gallery-product-card]'), 'press');
       }
@@ -200,6 +217,7 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
     const onCatalogVersionChanged = () => {
       prefetchedRoutes.clear();
       clearProductImageWarmups();
+      clearProductThumbWarmups();
     };
     const onStorage = () => syncWishlistButtons();
     const onAuthUserChanged = (event) => {
@@ -251,12 +269,44 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
     let cancelled = false;
     let idleId = 0;
     let timeoutId = 0;
+    let dwellTimerId = 0;
     let observer = null;
+    let dwellObserver = null;
+    const wellVisibleCards = new Set();
+
+    // Scroll arrete sur des cartes bien visibles : la personne regarde ces
+    // pieces, on amorce toutes leurs miniatures en partant du centre de
+    // l'ecran. Rien n'est lance pendant le defilement lui-meme.
+    const warmupDwelledCards = () => {
+      dwellTimerId = 0;
+      if (cancelled || !wellVisibleCards.size) return;
+      const root = getVisibleWarmupRoot(surface);
+      const bounds = root ? root.getBoundingClientRect() : { top: 0, height: window.innerHeight };
+      const centerY = bounds.top + (bounds.height / 2);
+      const compactViewport = window.matchMedia?.(GALLERY_INTERNAL_SCROLL_QUERY).matches;
+      Array.from(wellVisibleCards)
+        .filter((card) => card.isConnected)
+        .map((card) => {
+          const rect = card.getBoundingClientRect();
+          return { card, distance: Math.abs(rect.top + (rect.height / 2) - centerY) };
+        })
+        .sort((a, b) => a.distance - b.distance)
+        .slice(0, compactViewport ? DWELL_WARMUP_MAX_CARDS_COMPACT : DWELL_WARMUP_MAX_CARDS_WIDE)
+        .forEach(({ card }) => warmupProduct(card, 'dwell'));
+    };
+
+    const scheduleDwellWarmup = () => {
+      if (dwellTimerId) window.clearTimeout(dwellTimerId);
+      dwellTimerId = window.setTimeout(warmupDwelledCards, DWELL_WARMUP_DELAY_MS);
+    };
 
     const setupObserver = () => {
       if (cancelled) return;
       observer?.disconnect();
+      dwellObserver?.disconnect();
       observer = null;
+      dwellObserver = null;
+      wellVisibleCards.clear();
       const selector = surface === 'category'
         ? '[data-category-native-view] [data-gallery-product-card]'
         : '[data-ssr-gallery] [data-gallery-product-card]';
@@ -264,6 +314,7 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
         .filter((card) => card.querySelector('[data-product-media-warmup]')?.dataset.productMediaWarmup);
 
       if (!cards.length) return;
+      const root = getVisibleWarmupRoot(surface);
 
       observer = new IntersectionObserver((entries) => {
         entries.forEach((entry) => {
@@ -273,12 +324,26 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
           warmupProduct(card, 'visible');
         });
       }, {
-        root: getVisibleWarmupRoot(surface),
+        root,
         rootMargin: '100% 0px',
         threshold: 0.01,
       });
 
-      cards.forEach((card) => observer.observe(card));
+      dwellObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.intersectionRatio >= DWELL_VISIBLE_RATIO) wellVisibleCards.add(entry.target);
+          else wellVisibleCards.delete(entry.target);
+        });
+        scheduleDwellWarmup();
+      }, {
+        root,
+        threshold: [0, DWELL_VISIBLE_RATIO],
+      });
+
+      cards.forEach((card) => {
+        observer.observe(card);
+        dwellObserver.observe(card);
+      });
     };
 
     if (typeof window.requestIdleCallback === 'function') {
@@ -291,14 +356,20 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
     // conteneur qui defile ; les images deja amorcees restent dedoublonnees.
     const scrollRegionQuery = surface === 'gallery' ? window.matchMedia?.(GALLERY_INTERNAL_SCROLL_QUERY) : null;
     scrollRegionQuery?.addEventListener?.('change', setupObserver);
+    // Capture : recoit aussi le scroll interne de la galerie mobile.
+    document.addEventListener('scroll', scheduleDwellWarmup, { capture: true, passive: true });
 
     return () => {
       cancelled = true;
       scrollRegionQuery?.removeEventListener?.('change', setupObserver);
+      document.removeEventListener('scroll', scheduleDwellWarmup, { capture: true });
       if (idleId && typeof window.cancelIdleCallback === 'function') window.cancelIdleCallback(idleId);
       if (timeoutId) window.clearTimeout(timeoutId);
+      if (dwellTimerId) window.clearTimeout(dwellTimerId);
       observer?.disconnect();
+      dwellObserver?.disconnect();
       clearQueuedProductImageWarmups();
+      clearQueuedProductThumbWarmups();
     };
   }, [observeVisibleWarmup, surface, warmupProduct]);
 
