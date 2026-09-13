@@ -3,7 +3,9 @@
 13 septembre — suite de la recette images: correction molette/miniature
 provisoire, fondu mobile sans retour arriere, preparation des albums des cartes
 visibles par tours bornes. [Details](images/CHARGEMENT_IMAGES_IMPLEMENTATION_2026-09-13.md).
-Lint sans erreur; recette manuelle reservee a l'utilisateur. Livraison en cours.
+Commit `885fd47`, Hosting `build-2026-09-13-005` livre a 100 %,
+deployment ID `sv-mu07at15-8442337f1c17`. Lint sans erreur et construction cloud
+reussie; recette manuelle reservee a l'utilisateur, aucun test automatise.
 
 13 septembre — [suite du chargement des images](images/CHARGEMENT_IMAGES_IMPLEMENTATION_2026-09-13.md):
 file commune bornee, priorite aux cartes courantes, gestes tactiles distingues,

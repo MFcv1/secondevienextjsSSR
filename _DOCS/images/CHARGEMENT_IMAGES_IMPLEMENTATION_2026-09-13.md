@@ -51,9 +51,14 @@ retour arriere et une molette qui attend au debut. Correction suivante:
   DOM. Ce supplement augmente le HTML; le cout reseau depend des meubles vus.
   Ni nouvelle lecture Firestore ni changement de serveur/CDN.
 
-Lint cible sans erreur, contrat statique adapte sans execution. Aucune recette
-navigateur ni mesure FPS par l'agent. Livraison de cet ajustement a consigner
-ci-dessous; retour arriere Hosting vers `build-2026-09-13-004`.
+Lint cible sans erreur (9 avertissements), contrat statique adapte sans
+execution. Aucune recette navigateur ni mesure FPS par l'agent.
+Commit `885fd47`, livre depuis une worktree propre sur
+`build-2026-09-13-005`; Cloud Build SUCCESS, rollout termine. Lecture technique:
+HTTP 200, deployment ID `sv-mu07at15-8442337f1c17`, revision 005 a 100 % du
+trafic, minimum service toujours 1. Controle commerce relu `v2_all/v2/off`.
+Aucun push, deploiement Functions ou mutation catalogue dans cet ajustement.
+Retour arriere Hosting vers `build-2026-09-13-004`.
 
 ### Fichiers historiques
 
