@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { emitAnalyticsEvent } from '../shared/analyticsEvents';
+import { createQuotePhotoId, createQuotePhotoQueue, isLikelyImageFile, quotePhotoErrorMessage } from './quotePhotoPrep';
 import {
     QUOTE_CONTROL_HEIGHT,
     QUOTE_DROPZONE_HEIGHT,
@@ -72,6 +73,21 @@ const PhotoPlus = (props) => (
         <path d="m4 17 4.5-4.5 3 3" />
         <path d="M18 15v6" />
         <path d="M15 18h6" />
+    </IconBase>
+);
+
+const Alert = (props) => (
+    <IconBase {...props}>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7.5v5.5" />
+        <path d="M12 16.5h.01" />
+    </IconBase>
+);
+
+const Retry = (props) => (
+    <IconBase {...props}>
+        <path d="M20 11a8 8 0 1 0-2.3 5.7" />
+        <path d="M20 5v6h-6" />
     </IconBase>
 );
 
@@ -246,10 +262,49 @@ const emptyFields = {
     notes: ''
 };
 
-const formatPhotoName = (name = '') => {
-    const cleanName = name.replace(/\.[^/.]+$/, '');
-    if (cleanName.length <= 10) return cleanName;
-    return `${cleanName.slice(0, 10)}...`;
+const PHOTO_STEP_INDEX = 2;
+const PHOTO_TILE_MAX = 320;
+const PHOTO_TILE_MIN = 88;
+const PHOTO_COMPACT_TILE = 132;
+const DESKTOP_QUERY = '(min-width: 1024px)';
+
+/*
+ * Taille des vignettes selon leur nombre et la place reelle.
+ * Desktop : le panneau a une hauteur fixe, on cherche la plus grande vignette
+ * qui tient entierement (a taille egale, plus de colonnes = moins de lignes).
+ * Mobile et tablette : le document defile, on fixe les colonnes par palier.
+ */
+const computePhotoGrid = ({ width, height, count, desktop }) => {
+    if (!count || !width) return null;
+    const gap = desktop ? 12 : 10;
+
+    if (desktop && height > 0) {
+        // A taille egale : moins de lignes, puis le moins de colonnes (lignes equilibrees).
+        let best = { columns: 1, rows: count, size: 0 };
+        for (let columns = 1; columns <= count; columns += 1) {
+            const rows = Math.ceil(count / columns);
+            const size = Math.min(
+                PHOTO_TILE_MAX,
+                (width - gap * (columns - 1)) / columns,
+                (height - gap * (rows - 1)) / rows
+            );
+            if (size > best.size + 0.5 || (Math.abs(size - best.size) <= 0.5 && rows < best.rows)) {
+                best = { columns, rows, size };
+            }
+        }
+        if (best.size >= PHOTO_TILE_MIN) {
+            return { columns: best.columns, size: Math.floor(best.size), gap, scroll: false };
+        }
+        const columns = Math.min(count, Math.max(1, Math.floor((width + gap) / (PHOTO_TILE_MIN + gap))));
+        const size = Math.min(PHOTO_TILE_MAX, (width - gap * (columns - 1)) / columns);
+        return { columns, size: Math.floor(size), gap, scroll: true };
+    }
+
+    const tiers = width < 480
+        ? (count === 1 ? 1 : count <= 6 ? 2 : 3)
+        : (count <= 2 ? 2 : count <= 6 ? 3 : 4);
+    const size = Math.floor(Math.min(PHOTO_TILE_MAX + 40, (width - gap * (tiers - 1)) / tiers));
+    return { columns: Math.min(tiers, count), size, gap, scroll: false };
 };
 
 const formatRange = (min, max) => `${min}€ – ${max}€`;
@@ -278,9 +333,15 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
     const [submissionResult, setSubmissionResult] = useState(null);
     const [submissionState, setSubmissionState] = useState({ status: 'idle', message: '' });
     const [dragging, setDragging] = useState(false);
+    const [photoNotice, setPhotoNotice] = useState('');
+    const [photoGrid, setPhotoGrid] = useState(null);
 
     const fileInputRef = useRef(null);
+    const photoPickerRef = useRef(null);
+    const photoBoardRef = useRef(null);
     const photoPreviewsRef = useRef([]);
+    const photoQueueRef = useRef(null);
+    const photoTasksRef = useRef(new Map());
     const railRef = useRef(null);
     const quoteStartTrackedRef = useRef(false);
     const submissionIdentityRef = useRef(null);
@@ -306,12 +367,25 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
     const cardsMotion = stepMotionArmed ? 'quote-cards' : '';
     const initialStepReveal = step === 0 && !stepMotionArmed;
 
-    useEffect(() => {
-        photoPreviewsRef.current = photoPreviews;
-    }, [photoPreviews]);
+    /* La liste des photos vit dans une ref synchrone : l'envoi et les
+     * preparations asynchrones lisent toujours l'etat reel, pas un rendu passe. */
+    const commitPhotos = useCallback((next) => {
+        photoPreviewsRef.current = next;
+        setPhotoPreviews(next);
+    }, []);
+
+    const patchPhoto = useCallback((id, patch) => {
+        if (!photoPreviewsRef.current.some(photo => photo.id === id)) return false;
+        commitPhotos(photoPreviewsRef.current.map(photo => (photo.id === id ? { ...photo, ...patch } : photo)));
+        return true;
+    }, [commitPhotos]);
 
     useEffect(() => () => {
-        photoPreviewsRef.current.forEach(photo => URL.revokeObjectURL(photo.url));
+        photoPreviewsRef.current.forEach(photo => photo.previewUrl && URL.revokeObjectURL(photo.previewUrl));
+        // Les traitements en cours ne doivent plus publier d'aperçu après un départ.
+        photoPreviewsRef.current = [];
+        photoTasksRef.current.clear();
+        photoQueueRef.current = null;
     }, []);
 
     const trackQuoteStart = useCallback(() => {
@@ -326,29 +400,182 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
         setErrors(prev => (prev[name] ? { ...prev, [name]: undefined } : prev));
     }, [trackQuoteStart]);
 
-    const handleFiles = useCallback((files) => {
+    const preparePhoto = useCallback((id, file) => {
+        photoQueueRef.current ||= createQuotePhotoQueue();
+        const isPresent = () => photoPreviewsRef.current.some(photo => photo.id === id);
+        const task = photoQueueRef.current(file, { shouldPrepare: isPresent })
+            .then((prepared) => {
+                if (!prepared || !isPresent()) return;
+                patchPhoto(id, {
+                    status: 'ready',
+                    file: null,
+                    prepared,
+                    previewUrl: URL.createObjectURL(prepared.blob),
+                    errorMessage: ''
+                });
+            })
+            .catch((error) => {
+                patchPhoto(id, { status: 'error', errorMessage: quotePhotoErrorMessage(error?.code) });
+            })
+            .finally(() => {
+                photoTasksRef.current.delete(id);
+            });
+        photoTasksRef.current.set(id, task);
+        return task;
+    }, [patchPhoto]);
+
+    const handleFiles = useCallback((fileList) => {
+        const candidates = Array.from(fileList || []);
+        if (!candidates.length || submittingRef.current) return;
         trackQuoteStart();
-        setPhotoPreviews(prev => {
-            const room = Math.max(0, MAX_PHOTOS - prev.length);
-            const incoming = Array.from(files || []).slice(0, room);
-            if (!incoming.length) return prev;
-            const next = incoming.map(file => ({
-                id: `${file.name}-${file.lastModified}-${Math.random().toString(36).slice(2)}`,
-                name: file.name,
-                file,
-                url: URL.createObjectURL(file)
-            }));
-            return [...prev, ...next];
-        });
-    }, [trackQuoteStart]);
+        const images = candidates.filter(isLikelyImageFile);
+        const room = Math.max(0, MAX_PHOTOS - photoPreviewsRef.current.length);
+        const accepted = images.slice(0, room);
+        const notices = [];
+        const ignored = candidates.length - images.length;
+        if (ignored > 0) {
+            notices.push(`${ignored} fichier${ignored > 1 ? 's ignorés : ce ne sont' : ' ignoré : ce n’est'} pas une image.`);
+        }
+        if (images.length > room) {
+            const skipped = images.length - room;
+            notices.push(`Limite de ${MAX_PHOTOS} photos : ${skipped} photo${skipped > 1 ? 's non ajoutées' : ' non ajoutée'}.`);
+        }
+        setPhotoNotice(notices.join(' '));
+        if (!accepted.length) return;
+
+        const entries = accepted.map(file => ({
+            id: createQuotePhotoId(),
+            name: file.name || 'Photo',
+            file,
+            status: 'preparing',
+            prepared: null,
+            previewUrl: '',
+            errorMessage: ''
+        }));
+        commitPhotos([...photoPreviewsRef.current, ...entries]);
+        entries.forEach(entry => { void preparePhoto(entry.id, entry.file); });
+    }, [commitPhotos, preparePhoto, trackQuoteStart]);
+
+    const retryPhoto = useCallback((id) => {
+        const target = photoPreviewsRef.current.find(photo => photo.id === id);
+        if (!target?.file || target.status !== 'error') return;
+        patchPhoto(id, { status: 'preparing', errorMessage: '' });
+        void preparePhoto(id, target.file);
+    }, [patchPhoto, preparePhoto]);
 
     const removePhoto = useCallback((id) => {
-        setPhotoPreviews(prev => {
-            const target = prev.find(photo => photo.id === id);
-            if (target) URL.revokeObjectURL(target.url);
-            return prev.filter(photo => photo.id !== id);
+        const index = photoPreviewsRef.current.findIndex(photo => photo.id === id);
+        const restoreFocus = document.activeElement?.getAttribute('data-photo-remove') === id;
+        const target = photoPreviewsRef.current.find(photo => photo.id === id);
+        if (target?.previewUrl) URL.revokeObjectURL(target.previewUrl);
+        commitPhotos(photoPreviewsRef.current.filter(photo => photo.id !== id));
+        setPhotoNotice('');
+        if (restoreFocus) requestAnimationFrame(() => {
+            const next = photoPreviewsRef.current[Math.min(index, photoPreviewsRef.current.length - 1)];
+            const button = next && photoBoardRef.current?.querySelector(`[data-photo-remove="${next.id}"]`);
+            (button || photoPickerRef.current)?.focus();
         });
+    }, [commitPhotos]);
+
+    const clearPhotos = useCallback(() => {
+        photoPreviewsRef.current.forEach(photo => photo.previewUrl && URL.revokeObjectURL(photo.previewUrl));
+        commitPhotos([]);
+        setPhotoNotice('');
+    }, [commitPhotos]);
+
+    const openPhotoPicker = useCallback(() => {
+        if (photoPreviewsRef.current.length >= MAX_PHOTOS) return;
+        fileInputRef.current?.click();
     }, []);
+
+    /*
+     * Glisser-deposer au niveau de la fenetre : une photo lachee a cote de la
+     * zone ne doit jamais ouvrir l'image dans l'onglet et perdre le formulaire.
+     * Sur l'etape photos, deposer ou coller n'importe ou ajoute les images.
+     */
+    useEffect(() => {
+        if (submitted) return undefined;
+        let depth = 0;
+        const acceptsPhotos = step === PHOTO_STEP_INDEX;
+        const carriesFiles = (event) => Array.from(event.dataTransfer?.types || []).includes('Files');
+
+        const onDragEnter = (event) => {
+            if (!carriesFiles(event)) return;
+            event.preventDefault();
+            depth += 1;
+            if (acceptsPhotos) setDragging(true);
+        };
+        const onDragOver = (event) => {
+            if (!carriesFiles(event)) return;
+            event.preventDefault();
+            event.dataTransfer.dropEffect = acceptsPhotos ? 'copy' : 'none';
+        };
+        const onDragLeave = (event) => {
+            if (!carriesFiles(event)) return;
+            depth = Math.max(0, depth - 1);
+            if (depth === 0) setDragging(false);
+        };
+        const onDrop = (event) => {
+            if (!carriesFiles(event)) return;
+            event.preventDefault();
+            depth = 0;
+            setDragging(false);
+            if (acceptsPhotos) void handleFiles(event.dataTransfer.files);
+        };
+        const onPaste = (event) => {
+            if (!acceptsPhotos || !event.clipboardData?.files?.length) return;
+            if (event.target instanceof Element && event.target.closest('input, textarea, [contenteditable="true"]')) return;
+            event.preventDefault();
+            void handleFiles(event.clipboardData.files);
+        };
+
+        window.addEventListener('dragenter', onDragEnter);
+        window.addEventListener('dragover', onDragOver);
+        window.addEventListener('dragleave', onDragLeave);
+        window.addEventListener('drop', onDrop);
+        window.addEventListener('paste', onPaste);
+        return () => {
+            window.removeEventListener('dragenter', onDragEnter);
+            window.removeEventListener('dragover', onDragOver);
+            window.removeEventListener('dragleave', onDragLeave);
+            window.removeEventListener('drop', onDrop);
+            window.removeEventListener('paste', onPaste);
+            setDragging(false);
+        };
+    }, [handleFiles, step, submitted]);
+
+    /* Mesure la zone reellement disponible pour dimensionner les vignettes. */
+    const photoCount = photoPreviews.length;
+    useLayoutEffect(() => {
+        const board = photoBoardRef.current;
+        if (step !== PHOTO_STEP_INDEX || !board || !photoCount) {
+            setPhotoGrid(null);
+            return undefined;
+        }
+        const desktopQuery = window.matchMedia(DESKTOP_QUERY);
+        const measure = () => {
+            const desktop = desktopQuery.matches;
+            const next = computePhotoGrid({
+                width: board.clientWidth,
+                height: desktop ? board.clientHeight : 0,
+                count: photoCount,
+                desktop
+            });
+            setPhotoGrid(prev => (
+                prev && next && prev.columns === next.columns && prev.size === next.size && prev.gap === next.gap && prev.scroll === next.scroll ? prev : next
+            ));
+        };
+        measure();
+        const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(measure) : null;
+        observer?.observe(board);
+        desktopQuery.addEventListener?.('change', measure);
+        window.addEventListener('resize', measure);
+        return () => {
+            observer?.disconnect();
+            desktopQuery.removeEventListener?.('change', measure);
+            window.removeEventListener('resize', measure);
+        };
+    }, [photoCount, step]);
 
     const toggleService = useCallback((id) => {
         trackQuoteStart();
@@ -425,11 +652,25 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
         setSubmissionState({ status: 'submitting', message: 'Enregistrement de votre demande…' });
         setErrors({});
         try {
+            if (photoTasksRef.current.size) {
+                setSubmissionState({ status: 'submitting', message: 'Préparation des photos…' });
+                await Promise.allSettled([...photoTasksRef.current.values()]);
+            }
+            if (photoPreviewsRef.current.some(photo => photo.status !== 'ready')) {
+                submittingRef.current = false;
+                setPhotoNotice('Certaines photos ne sont pas prêtes. Réessayez ou retirez-les pour envoyer votre demande.');
+                setSubmissionState({ status: 'idle', message: '' });
+                goToStep(PHOTO_STEP_INDEX);
+                return;
+            }
+            const readyPhotos = photoPreviewsRef.current
+                .filter((photo) => photo.status === 'ready' && photo.prepared)
+                .map((photo) => ({ photoId: photo.id, ...photo.prepared }));
             const { createQuoteSubmissionIdentity, submitQuoteRequest } = await import('./quoteRequestClient');
             submissionIdentityRef.current ||= createQuoteSubmissionIdentity();
             const result = await submitQuoteRequest({
                 identity: submissionIdentityRef.current,
-                files: photoPreviews.map((photo) => photo.file),
+                files: readyPhotos,
                 payload: {
                     customer: {
                         firstName: fields.firstname,
@@ -550,6 +791,7 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
                             setSubmissionResult(null);
                             setSubmissionState({ status: 'idle', message: '' });
                             submissionIdentityRef.current = null;
+                            clearPhotos();
                             goToStep(0);
                         }}
                         className={`mt-7 font-sans text-[13px] font-semibold underline decoration-1 underline-offset-4 ${t.muted} ${t.focusRing}`}
@@ -563,6 +805,12 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
 
     const activeStep = steps[step];
     const isLastStep = step === steps.length - 1;
+    const isPhotoStep = step === PHOTO_STEP_INDEX;
+    const readyPhotoCount = photoPreviews.filter(photo => photo.status === 'ready').length;
+    const preparingPhotoCount = photoPreviews.filter(photo => photo.status === 'preparing').length;
+    const failedPhotoCount = photoPreviews.filter(photo => photo.status === 'error').length;
+    const photoRoomLeft = MAX_PHOTOS - photoPreviews.length;
+    const compactTiles = (photoGrid?.size ?? PHOTO_COMPACT_TILE) < PHOTO_COMPACT_TILE;
 
     return (
         <div className={`${QUOTE_SHELL} pb-6 pt-6 lg:pt-9`}>
@@ -631,7 +879,7 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
                         </p>
                     ) : null}
                     <div
-                        className={`${contentMotion} min-h-0 flex-1 overflow-visible lg:mx-0 lg:px-0`}
+                        className={`${contentMotion} min-h-0 flex-1 overflow-visible lg:mx-0 lg:px-0 ${isPhotoStep ? 'lg:flex lg:flex-col' : ''}`}
                     >
                         <header
                             data-quote-reveal={initialStepReveal ? 'step-copy' : undefined}
@@ -725,81 +973,179 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
                         )}
 
                         {/* 3 — PHOTOS */}
-                        {step === 2 && (
-                            <div>
-                                <div className="flex items-baseline justify-between gap-4">
-                                    <span className={QUOTE_TYPE.label}>Photos du meuble</span>
-                                    <span className={`font-sans text-[11.5px] tabular-nums ${t.faint}`}>
-                                        {photoPreviews.length}/{MAX_PHOTOS}
-                                    </span>
-                                </div>
-
-                                <button
-                                    type="button"
-                                    onClick={() => fileInputRef.current?.click()}
-                                    onDragOver={(event) => {
-                                        event.preventDefault();
-                                        setDragging(true);
-                                    }}
-                                    onDragLeave={() => setDragging(false)}
-                                    onDrop={(event) => {
-                                        event.preventDefault();
-                                        setDragging(false);
-                                        handleFiles(event.dataTransfer.files);
-                                    }}
-                                    disabled={photoPreviews.length >= MAX_PHOTOS}
-                                    className={`mt-2.5 flex w-full flex-col items-center justify-center border border-dashed ${QUOTE_RADIUS_CARD} ${QUOTE_DROPZONE_HEIGHT} px-4 py-8 text-center ${QUOTE_EASE} lg:px-6 lg:py-10 ${t.focusRing} disabled:cursor-not-allowed disabled:opacity-55 ${dragging
-                                        ? darkMode ? 'border-[#D9B58D]/70 bg-[#D9B58D]/[0.08]' : 'border-[#8B5C42] bg-[#fbf7f3]'
-                                        : darkMode ? 'border-white/16 bg-white/[0.02] hover:border-white/30' : 'border-[#d5cbbf] bg-white hover:border-[#b9ab9a] hover:bg-[#f5f2ee]'
-                                    }`}
-                                >
-                                    <PhotoPlus size={28} strokeWidth={1.4} className={`h-6 w-6 lg:h-7 lg:w-7 ${t.faint}`} />
-                                    <span className="mt-3 font-sans text-[13.5px] font-semibold lg:mt-4 lg:text-[14px]">
-                                        {photoPreviews.length > 0 ? 'Ajouter d’autres photos' : 'Déposez vos photos'}
-                                    </span>
-                                    <span className={`mt-1.5 ${QUOTE_TYPE.meta} ${t.muted}`}>
-                                        ou cliquez pour parcourir
-                                    </span>
-                                </button>
-
+                        {isPhotoStep && (
+                            <div className="flex flex-col lg:min-h-0 lg:flex-1">
                                 <input
                                     ref={fileInputRef}
                                     type="file"
-                                    accept="image/png,image/jpeg,image/webp"
+                                    accept="image/*"
                                     multiple
-                                    className="hidden"
+                                    tabIndex={-1}
+                                    aria-hidden="true"
+                                    className="sr-only"
                                     onChange={(event) => {
-                                        handleFiles(event.target.files);
+                                        void handleFiles(event.target.files);
                                         event.target.value = '';
                                     }}
                                 />
 
-                                {photoPreviews.length > 0 && (
-                                    <div className="mt-4 grid grid-cols-3 gap-3 min-[520px]:grid-cols-4 sm:grid-cols-5 lg:grid-cols-6">
-                                        {photoPreviews.map(photo => (
-                                            <div
-                                                key={photo.id}
-                                                className={`group relative aspect-[4/5] overflow-hidden ${QUOTE_RADIUS_FIELD} ${t.imageBed}`}
-                                            >
-                                                <img src={photo.url} alt={photo.name} className={`h-full w-full object-cover ${QUOTE_EASE} group-hover:scale-[1.05]`} />
-                                                <span className="pointer-events-none absolute inset-x-1.5 bottom-1.5 truncate rounded-full bg-black/55 px-2 py-1 font-sans text-[10px] font-semibold text-white backdrop-blur-sm">
-                                                    {formatPhotoName(photo.name)}
+                                {photoPreviews.length === 0 ? (
+                                    <button
+                                        ref={photoPickerRef}
+                                        type="button"
+                                        onClick={openPhotoPicker}
+                                        className={`group flex w-full flex-col items-center justify-center border border-dashed ${QUOTE_RADIUS_CARD} ${QUOTE_DROPZONE_HEIGHT} px-5 py-9 text-center ${QUOTE_EASE} lg:min-h-0 lg:flex-1 lg:py-8 ${t.focusRing} ${dragging
+                                            ? darkMode ? 'border-[#D9B58D]/70 bg-[#D9B58D]/[0.08]' : 'border-[#8B5C42] bg-[#fbf7f3]'
+                                            : darkMode ? 'border-white/16 bg-white/[0.02] hover:border-white/30' : 'border-[#d5cbbf] bg-white hover:border-[#b9ab9a] hover:bg-[#fbf9f6]'
+                                        }`}
+                                    >
+                                        <span className={`flex h-14 w-14 items-center justify-center rounded-full ${QUOTE_EASE} group-hover:scale-105 ${darkMode ? 'bg-white/[0.06] text-[#D9B58D]' : 'bg-[#f3ede6] text-[#8B5C42]'}`}>
+                                            <PhotoPlus size={24} strokeWidth={1.5} />
+                                        </span>
+                                        <span className="mt-4 font-sans text-[15px] font-semibold">
+                                            {dragging ? 'Déposez vos photos ici' : 'Ajoutez vos photos'}
+                                        </span>
+                                        <span className={`mt-1.5 max-w-[36ch] ${QUOTE_TYPE.meta} ${t.muted}`}>
+                                            <span className="lg:hidden">Prenez une photo ou choisissez-en dans votre galerie.</span>
+                                            <span className="hidden lg:inline">Glissez-déposez vos photos, collez-les ou cliquez pour parcourir.</span>
+                                        </span>
+                                        <span className="mt-5 flex flex-wrap justify-center gap-2">
+                                            {['Vue d’ensemble', 'Défauts de près', 'Pieds et dessous'].map(tip => (
+                                                <span key={tip} className={`rounded-full px-3 py-1.5 font-sans text-[11.5px] font-medium ${darkMode ? 'bg-white/[0.05] text-stone-300' : 'bg-[#f5f1ec] text-[#6e655d]'}`}>
+                                                    {tip}
                                                 </span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => removePhoto(photo.id)}
-                                                    aria-label={`Retirer ${photo.name}`}
-                                                    className={`absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur-sm ${QUOTE_EASE} hover:bg-black/80 ${t.focusRing}`}
-                                                >
-                                                    <Close size={13} strokeWidth={2} />
-                                                </button>
+                                            ))}
+                                        </span>
+                                        <span className={`mt-5 ${QUOTE_TYPE.micro} ${t.faint}`}>
+                                            JPG, PNG, WEBP · jusqu’à {MAX_PHOTOS} photos
+                                            <span className="mt-1 block">HEIC selon votre navigateur ; sinon, exportez en JPEG.</span>
+                                        </span>
+                                    </button>
+                                ) : (
+                                    <>
+                                        <div className="flex items-center justify-between gap-4">
+                                            <div className="min-w-0">
+                                                <p className="font-sans text-[13.5px] font-semibold">
+                                                    {photoPreviews.length} photo{photoPreviews.length > 1 ? 's' : ''} · {photoPreviews.length}/{MAX_PHOTOS}
+                                                </p>
+                                                <p className={`mt-0.5 truncate ${QUOTE_TYPE.micro} ${t.faint}`} aria-live="polite">
+                                                    {preparingPhotoCount > 0
+                                                        ? `Préparation de ${preparingPhotoCount} photo${preparingPhotoCount > 1 ? 's' : ''}…`
+                                                        : photoRoomLeft > 0
+                                                            ? `Encore ${photoRoomLeft} possible${photoRoomLeft > 1 ? 's' : ''}`
+                                                            : 'Maximum atteint'}
+                                                    {photoRoomLeft > 0 ? <span className="hidden lg:inline"> · glissez ou collez pour en ajouter</span> : null}
+                                                </p>
                                             </div>
-                                        ))}
-                                    </div>
+                                            <button
+                                                ref={photoPickerRef}
+                                                type="button"
+                                                onClick={openPhotoPicker}
+                                                disabled={photoRoomLeft <= 0}
+                                                className={`inline-flex h-11 shrink-0 items-center gap-2 rounded-full pl-3.5 pr-4 font-sans text-[13px] font-semibold ${QUOTE_EASE} active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-45 ${t.ghostBtn} ${t.focusRing}`}
+                                            >
+                                                <PhotoPlus size={17} strokeWidth={1.6} />
+                                                Ajouter
+                                            </button>
+                                        </div>
+
+                                        <div
+                                            ref={photoBoardRef}
+                                            className={`relative mt-4 lg:min-h-0 lg:flex-1 ${photoGrid?.scroll ? 'lg:overflow-y-auto' : 'lg:overflow-hidden'}`}
+                                        >
+                                            <ul
+                                                aria-label="Photos ajoutées"
+                                                className={photoGrid ? 'grid content-start' : 'grid grid-cols-2 gap-2.5 min-[480px]:grid-cols-3 lg:grid-cols-5 lg:gap-3'}
+                                                style={photoGrid ? { gridTemplateColumns: `repeat(${photoGrid.columns}, ${photoGrid.size}px)`, gap: photoGrid.gap } : undefined}
+                                            >
+                                                {photoPreviews.map((photo, index) => (
+                                                    <li
+                                                        key={photo.id}
+                                                        className={`quote-photo-tile relative aspect-square overflow-hidden ${QUOTE_RADIUS_FIELD} ${photo.status === 'error'
+                                                            ? darkMode ? 'bg-[#1a1412] ring-[1.5px] ring-red-400/60' : 'bg-[#fdf6f3] ring-[1.5px] ring-red-300'
+                                                            : t.imageBed}`}
+                                                    >
+                                                        {photo.previewUrl ? (
+                                                            <img
+                                                                src={photo.previewUrl}
+                                                                alt={`Vue ${index + 1} du meuble`}
+                                                                draggable={false}
+                                                                decoding="async"
+                                                                className="h-full w-full object-cover"
+                                                            />
+                                                        ) : null}
+
+                                                        {photo.status === 'preparing' ? (
+                                                            <span className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                                                                <span
+                                                                    aria-hidden="true"
+                                                                    className={`h-6 w-6 animate-spin rounded-full border-2 ${darkMode ? 'border-white/15 border-t-[#D9B58D]' : 'border-[#e0d6ca] border-t-[#8B5C42]'}`}
+                                                                />
+                                                                <span className={compactTiles ? 'sr-only' : `${QUOTE_TYPE.micro} ${t.muted}`}>Préparation…</span>
+                                                            </span>
+                                                        ) : null}
+
+                                                        {photo.status === 'error' ? (
+                                                            <span className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 px-2.5 text-center" title={photo.errorMessage}>
+                                                                <Alert size={compactTiles ? 18 : 22} className={darkMode ? 'text-red-300' : 'text-red-600'} />
+                                                                <span className={compactTiles ? 'sr-only' : 'font-sans text-[11.5px] font-semibold leading-tight'}>
+                                                                    {photo.errorMessage}
+                                                                </span>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => retryPhoto(photo.id)}
+                                                                    aria-label={`Réessayer la photo ${index + 1}`}
+                                                                    className={`mt-0.5 inline-flex h-8 items-center gap-1.5 rounded-full px-3 font-sans text-[11.5px] font-semibold ${QUOTE_EASE} ${t.ghostBtn} ${t.focusRing}`}
+                                                                >
+                                                                    <Retry size={13} strokeWidth={2} />
+                                                                    {compactTiles ? null : 'Réessayer'}
+                                                                </button>
+                                                            </span>
+                                                        ) : null}
+
+                                                        {!compactTiles ? (
+                                                            <span className="pointer-events-none absolute left-1.5 top-1.5 flex h-6 min-w-6 items-center justify-center rounded-full bg-black/55 px-1.5 font-sans text-[10.5px] font-semibold tabular-nums text-white backdrop-blur-sm">
+                                                                {index + 1}
+                                                            </span>
+                                                        ) : null}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removePhoto(photo.id)}
+                                                            data-photo-remove={photo.id}
+                                                            aria-label={`Retirer la photo ${index + 1}`}
+                                                            className={`absolute right-1.5 top-1.5 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm ${QUOTE_EASE} hover:bg-black/80 active:scale-95 ${t.focusRing}`}
+                                                        >
+                                                            <Close size={14} strokeWidth={2.2} />
+                                                        </button>
+                                                    </li>
+                                                ))}
+                                            </ul>
+
+                                            {dragging ? (
+                                                <div className={`pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center border-2 border-dashed ${QUOTE_RADIUS_CARD} backdrop-blur-[2px] ${darkMode ? 'border-[#D9B58D]/70 bg-[#0A0A0A]/75 text-[#D9B58D]' : 'border-[#8B5C42] bg-white/85 text-[#8B5C42]'}`}>
+                                                    <PhotoPlus size={26} strokeWidth={1.5} />
+                                                    <span className="mt-2 font-sans text-[14px] font-semibold">
+                                                        {photoRoomLeft > 0 ? 'Déposez pour ajouter' : `Maximum de ${MAX_PHOTOS} photos atteint`}
+                                                    </span>
+                                                </div>
+                                            ) : null}
+                                        </div>
+                                    </>
                                 )}
 
-                                <p className={`mt-4 ${QUOTE_TYPE.micro} ${t.faint}`}>
-                                    Les photos seront transmises avec votre demande et resteront privées dans l’espace de suivi de l’atelier.
+                                {photoNotice || failedPhotoCount > 0 ? (
+                                    <p role="status" className={`mt-3 shrink-0 ${QUOTE_TYPE.micro} font-medium ${darkMode ? 'text-amber-200' : 'text-amber-800'}`}>
+                                        {[
+                                            photoNotice,
+                                            failedPhotoCount > 0
+                                                ? `${failedPhotoCount} photo${failedPhotoCount > 1 ? 's' : ''} à corriger ou retirer. ${photoPreviews.find(photo => photo.status === 'error')?.errorMessage || ''}`
+                                                : ''
+                                        ].filter(Boolean).join(' ')}
+                                    </p>
+                                ) : null}
+
+                                <p className={`mt-3 shrink-0 ${QUOTE_TYPE.micro} ${t.faint}`}>
+                                    Facultatif. Vos photos restent privées et servent uniquement à étudier votre demande.
                                 </p>
                             </div>
                         )}
@@ -1075,7 +1421,11 @@ const QuoteFormIsland = ({ initialDarkMode = false }) => {
                                         {[
                                             ['Meuble', selectedTypeLabel],
                                             ['État', fields.condition || 'À préciser'],
-                                            ['Photos', photoPreviews.length ? `${photoPreviews.length} ajoutée${photoPreviews.length > 1 ? 's' : ''}` : 'Aucune'],
+                                            ['Photos', photoPreviews.length ? [
+                                                `${readyPhotoCount} prête${readyPhotoCount > 1 ? 's' : ''}`,
+                                                preparingPhotoCount ? `${preparingPhotoCount} en préparation` : '',
+                                                failedPhotoCount ? `${failedPhotoCount} à corriger` : ''
+                                            ].filter(Boolean).join(' · ') : 'Aucune'],
                                             ['Contact', fields.firstname]
                                         ].map(([label, value]) => (
                                             <div key={label} className="flex items-baseline justify-between gap-4">

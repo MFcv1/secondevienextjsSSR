@@ -1,6 +1,6 @@
 # Assistant IA pour les demandes de devis
 
-Derniere mise a jour: 2026-08-09
+Derniere mise a jour: 2026-09-13
 Statut: `COLLECTE_ET_REVUE_ACTIVE - IA_NON_IMPLEMENTEE`
 
 ## 1. Decision produit
@@ -42,7 +42,7 @@ Champs:
 - localisation et delai;
 - budget facultatif;
 - description;
-- jusqu'a trois photos compressees;
+- jusqu'a dix photos compressees (deux ou trois recommandees);
 - contact minimal et consentement.
 
 Pas d'appel IA avant un contexte minimum exploitable.
@@ -180,6 +180,31 @@ Avant lancement:
 6. eventuelle bulle site-wide seulement apres stabilisation du devis.
 
 La bulle globale n'appartient pas au MVP initial.
+
+### Contrat actuel de l'étape Photos
+
+Le formulaire prépare les images dès leur sélection, dépôt ou collage : une
+seule préparation à la fois, JPEG de 1800 px maximum et 1536 Kio maximum.
+L'entrée est limitée à 40 Mio et 25 mégapixels. Le décodage dépend du navigateur,
+y compris pour HEIC ; un format illisible demande un export JPEG, sans promettre
+une conversion universelle. La vignette montre exactement le JPEG préparé.
+
+L'ajout et l'enregistrement des tâches sont synchrones. Le petit module de
+préparation accompagne le formulaire, sans téléchargement supplémentaire au
+premier ajout. Les fichiers retirés encore en file ne sont pas décodés ; quitter
+la page libère les aperçus et empêche les traitements tardifs d'en créer.
+
+Le récapitulatif distingue photos prêtes, en préparation et en erreur. L'envoi
+attend les tâches ; une erreur ramène à Photos pour réessayer ou retirer le
+fichier. Les photos restent facultatives, mais aucune photo sélectionnée n'est
+écartée silencieusement. Chaque photo garde son identifiant pour les reprises
+d'upload (trois essais maximum). Le bilan final utilise le compteur durable du
+serveur et signale les transmissions manquantes.
+
+La grille tient dans le panneau fixe sur ordinateur ; sur mobile et tablette,
+elle suit le défilement du document. Le retrait conserve un focus utilisable.
+Tests ciblés : `tests/quote-photo-lifecycle.test.mjs`,
+`tests/quote-client-audit.test.mjs`, `tests/quote-photo-audit.test.cjs`.
 
 ## 11. Definition de done MVP
 

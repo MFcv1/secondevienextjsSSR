@@ -7329,6 +7329,11 @@ html.dark .discount-section__decor, .discount-section--dark .discount-section__d
 .quote-cards > *:nth-child(6) { animation-delay: 470ms; }
 .quote-cards > *:nth-child(n + 7) { animation-delay: 515ms; }
 
+/* Vignette photo du devis : entree douce, la grille se recalcule sans saut. */
+.quote-photo-tile {
+  animation: quote-rise 420ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
 .quote-action-bar {
   animation: quote-bar-in 420ms cubic-bezier(0.32, 0.72, 0, 1) both;
   padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
@@ -7488,6 +7493,7 @@ html.dark .discount-section__decor, .discount-section--dark .discount-section__d
   .quote-stagger > *,
   .quote-cards > *,
   .quote-value,
+  .quote-photo-tile,
   .quote-action-bar {
     animation: none !important;
   }

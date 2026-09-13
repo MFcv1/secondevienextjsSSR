@@ -52,7 +52,10 @@ function harness({ loseCommitResponse = false } = {}) {
         }
     });
     const source = fs.readFileSync('functions/src/quotes/quoteRequests.js', 'utf8');
-    vm.runInContext(source.slice(source.indexOf('async function uploadQuoteRequestPhotoHandler('), source.indexOf('async function finalizeQuoteRequestHandler(')), scope);
+    const start = source.indexOf('async function uploadQuoteRequestPhotoHandler(');
+    const end = source.indexOf('async function listQuoteRequestsAdminHandler(', start);
+    assert.ok(start >= 0 && end > start, 'Le test doit isoler le handler upload actuel.');
+    vm.runInContext(source.slice(start, end), scope);
     return {
         invoke: (content) => scope.uploadQuoteRequestPhotoHandler({ quoteId: 'quote-test', photoId: 'photo-test', buffer: Buffer.from(content) }),
         quote: () => quote, objects
