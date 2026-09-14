@@ -102,3 +102,24 @@ Rollout `build-2026-09-14-005` : `SUCCEEDED`, trafic 100 % ; identifiant servi
 `sv-mu11l0qk-d8697bbad9bb`. `/admin` et `/devis` répondent en HTTP 200 avec cet
 identifiant, admin reste `private, no-store`. Révision observée avant publication
 pour retour arrière : `build-2026-09-14-004`.
+
+## Retour animé pendant la préparation et l'envoi
+
+Source `35dd171`, reportée en `52c88ce` sur la source Hosting isolée : carte de
+devis animée affichée immédiatement dans le dialogue jusqu'à la réponse de
+sauvegarde ou d'envoi. Aucun pourcentage ni délai artificiel. La confirmation
+avant envoi reste obligatoire. Sélecteur natif aéré, hauteur explicite 48 px.
+Huit scénarios UI ordinateur/mobile réussis, dont requêtes maintenues en attente,
+échec puis reprise ; ESLint, diff-check et build Node 22 réussis.
+La capture fournie a servi de référence, X ayant répondu HTTP 403.
+
+Hosting `build-2026-09-14-006` confirmé `SUCCEEDED`, trafic 100 %, identifiant
+`sv-mu12454d-6143d69ed7b4` sur `/admin` et `/devis` (HTTP 200). Hosting précédent
+observé : `build-2026-09-14-005`. Aucune Function redéployée ni e-mail de test envoyé.
+L'utilisateur a confirmé la réception réelle du devis à 60 € avant ce correctif.
+
+Coordination : la tâche panier a signalé que les publications isolées avaient
+omis ses corrections déjà publiées en 004. Elle reprend l'archive exacte 006
+pour réintégrer son lot panier dans le prochain rollout. Ne pas redéployer cet
+ancien worktree isolé sans conserver les changements Hosting ultérieurs.
+La publication combinée est suivie par la tâche panier, pas prouvée ici.
