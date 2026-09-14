@@ -160,7 +160,7 @@ function slotStart(day, hour = 0) {
     }
     return timestamp;
 }
-function detailedTimeline(data, period, days, months, now) {
+function detailedTimeline(data, period, days, months, now, legacyTimeline) {
     const weekly = period === '7j';
     const doc = weekly ? data.recent : data.history;
     const fallback = {
@@ -172,27 +172,44 @@ function detailedTimeline(data, period, days, months, now) {
         ? days.flatMap(day => [0, 6, 12, 18].map((hour, index) => ({ key: `quarterday_${day}-${index}`, timestamp: slotStart(day, hour), day, hour })))
         : months.flatMap(month => ['01', '11', '21'].map(date => ({ key: `tenday_${month}-${date}`, timestamp: slotStart(`${month}-${date}`), day: `${month}-${date}` })));
     // A coverage marker only dates the new collector; it does not migrate the
-    // old visits. Compare each calendar group before replacing the legacy chart.
+    // old visits. Compare each calendar group on its own: a group whose detail
+    // does not cover its sessions keeps a single legacy bar spanning its slots.
     // Never compare summed unique visitors: a visitor may span several slots.
     const groups = weekly ? days : months;
     const groupSize = weekly ? 4 : 3;
-    const incomplete = groups.some((group, index) => {
+    const detailed = groups.map((group, index) => {
         const parent = data.history.buckets[`${weekly ? 'day' : 'month'}_${group}`];
         const detailedSessions = slots.slice(index * groupSize, (index + 1) * groupSize)
             .reduce((sum, slot) => sum + (doc.buckets[slot.key]?.sessions || 0), 0);
-        return detailedSessions !== (parent?.sessions || 0);
+        return detailedSessions === (parent?.sessions || 0);
     });
-    if (incomplete) return fallback;
-    const chartData = slots.map(({ key, timestamp, day, hour }) => {
-        const bucket = doc.buckets[key];
-        const known = doc.detailCoverageStartMs !== undefined && timestamp >= doc.detailCoverageStartMs && timestamp <= now;
-        const value = known ? 0 : null;
-        return { timestamp, name: `${day.slice(8)}/${day.slice(5, 7)}`,
-            tooltipLabel: `${day.slice(8)}/${day.slice(5, 7)}/${day.slice(0, 4)}${weekly ? ` · ${String(hour).padStart(2, '0')} h – ${hour + 6} h` : ` · du ${day.slice(8)} au ${day.endsWith('21') ? new Date(Date.UTC(Number(day.slice(0, 4)), Number(day.slice(5, 7)), 0)).getUTCDate() : Number(day.slice(8)) + 9}`}`,
-            sessions: bucket?.sessions ?? value, visites: bucket ? estimate(registers(bucket.uniqueHll)) : value, ips: 0 };
+    // An empty group before the collector matches vacuously: it cannot justify the detailed chart alone.
+    const collected = detailed.some((match, index) => match
+        && (slots[(index + 1) * groupSize]?.timestamp ?? Infinity) > doc.detailCoverageStartMs);
+    if (!collected) return fallback;
+    const chartData = groups.flatMap((group, index) => {
+        const groupSlots = slots.slice(index * groupSize, (index + 1) * groupSize);
+        if (!detailed[index]) {
+            const { day } = groupSlots[0];
+            const legacy = legacyTimeline[index];
+            return [{ timestamp: groupSlots[0].timestamp, name: `${day.slice(8)}/${day.slice(5, 7)}`,
+                tooltipLabel: `${weekly ? `${day.slice(8)}/${day.slice(5, 7)}/${day.slice(0, 4)} · journée entière` : `${day.slice(5, 7)}/${day.slice(0, 4)} · mois entier`} · détail indisponible`,
+                sessions: legacy.sessions, visites: legacy.visites, ips: 0, span: groupSize, detailUnavailable: true }];
+        }
+        return groupSlots.map(({ key, timestamp, day, hour }) => {
+            const bucket = doc.buckets[key];
+            const known = timestamp >= doc.detailCoverageStartMs && timestamp <= now;
+            const value = known ? 0 : null;
+            return { timestamp, name: `${day.slice(8)}/${day.slice(5, 7)}`,
+                tooltipLabel: `${day.slice(8)}/${day.slice(5, 7)}/${day.slice(0, 4)}${weekly ? ` · ${String(hour).padStart(2, '0')} h – ${hour + 6} h` : ` · du ${day.slice(8)} au ${day.endsWith('21') ? new Date(Date.UTC(Number(day.slice(0, 4)), Number(day.slice(5, 7)), 0)).getUTCDate() : Number(day.slice(8)) + 9}`}`,
+                sessions: bucket?.sessions ?? value, visites: bucket ? estimate(registers(bucket.uniqueHll)) : value, ips: 0 };
+        });
     });
-    const complete = doc.detailCoverageStartMs !== undefined && slots[0].timestamp >= doc.detailCoverageStartMs;
-    return { chartData, chartGranularity: weekly ? 'quarterday' : 'tenday', chartDescription: `${weekly ? '4 barres par jour · tranches de 6 heures' : '3 barres par mois · du 1 au 10, du 11 au 20 et du 21 à la fin du mois'}. Chaque barre déduplique les visiteurs.${complete ? '' : ' Détail historique partiel : les créneaux inconnus restent vides.'}` };
+    const unavailable = detailed.filter(value => !value).length;
+    const firstDetailed = slots[detailed.indexOf(true) * groupSize];
+    const complete = firstDetailed.timestamp >= doc.detailCoverageStartMs;
+    return { chartData, chartGranularity: unavailable ? 'mixed' : weekly ? 'quarterday' : 'tenday',
+        chartDescription: `${weekly ? '4 barres par jour · tranches de 6 heures' : '3 barres par mois · du 1 au 10, du 11 au 20 et du 21 à la fin du mois'}. Chaque barre déduplique les visiteurs.${unavailable ? ` Détail indisponible pour ${unavailable} ${weekly ? `jour${unavailable > 1 ? 's' : ''}` : 'mois'} : une barre atténuée couvre ${weekly ? 'la journée entière' : 'le mois entier'}.` : ''}${complete ? '' : ' Détail historique partiel : les créneaux inconnus restent vides.'}` };
 }
 export function realtimeOverview(data, period, now = Date.now()) {
     if (!data) return null;
@@ -265,7 +282,7 @@ export function realtimeOverview(data, period, now = Date.now()) {
         Array.from({ length: 12 }, (_, index) => {
             const value = monthIndex + index;
             return `${Math.floor(value / 12)}-${String(value % 12 + 1).padStart(2, '0')}`;
-        }), now) : {};
+        }), now, timeline) : {};
     return {
         period, chartData: timeline,
         ...detail,

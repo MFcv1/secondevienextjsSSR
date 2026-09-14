@@ -92,19 +92,29 @@ const TrafficChart = ({ data, darkMode, valueLabel = 'visite', animationKey = 0 
     }, [maxVal, isMobile]);
 
     // Créneaux réguliers ; bâtons fins centrés, même quand le trafic est faible.
+    // Un point peut couvrir plusieurs créneaux (span) lorsque son détail est indisponible.
     const barMetrics = useMemo(() => {
-        const total = data.length;
+        const offsets = [];
+        const unitIndex = [];
+        data.forEach((d, i) => {
+            offsets.push(unitIndex.length);
+            for (let unit = 0; unit < (d.span || 1); unit += 1) unitIndex.push(i);
+        });
+        const total = unitIndex.length;
         const slotW = total ? Math.max(0, chartW) / total : 0;
         const gap = Math.min(2, slotW * 0.08);
         const barW = Math.min(42, slotW - gap);
-        return { slotW, barW, gap: slotW - barW, total };
-    }, [data.length, chartW]);
+        return { slotW, barW, gap: slotW - barW, total, offsets, unitIndex };
+    }, [data, chartW]);
+    // Une barre étendue va du bord gauche du premier créneau au bord droit du dernier.
+    const barX = i => barMetrics.offsets[i] * barMetrics.slotW + barMetrics.gap / 2;
+    const barWidth = i => ((data[i]?.span || 1) - 1) * barMetrics.slotW + barMetrics.barW;
 
     // Labels X — espacement intelligent selon la taille
     const xLabelInterval = useMemo(() => {
         const maxLabels = isMobile ? 5 : 10;
-        return Math.max(1, Math.ceil(data.length / maxLabels));
-    }, [data.length, isMobile]);
+        return Math.max(1, Math.ceil(barMetrics.total / maxLabels));
+    }, [barMetrics.total, isMobile]);
 
     // ── Handlers d'interaction (Scrubbing global) ──
     const handlePointerAction = useCallback((e) => {
@@ -117,11 +127,10 @@ const TrafficChart = ({ data, darkMode, valueLabel = 'visite', animationKey = 0 
 
         const slotW = barMetrics.slotW;
         if (!slotW) return;
-        let idx = Math.floor(localX / slotW);
         // Empêcher le débordement des index
-        idx = Math.max(0, Math.min(barMetrics.total - 1, idx));
+        const unit = Math.max(0, Math.min(barMetrics.total - 1, Math.floor(localX / slotW)));
 
-        setActiveIdx(idx);
+        setActiveIdx(barMetrics.unitIndex[unit]);
     }, [barMetrics]);
 
     const handlePointerLeave = useCallback(() => {
@@ -132,12 +141,12 @@ const TrafficChart = ({ data, darkMode, valueLabel = 'visite', animationKey = 0 
     const tooltipInfo = useMemo(() => {
         if (activeIdx === null || !data[activeIdx]) return null;
         const d = data[activeIdx];
-        const barX = margin.left + (activeIdx + 0.5) * barMetrics.slotW;
+        const barCenter = margin.left + (barMetrics.offsets[activeIdx] + (d.span || 1) / 2) * barMetrics.slotW;
         const barH = d.visites > 0 ? Math.max(2, (d.visites / maxVal) * chartH) : 0;
         const barTopY = margin.top + chartH - barH;
 
         // Tooltip au-dessus de la barre, centré horizontalement
-        let tooltipX = barX;
+        let tooltipX = barCenter;
         let tooltipY = barTopY - 12;
 
         // Clamper pour ne pas déborder
@@ -162,6 +171,14 @@ const TrafficChart = ({ data, darkMode, valueLabel = 'visite', animationKey = 0 
                     <linearGradient id="svgBarGradActive" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="#34d399" stopOpacity={1} />
                         <stop offset="100%" stopColor="#10b981" stopOpacity={0.85} />
+                    </linearGradient>
+                    <linearGradient id="svgBarGradMuted" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#10b981" stopOpacity={0.3} />
+                        <stop offset="100%" stopColor="#059669" stopOpacity={0.12} />
+                    </linearGradient>
+                    <linearGradient id="svgBarGradMutedActive" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#10b981" stopOpacity={0.5} />
+                        <stop offset="100%" stopColor="#059669" stopOpacity={0.25} />
                     </linearGradient>
                     <filter id="glowFilter" x="-50%" y="-50%" width="200%" height="200%">
                         <feGaussianBlur stdDeviation="3.5" result="blur" />
@@ -204,17 +221,25 @@ const TrafficChart = ({ data, darkMode, valueLabel = 'visite', animationKey = 0 
 
                     {/* Barres */}
                     {data.map((d, i) => {
-                        const x = i * barMetrics.slotW + barMetrics.gap / 2;
+                        const x = barX(i);
                         const h = d.visites > 0 ? Math.max(3, (d.visites / maxVal) * chartH) : 0;
                         const y = chartH - h;
                         const isActive = activeIdx === i;
-                        const bw = barMetrics.barW;
+                        const bw = barWidth(i);
                         const radius = Math.min(3, bw / 2);
+                        const muted = Boolean(d.detailUnavailable);
 
                         return (
                             <g key={`${animationKey}-${i}`}>
+                                {/* Détail indisponible : barre atténuée, sans glow */}
+                                {isActive && muted && d.visites > 0 && (
+                                    <rect x={x} y={y} width={bw} height={h}
+                                        rx={radius} ry={radius} fill="url(#svgBarGradMutedActive)"
+                                    />
+                                )}
+
                                 {/* Barre active : glow + agrandissement */}
-                                {isActive && d.visites > 0 && (
+                                {isActive && !muted && d.visites > 0 && (
                                     <rect
                                         x={x - Math.min(3, bw * 0.3)}
                                         y={Math.max(0, y - 5)}
@@ -232,7 +257,7 @@ const TrafficChart = ({ data, darkMode, valueLabel = 'visite', animationKey = 0 
                                         x={x} y={y}
                                         width={bw} height={h}
                                         rx={radius} ry={radius}
-                                        fill="url(#svgBarGrad)"
+                                        fill={muted ? 'url(#svgBarGradMuted)' : 'url(#svgBarGrad)'}
                                     >
                                         <animate attributeName="height" from="0" to={h} dur="520ms" begin={`${Math.min(i * 18, 260)}ms`} fill="freeze" />
                                         <animate attributeName="y" from={chartH} to={y} dur="520ms" begin={`${Math.min(i * 18, 260)}ms`} fill="freeze" />
@@ -253,9 +278,12 @@ const TrafficChart = ({ data, darkMode, valueLabel = 'visite', animationKey = 0 
 
                     {/* Labels X */}
                     {data.map((d, i) => {
-                        if (i % xLabelInterval !== 0 && i !== data.length - 1) return null;
-                        if (i !== data.length - 1 && data.length - 1 - i < xLabelInterval * 0.65) return null;
-                        const x = (i + 0.5) * barMetrics.slotW;
+                        const offset = barMetrics.offsets[i];
+                        const span = d.span || 1;
+                        const isLast = i === data.length - 1;
+                        if (!isLast && Math.ceil(offset / xLabelInterval) * xLabelInterval >= offset + span) return null;
+                        if (!isLast && barMetrics.offsets[data.length - 1] - offset < xLabelInterval * 0.65) return null;
+                        const x = (offset + span / 2) * barMetrics.slotW;
                         return (
                             <text key={`x-${i}`} x={x} y={chartH + (isMobile ? 16 : 22)}
                                 textAnchor="middle" fontSize={isMobile ? 8 : 10}

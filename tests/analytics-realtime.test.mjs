@@ -178,7 +178,15 @@ test('a few new visits do not hide older traffic; full detail automatically rest
     const key = keysFor(now - 86400000).find(key => key.startsWith('quarterday_'));
     const historical = base.recent.buckets[key];
     delete base.recent.buckets[key];
-    assert.equal(realtimeOverview(base, '7j', now).chartGranularity, 'day');
+    const mixed = realtimeOverview(base, '7j', now);
+    assert.equal(mixed.chartGranularity, 'mixed');
+    assert.equal(mixed.chartData.length, 6 * 4 + 1);
+    const legacy = mixed.chartData.filter(point => point.detailUnavailable);
+    assert.deepEqual(legacy.map(point => [point.span, point.sessions]), [[4, 1]]);
+    assert.match(legacy[0].tooltipLabel, /journée entière · détail indisponible/);
+    assert.equal(mixed.chartData.reduce((sum, point) => sum + (point.sessions || 0), 0), 2);
+    assert.ok(mixed.chartData.every((point, index, points) => index === 0 || point.timestamp > points[index - 1].timestamp));
+    assert.match(mixed.chartDescription, /Détail indisponible pour 1 jour :/);
     base.recent.buckets[key] = historical;
     const restored = realtimeOverview(base, '7j', now);
     assert.equal(restored.chartGranularity, 'quarterday');
@@ -192,7 +200,11 @@ test('matching global session totals cannot mask detail assigned to the wrong ca
     const newKey = keysFor(now).find(key => key.startsWith('quarterday_'));
     base.recent.buckets[newKey] = base.recent.buckets[oldKey];
     delete base.recent.buckets[oldKey];
-    assert.equal(realtimeOverview(base, '7j', now).chartGranularity, 'day');
+    const result = realtimeOverview(base, '7j', now);
+    assert.equal(result.chartGranularity, 'mixed');
+    assert.equal(result.chartData.filter(point => point.detailUnavailable).length, 2);
+    assert.ok(result.chartData.every(point => point.detailUnavailable || !point.sessions));
+    assert.equal(result.chartData.reduce((sum, point) => sum + (point.sessions || 0), 0), 1);
 });
 test('TTL preserves history, exclusion removes once, delayed event cannot resurrect', async () => {
     const memory = prepared();

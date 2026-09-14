@@ -15,12 +15,16 @@ Les KPI conservent leur déduplication sur la période. Les détails sont produi
 par le projecteur existant, sans requête ni écoute supplémentaire. Les tranches
 suivent Europe/Paris, y compris les changements d’heure ; le futur reste vide.
 L’ancien format reste lisible par jour/mois avec une mention explicite.
-Le lecteur conserve également cet affichage lorsque les nouveaux détails
-ne couvrent pas toutes les sessions de chaque jour (7 j) ou mois (1 an).
+Chaque jour (7 j) ou mois (1 an) est évalué séparément : si ses tranches couvrent
+toutes ses sessions, il affiche son détail ; sinon une seule barre atténuée couvre
+la largeur de ses tranches, avec « détail indisponible » dans l’infobulle.
+L’affichage par jour/mois n’est conservé que si aucun groupe n’est détaillé.
 La présence de `detailCoverageStartMs` ne suffit jamais à remplacer l’historique.
 La comparaison porte sur les sessions de chaque groupe, pas sur la somme des
 visiteurs uniques, qui peuvent revenir dans plusieurs créneaux. Le passage au
-détail est automatique quand tous les groupes concordent ; les KPI restent identiques.
+détail est automatique groupe par groupe ; les KPI restent identiques.
+Une barre atténuée porte le total unique de sa journée ou de son mois : elle
+peut donc dépasser les tranches voisines.
 `detailCoverageStartMs` distingue la couverture des nouveaux détails : aucun
 historique fin n’est inventé lors d’une mise à niveau. Les infobulles indiquent
 les bornes des tranches. Le détail incomplet est signalé sous le titre.
