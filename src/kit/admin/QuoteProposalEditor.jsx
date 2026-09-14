@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Pencil, Plus, X } from 'lucide-react';
+import { ChevronDown, FileText, LoaderCircle, Pencil, Plus, X } from 'lucide-react';
 import { euroRange } from './quotePresentation';
 import { quoteServices } from '../shared/quoteServices';
 
@@ -12,6 +12,8 @@ export default function QuoteProposalEditor({ detail, proposal, onChange, onActi
   const [editing, setEditing] = useState(false);
   const [adding, setAdding] = useState(false);
   const [previewError, setPreviewError] = useState('');
+  const [pending, setPending] = useState(null);
+  const pendingRef = useRef(false);
   const delivery = detail.proposalEmail?.status;
   const blocked = saving || Boolean(detail.deletedAt) || ['sending', 'delivery_unknown'].includes(delivery);
   const requested = detail.project?.services || [];
@@ -46,12 +48,32 @@ export default function QuoteProposalEditor({ detail, proposal, onChange, onActi
   };
   const ask = (action) => { setConfirmation(action); dialog.current.showModal(); };
   const preview = async () => {
+    if (pendingRef.current) return;
+    pendingRef.current = true;
     setPreviewError('');
-    if (dirty && !await onAction('save')) {
-      setPreviewError('L’enregistrement n’a pas abouti. Vos modifications sont conservées. Consultez le message en haut de la fiche puis réessayez.');
-      return;
+    setPending('preview');
+    ask('send');
+    try {
+      if (dirty && !await onAction('save')) {
+        dialog.current?.close();
+        setPreviewError('L’enregistrement n’a pas abouti. Vos modifications sont conservées. Consultez le message en haut de la fiche puis réessayez.');
+      }
+    } finally {
+      pendingRef.current = false;
+      setPending(null);
     }
-    if (dialog.current?.isConnected) ask('send');
+  };
+  const confirm = async () => {
+    if (pendingRef.current) return;
+    pendingRef.current = true;
+    setPending('send');
+    try {
+      await onAction(confirmation);
+      dialog.current?.close();
+    } finally {
+      pendingRef.current = false;
+      setPending(null);
+    }
   };
   const button = 'inline-flex min-h-10 items-center justify-center gap-2 rounded-xl px-4 py-2 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 disabled:opacity-40';
   const secondary = `${button} bg-stone-100 text-stone-700 hover:bg-stone-200/70 dark:bg-white/10 dark:text-stone-200 dark:hover:bg-white/15`;
@@ -116,11 +138,15 @@ export default function QuoteProposalEditor({ detail, proposal, onChange, onActi
           </button>
           {adding && <label className="block w-full text-xs text-stone-500">
             Prestations du formulaire client
+            <span className="relative mt-2 block">
             <select ref={servicePicker} aria-label="Prestation à ajouter" value="" onChange={e => addService(e.target.value)}
-              className={`mt-2 min-h-11 w-full rounded-xl border px-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/30 ${field}`}>
+              style={{ appearance: 'none', height: 48 }}
+              className={`block w-full rounded-xl border py-3 pl-4 pr-10 text-sm leading-6 outline-none focus:ring-2 focus:ring-blue-500/30 ${field}`}>
               <option value="">Choisir une prestation…</option>
               {available.map(service => <option key={service.id} value={service.id}>{service.label} · {service.min}–{service.max} €</option>)}
             </select>
+            <ChevronDown size={16} aria-hidden="true" className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2" />
+            </span>
           </label>}
           {!available.length && <p className="text-xs text-stone-500">Toutes les prestations disponibles sont ajoutées.</p>}
         </div>
@@ -151,10 +177,25 @@ export default function QuoteProposalEditor({ detail, proposal, onChange, onActi
     {alreadySent && <p className="text-xs text-stone-500">Cette version est déjà envoyée. Modifiez le chiffrage ou le message pour préparer une nouvelle proposition.</p>}
     {dirty && <p className="text-xs text-stone-500">Vos modifications seront enregistrées avant l’aperçu. L’envoi demandera votre confirmation.</p>}
     {previewError && <p role="alert" className="text-xs text-red-700 dark:text-red-300">{previewError}</p>}
-    <dialog ref={dialog} className="m-auto max-h-[85dvh] w-[min(600px,calc(100%-2rem))] overflow-y-auto rounded-2xl border border-stone-200 bg-white p-5 text-stone-900 backdrop:bg-black/50 dark:border-white/10 dark:bg-stone-900 dark:text-white">
+    <dialog ref={dialog} aria-label={pending ? 'Traitement du devis' : 'Vérifier la proposition'} onCancel={event => { if (pendingRef.current) event.preventDefault(); }} className="m-auto max-h-[85dvh] w-[min(600px,calc(100%-2rem))] overflow-y-auto rounded-2xl border border-stone-200 bg-white p-5 text-stone-900 backdrop:bg-black/50 dark:border-white/10 dark:bg-stone-900 dark:text-white">
+      {pending ? <div role="status" aria-live="polite" className="py-3 sm:p-4">
+        <div className="flex items-center gap-4">
+          <div aria-hidden="true" className="relative flex h-20 w-16 shrink-0 items-center justify-center rounded-xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white text-indigo-400 shadow-sm dark:border-indigo-400/20 dark:from-indigo-400/10 dark:to-stone-900">
+            <FileText size={32} strokeWidth={1.2} />
+            <span className="absolute -bottom-1 -right-1 rounded-full bg-white p-1 dark:bg-stone-900"><LoaderCircle size={18} className="animate-spin motion-reduce:animate-none" /></span>
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold">{detail.requestNumber}</p>
+            <p className="mt-1 text-sm text-indigo-600 dark:text-indigo-300">{pending === 'preview' ? 'Préparation de l’aperçu…' : 'Envoi au client…'}</p>
+            <p className="mt-1 text-xs leading-5 text-stone-500">{pending === 'preview' ? 'Enregistrement de vos prestations et de votre message.' : 'Transmission de votre proposition. Patientez un instant.'}</p>
+          </div>
+        </div>
+        <div aria-hidden="true" className="mt-5 h-1.5 overflow-hidden rounded-full bg-indigo-50 dark:bg-white/10"><div className="h-full w-full animate-pulse rounded-full bg-gradient-to-r from-indigo-200 via-indigo-500 to-indigo-200 motion-reduce:animate-none" /></div>
+      </div> : <>
       <h3 className="text-lg font-bold">{confirmation === 'send' ? 'Vérifier la proposition' : 'Confirmer le résultat vérifié'}</h3>
       {confirmation === 'send' ? <div className="my-4 space-y-3 text-sm leading-6"><p>À : {detail.customer?.email}</p><p>Objet : Votre proposition de restauration — {detail.requestNumber}</p><p>Bonjour {detail.customer?.firstName || ''}, voici le chiffrage étudié par l’atelier.</p>{value.lines.map((line, i) => <p key={i}>{line.label} : {euroRange(line)}</p>)}<strong>Total proposé : {euroRange(total)}</strong><p className="whitespace-pre-wrap">{value.message}</p><p>Validité : {value.validDays} jours à compter de l’envoi.</p><p>Répondez à cet e-mail pour confirmer votre accord ou poser vos questions. Les travaux et leur calendrier seront convenus avec l’atelier avant intervention.</p></div> : <p className="my-4 text-sm">{confirmation === 'confirm_sent' ? 'Vous confirmez avoir vérifié que ce message a été envoyé.' : 'Vous confirmez avoir vérifié que ce message n’a pas été envoyé. Une nouvelle tentative sera alors possible.'}</p>}
-      <div className="flex flex-wrap justify-end gap-3"><button type="button" className={secondary} onClick={() => dialog.current.close()}>Retour</button><button type="button" className={`${button} bg-stone-950 text-white dark:bg-white dark:text-stone-950`} disabled={saving} onClick={() => { dialog.current.close(); void onAction(confirmation); }}>{confirmation === 'send' ? 'Envoyer au client' : 'Confirmer ma vérification'}</button></div>
+      <div className="flex flex-wrap justify-end gap-3"><button type="button" className={secondary} onClick={() => dialog.current.close()}>Retour</button><button type="button" className={`${button} bg-stone-950 text-white dark:bg-white dark:text-stone-950`} disabled={saving} onClick={() => void confirm()}>{confirmation === 'send' ? 'Envoyer au client' : 'Confirmer ma vérification'}</button></div>
+      </>}
     </dialog>
   </section>;
 }

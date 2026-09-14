@@ -96,3 +96,28 @@ test('failed automatic save preserves draft and prevents preview and email', asy
   await expect(page.getByRole('dialog')).toBeVisible();
   expect(await page.evaluate(() => window.actions)).toEqual(['save', 'save']);
 });
+
+test('preparation and sending show immediate progress until each request resolves', async ({ page }, info) => {
+  await page.getByRole('button', { name: 'Modifier le devis' }).click();
+  await page.getByRole('spinbutton', { name: 'Prix proposé — Ponçage manuel' }).fill('60');
+  await page.getByRole('button', { name: 'Ajouter une prestation' }).click();
+  const picker = page.getByRole('combobox', { name: 'Prestation à ajouter' });
+  expect((await picker.boundingBox()).height).toBe(48);
+  await page.evaluate(() => { window.holdAction = 'save'; });
+  await page.getByRole('button', { name: 'Prévisualiser et envoyer' }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toContainText('Préparation de l’aperçu');
+  await expect(dialog.getByRole('button', { name: 'Envoyer au client' })).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeVisible();
+  await dialog.screenshot({ path: info.outputPath('quote-progress.png') });
+  await page.evaluate(() => window.releaseAction());
+  await expect(dialog).toContainText('Vérifier la proposition');
+  await page.evaluate(() => { window.holdAction = 'send'; });
+  await dialog.getByRole('button', { name: 'Envoyer au client' }).click();
+  await expect(dialog).toContainText('Envoi au client');
+  expect(await page.evaluate(() => window.actions)).toEqual(['save', 'send']);
+  await page.evaluate(() => window.releaseAction());
+  await expect(dialog).not.toBeVisible();
+  await expect(page.getByText('Proposition envoyée au client.', { exact: true }).first()).toBeVisible();
+});

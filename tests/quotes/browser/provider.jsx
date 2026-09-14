@@ -7,6 +7,7 @@ export const loadQuoteRequestsAdmin = async () => ({ quotes: [quote], hasMore: f
 export const getQuoteRequestAdmin = async () => ({ quote });
 export async function updateQuoteRequestAdmin(payload) {
   window.actions = [...(window.actions || []), payload.action];
+  if (window.holdAction === payload.action) await new Promise(resolve => { window.releaseAction = resolve; });
   if (payload.action === 'save' && window.failSave) throw new Error('Enregistrement indisponible. Réessayez.');
   quote = { ...quote, version: quote.version + 1 };
   if (payload.action === 'save') quote = { ...quote, status: payload.status, internalNotes: payload.internalNotes, proposal: payload.proposal };

@@ -668,6 +668,11 @@ l'aperçu et la confirmation d'envoi : le bouton de prévisualisation enregistre
 automatiquement les modifications, puis ouvre l'aperçu uniquement en cas de
 succès. Un échec conserve la saisie et affiche une erreur près du bouton.
 L'en-tête de la fiche reste dans le flux normal, sans suivre le défilement.
+La fenêtre affiche immédiatement une carte de progression pendant la sauvegarde
+et l'envoi, jusqu'à leur réponse réelle, sans pourcentage ni délai artificiel.
+L'animation respecte la réduction des mouvements ; aucune confirmation d'envoi
+n'est accessible pendant le traitement. Le sélecteur de prestation garde une
+hauteur explicite de 48 px, y compris avec le rendu natif de Safari.
 La proposition envoyée reste consultable,
 distincte du brouillon modifiable. Les notes internes ne partent jamais au client.
 L'e-mail propose une réponse à l'atelier ; aucun PDF contractuel ou signature
