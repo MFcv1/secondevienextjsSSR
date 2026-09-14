@@ -120,7 +120,7 @@
     "test:billing-onboarding": "node --test tests/billing-onboarding-contract.test.cjs",
     "test:invoices": "node --test tests/invoicing/manual-invoices.test.cjs",
     "test:email-design": "node --test tests/email-visual-system.test.cjs",
-    "test:quotes": "node --test tests/quote-requests.test.cjs tests/quote-workflow.test.cjs tests/quote-admin-photos.test.cjs tests/quote-photo-audit.test.cjs tests/quote-receipt-audit.test.cjs tests/quote-client-audit.test.mjs tests/quote-photo-lifecycle.test.mjs",
+    "test:quotes": "node --test tests/quote-requests.test.cjs tests/quote-workflow.test.cjs tests/quote-admin-photos.test.cjs tests/quote-photo-audit.test.cjs tests/quote-receipt-audit.test.cjs tests/quote-client-audit.test.mjs tests/quote-photo-lifecycle.test.mjs tests/quote-service-catalog.test.mjs",
     "test:quotes:ui": "playwright test tests/quotes/browser/admin.spec.mjs --project=desktop --project=mobile",
     "test:newsletter": "node --test tests/newsletter-rewards.test.cjs",
     "test:admin-cache": "node --test tests/admin-data-cache-contract.test.mjs tests/admin-navigation-contract.test.mjs",

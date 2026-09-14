@@ -649,8 +649,18 @@ sans migration en masse. L'envoi détermine son statut ; l'accord est consigné
 par l'admin après une réponse du client, uniquement sur le chiffrage envoyé.
 La clôture ne crée ni commande, ni paiement, ni mouvement de stock.
 
-Le chiffrage reprend explicitement la grille enregistrée dans le projet ou
-utilise des prestations manuelles : 1 à 20 lignes, prix minimum/maximum en
+L'interface présente d'abord le devis demandé, puis l'action « Modifier le devis ».
+Elle initialise les prestations déjà sélectionnées sans leur inventer un prix
+fixe. L'ajout utilise le même catalogue `src/kit/shared/quoteServices.js` que
+le formulaire public ; les prestations présentes ne sont plus proposées.
+Chaque ligne affiche la fourchette comme repère et un seul champ de prix
+proposé, à saisir explicitement. Le total est recalculé et le message permet
+d'expliquer les prestations ajoutées ou retirées. La validité est repliée.
+Les boutons secondaires ont un fond discret, sans contour appuyé, et des
+espacements explicites. Une ancienne proposition en fourchette reste lisible,
+mais doit être précisée avant un nouvel envoi depuis cette interface.
+
+Le contrat serveur conserve 1 à 20 lignes, prix minimum/maximum en
 centimes entiers, total strictement positif plafonné à 100 000 €, validité de
 1 à 90 jours et message client borné à 4000 caractères. Le serveur recalcule
 les totaux. Minimum = maximum donne un prix fixe. Une sauvegarde précède

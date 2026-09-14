@@ -51,13 +51,25 @@ test('photos open privately; Escape restores focus; no horizontal overflow', asy
   await page.screenshot({ path: info.outputPath('quotes-layout.png'), fullPage: true });
 });
 
-test('pricing must be saved; preview sends only after confirmation; trash can be restored', async ({ page }) => {
-  await page.getByRole('button', { name: 'Reprendre la grille du projet' }).click();
+test('pricing must be saved; preview sends only after confirmation; trash can be restored', async ({ page }, info) => {
+  await page.getByRole('button', { name: 'Modifier le devis' }).click();
+  await page.getByRole('spinbutton', { name: 'Prix proposé — Ponçage manuel' }).fill('80');
+  await page.getByRole('button', { name: 'Ajouter une prestation' }).click();
+  await page.getByRole('combobox', { name: 'Prestation à ajouter' }).selectOption('protection');
+  await page.getByRole('spinbutton', { name: 'Prix proposé — Finition & protection' }).fill('35');
+  await page.getByRole('textbox', { name: 'Message au client' }).fill('Je propose une finition protectrice en complément du ponçage. Le devis est de 115 €.');
+  await page.getByRole('button', { name: 'Ajouter une prestation' }).click();
+  await expect(page.getByRole('combobox', { name: 'Prestation à ajouter' }).locator('option[value="protection"]')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Ajouter une prestation' }).click();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.getByRole('region', { name: 'Devis à proposer' }).screenshot({ path: info.outputPath('quote-editor.png') });
   await expect(page.getByRole('button', { name: 'Prévisualiser et envoyer' })).toBeDisabled();
   await page.getByRole('button', { name: 'Enregistrer les modifications' }).click();
   await page.getByRole('button', { name: 'Prévisualiser et envoyer' }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog).toContainText('camille@example.test');
+  await expect(dialog).toContainText('115,00');
+  await expect(dialog).toContainText('finition protectrice');
   expect(await page.evaluate(() => window.actions)).toEqual(['save']);
   await dialog.getByRole('button', { name: 'Envoyer au client' }).click();
   await expect(page.getByText('Proposition envoyée au client.', { exact: true }).first()).toBeVisible();
