@@ -1680,7 +1680,12 @@ img {
 }
 
 .category-product-list {
+  position: relative;
+  align-content: start;
   align-items: start;
+  /* Les cartes bougent pendant le filtrage : elles ne doivent pas servir
+     d'ancre au scroll, sinon la page (et le curseur de prix) se décale. */
+  overflow-anchor: none;
 }
 
 @media (max-width: 767px) {

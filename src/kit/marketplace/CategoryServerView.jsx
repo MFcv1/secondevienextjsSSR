@@ -233,17 +233,17 @@ const FilterForm = ({
 
       {variant === 'mobile' ? (
         <Link href={resetHref} prefetch={false} data-category-reset-link hidden={!hasActiveFilters} className={`mt-4 inline-block text-[12px] underline underline-offset-4 ${darkMode ? 'text-stone-400' : 'text-[#9C8268]'}`}>
-          R\u00e9initialiser
+          Réinitialiser
         </Link>
       ) : (
         <Link href={resetHref} prefetch={false} data-category-reset-link hidden={!hasActiveFilters} className={`mt-4 block w-full rounded-lg py-2.5 text-center text-[11px] font-bold uppercase tracking-widest transition-colors ${darkMode ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-stone-100 text-stone-700 hover:bg-stone-200'}`}>
-          R\u00e9initialiser les filtres
+          Réinitialiser les filtres
         </Link>
       )}
 
       {variant === 'mobile' ? (
         <button type="submit" className={`mt-6 w-full flex-shrink-0 rounded-md py-4 text-[13px] font-bold transition-colors ${darkMode ? 'bg-stone-100 text-stone-950' : 'bg-stone-950 text-white'}`}>
-          Voir les <span data-category-filtered-count>{filteredCount}</span> r\u00e9sultat{filteredCount !== 1 ? 's' : ''}
+          Voir les <span data-category-filtered-count>{filteredCount}</span> résultat{filteredCount !== 1 ? 's' : ''}
         </button>
       ) : null}
     </form>
@@ -410,10 +410,10 @@ export default function CategoryServerView({
 
             <div className="min-w-0 flex-1">
               <div className="flex flex-col items-center justify-center py-20 text-center" data-category-empty-state hidden={filteredItems.length !== 0}>
-                <p className={`mb-2 font-serif text-lg ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>Aucun produit trouv\u00e9</p>
+                <p className={`mb-2 font-serif text-lg ${darkMode ? 'text-stone-400' : 'text-stone-500'}`}>Aucun produit trouvé</p>
                 <p className={`mb-6 text-[13px] ${darkMode ? 'text-stone-600' : 'text-stone-400'}`}>Essayez de modifier vos filtres</p>
                 <Link href={categoryHref} prefetch={false} data-category-reset-link hidden={!hasActiveFilters} className={`rounded-full border px-6 py-2.5 text-[10px] font-bold uppercase tracking-widest transition-colors ${darkMode ? 'border-stone-700 text-stone-300 hover:border-stone-400' : 'border-stone-300 text-stone-600 hover:border-stone-500'}`}>
-                  R\u00e9initialiser
+                  Réinitialiser
                 </Link>
               </div>
 
@@ -455,7 +455,7 @@ export default function CategoryServerView({
               <div className="mb-8 flex items-center justify-between">
                 <div>
                   <h3 id="category-filter-dialog-title" className="font-serif text-2xl">Filtrer</h3>
-                  <p className={`mt-1 text-[12px] ${darkMode ? 'text-stone-500' : 'text-stone-500'}`}><span data-category-filtered-count>{filteredItems.length}</span> r\u00e9sultat{filteredItems.length !== 1 ? 's' : ''}</p>
+                  <p className={`mt-1 text-[12px] ${darkMode ? 'text-stone-500' : 'text-stone-500'}`}><span data-category-filtered-count>{filteredItems.length}</span> résultat{filteredItems.length !== 1 ? 's' : ''}</p>
                 </div>
                 <Link href={buildCategoryHref(categoryId, state, {
                   selectedMaterials: [],
@@ -465,7 +465,7 @@ export default function CategoryServerView({
                   priceRange: [0, state.roundedMaxPrice],
                   searchQuery: '',
                 })} prefetch={false} data-category-reset-link hidden={!hasActiveFilters} className={`text-[12px] underline underline-offset-4 ${darkMode ? 'text-stone-400' : 'text-[#9C8268]'}`}>
-                  R\u00e9initialiser
+                  Réinitialiser
                 </Link>
                 <button type="button" data-category-close-filters data-category-filter-initial-focus className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${darkMode ? 'hover:bg-white/10' : 'hover:bg-stone-100'}`} aria-label="Fermer les filtres">
                   <X size={16} />
@@ -491,7 +491,7 @@ export default function CategoryServerView({
           <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.8fr_1.2fr]">
             <div>
               <p className={`mb-3 font-sans text-[10px] font-black uppercase tracking-[0.24em] ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>
-                Guide cat\u00e9gorie
+                Guide catégorie
               </p>
               <h2 id="category-seo-more" className={`font-serif text-[26px] leading-tight tracking-normal md:text-[32px] ${darkMode ? 'text-white' : 'text-stone-950'}`}>
                 Choisir {categoryTitle.toLocaleLowerCase('fr-FR')} sans perdre le charme de l&apos;ancien
