@@ -85,3 +85,20 @@ Identifiant servi : `sv-mu1151al-d52c86310c39`. Vérification après publication
 Les Functions n'ont pas été redéployées lors de cette seconde livraison.
 Révision précédente observée juste avant déploiement et disponible pour retour
 arrière : `build-2026-09-14-002` (identifiant `sv-mu10lvuk-5fc4f71b41b1`).
+
+## Correction de l'aperçu et du défilement
+
+Source `952b802` : en-tête dans le flux normal ; prévisualisation accessible
+sur un brouillon valide, avec sauvegarde automatique avant ouverture. Un échec
+de sauvegarde conserve la saisie, affiche une erreur locale et bloque l'aperçu.
+L'e-mail exige toujours la confirmation explicite dans l'aperçu.
+
+Six scénarios Playwright ordinateur/mobile réussis, dont échec de sauvegarde
+et nouvelle tentative ; ESLint et diff-check sans erreur, build Node 22 réussi.
+Aucun e-mail réel envoyé pour ces vérifications. Source déployée depuis le
+worktree isolé, hors modifications parallèles. Hosting seul, aucune Function.
+
+Rollout `build-2026-09-14-005` : `SUCCEEDED`, trafic 100 % ; identifiant servi
+`sv-mu11l0qk-d8697bbad9bb`. `/admin` et `/devis` répondent en HTTP 200 avec cet
+identifiant, admin reste `private, no-store`. Révision observée avant publication
+pour retour arrière : `build-2026-09-14-004`.
