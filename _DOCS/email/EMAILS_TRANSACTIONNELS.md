@@ -370,8 +370,10 @@ ni IAM cloud, ni délivrabilité réelle.
 
 Le manifeste ciblé de `updateQuoteRequestAdminGen2` inclut désormais les mêmes
 secrets e-mail que le transport devis existant, `FIREBASE_CONFIG`, le choix du
-fournisseur et 60 secondes. Avant livraison, vérifier leurs versions et droits
-réels sur le sandbox ; aucune activation ni aucun e-mail réel dans ce chantier.
+fournisseur et 60 secondes. Déployé sur sandbox le 14 septembre avec Gmail et
+les versions vérifiées `GMAIL_EMAIL@2`, `GMAIL_PASSWORD@6`, `RESEND_API_KEY@1`.
+Aucun e-mail réel envoyé durant cette livraison ; la recette d'envoi reste
+à effectuer par l'admin. [Livraison](../admin/DEVIS_LIVRAISON_2026-09-14.md).
 
 Modele: `quote-request-received`.
 
