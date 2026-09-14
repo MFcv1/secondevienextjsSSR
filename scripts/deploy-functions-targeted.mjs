@@ -580,6 +580,7 @@ export const GCLOUD_GEN2_TARGETS = Object.freeze({
     memory: '512Mi', cpu: '1', timeout: '60s', concurrency: '4',
     minInstances: '0', maxInstances: '1', ingressSettings: 'all',
     secrets: ['PAYMENT_LINK_HMAC_SECRET=PAYMENT_LINK_HMAC_SECRET:1'],
+    environmentVariables: [G6_FIREBASE_CONFIG],
   }),
   ...G6_GEN2_TARGETS,
   ...G7_GEN2_TARGETS,
