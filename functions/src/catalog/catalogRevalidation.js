@@ -144,7 +144,9 @@ async function verifyServedCatalog(fetchImpl, endpoint, identity, impactPlan, de
     ].filter(Boolean).filter((entry, index, entries) => (
         entries.findIndex((candidate) => candidate.path === entry.path) === index
     ));
-    const attempts = [0, 300, 900];
+    // Route-handler invalidation regenerates on the next visit. Give that
+    // regeneration a bounded settling window without invalidating again.
+    const attempts = [0, 1000, 3000, 6000];
     let lastError = null;
     for (const waitMs of attempts) {
         if (waitMs) await delayImpl(waitMs);

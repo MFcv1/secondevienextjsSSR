@@ -4,6 +4,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { BACKLOG_FILTER } from './lib/deferred-queue-alerts.mjs';
 
 const PROJECT_ID = 'secondevienextjsssr';
 const ENVIRONMENT = 'sandbox';
@@ -102,8 +103,8 @@ const POLICIES = Object.freeze([
   },
   {
     displayName: 'G1 Sandbox - Cloud Tasks backlog',
-    conditionName: 'Profondeur de queue non nulle pendant 5 minutes',
-    filter: 'metric.type="cloudtasks.googleapis.com/queue/depth" AND resource.type="cloud_tasks_queue"',
+    conditionName: 'Travail immédiat en attente pendant 5 minutes',
+    filter: BACKLOG_FILTER,
     duration: '300s',
     predicate: '> 0',
     aggregation: { alignmentPeriod: '60s', perSeriesAligner: 'ALIGN_MAX' },
@@ -307,6 +308,12 @@ function logMatchPolicyIsCurrent(current, definition, channels) {
 
 function ensurePolicy(definition, channels, apply, existing) {
   const current = existing.find((policy) => policy.displayName === definition.displayName);
+  if (definition.filter === BACKLOG_FILTER
+    && current?.conditions?.[0]?.conditionThreshold?.filter !== BACKLOG_FILTER) {
+    // The targeted migration installs and reads back transport protection first.
+    // Never silently recreate the old alarm or exclude deferred work without it.
+    fail('BACKLOG_REQUIRES_TARGETED_REPAIR: scripts/repair-deferred-queue-alerts.mjs');
+  }
   if (definition.logMatchFilter) {
     if (current && logMatchPolicyIsCurrent(current, definition, channels)) {
       return { name: current.name, displayName: definition.displayName, state: 'EXISTING' };

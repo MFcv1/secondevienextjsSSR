@@ -85,6 +85,16 @@ async function assertBuildStillCurrent(db, leaseToken, targetRevision) {
     return snap.data();
 }
 
+function assertCommittedBuildLease(state, token, revision, nowMs = Date.now()) {
+    // Storage already committed this revision. A later source mutation must not
+    // prevent recording that fact; ownership, expiry and rollback still fence it.
+    if (Number(state.desiredRevision || 0) < revision || Number(state.publishedRevision || 0) > revision) {
+        throw new Error('BUILD_OBSOLETE');
+    }
+    if (isRollbackActive(state, nowMs)) throw new Error('ROLLBACK_ACTIVE');
+    return assertLease({ ...state, desiredRevision: revision }, token, revision, nowMs);
+}
+
 async function renewBuildLease(db, { leaseToken, targetRevision, now = new Date(), durationMs = 120000, minimumRemainingMs = 30000 }) {
     const controlRef = db.doc(CONTROL_DOCUMENT);
     return db.runTransaction(async (transaction) => {
@@ -263,6 +273,20 @@ async function dispatchBuildRequest(dependencies, input = {}) {
     return build(dependencies, { ...input, targetRevision: desiredRevision });
 }
 
+async function supersedeUncommittedBuild({ db, buildRef, token, revision, now, enqueueSuccessor = enqueueSuccessorBuild }) {
+    const state = (await db.doc(CONTROL_DOCUMENT).get()).data();
+    const successor = Number(state?.desiredRevision || 0);
+    if (successor <= revision || state.mode === 'paused' || isRollbackActive(state, now.getTime())) return false;
+    const quietUntil = state.quietUntil?.toDate?.() || state.quietUntil;
+    const due = quietUntil instanceof Date && quietUntil > now ? quietUntil : now;
+    // Confirm delivery before acknowledging this obsolete attempt. An enqueue
+    // failure must still fail the task so Cloud Tasks can retry it.
+    await enqueueSuccessor(successor, due);
+    await releaseBuildLease(db, { leaseToken: token, now, updates: { dirty: true, buildState: 'queued' } });
+    await buildRef.set({ state: 'superseded', supersededByRevision: successor, finishedAt: serverTimestamp() }, { merge: true });
+    return { result: 'superseded', revision, successorRevision: successor };
+}
+
 async function buildCatalog(dependencies, input = {}) {
     const {
         db,
@@ -438,7 +462,7 @@ async function buildCatalog(dependencies, input = {}) {
                     const controlRef = db.doc(CONTROL_DOCUMENT);
                     const snap = await transaction.get(controlRef);
                     const state = snap.data() || {};
-                    assertLease(state, token, requestedRevision);
+                    assertCommittedBuildLease(state, token, requestedRevision, now().getTime());
                     transaction.set(controlRef, {
                         stateVersion: nextStateVersion(state),
                         buildState: 'pointer_committed_control_pending',
@@ -596,6 +620,16 @@ async function buildCatalog(dependencies, input = {}) {
         });
         return { result: 'published', buildId, release, revision: requestedRevision };
     } catch (error) {
+        // A newer source revision is normal under consecutive edits. Once the
+        // pointer is committed, however, keep the existing recovery/error path.
+        if (!pointerCommitted && error.message === 'BUILD_OBSOLETE') {
+            const result = await supersedeUncommittedBuild({ db, buildRef, token,
+                revision: requestedRevision, now: now(), enqueueSuccessor: dependencies.enqueueSuccessor });
+            if (result) {
+                logger('info', { phase: 'build', buildId, targetRevision: requestedRevision, result: 'superseded' });
+                return result;
+            }
+        }
         if (isPreconditionError(error)) {
             const latest = await readCurrentPointer(bucket).catch(() => null);
             if (Number(latest?.value?.revision || 0) >= requestedRevision) {
@@ -670,6 +704,7 @@ module.exports = {
     SOURCE_PATH,
     acquireBuildLease,
     assertBuildStillCurrent,
+    assertCommittedBuildLease,
     buildCatalog,
     buildRecordId,
     dispatchBuildRequest,
@@ -678,5 +713,6 @@ module.exports = {
     projectCatalogActivity,
     renewBuildLease,
     releaseBuildLease,
+    supersedeUncommittedBuild,
     updateOwnedBuildState
 };

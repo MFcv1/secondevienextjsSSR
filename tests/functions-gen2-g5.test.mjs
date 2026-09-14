@@ -223,7 +223,7 @@ test('G5-A5 prouve le runtime OTP et autorise seulement le cutover client', () =
   assert.equal(manifest.runtimeEvidence.verifiedTokenHashPresent, true);
   assert.equal(manifest.runtimeEvidence.otpDisplayed, false);
   assert.equal(manifest.runtimeEvidence.checkoutTokenDisplayed, false);
-  assert.equal(manifest.postDeploymentInventory.cloudFunctions, 163);
+  assert.equal(manifest.postDeploymentInventory.cloudFunctions, 162);
   assert.equal(manifest.postDeploymentInventory.cloudGen2, 23);
   const proof = read('scripts/prove-guest-otp-verification-g5.mjs');
   assert.match(proof, /SEND_TARGET = 'sendGuestCheckoutOtpGen2'/);
@@ -238,7 +238,7 @@ test('G5-A5 prouve le runtime OTP et autorise seulement le cutover client', () =
 test('G5-A5 ferme le cutover, le rollback reel et la reactivation finale', () => {
   const manifest = JSON.parse(read('apphostingaudit/manifests/functions-gen2-g5-verify-guest-checkout-otp-rollout.json'));
   assert.equal(manifest.reconciliation.sourceExports, 167);
-  assert.equal(manifest.reconciliation.cloudFunctions, 163);
+  assert.equal(manifest.reconciliation.cloudFunctions, 162);
   assert.equal(manifest.reconciliation.cloudGen1, 139);
   assert.equal(manifest.reconciliation.cloudGen2, 23);
   assert.equal(manifest.function.name, 'verifyGuestCheckoutOtpGen2');
@@ -281,7 +281,7 @@ test('G5-A6 prepare uniquement sendCustomerLoginOtpGen2 avec runtime OTP reutili
     'OTP_HMAC_SECRET=OTP_HMAC_SECRET:1'
   ]);
   assert.equal(manifest.preflight.sourceExportsWithParallel, 168);
-  assert.equal(manifest.preflight.cloudFunctions, 163);
+  assert.equal(manifest.preflight.cloudFunctions, 162);
   assert.equal(manifest.functions[0].cloud.present, true);
   assert.equal(manifest.functions[0].cloud.revision, 'sendcustomerloginotpgen2-00002-kod');
   assert.equal(manifest.iamEvidence.reusedRuntimeFrom, 'G5-A4 sendGuestCheckoutOtpGen2');

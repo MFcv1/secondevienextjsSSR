@@ -33,7 +33,7 @@ const {
 const { collectRetainedSnapshotPaths } = require('../../functions/src/catalog/mediaGarbageCollection');
 const { planReleaseGarbageCollection } = require('../../functions/src/catalog/releaseGarbageCollection');
 const { reconcileCatalog } = require('../../functions/src/catalog/catalogReconciler');
-const { renewBuildLease } = require('../../functions/src/catalog/buildCatalogSnapshot');
+const { assertCommittedBuildLease, buildCatalog, finalizeControlState, renewBuildLease, supersedeUncommittedBuild } = require('../../functions/src/catalog/buildCatalogSnapshot');
 
 class FakeFile {
   constructor(name, bucket, options = {}) {
@@ -108,6 +108,70 @@ class FakeDb {
     });
   }
 }
+
+test('une publication dépassée prépare son successeur sans marquer la nouvelle version en échec', async () => {
+  const now = new Date();
+  const controlPath = 'sys_catalog_publication/secondevie';
+  const db = new FakeDb({ [controlPath]: { ...initialPublicationState(now), desiredRevision: 7, dirty: true } });
+  db.collection = () => ({ get: async () => {
+    db.values.set(controlPath, { ...db.values.get(controlPath), desiredRevision: 8, quietUntil: new Date(now.getTime() + 1000) });
+    return { docs: [] };
+  } });
+  const deliveries = [];
+  const logs = [];
+  const bucket = new FakeBucket();
+  const result = await buildCatalog({ db, bucket, now: () => now, leaseToken: 'local-7',
+    enqueueSuccessor: async (...args) => deliveries.push(args), logger: (level, event) => logs.push({ level, event }) }, { targetRevision: 7 });
+  assert.equal(result.result, 'superseded');
+  assert.equal(deliveries.length, 1);
+  assert.equal(deliveries[0][0], 8);
+  assert.equal(deliveries[0][1].getTime(), now.getTime() + 1000);
+  assert.equal(db.values.get(controlPath).dirty, true);
+  assert.equal(db.values.get(controlPath).buildState, 'queued');
+  assert.equal(db.values.get(controlPath).leaseToken, null);
+  assert.equal(db.values.get(controlPath).consecutiveFailures, 0);
+  assert.equal(bucket.store.has(POINTER_PATHS.current), false);
+  assert.ok(logs.every(log => log.level !== 'error'));
+});
+
+test('un successeur non distribué échoue encore et un lease plus récent reste intact', async () => {
+  const now = new Date();
+  const controlPath = 'sys_catalog_publication/secondevie';
+  const state = { desiredRevision: 8, leaseToken: 'new-worker', leaseTargetRevision: 8, buildState: 'building', dirty: true };
+  const db = new FakeDb({ [controlPath]: state });
+  const input = { db, buildRef: db.doc('builds/old'), token: 'old-worker', revision: 7, now };
+  await assert.rejects(supersedeUncommittedBuild({ ...input,
+    enqueueSuccessor: async () => { throw Error('ENQUEUE_UNAVAILABLE'); } }), /ENQUEUE_UNAVAILABLE/);
+  assert.deepEqual(db.values.get(controlPath), state);
+  assert.equal(db.values.has('builds/old'), false);
+  await supersedeUncommittedBuild({ ...input, enqueueSuccessor: async () => {} });
+  assert.deepEqual(db.values.get(controlPath), state);
+  assert.equal(db.values.get('builds/old').state, 'superseded');
+  db.values.set(controlPath, { ...state, mode: 'paused' });
+  assert.equal(await supersedeUncommittedBuild({ ...input, enqueueSuccessor: async () => assert.fail('paused') }), false);
+});
+
+test('après CAS une nouvelle mutation conserve le fait publié et le prochain travail sans affaiblir le lease', async () => {
+  const now = new Date();
+  const state = { ...initialPublicationState(now), desiredRevision: 8, publishedRevision: 6,
+    leaseToken: 'worker-7', leaseTargetRevision: 7, leaseExpiresAt: new Date(now.getTime() + 120000),
+    dirty: true, quietUntil: new Date(now.getTime() + 1000) };
+  assert.throws(() => assertLease(state, 'worker-7', 7, now.getTime()), /BUILD_OBSOLETE/);
+  assert.equal(assertCommittedBuildLease(state, 'worker-7', 7, now.getTime()), true);
+  for (const patch of [{ leaseToken: 'another' }, { leaseExpiresAt: new Date(0) },
+    { mode: 'paused' }, { leaseTargetRevision: 8 }, { publishedRevision: 8 }, { desiredRevision: 6 }]) {
+    assert.throws(() => assertCommittedBuildLease({ ...state, ...patch }, 'worker-7', 7, now.getTime()));
+  }
+  const db = new FakeDb({ 'sys_catalog_publication/secondevie': state });
+  await finalizeControlState(db, { leaseToken: 'worker-7', targetRevision: 7, now, allowNewerRevision: true,
+    updates: { publishedRevision: 7, dirty: false, buildState: 'revalidating' } });
+  const actual = db.values.get('sys_catalog_publication/secondevie');
+  assert.equal(actual.publishedRevision, 7);
+  assert.equal(actual.desiredRevision, 8);
+  assert.equal(actual.dirty, true);
+  assert.equal(actual.buildState, 'queued');
+  assert.equal(actual.quietUntil, state.quietUntil);
+});
 
 class SerializedFakeDb extends FakeDb {
   constructor(values = {}) {

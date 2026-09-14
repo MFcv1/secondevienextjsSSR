@@ -181,9 +181,14 @@ test('the complete Next API inventory is public-bounded or strongly authorized',
   assert.deepEqual(routeFiles, [
     'app/api/admin/catalog-publication-status/route.js',
     'app/api/admin/function-metrics/route.js',
+    'app/api/admin/project-costs/route.js',
+    'app/api/admin/sandbox-restock-eligibility/route.js',
+    'app/api/auth/passkeys/[operation]/route.js',
     'app/api/catalog/route.js',
     'app/api/catalog/version/route.js',
+    'app/api/public/[operation]/route.js',
     'app/api/revalidate-catalog/route.js',
+    'app/api/runtime-ingress-probe/route.js',
     'app/api/search/route.js',
   ]);
 
@@ -203,6 +208,32 @@ test('the complete Next API inventory is public-bounded or strongly authorized',
   assert.match(revalidation, /maxBytes:\s*512 \* 1024/);
   assert.match(catalog, /Math\.min\(value, 120\)/);
   assert.match(search, /slice\(0, 80\)/);
+  for (const file of ['project-costs', 'sandbox-restock-eligibility']) {
+    const route = read(`app/api/admin/${file}/route.js`);
+    assert.match(route, /await authorizeAdminRequest\(request\)/);
+    assert.match(route, /if \(!(auth|admin)\.ok\) return/);
+    assert.match(route, /no-store/);
+  }
+  const eligibility = read('app/api/admin/sandbox-restock-eligibility/route.js');
+  assert.match(eligibility, /maxBytes: 8192/);
+  assert.match(eligibility, /products.length > 10/);
+  for (const [route, handler, server] of [
+    ['auth/passkeys', 'handlePublicPasskey', 'publicPasskeys'],
+    ['public', 'handlePublicOperation', 'publicOperations'],
+  ]) {
+    const source = read(`app/api/${route}/[operation]/route.js`);
+    assert.match(source, new RegExp(`return ${handler}\\(request, operation\\)`));
+    const transport = read(`src/lib/server/${server}.js`);
+    assert.match(transport, /createPasskeyPost\(/);
+    assert.match(transport, /verifyAppCheck:/);
+    assert.match(transport, /verifyIdToken\(token, true\)/);
+    assert.match(transport, /readBody: readBoundedJsonBody/);
+    assert.match(transport, /enabled:/);
+  }
+  const probe = read('app/api/runtime-ingress-probe/route.js');
+  assert.match(probe, /expected.length !== 64 \|\| !timingSafeEqual/);
+  assert.match(probe, /status: 404/);
+  assert.match(probe, /private, no-store/);
 });
 
 test('analytics does not send visitor IPs to an external cleartext geo API', () => {

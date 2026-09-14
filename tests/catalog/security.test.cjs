@@ -345,6 +345,26 @@ test('preuve HTML ancienne reste served failed et reparable', async () => {
   assert.equal(state.revalidationRetryNotBefore.toISOString(), '2026-09-02T10:05:00.000Z');
 });
 
+test('la preuve HTML attend la régénération sans réinvalider et reste bornée', async () => {
+  const { aggregateSha256, impactPlan } = buildSignedPlan(7);
+  let elapsed = 0;
+  let gets = 0;
+  const waits = [];
+  const fetchImpl = async (url, options) => {
+    assert.notEqual(options.method, 'POST');
+    gets++;
+    return String(url).includes('/api/catalog/version')
+      ? response({ json: { revision: 7, aggregateSha256 } })
+      : response({ status: impactPlan.products.some(p => p.beforePath !== p.afterPath && String(url).endsWith(p.beforePath)) ? 404 : 200,
+        contentType: 'text/html', text: `<main data-catalog-version="${elapsed >= 4000 ? aggregateSha256 : 'old'}"></main>` });
+  };
+  const result = await verifyServedCatalog(fetchImpl, 'https://example.test/api/revalidate-catalog',
+    { revision: 7, aggregateSha256 }, impactPlan, async ms => { waits.push(ms); elapsed += ms; });
+  assert.equal(result.result, 'observed');
+  assert.deepEqual(waits, [1000, 3000]);
+  assert.ok(gets <= 15);
+});
+
 test('archivage accepte la disparition 404 de l ancienne fiche et verifie les surfaces restantes', async () => {
   const before = [{
     id: 'product-archive', name: 'Chevet archive', category: 'commodes',

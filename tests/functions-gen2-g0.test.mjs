@@ -3,10 +3,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
 
 import {
   EXPECTED_CLOUD_COUNT,
   EXPECTED_CURRENT_SOURCE_COUNT,
+  runtimeFunctionNames,
   EXPECTED_SOURCE_COUNT,
   HOLD_META_RECONCILIATION,
   KEEP_GEN1_AUTH,
@@ -61,9 +63,12 @@ function validate(args) {
   });
 }
 
-test('inventaire source courant: 163 exports dont huit event-driven actifs sur le sandbox', () => {
+test('inventaire source courant: parité exacte avec les endpoints Firebase, y compris les modules composés', () => {
   const exports = extractLocalExports(ROOT);
   const expectedCurrentCount = EXPECTED_CURRENT_SOURCE_COUNT;
+  const runtime = createRequire(import.meta.url)(path.join(ROOT, 'functions/index.js'));
+  const endpointNames = runtimeFunctionNames(runtime);
+  assert.deepEqual(exports.map(({ name }) => name).sort(), endpointNames);
   assert.equal(exports.length, expectedCurrentCount);
   assert.equal(new Set(exports.map(({ name }) => name)).size, expectedCurrentCount);
   assert.deepEqual(

@@ -1,5 +1,11 @@
 # État du projet
 
+14 septembre — alertes Google Cloud corrigées en sandbox : tâches différées
+exclues du faux backlog après relecture des cinq protections transport vers
+LOA/PubSub ; deux workers catalogue corrigés et déployés, configuration/IAM
+préservées. Corrections CI et dépendances Next locales, sans push ni Hosting.
+[Résultats, preuves et limites](operations/ALERTES_2026-09-14.md).
+
 14 septembre — clôture Git commune checkout/stock : comparaison intégrale avec
 l'archive source de Hosting `017`, relue active à 100 % et vérifiée par SHA-256.
 Tous ses fichiers sont identiques au dossier local ; les dernières modifications

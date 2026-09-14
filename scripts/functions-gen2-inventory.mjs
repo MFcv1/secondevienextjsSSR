@@ -12,7 +12,36 @@ export const EXPECTED_CODEBASE = 'main';
 export const EXPECTED_SOURCE_COUNT = 157;
 export const EXPECTED_CLOUD_COUNT = 152;
 
+export function runtimeFunctionNames(exported) {
+  // Two private CloudEvent facades deliberately have no Firebase metadata.
+  // Exclude only the three known helpers, rather than dropping those facades.
+  const helpers = new Set(['inspectFinancialDay', 'registerReleaseObject', 'inspectGroup']);
+  return Object.keys(exported).filter(name => !helpers.has(name)).sort();
+}
+
+// Explicitly reviewed Object.assign entry points. Ordinary helper exports from
+// these modules are not deployable Functions. Runtime parity is checked in CI.
+export const COMPOSED_FUNCTION_EXPORTS = {
+  './src/maintenance/activityMaintenance': [
+    'schedulePaymentLinkExpiryGen2', 'dispatchPaymentLinkExpiryGen2',
+    'schedulePublicationCheckGen2', 'dispatchPublicationCheckGen2',
+    'dispatchAnalyticsInactivityGen2', 'scheduleAnalyticsInactivityGroupGen2',
+    'dispatchAnalyticsInactivityGroupGen2', 'dispatchAnalyticsArchiveGen2',
+    'scheduleInboxCheckGen2', 'dispatchInboxCheckGen2',
+    'schedulePaymentCheckGen2', 'dispatchPaymentCheckGen2',
+    'scheduleAnalyticsCompactionGen2', 'dispatchAnalyticsCompactionGen2'
+  ],
+  './src/commerce/commerceReconciliation': ['scheduleCommerceReconciliationGen2', 'dispatchCommerceReconciliationGen2'],
+  './src/catalog/catalogCycle': ['scheduleCatalogCycleGen2', 'dispatchCatalogCycleGen2'],
+  './src/catalog/groupedGarbageCollection': ['registerCatalogReleaseGcGen2', 'scheduleCatalogGcGroupGen2',
+    'onCatalogGcPointersWrittenGen2', 'dispatchCatalogGcGroupGen2']
+};
+// Cloud inventory reread 2026-09-14: these two publication candidates remain local.
+export const PENDING_RUNTIME_EXPORTS = new Set(['schedulePublicationCheckGen2', 'dispatchPublicationCheckGen2']);
+
 export const ACTIVE_OBSERVABILITY_EXPORTS = new Set([
+  'onCommerceCheckoutExpiryWrittenGen2', 'readAdminSharedGen2', 'captureProjectCostsGen2',
+  ...Object.values(COMPOSED_FUNCTION_EXPORTS).flat().filter(name => !PENDING_RUNTIME_EXPORTS.has(name)),
   'getDiagnosticTimelineAdminGen2',
   'getSystemIncidentsAdminGen2',
   'journalCommerceIncidentGen2',
@@ -35,7 +64,6 @@ export const ACTIVE_OBSERVABILITY_EXPORTS = new Set([
   'projectAdminActionSummaryGen2'
 ]);
 export const PENDING_OBSERVABILITY_EXPORTS = new Set([]);
-export const PENDING_RUNTIME_EXPORTS = new Set(['readAdminSharedGen2', 'captureProjectCostsGen2']);
 
 export const PARALLEL_MIGRATION_EXPORTS = new Set([
   'addAdminUserGen2',
@@ -409,6 +437,12 @@ export function extractLocalExports(rootDir) {
       localName: match[2],
       sourceFile: imports.get(match[2]) ? path.posix.join('functions', imports.get(match[2]).replace(/^\.\//, '')) : null
     }));
+  for (const [, modulePath] of source.matchAll(/Object\.assign\(exports, require\(['"]([^'"]+)['"]\)\);/g)) {
+    const names = COMPOSED_FUNCTION_EXPORTS[modulePath];
+    if (!names) throw new Error(`Module composé non inventorié: ${modulePath}`);
+    exports.push(...names.map(name => ({ name, localName: name,
+      sourceFile: path.posix.join('functions', `${modulePath.replace(/^\.\//, '')}.js`) })));
+  }
   const names = new Set(exports.map(({ name }) => name));
   if (exports.length !== EXPECTED_CURRENT_SOURCE_COUNT || names.size !== EXPECTED_CURRENT_SOURCE_COUNT) {
     throw new Error(`Inventaire source inattendu: ${exports.length} exports, ${names.size} uniques`);

@@ -4,6 +4,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
+import { EXPECTED_CURRENT_SOURCE_COUNT, runtimeFunctionNames } from '../scripts/functions-gen2-inventory.mjs';
 
 import {
   GCLOUD_GEN2_TARGETS,
@@ -31,7 +32,7 @@ const TARGETS = [...CALLABLES, TRIGGER].map((name) => `${name}Gen2`);
 
 test('G6 exports exactly 24 Gen2 functions after Gen1 retirement', () => {
   const exported = require(path.join(root, 'functions/index.js'));
-  assert.equal(Object.keys(exported).length, 163);
+  assert.equal(runtimeFunctionNames(exported).length, EXPECTED_CURRENT_SOURCE_COUNT);
   for (const name of [...CALLABLES, TRIGGER]) {
     assert.equal(exported[name], undefined, `${name} Gen1 encore exportee`);
     assert.equal(typeof exported[`${name}Gen2`], 'function', `${name}Gen2 absent`);

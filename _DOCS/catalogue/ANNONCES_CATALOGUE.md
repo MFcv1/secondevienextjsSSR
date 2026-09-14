@@ -265,6 +265,15 @@ La passe de synchronisation locale du 2026-07-19 a ferme les ecarts suivants dan
 - les pages ISR et les API lisent le pointeur Storage mutable frais; seules les releases adressees par un chemin immutable sont cachees; l'ETag de `/api/catalog/version` peut donc repondre 304 uniquement apres comparaison avec la generation courante, et ISR 300 reste l'unique filet temporel de page;
 - une revalidation dont la revision a deja ete depassee s'arrete en `superseded` avant tout signal ou ecriture d'etat; un rollback exige au contraire l'identite exacte et n'accepte jamais une revision superieure comme preuve;
 - les reprises utilisent un nom Cloud Tasks deterministe par revision, manifeste et numero de tentative. Un echec courant persiste `revalidationFailureCount`, `revalidationRetryNotBefore` et `revalidationLastFailureAt`; le reconciler respecte ce backoff et ne cree plus une nouvelle chaine toutes les cinq minutes;
+- une construction dépassée avant le commit Storage confirme la programmation
+  du successeur avant de terminer en `superseded`, sans incrémenter les échecs.
+  Après CAS, une mutation source plus récente n'empêche pas d'enregistrer la
+  révision publiée : propriétaire, expiration du lease, rollback et révision
+  déjà publiée restent contrôlés. La nouvelle révision reste à construire ;
+- la preuve HTML laisse jusqu'à dix secondes d'attente cumulée à la
+  régénération Next (essais immédiat, puis après 1, 3 et 6 secondes), sans
+  réinvalidation à chaque lecture. Une page toujours ancienne reste un échec
+  durable et reprenable, jamais un succès supposé ;
 - apres acceptation de l'invalidation et preuve exacte de `/api/catalog/version`, le backend remplace le document minimal `sys_catalog_live/current`, avant le controle HTML; il ne contient ni prix, ni stock, ni image et n'est jamais autoritaire pour le commerce;
 - la galerie visible confirme ce signal par l'endpoint version avec des reprises bornees, charge les 48 cartes depuis `/api/catalog` et remplace ses grilles Nouveautes/Petits Prix sans attendre ISR; la release attendue ou une revision superieure est admissible, jamais une revision inferieure; `router.refresh()` reste lance pour faire converger le document et les autres surfaces;
 - fiabilisation client du 14 septembre : signal confirme memorise et rejoue aux grilles hydratees plus tard, nouvelles props serveur appliquees sans regression de revision, anciennes requetes annulees. Chaque lecture dispose de sept tentatives (delais 0/0,5/1,5/4/10/20/30 s, timeout HTTP 8 s). Une erreur terminale d'ecoute declenche au plus six reconnexions; retour visible, focus, `pageshow` et `online` reinitialisent la reprise. Pas de polling permanent. Le retour de fiche differe la livraison jusqu'a 30 s pour conserver la restauration du scroll. Une panne depassant ces budgets exige un nouveau signal ou evenement de reprise; aucune garantie d'instantaneite ni de convergence pendant une panne illimitee;
