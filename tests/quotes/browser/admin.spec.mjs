@@ -51,7 +51,7 @@ test('photos open privately; Escape restores focus; no horizontal overflow', asy
   await page.screenshot({ path: info.outputPath('quotes-layout.png'), fullPage: true });
 });
 
-test('pricing must be saved; preview sends only after confirmation; trash can be restored', async ({ page }, info) => {
+test('preview saves pricing automatically; sends only after confirmation; trash can be restored', async ({ page }, info) => {
   await page.getByRole('button', { name: 'Modifier le devis' }).click();
   await page.getByRole('spinbutton', { name: 'Prix proposé — Ponçage manuel' }).fill('80');
   await page.getByRole('button', { name: 'Ajouter une prestation' }).click();
@@ -63,8 +63,8 @@ test('pricing must be saved; preview sends only after confirmation; trash can be
   await page.getByRole('button', { name: 'Ajouter une prestation' }).click();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.getByRole('region', { name: 'Devis à proposer' }).screenshot({ path: info.outputPath('quote-editor.png') });
-  await expect(page.getByRole('button', { name: 'Prévisualiser et envoyer' })).toBeDisabled();
-  await page.getByRole('button', { name: 'Enregistrer les modifications' }).click();
+  await expect(page.locator('#quote-admin-detail header')).toHaveCSS('position', 'static');
+  await expect(page.getByRole('button', { name: 'Prévisualiser et envoyer' })).toBeEnabled();
   await page.getByRole('button', { name: 'Prévisualiser et envoyer' }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog).toContainText('camille@example.test');
@@ -80,4 +80,19 @@ test('pricing must be saved; preview sends only after confirmation; trash can be
   await page.getByLabel('Filtrer les demandes par statut').selectOption('trash');
   await page.getByRole('button', { name: 'Restaurer la demande' }).click();
   expect(await page.evaluate(() => window.actions)).toEqual(['save', 'send', 'trash', 'restore']);
+});
+
+test('failed automatic save preserves draft and prevents preview and email', async ({ page }) => {
+  await page.getByRole('button', { name: 'Modifier le devis' }).click();
+  await page.getByRole('spinbutton', { name: 'Prix proposé — Ponçage manuel' }).fill('80');
+  await page.evaluate(() => { window.failSave = true; });
+  await page.getByRole('button', { name: 'Prévisualiser et envoyer' }).click();
+  await expect(page.getByRole('alert')).toContainText('L’enregistrement n’a pas abouti');
+  await expect(page.getByRole('dialog')).not.toBeVisible();
+  await expect(page.getByRole('spinbutton', { name: 'Prix proposé — Ponçage manuel' })).toHaveValue('80');
+  expect(await page.evaluate(() => window.actions)).toEqual(['save']);
+  await page.evaluate(() => { window.failSave = false; });
+  await page.getByRole('button', { name: 'Prévisualiser et envoyer' }).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  expect(await page.evaluate(() => window.actions)).toEqual(['save', 'save']);
 });

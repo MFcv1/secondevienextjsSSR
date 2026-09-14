@@ -664,7 +664,11 @@ Le contrat serveur conserve 1 à 20 lignes, prix minimum/maximum en
 centimes entiers, total strictement positif plafonné à 100 000 €, validité de
 1 à 90 jours et message client borné à 4000 caractères. Le serveur recalcule
 les totaux. Minimum = maximum donne un prix fixe. Une sauvegarde précède
-l'aperçu et la confirmation d'envoi. La proposition envoyée reste consultable,
+l'aperçu et la confirmation d'envoi : le bouton de prévisualisation enregistre
+automatiquement les modifications, puis ouvre l'aperçu uniquement en cas de
+succès. Un échec conserve la saisie et affiche une erreur près du bouton.
+L'en-tête de la fiche reste dans le flux normal, sans suivre le défilement.
+La proposition envoyée reste consultable,
 distincte du brouillon modifiable. Les notes internes ne partent jamais au client.
 L'e-mail propose une réponse à l'atelier ; aucun PDF contractuel ou signature
 électronique n'est généré par ce parcours.

@@ -291,13 +291,15 @@ export default function AdminQuotes({ darkMode = false }) {
       )));
       if (selectionRef.current !== updated.quoteId) return;
       setDetail(updated);
-      if (draftRef.current === draft) {
+      const draftUnchanged = draftRef.current === draft;
+      if (draftUnchanged) {
         const nextDraft = quoteDraft(updated);
         draftRef.current = nextDraft;
         draftBaseRef.current = nextDraft;
         setDraft(nextDraft);
       }
       setSaveMessage(action === 'send' ? (updated.proposalEmail?.status === 'sent' ? 'Proposition envoyée au client.' : 'Consultez le résultat de l’envoi dans le chiffrage.') : action === 'trash' ? 'Demande placée dans la corbeille. Vous pouvez la restaurer.' : 'Modifications enregistrées.');
+      return draftUnchanged;
     } catch (saveError) {
       if (selectionRef.current !== detail.quoteId) return;
       const conflict = String(saveError?.details?.reason || saveError?.code || '').includes('conflict')
@@ -435,7 +437,7 @@ export default function AdminQuotes({ darkMode = false }) {
             </div>
           ) : detail ? (
             <div className={`rounded-2xl border ${surface}`}>
-              <header className={`sticky top-0 z-10 rounded-t-2xl border-b p-4 ${darkMode ? 'border-white/10 bg-[#151515]' : 'border-stone-200 bg-white'}`}>
+              <header className={`rounded-t-2xl border-b p-4 ${darkMode ? 'border-white/10 bg-[#151515]' : 'border-stone-200 bg-white'}`}>
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <p className={`text-[10px] font-black uppercase tracking-[0.14em] ${muted}`}>{detail.requestNumber}</p>

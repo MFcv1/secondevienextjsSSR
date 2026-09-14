@@ -11,6 +11,7 @@ export default function QuoteProposalEditor({ detail, proposal, onChange, onActi
   const [confirmation, setConfirmation] = useState(null);
   const [editing, setEditing] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [previewError, setPreviewError] = useState('');
   const delivery = detail.proposalEmail?.status;
   const blocked = saving || Boolean(detail.deletedAt) || ['sending', 'delivery_unknown'].includes(delivery);
   const requested = detail.project?.services || [];
@@ -44,6 +45,14 @@ export default function QuoteProposalEditor({ detail, proposal, onChange, onActi
     setAdding(false);
   };
   const ask = (action) => { setConfirmation(action); dialog.current.showModal(); };
+  const preview = async () => {
+    setPreviewError('');
+    if (dirty && !await onAction('save')) {
+      setPreviewError('L’enregistrement n’a pas abouti. Vos modifications sont conservées. Consultez le message en haut de la fiche puis réessayez.');
+      return;
+    }
+    if (dialog.current?.isConnected) ask('send');
+  };
   const button = 'inline-flex min-h-10 items-center justify-center gap-2 rounded-xl px-4 py-2 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 disabled:opacity-40';
   const secondary = `${button} bg-stone-100 text-stone-700 hover:bg-stone-200/70 dark:bg-white/10 dark:text-stone-200 dark:hover:bg-white/15`;
   return <section aria-label="Devis à proposer" className="space-y-5 rounded-2xl border border-stone-200/70 bg-white p-4 sm:p-5 dark:border-white/10 dark:bg-white/[0.02]">
@@ -138,9 +147,10 @@ export default function QuoteProposalEditor({ detail, proposal, onChange, onActi
     )}
     {detail.proposalEmail?.proposal && <details className="text-xs"><summary className="min-h-9 cursor-pointer font-semibold">Proposition de la dernière tentative · {euroRange(detail.proposalEmail.proposal)}</summary><div className="space-y-2 whitespace-pre-wrap py-3">{detail.proposalEmail.proposal.lines.map((line, i) => <p key={i}>{line.label} : {euroRange(line)}</p>)}<p>{detail.proposalEmail.proposal.message}</p><p>Validité : {detail.proposalEmail.proposal.validDays} jours</p></div></details>}
     <p role="status" className="text-xs leading-5">{delivery === 'sent' ? `Dernier envoi confirmé${detail.proposalEmail.completedAt ? ` le ${new Date(detail.proposalEmail.completedAt).toLocaleString('fr-FR')}` : ''}.` : delivery === 'sending' ? 'Envoi en cours. Actualisez pour consulter son résultat.' : delivery === 'delivery_unknown' ? 'Résultat incertain : vérifiez l’envoi auprès de votre service mail avant de confirmer son résultat ci-dessous.' : delivery === 'failed' ? 'Envoi non effectué. Vous pouvez réessayer après correction.' : 'Aucune proposition envoyée.'}</p>
-    {delivery === 'delivery_unknown' ? <div className="flex flex-wrap gap-2"><button className={secondary} disabled={saving} onClick={() => ask('confirm_sent')}>J’ai vérifié : envoyé</button><button className={secondary} disabled={saving} onClick={() => ask('confirm_not_sent')}>J’ai vérifié : non envoyé</button></div> : <button type="button" className={`${button} w-full bg-stone-950 text-white dark:bg-white dark:text-stone-950`} disabled={blocked || dirty || !valid || alreadySent || ['closed', 'accepted'].includes(detail.status)} onClick={() => ask('send')}>Prévisualiser et envoyer</button>}
+    {delivery === 'delivery_unknown' ? <div className="flex flex-wrap gap-2"><button className={secondary} disabled={saving} onClick={() => ask('confirm_sent')}>J’ai vérifié : envoyé</button><button className={secondary} disabled={saving} onClick={() => ask('confirm_not_sent')}>J’ai vérifié : non envoyé</button></div> : <button type="button" className={`${button} w-full bg-stone-950 text-white dark:bg-white dark:text-stone-950`} disabled={blocked || !valid || alreadySent || ['closed', 'accepted'].includes(detail.status)} onClick={() => void preview()}>{saving ? 'Enregistrement…' : 'Prévisualiser et envoyer'}</button>}
     {alreadySent && <p className="text-xs text-stone-500">Cette version est déjà envoyée. Modifiez le chiffrage ou le message pour préparer une nouvelle proposition.</p>}
-    {dirty && <p className="text-xs text-stone-500">Enregistrez vos modifications avant l’aperçu et l’envoi.</p>}
+    {dirty && <p className="text-xs text-stone-500">Vos modifications seront enregistrées avant l’aperçu. L’envoi demandera votre confirmation.</p>}
+    {previewError && <p role="alert" className="text-xs text-red-700 dark:text-red-300">{previewError}</p>}
     <dialog ref={dialog} className="m-auto max-h-[85dvh] w-[min(600px,calc(100%-2rem))] overflow-y-auto rounded-2xl border border-stone-200 bg-white p-5 text-stone-900 backdrop:bg-black/50 dark:border-white/10 dark:bg-stone-900 dark:text-white">
       <h3 className="text-lg font-bold">{confirmation === 'send' ? 'Vérifier la proposition' : 'Confirmer le résultat vérifié'}</h3>
       {confirmation === 'send' ? <div className="my-4 space-y-3 text-sm leading-6"><p>À : {detail.customer?.email}</p><p>Objet : Votre proposition de restauration — {detail.requestNumber}</p><p>Bonjour {detail.customer?.firstName || ''}, voici le chiffrage étudié par l’atelier.</p>{value.lines.map((line, i) => <p key={i}>{line.label} : {euroRange(line)}</p>)}<strong>Total proposé : {euroRange(total)}</strong><p className="whitespace-pre-wrap">{value.message}</p><p>Validité : {value.validDays} jours à compter de l’envoi.</p><p>Répondez à cet e-mail pour confirmer votre accord ou poser vos questions. Les travaux et leur calendrier seront convenus avec l’atelier avant intervention.</p></div> : <p className="my-4 text-sm">{confirmation === 'confirm_sent' ? 'Vous confirmez avoir vérifié que ce message a été envoyé.' : 'Vous confirmez avoir vérifié que ce message n’a pas été envoyé. Une nouvelle tentative sera alors possible.'}</p>}
