@@ -82,6 +82,9 @@ pas un déploiement. Signaler et corriger les contradictions du périmètre trai
   de scroll ; fond flouté et miniatures de fiche utilisent les URLs de
   `getProductDetailThumbSrc`, jointes aux cartes (`detailThumbs`).
   [Chantier et audit du 2026-09-13](_DOCS/images/PRECHARGEMENT_GALERIE_2026-09-13.md).
+  Chaque carte visible prépare aussi sa route Next sans attendre l'arrêt du
+  scroll ; images d'ouverture prioritaires, albums par tours, sans indicateur
+  « Ouverture… ». [Bilan du 2026-09-14](_DOCS/images/OUVERTURE_GALERIE_2026-09-14.md).
 - Pointeurs `current/previous/last-known-good` relus frais ; seules les
   releases immuables sont cachées. Publication CAS, plan d'impact et
   revalidation HMAC ; signal catalogue borné, sans polling permanent.

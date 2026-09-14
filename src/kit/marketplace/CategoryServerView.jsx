@@ -1,6 +1,5 @@
 import { ChevronDown, Grid3X3, LayoutGrid, List, SlidersHorizontal, X } from 'lucide-react';
 import Link from 'next/link';
-import ProductNavigationFeedback from './ProductNavigationFeedback';
 import { getCategoryUrl, getProductUrl } from '../../utils/slug';
 import { getProductCardImage, getProductDetailThumbSrcs, getProductDetailImageSrcs, getProductDisplayImageSrc, getProductImageItems } from '../../utils/imageUtils';
 import { getProductStockAmount, getPurchaseUnavailableLabel, isPurchasable, isSoldOut, shouldRequestQuote } from '../commerce/purchasability';
@@ -80,7 +79,6 @@ const CategoryProductCard = ({ item, priority = false, darkMode = false }) => {
         />
 
         <ProductCardHoverOverlay />
-        <ProductNavigationFeedback />
 
         {soldOut ? <ProductSoldBadge /> : null}
       </div>

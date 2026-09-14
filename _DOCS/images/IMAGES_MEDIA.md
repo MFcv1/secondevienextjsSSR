@@ -1,6 +1,6 @@
 # Images produit et medias
 
-Derniere mise a jour: 2026-08-23
+Derniere mise a jour: 2026-09-14
 Statut: `REFERENCE_ACTIVE`
 
 ## 1. Architecture
@@ -75,14 +75,18 @@ Politique courante:
 - warmup partage via `productImageLoader.js`: 2 transferts speculatifs sur mobile, 3 sur ordinateur, une place supplementaire pour une action explicite; promotion en vol et decodage sequentiel;
 - cartes visibles: la racine d'observation suit le vrai conteneur de scroll (viewport pour les categories et la galerie ordinateur, `#marketplaceGalleryScroll` pour la galerie mobile) — [correctif du 2026-09-13](PRECHARGEMENT_GALERIE_2026-09-13.md);
 - fond flou et miniatures: `getProductDetailThumbSrc` choisit `thumb320`, `thumb384`, puis les replis historiques; URLs jointes aux cartes (`detailThumbs`), prefixe commun compact dans le DOM;
-- cartes visibles/proches: selection reordonnee au scroll, marge de 250 px, 8 candidates au plus; aucune demande explicite de decodage pendant ce prechargement; decodages speculatifs suspendus pendant le scroll;
-- pause de 240 ms: les cartes visibles a 60 % (2 mobile, 5 ordinateur) preparent toutes leurs miniatures puis leurs photos de detail par tours, une photo par meuble. Les deux cartes centrales preparent aussi leur route. Un nouveau scroll annule la suite des tours; Save-Data/2G les desactive. Les URLs `detailImages` proviennent du meme snapshot complet, prefixe compact dans le DOM;
+- cartes visibles, meme partiellement: observation installee au montage, prechargement de chaque route Next sans attendre une pause. Registre borne de demandes (pas une preuve de disponibilite); invalidation Next relancee seulement pour les routes encore visibles, sans polling;
+- images d'ouverture: toutes les premieres photos visibles puis leurs fonds/miniatures precedents aux images de la rangee voisine dans le sens du scroll (marge 250 px, 2 voisines mobile/5 ordinateur). Plan mis a jour en place: seules les demandes devenues inutiles sont retirees; priorites et ordre des demandes conservees sont ajustes;
+- pause de 240 ms: decodage sequentiel des premieres photos visibles, puis miniatures et photos de detail par tours entre tous les meubles visibles. Un nouveau scroll annule la suite et les demandes de decodage encore non engagees; un decodage deja engage finit normalement. Save-Data/2G desactivent l'anticipation. Les URLs `detailImages` proviennent du meme snapshot complet, prefixe compact dans le DOM;
 - une pression vers un produit annule les warmups speculatifs encore en file pour que les cartes survolees precedemment ne concurrencent pas la navigation choisie;
 - Save-Data et reseaux 2G: aucune anticipation speculative;
 - nouvelle version catalogue: files et registre des routes vides, observateurs reconstruits; cartes ajoutees et URLs modifiees suivies sans polling;
-- cache d'images chargees borne a 32 entrees mobile/64 ordinateur, attente a 48 telechargements et 16 decodages; delais maximum 20 s de chargement et 5 s de decodage, puis nouvelle tentative possible;
+- cache d'images chargees borne a 32 entrees mobile/64 ordinateur, dont au plus la moitie protegee temporairement pour les images d'ouverture visibles; protection liberee a la sortie, au changement de catalogue et au demontage. Attente a 48 telechargements et 16 decodages; delais maximum 20 s de chargement et 5 s de decodage, puis nouvelle tentative possible;
 - fiche: charger les deux voisines en premier, avec decodage, puis les autres une par une sans decodage; arreter la preparation au demontage et en arriere-plan. Selection immediate avec miniature provisoire si la photo de detail n'est pas chargee; remplacement apres decodage et uniquement pour la selection courante. Derniere photo peinte conservee dessous. Mobile: fondu entrant 160 ms, ancienne photo opaque, aucun drag/retour arriere superpose; mouvement reduit respecte. Erreur visible et bouton Reessayer;
 - medias historiques sans variante recente: ordre de fallback conserve, sans suppression implicite.
+
+Livraison et limites du prechargement au scroll :
+[ouverture des fiches du 14 septembre](OUVERTURE_GALERIE_2026-09-14.md).
 
 ## 4. Upload admin
 
@@ -94,9 +98,9 @@ l'annulation/demontage/nouveau geste. La bande reste jusqu'a la disponibilite
 de la photo normale dessous. Variantes deja chargees ou miniatures; photo
 courante en fond de secours, cadre stabilise pendant le mouvement. Mouvement
 reduit: calage sans transition. Desktop conserve.
-Les liens galerie/categories incluent `ProductNavigationFeedback`, branche
-sur `useLinkStatus` de Next: indicateur « Ouverture… » pendant la navigation
-reelle, sans delai ajoute ni navigation parallele.
+Les liens galerie/categories conservent la navigation Next native sans voile,
+spinner ni libelle « Ouverture… ». Le prechargement anticipe l'ouverture mais
+ne garantit pas une navigation instantanee si le toucher precede sa fin.
 
 Affinage tactile du 13 septembre apres recette: transition mobile 100 ms avec
 translation entrante de 8 px, couche precedente opaque. Seuil de swipe borne a

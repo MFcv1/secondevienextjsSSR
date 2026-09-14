@@ -1,5 +1,5 @@
 import { preloadImage, clearQueuedImageLoads } from './productImageLoader.js';
-export { preloadImage, getLoadedProductImage, pauseSpeculativeProductImages, clearQueuedImageLoads } from './productImageLoader.js';
+export { preloadImage, getLoadedProductImage, pauseSpeculativeProductImages, clearQueuedImageLoads, syncImageLoadPlan } from './productImageLoader.js';
 
 /**
  * Compresses and converts an image file to WebP format client-side.

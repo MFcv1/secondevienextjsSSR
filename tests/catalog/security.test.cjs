@@ -484,19 +484,19 @@ test('images, categorie, warmup et navigation respectent le contrat unifie', () 
   assert.match(gridActions, /const root = getVisibleWarmupRoot\(surface\)/);
   assert.match(gridActions, /display !== 'contents'/);
   assert.doesNotMatch(gridActions, /root: surface === 'gallery' \? document\.getElementById/);
-  // Fond flou et miniatures : memes URLs cote carte et cote fiche, file distincte.
+  // Fond flou et miniatures : memes URLs cote carte et cote fiche, file partagee.
   const productShell = read('src/kit/marketplace/ProductDetailShellIsland.jsx');
   assert.match(productShell, /const getThumbSrc = getProductDetailThumbSrc;/);
   assert.match(productShell, /const getBackdropSrc = getProductDetailThumbSrc;/);
   assert.match(media, /data-product-thumbs-warmup=/);
-  assert.match(gridActions, /scheduleProductThumbWarmups\(intent === 'visible' \? thumbs\.slice\(0, 1\) : thumbs/);
+  assert.match(gridActions, /syncImageLoadPlan\('gallery-visible'/);
   assert.match(imageUtils, /owner: 'gallery-thumb'/);
   assert.match(imageLoader, /queue\.length > 48/);
   assert.match(imageLoader, /compact\(\) \? 32 : 64/);
   assert.match(read('src/lib/server/materializedCatalog.js'), /detailImages: getProductDetailImageSrcs\(product\)/);
   assert.match(imageUtils, /saveData/);
   assert.match(imageUtils, /\(\^\|-\)2g\$/);
-  assert.match(gridActions, /intent === 'hover' \|\| intent === 'press' \|\| intent === 'dwell'/);
+  assert.match(gridActions, /visibleRouteUrlsRef\.current\.forEach\(prefetchProductRoute\)/);
   assert.doesNotMatch(productShell, /IMAGE_SWITCH_DECODE_BUDGET_MS|Promise\.race/);
   assert.match(productShell, /useProductSwipeMotion\(activeImg, hasPrimaryImagePainted\)/);
   assert.doesNotMatch(`${marketplace}\n${layout}`, /window\.location\.assign/);

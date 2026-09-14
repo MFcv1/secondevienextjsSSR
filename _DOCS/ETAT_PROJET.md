@@ -1,5 +1,15 @@
 # État du projet
 
+14 septembre — [ouverture des fiches au scroll](images/OUVERTURE_GALERIE_2026-09-14.md) :
+toutes les cartes visibles preparent leur route Next et leurs premieres images,
+file reordonnee sans abandon des demandes utiles, decodage a la pause et albums
+par tours. Indicateur « Ouverture… » retire ; swipe conserve. Sandbox
+`build-2026-09-14-002` livre a 100 %, deployment ID `sv-mu10lvuk-5fc4f71b41b1`.
+Lint Node 22, construction cloud, HTTP/version et diff controles. Aucun test
+automatise ou navigateur par l'agent. Retour utilisateur du 14 septembre :
+ouverture beaucoup plus fluide sur mobile et desktop, lot accepté en l'état.
+Clôture documentaire et commit sur main, sans push ; devis de la version 001 preserves.
+
 14 septembre — refonte livrée de la [gestion des devis](admin/BACKOFFICE.md#51-demandes-de-devis) :
 aperçus privés de secours, corbeille restaurable, chiffrage par grille ou manuel,
 aperçu et envoi explicite, accord client et clôture. Actions d'enregistrement en

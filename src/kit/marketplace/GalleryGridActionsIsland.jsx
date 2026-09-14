@@ -13,6 +13,7 @@ import {
   decodeProductThumbWarmups,
   preloadImage,
   clearQueuedImageLoads,
+  syncImageLoadPlan,
 } from '../../utils/imageUtils';
 import {
   getCurrentWishlistUser,
@@ -26,9 +27,6 @@ const HOVER_WARMUP_INTENT_MS = 160;
 const PRODUCT_CARD_IMAGE_SELECTOR = 'img[data-product-image-state]';
 const GALLERY_INTERNAL_SCROLL_QUERY = '(max-width: 1023px)';
 const DWELL_WARMUP_DELAY_MS = 240;
-const DWELL_VISIBLE_RATIO = 0.6;
-const DWELL_WARMUP_MAX_CARDS_COMPACT = 2;
-const DWELL_WARMUP_MAX_CARDS_WIDE = 5;
 
 const readThumbWarmups = (card) => decodeProductThumbWarmups(
   card.querySelector('[data-product-thumbs-warmup]')?.dataset.productThumbsWarmup || ''
@@ -98,6 +96,8 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
   const authUserRef = useRef(null);
   const hoverWarmupTimerRef = useRef(0);
   const hoverWarmupCardRef = useRef(null);
+  const visibleRouteUrlsRef = useRef(new Set());
+  const stopGalleryWarmupRef = useRef(null);
 
   const syncWishlistButtons = useCallback(() => {
     const wishlist = new Set(readWishlistIds());
@@ -106,33 +106,34 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
     });
   }, []);
 
-  const warmupProduct = useCallback((card, intent = 'hover') => {
-    if (!card || (intent !== 'press' && (document.hidden || shouldSkipSoftWarmup()))) return;
-    const productUrl = card.dataset.productUrl || '';
-    const shouldPrefetchRoute = intent === 'hover' || intent === 'press' || intent === 'dwell';
-    const warmupSrc = card.querySelector('[data-product-media-warmup]')?.dataset.productMediaWarmup || '';
-
-    if (shouldPrefetchRoute && productUrl && Date.now() - (prefetchedRoutes.get(productUrl) || 0) > 60000) {
+  const prefetchProductRoute = useCallback((productUrl) => {
+    if (productUrl && Date.now() - (prefetchedRoutes.get(productUrl) || 0) > 60000) {
       const requestedAt = Date.now();
       prefetchedRoutes.set(productUrl, requestedAt);
-      if (prefetchedRoutes.size > 32) prefetchedRoutes.delete(prefetchedRoutes.keys().next().value);
+      if (prefetchedRoutes.size > 64) prefetchedRoutes.delete(prefetchedRoutes.keys().next().value);
       try {
         router.prefetch(productUrl, { onInvalidate: () => {
-          if (prefetchedRoutes.get(productUrl) === requestedAt) prefetchedRoutes.delete(productUrl);
+          if (prefetchedRoutes.get(productUrl) !== requestedAt) return;
+          prefetchedRoutes.delete(productUrl);
+          window.dispatchEvent(new CustomEvent('sv:product-route-invalidated', { detail: { productUrl } }));
         } });
       } catch {
         prefetchedRoutes.delete(productUrl);
         // Links remain normal navigation if prefetch is unavailable.
       }
     }
-
-    scheduleProductImageWarmup(warmupSrc, { intent }).catch(() => null);
-
-    // Carte simplement visible : fond flou et premiere miniature. Intention
-    // reelle (scroll arrete, survol, focus, pression) : toutes les miniatures.
-    const thumbs = readThumbWarmups(card);
-    scheduleProductThumbWarmups(intent === 'visible' ? thumbs.slice(0, 1) : thumbs, { intent });
   }, [router]);
+
+  const warmupProduct = useCallback((card, intent = 'hover') => {
+    if (!card || (intent !== 'press' && (document.hidden || shouldSkipSoftWarmup()))) return;
+    if (intent === 'press') stopGalleryWarmupRef.current?.();
+    prefetchProductRoute(card.dataset.productUrl || '');
+    const warmupSrc = card.querySelector('[data-product-media-warmup]')?.dataset.productMediaWarmup || '';
+    scheduleProductImageWarmup(warmupSrc, { intent }).catch(() => null);
+    const thumbs = readThumbWarmups(card);
+    scheduleProductThumbWarmups(thumbs.slice(0, 1), { intent });
+    scheduleProductThumbWarmups(thumbs.slice(1), { intent: 'hover' });
+  }, [prefetchProductRoute]);
 
   useEffect(() => {
     syncWishlistButtons();
@@ -322,25 +323,29 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
     if (shouldSkipSoftWarmup()) return undefined;
 
     let cancelled = false;
-    let idleId = 0;
-    let timeoutId = 0;
     let dwellTimerId = 0;
     let nearTimerId = 0;
     let observer = null;
-    let dwellObserver = null;
-    const wellVisibleCards = new Set();
+    let visibleObserver = null;
+    let scrollRoot = null;
+    let lastScrollTop = 0;
+    let scrollDirection = 1;
+    let navigating = false;
+    const visibleCards = new Set();
     const nearCards = new Set();
     const observedCards = new Set();
     let detailGeneration = 0;
     const stopDetailWarmup = () => {
       detailGeneration += 1;
       clearQueuedImageLoads('gallery-detail');
+      clearQueuedImageLoads('gallery-decode');
     };
 
     const sortedCards = (cards) => {
-      const root = getVisibleWarmupRoot(surface);
-      const bounds = root ? root.getBoundingClientRect() : { top: 0, height: window.innerHeight };
-      const center = bounds.top + bounds.height / 2;
+      const bounds = scrollRoot?.getBoundingClientRect();
+      const top = Math.max(0, bounds?.top || 0);
+      const bottom = Math.min(window.innerHeight, bounds?.bottom ?? window.innerHeight);
+      const center = (top + bottom) / 2;
       return Array.from(cards).filter((card) => card.isConnected && card.getClientRects().length)
         .map((card) => {
           const rect = card.getBoundingClientRect();
@@ -350,39 +355,71 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
     };
     const warmupNearCards = () => {
       nearTimerId = 0;
-      if (cancelled || document.hidden) return;
-      clearQueuedProductImageWarmups();
-      clearQueuedProductThumbWarmups();
-      sortedCards(nearCards).slice(0, 8).forEach((card) => warmupProduct(card, 'visible'));
+      if (cancelled || navigating || document.hidden || shouldSkipSoftWarmup()) return;
+      const visible = sortedCards(visibleCards);
+      visibleRouteUrlsRef.current = new Set(visible.map((card) => card.dataset.productUrl).filter(Boolean));
+      visibleRouteUrlsRef.current.forEach(prefetchProductRoute);
+
+      const bounds = scrollRoot?.getBoundingClientRect();
+      const center = (Math.max(0, bounds?.top || 0) + Math.min(window.innerHeight, bounds?.bottom ?? window.innerHeight)) / 2;
+      const nearby = sortedCards(nearCards).filter((card) => {
+        if (visibleCards.has(card)) return false;
+        const rect = card.getBoundingClientRect();
+        return (rect.top + rect.height / 2 - center) * scrollDirection > 0;
+      }).slice(0, window.matchMedia(GALLERY_INTERNAL_SCROLL_QUERY).matches ? 2 : 5);
+      const requests = [];
+      // Batch all visible primaries first, then their backdrops, then the next
+      // row. The queue preserves useful work and updates priority in place.
+      for (const cards of [visible, nearby]) {
+        const isVisible = cards === visible;
+        for (const primary of [true, false]) {
+          cards.forEach((card) => {
+            const src = primary
+              ? card.querySelector('[data-product-media-warmup]')?.dataset.productMediaWarmup
+              : readThumbWarmups(card)[0];
+            if (src) requests.push({ src, priority: isVisible ? 'auto' : 'low', order: requests.length, retain: isVisible });
+          });
+        }
+      }
+      // A product may occur in several gallery sections: keep its best rank.
+      const unique = new Map();
+      requests.forEach((request) => { if (!unique.has(request.src)) unique.set(request.src, request); });
+      syncImageLoadPlan('gallery-visible', [...unique.values()]);
     };
 
-    // Scroll arrete sur des cartes bien visibles : la personne regarde ces
-    // pieces, on amorce leurs miniatures puis leurs photos par tours equitables.
-    // Un nouveau scroll arrete les tours et retire les transferts en attente.
+    const scheduleNearWarmup = () => {
+      if (!nearTimerId) nearTimerId = window.setTimeout(warmupNearCards, 60);
+    };
+    const onRouteInvalidated = (event) => {
+      if (!document.hidden && visibleRouteUrlsRef.current.has(event.detail?.productUrl)) scheduleNearWarmup();
+    };
+    window.addEventListener('sv:product-route-invalidated', onRouteInvalidated);
+
+    // Only optional decoding and albums wait for a pause. Every visible card
+    // participates, including partial rows, with one resource per card/round.
     const warmupDwelledCards = async () => {
       dwellTimerId = 0;
-      if (cancelled || document.hidden || !wellVisibleCards.size) return;
-      const compactViewport = window.matchMedia?.(GALLERY_INTERNAL_SCROLL_QUERY).matches;
-      const cards = sortedCards(wellVisibleCards)
-        .slice(0, compactViewport ? DWELL_WARMUP_MAX_CARDS_COMPACT : DWELL_WARMUP_MAX_CARDS_WIDE);
-      cards.forEach((card, index) => {
-        warmupProduct(card, index < 2 ? 'dwell' : 'visible');
-        scheduleProductThumbWarmups(readThumbWarmups(card), { intent: 'dwell' });
-      });
-      const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-      if (connection?.saveData || /(^|-)2g$/.test(connection?.effectiveType || '')) return;
+      if (cancelled || navigating || document.hidden || shouldSkipSoftWarmup()) return;
+      const cards = [...new Map(sortedCards(visibleCards).map((card) => [card.dataset.productUrl, card])).values()];
       stopDetailWarmup();
       const generation = detailGeneration;
+      const current = () => !cancelled && !navigating && !document.hidden && generation === detailGeneration;
+      for (const card of cards) {
+        if (!current()) return;
+        const src = card.querySelector('[data-product-media-warmup]')?.dataset.productMediaWarmup;
+        await preloadImage(src, { owner: 'gallery-decode', priority: 'auto', decode: true });
+      }
+      const thumbs = cards.map(readThumbWarmups);
       const images = cards.map((card) => decodeProductThumbWarmups(
         card.querySelector('[data-product-images-warmup]')?.dataset.productImagesWarmup || ''
       ));
-      // One photo per visible product per round: never fill the queue with a
-      // single product's whole album. Downloads share the global 2/3-slot cap.
-      for (let index = 1; index < Math.max(0, ...images.map((list) => list.length)); index += 1) {
-        if (cancelled || document.hidden || generation !== detailGeneration) return;
-        await Promise.all(images.map((list) => list[index] && preloadImage(list[index], {
-          owner: 'gallery-detail', priority: 'low', decode: false,
-        })));
+      for (const albums of [thumbs, images]) {
+        for (let index = 1; index < Math.max(0, ...albums.map((list) => list.length)); index += 1) {
+          if (!current()) return;
+          await Promise.all(albums.map((list) => list[index] && preloadImage(list[index], {
+            owner: 'gallery-detail', priority: 'low', decode: false,
+          })));
+        }
       }
     };
 
@@ -392,6 +429,10 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
     };
 
     const onScroll = () => {
+      const scrollTop = scrollRoot ? scrollRoot.scrollTop : window.scrollY;
+      if (scrollTop !== lastScrollTop) scrollDirection = scrollTop > lastScrollTop ? 1 : -1;
+      lastScrollTop = scrollTop;
+      navigating = false;
       stopDetailWarmup();
       pauseSpeculativeProductImages(180);
       // Throttle selection, not the native scrolling or visible card downloads.
@@ -399,24 +440,34 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
       scheduleDwellWarmup();
     };
 
+    stopGalleryWarmupRef.current = () => {
+      navigating = true;
+      stopDetailWarmup();
+      clearQueuedImageLoads('gallery-visible');
+      window.clearTimeout(dwellTimerId);
+      window.clearTimeout(nearTimerId);
+      dwellTimerId = 0;
+      nearTimerId = 0;
+    };
+
     const selector = surface === 'category'
       ? '[data-category-native-view] [data-gallery-product-card]'
       : '[data-ssr-gallery] [data-gallery-product-card]';
     const syncCards = () => {
-      if (!observer || !dwellObserver) return;
+      if (!observer || !visibleObserver) return;
       for (const card of observedCards) {
         if (card.isConnected) continue;
         observer.unobserve(card);
-        dwellObserver.unobserve(card);
+        visibleObserver.unobserve(card);
         observedCards.delete(card);
         nearCards.delete(card);
-        wellVisibleCards.delete(card);
+        visibleCards.delete(card);
       }
       document.querySelectorAll(selector).forEach((card) => {
         if (observedCards.has(card)) return;
         observedCards.add(card);
         observer.observe(card);
-        dwellObserver.observe(card);
+        visibleObserver.observe(card);
       });
     };
 
@@ -424,13 +475,18 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
       if (cancelled) return;
       stopDetailWarmup();
       observer?.disconnect();
-      dwellObserver?.disconnect();
+      visibleObserver?.disconnect();
       observer = null;
-      dwellObserver = null;
-      wellVisibleCards.clear();
+      visibleObserver = null;
+      visibleCards.clear();
       nearCards.clear();
       observedCards.clear();
       const root = getVisibleWarmupRoot(surface);
+      scrollRoot = root;
+      lastScrollTop = root ? root.scrollTop : window.scrollY;
+      navigating = false;
+      visibleRouteUrlsRef.current.clear();
+      clearQueuedImageLoads('gallery-visible');
 
       observer = new IntersectionObserver((entries) => {
         entries.forEach((entry) => {
@@ -438,32 +494,32 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
           if (entry.isIntersecting) nearCards.add(card);
           else nearCards.delete(card);
         });
-        if (!nearTimerId) nearTimerId = window.setTimeout(warmupNearCards, 60);
+        scheduleNearWarmup();
       }, {
         root,
         rootMargin: '250px 0px',
         threshold: 0.01,
       });
 
-      dwellObserver = new IntersectionObserver((entries) => {
+      visibleObserver = new IntersectionObserver((entries) => {
         entries.forEach((entry) => {
-          if (entry.intersectionRatio >= DWELL_VISIBLE_RATIO) wellVisibleCards.add(entry.target);
-          else wellVisibleCards.delete(entry.target);
+          if (entry.isIntersecting && entry.intersectionRatio > 0) visibleCards.add(entry.target);
+          else visibleCards.delete(entry.target);
         });
+        stopDetailWarmup();
+        // No dwell requirement for the page or its first image.
+        if (nearTimerId) window.clearTimeout(nearTimerId);
+        warmupNearCards();
         scheduleDwellWarmup();
       }, {
         root,
-        threshold: [0, DWELL_VISIBLE_RATIO],
+        threshold: [0, 0.01],
       });
 
       syncCards();
     };
 
-    if (typeof window.requestIdleCallback === 'function') {
-      idleId = window.requestIdleCallback(setupObserver, { timeout: 1200 });
-    } else {
-      timeoutId = window.setTimeout(setupObserver, 120);
-    }
+    setupObserver();
 
     // Une fenetre redimensionnee de part et d'autre de 1024px change le
     // conteneur qui defile ; les images deja amorcees restent dedoublonnees.
@@ -472,41 +528,45 @@ export default function GalleryGridActionsIsland({ observeVisibleWarmup = false,
     // Capture : recoit aussi le scroll interne de la galerie mobile.
     document.addEventListener('scroll', onScroll, { capture: true, passive: true });
     const mutations = new MutationObserver(() => {
+      stopDetailWarmup();
       syncCards();
       if (!nearTimerId) nearTimerId = window.setTimeout(warmupNearCards, 120);
       scheduleDwellWarmup();
     });
     const grid = document.querySelector(surface === 'category' ? '[data-category-native-view]' : '[data-ssr-gallery]');
     if (grid) mutations.observe(grid, { childList: true, subtree: true, attributes: true,
-      attributeFilter: ['data-product-media-warmup', 'data-product-thumbs-warmup', 'data-product-images-warmup'] });
+      attributeFilter: ['data-product-url', 'data-product-media-warmup', 'data-product-thumbs-warmup', 'data-product-images-warmup'] });
     window.addEventListener('sv:catalog-version-changed', setupObserver);
     const onVisibility = () => {
       if (document.hidden) {
         stopDetailWarmup();
+        clearQueuedImageLoads('gallery-visible');
         clearQueuedProductImageWarmups();
         clearQueuedProductThumbWarmups();
-      } else { warmupNearCards(); scheduleDwellWarmup(); }
+      } else { navigating = false; warmupNearCards(); scheduleDwellWarmup(); }
     };
     document.addEventListener('visibilitychange', onVisibility);
 
     return () => {
       cancelled = true;
+      visibleRouteUrlsRef.current.clear();
+      window.removeEventListener('sv:product-route-invalidated', onRouteInvalidated);
+      stopGalleryWarmupRef.current = null;
       stopDetailWarmup();
+      clearQueuedImageLoads('gallery-visible');
       scrollRegionQuery?.removeEventListener?.('change', setupObserver);
       document.removeEventListener('scroll', onScroll, { capture: true });
       document.removeEventListener('visibilitychange', onVisibility);
       window.removeEventListener('sv:catalog-version-changed', setupObserver);
       mutations.disconnect();
-      if (idleId && typeof window.cancelIdleCallback === 'function') window.cancelIdleCallback(idleId);
-      if (timeoutId) window.clearTimeout(timeoutId);
       if (dwellTimerId) window.clearTimeout(dwellTimerId);
       if (nearTimerId) window.clearTimeout(nearTimerId);
       observer?.disconnect();
-      dwellObserver?.disconnect();
+      visibleObserver?.disconnect();
       clearQueuedProductImageWarmups();
       clearQueuedProductThumbWarmups();
     };
-  }, [observeVisibleWarmup, surface, warmupProduct]);
+  }, [observeVisibleWarmup, surface, prefetchProductRoute]);
 
   return null;
 }
