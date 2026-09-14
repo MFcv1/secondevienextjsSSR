@@ -1,9 +1,19 @@
 # État du projet
 
+14 septembre — ajout au panier sans ouverture imposée **livré en staging** :
+cartes, fiches et wishlist ajoutent le meuble et actualisent le compteur ;
+seules les actions explicites ouvrent le panier. Persistance invité/connecté,
+rejeu au chargement et checkout conservés. Hosting `019` READY/SUCCEEDED à
+100 %, `sv-mu1dz3bq-83f2f68bd80d`, source comparée au local (1 247 fichiers
+identiques), 23 tests ciblés, lint, builds local/cloud et contrôles HTTP/SSR
+réussis. Aucun navigateur/E2E ni mutation métier. Commit séparé des correctifs
+alertes/CI `588543c` ; aucun push. [Contrat panier](ux/INTERFACE_NAVIGATION.md).
+
 14 septembre — alertes Google Cloud corrigées en sandbox : tâches différées
 exclues du faux backlog après relecture des cinq protections transport vers
 LOA/PubSub ; deux workers catalogue corrigés et déployés, configuration/IAM
-préservées. Corrections CI et dépendances Next locales, sans push ni Hosting.
+préservées. Corrections CI committées sans push ; dépendances Next livrées
+avec Hosting `019` lors du correctif panier ci-dessus.
 [Résultats, preuves et limites](operations/ALERTES_2026-09-14.md).
 
 14 septembre — clôture Git commune checkout/stock : comparaison intégrale avec

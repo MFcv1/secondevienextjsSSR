@@ -77,8 +77,10 @@ export default function LazyCartPanelIsland({ className = '', darkMode = false }
       window.clearTimeout(shellTimerRef.current);
       shellTimerRef.current = null;
     }
-    setInstantShellClosing(false);
-    setInstantShellOpen(true);
+    if (eventType === 'sv:open-cart') {
+      setInstantShellClosing(false);
+      setInstantShellOpen(true);
+    }
     loadCartPanel()
       .then((Component) => {
         setCartPanel(() => Component);

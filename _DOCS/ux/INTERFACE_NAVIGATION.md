@@ -62,7 +62,12 @@ Le panier utilise une seule frontière asynchrone : `LazyCartPanelIsland` charge
 et la vue complète partagent `CartSurface`, sans deuxième importation dynamique.
 Le panier couvre tout le viewport, sur mobile comme sur ordinateur, avec un
 défilement unique et sa propre navigation de sortie. Il reste ouvert depuis les
-actions panier existantes, sans changement de route avant `/checkout`.
+actions d'ouverture explicites, sans changement de route avant `/checkout`.
+L'ajout d'un meuble depuis une carte, la fiche ou la wishlist conserve la
+page courante et actualise le compteur, sans ouvrir le panier ni son écran
+de chargement. L'icône Panier et l'action « Voir le panier » gardent leur
+comportement d'ouverture volontaire.
+
 Le dialogue natif contient le focus, rend l'arrière-plan inerte et gère Échap ;
 la fermeture restaure le focus et libère le scroll de la page. Les safe areas
 sont préservées. Le montant se révèle chiffre par chiffre et les sections au

@@ -181,7 +181,6 @@ export default function CartPanelIsland({ className = '', darkMode = false, onRe
 
     if (!cartUser) {
       setCartItems(addGuestCartItem(item));
-      openCart();
       return true;
     }
 
@@ -214,9 +213,8 @@ export default function CartPanelIsland({ className = '', darkMode = false, onRe
         updatedAt: serverTimestamp(),
       }, { merge: true });
     });
-    openCart();
     return true;
-  }, [openCart, user]);
+  }, [user]);
 
   const processProductAdded = useCallback(async (item) => {
     const requestId = typeof item?.cartRequestId === 'string' ? item.cartRequestId : '';
