@@ -61,3 +61,27 @@ source proviennent de générations Storage explicitement identifiées.
 Restaurer uniquement ces cibles en cas de besoin, en conservant les documents.
 Le binding IAM ajouté est identifié par `admin-private-quote-photos` et peut
 être retiré isolément. Aucun rollback n'a été exécuté lors de cette livraison.
+
+## Simplification du chiffrage — seconde livraison
+
+Demande utilisateur : interface épurée, « Modifier le devis », ajout depuis les
+prestations du formulaire public, prix précis et message expliquant la révision.
+Source : `0a02aa0`, construite depuis un worktree isolé ; les changements locaux
+parallèles des fiches, images et panier ne sont pas inclus.
+
+- Une action ouvre les prestations demandées ; chaque ligne conserve sa
+  fourchette indicative et propose un seul montant manuel. Aucun prix médian
+  n'est choisi automatiquement.
+- Les six prestations publiques sont partagées avec l'éditeur admin ; les
+  prestations déjà présentes sont exclues du sélecteur d'ajout.
+- Le message accompagne le total dans la prévisualisation existante.
+- Quinze tests ciblés et quatre scénarios Playwright ordinateur/mobile passent.
+  ESLint sans erreur (deux avertissements image préexistants), build Node 22 et
+  `git diff --check` réussis. Envoi simulé seulement, aucun e-mail réel envoyé.
+
+App Hosting uniquement : `build-2026-09-14-003`, état `SUCCEEDED`, trafic 100 %.
+Identifiant servi : `sv-mu1151al-d52c86310c39`. Vérification après publication :
+`/`, `/admin`, `/devis` en HTTP 200, même identifiant, admin `private, no-store`.
+Les Functions n'ont pas été redéployées lors de cette seconde livraison.
+Révision précédente observée juste avant déploiement et disponible pour retour
+arrière : `build-2026-09-14-002` (identifiant `sv-mu10lvuk-5fc4f71b41b1`).
