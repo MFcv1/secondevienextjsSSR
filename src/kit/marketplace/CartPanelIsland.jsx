@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { ShoppingBag } from 'lucide-react';
 import CartPageView from '../commerce/CartPageView';
+import useCartFavorites from '../commerce/useCartFavorites';
 import { getDb, getFirebaseAuth, loadFirestoreModule } from '../config/firebaseLazy';
 import { useAuthState } from '../contexts/AuthContext';
 import {
@@ -13,11 +14,13 @@ import {
   CART_STATE_CHANGED_EVENT,
   getCartDocumentId,
   GUEST_CART_CHANGED_EVENT,
+  GUEST_CART_STORAGE_KEY,
   readGuestCart,
   removeGuestCartItem,
   writeCheckoutCartHandoff,
 } from '../commerce/guestCart';
 import { isPurchasable } from '../commerce/purchasability';
+import { migrateGuestCartToUserCart } from '../commerce/cartMigration';
 
 function CartHeaderIcon({ darkMode = false } = {}) {
   const iconTone = darkMode
@@ -52,6 +55,7 @@ export default function CartPanelIsland({ className = '', darkMode = false, onRe
   const user = authState.user;
   const [cartItems, setCartItems] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
+  const favorites = useCartFavorites(user, isOpen);
   const [interacted, setInteracted] = useState(false);
   const [isCartPrimed, setIsCartPrimed] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -80,8 +84,11 @@ export default function CartPanelIsland({ className = '', darkMode = false, onRe
     setCartLoading(true);
 
     Promise.all([getDb(), loadFirestoreModule()])
-      .then(([db, { collection, onSnapshot, query }]) => {
+      .then(async ([db, firestore]) => {
         if (cancelled) return;
+        await migrateGuestCartToUserCart(db, firestore, user, () => !cancelled);
+        if (cancelled) return;
+        const { collection, onSnapshot, query } = firestore;
         unsubscribe = onSnapshot(
           query(collection(db, 'users', user.uid, 'cart')),
           (snap) => {
@@ -118,11 +125,16 @@ export default function CartPanelIsland({ className = '', darkMode = false, onRe
     if (user) return undefined;
 
     const handleGuestCartChanged = (event) => {
+      if (event.type === 'storage' && event.key !== null && event.key !== GUEST_CART_STORAGE_KEY) return;
       setCartItems(Array.isArray(event.detail?.items) ? event.detail.items : readGuestCart());
     };
 
     window.addEventListener(GUEST_CART_CHANGED_EVENT, handleGuestCartChanged);
-    return () => window.removeEventListener(GUEST_CART_CHANGED_EVENT, handleGuestCartChanged);
+    window.addEventListener('storage', handleGuestCartChanged);
+    return () => {
+      window.removeEventListener(GUEST_CART_CHANGED_EVENT, handleGuestCartChanged);
+      window.removeEventListener('storage', handleGuestCartChanged);
+    };
   }, [user]);
 
   useEffect(() => {
@@ -252,6 +264,7 @@ export default function CartPanelIsland({ className = '', darkMode = false, onRe
   }, [user]);
 
   const totalPrice = useMemo(() => getCartTotal(cartItems), [cartItems]);
+  const cartCount = cartItems.reduce((sum, item) => sum + (Number(item.quantity) || 1), 0);
 
   const goToCheckout = () => {
     writeCheckoutCartHandoff(cartItems);
@@ -263,9 +276,9 @@ export default function CartPanelIsland({ className = '', darkMode = false, onRe
     <>
       <button type="button" className={className} title="Panier" aria-label="Panier" onPointerDown={primeCart} onPointerEnter={primeCart} onFocus={primeCart} onClick={() => isOpen ? setIsOpen(false) : openCart()}>
         <CartHeaderIcon darkMode={darkMode} />
-        {cartItems.length > 0 ? (
+        {cartCount > 0 ? (
           <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-stone-950 px-1 text-[9px] font-black leading-none text-white ring-2 ring-white dark:bg-[#D9B58D] dark:text-stone-950 dark:ring-[#080807]">
-            {cartItems.length}
+            {cartCount}
           </span>
         ) : null}
       </button>
@@ -275,6 +288,8 @@ export default function CartPanelIsland({ className = '', darkMode = false, onRe
           isOpen={isOpen}
           onClose={() => setIsOpen(false)}
           cartItems={cartItems}
+          favorites={favorites}
+          onAddFavorite={addCartItem}
           onRemoveItem={removeFromCart}
           totalPrice={totalPrice}
           onCheckout={goToCheckout}

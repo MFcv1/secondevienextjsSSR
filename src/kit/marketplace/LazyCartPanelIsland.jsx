@@ -33,7 +33,7 @@ const readGuestCartCount = () => {
   if (typeof window === 'undefined') return 0;
   try {
     const parsed = JSON.parse(window.localStorage.getItem(GUEST_CART_STORAGE_KEY) || '[]');
-    return Array.isArray(parsed) ? parsed.length : 0;
+    return Array.isArray(parsed) ? parsed.reduce((sum, item) => sum + (Number(item.quantity) || 1), 0) : 0;
   } catch {
     return 0;
   }
@@ -79,9 +79,6 @@ export default function LazyCartPanelIsland({ className = '', darkMode = false }
     }
     setInstantShellClosing(false);
     setInstantShellOpen(true);
-    if (eventType === 'sv:product-added') {
-      setCartCount((currentCount) => Math.max(currentCount + 1, readGuestCartCount() + 1));
-    }
     loadCartPanel()
       .then((Component) => {
         setCartPanel(() => Component);
@@ -116,7 +113,7 @@ export default function LazyCartPanelIsland({ className = '', darkMode = false }
   useEffect(() => {
     const refreshGuestCount = (event) => {
       const items = Array.isArray(event?.detail?.items) ? event.detail.items : null;
-      setCartCount(items ? items.length : readGuestCartCount());
+      setCartCount(items ? items.reduce((sum, item) => sum + (Number(item.quantity) || 1), 0) : readGuestCartCount());
     };
 
     refreshGuestCount();
@@ -128,6 +125,18 @@ export default function LazyCartPanelIsland({ className = '', darkMode = false }
       window.removeEventListener(CART_STATE_CHANGED_EVENT, refreshGuestCount);
       window.removeEventListener('storage', refreshGuestCount);
     };
+  }, []);
+
+  // Start the real cart subscription even when the header has not been touched.
+  // Keep the immediate shell interactive while its runtime loads in the background.
+  useEffect(() => {
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      loadCartPanel().then((Component) => {
+        if (!cancelled) setCartPanel(() => Component);
+      }).catch(() => {});
+    }, 800);
+    return () => { cancelled = true; window.clearTimeout(timer); };
   }, []);
 
   useEffect(() => {

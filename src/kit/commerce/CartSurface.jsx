@@ -11,6 +11,7 @@ export default function CartSurface({ isOpen, onClose, darkMode, children, loadi
     const dialog = dialogRef.current;
     const previousFocus = document.activeElement;
     dialog.showModal();
+    dialog.focus({ preventScroll: true });
     dialog.scrollTop = 0;
     return () => {
       dialog.close();
@@ -24,6 +25,7 @@ export default function CartSurface({ isOpen, onClose, darkMode, children, loadi
   return (
     <dialog
       ref={dialogRef}
+      tabIndex={-1}
       className={styles.surface}
       data-theme={darkMode ? 'dark' : undefined}
       data-cart-panel

@@ -88,7 +88,7 @@ test('quantity totals, removal, empty cart and checkout callback', async ({ page
   await page.getByRole('button', { name: 'Retirer Chaise de bistrot du panier' }).click();
   await expect(page.getByLabel('780,00 €', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: /Retirer Buffet/ }).click();
-  await expect(page.getByRole('heading', { name: /Une place pour/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Votre panier', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Valider la commande' })).toHaveCount(0);
   await page.keyboard.press('Escape');
   await page.reload();

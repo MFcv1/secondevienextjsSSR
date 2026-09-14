@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowRight, ShoppingBag, ShieldCheck, Truck } from 'lucide-react';
 import CartSurface from './CartSurface';
+import CartFavorites from './CartFavorites';
 import styles from './CartPage.module.css';
 
 const money = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' });
@@ -10,11 +11,17 @@ function AnimatedAmount({ value }) {
   return (
     <span className={styles.amount} aria-label={formatted}>
       <span key={formatted} className={styles.digits} aria-hidden="true">
-        {Array.from(formatted).map((character, index) => (
-          <span className={styles.digitWindow} key={index}>
-            <span className={styles.digit} style={{ '--digit-delay': `${Math.min(index, 12) * 45}ms` }}>{character}</span>
-          </span>
-        ))}
+        {Array.from(formatted).map((character, index) => {
+          if (!/\d/.test(character)) return <span key={index}>{character}</span>;
+          const digit = Number(character);
+          return (
+            <span className={styles.digitWindow} key={index}>
+              <span className={styles.digit} style={{ '--digit-delay': `${Math.min(index, 12) * 55}ms` }}>
+                {[3, 2, 1, 0].map((offset) => <span className={styles.digitFace} key={offset}>{(digit + offset) % 10}</span>)}
+              </span>
+            </span>
+          );
+        })}
       </span>
     </span>
   );
@@ -87,7 +94,7 @@ function CartItem({ item, onRemoveItem, onRemoved }) {
   );
 }
 
-export default function CartPageView({ isOpen, onClose, cartItems, onRemoveItem, totalPrice, onCheckout, darkMode, loading = false, loadError = '' }) {
+export default function CartPageView({ isOpen, onClose, cartItems, onRemoveItem, totalPrice, onCheckout, darkMode, loading = false, loadError = '', favorites, onAddFavorite }) {
   const [announcement, setAnnouncement] = useState('');
   const headingRef = useRef(null);
   const count = cartItems.reduce((sum, item) => sum + (Number(item.quantity) || 1), 0);
@@ -112,8 +119,8 @@ export default function CartPageView({ isOpen, onClose, cartItems, onRemoveItem,
           <>
             <section className={styles.hero}>
               <p className={styles.eyebrow}>Votre panier · {count} pièce{count > 1 ? 's' : ''}</p>
-              <h1 ref={headingRef} tabIndex={-1}>Une nouvelle histoire.<br /><span>Chez vous.</span></h1>
-              <AnimatedAmount value={totalPrice} />
+              <h1 ref={headingRef} tabIndex={-1}>Total du panier</h1>
+              <AnimatedAmount key={String(isOpen)} value={totalPrice} />
               <p className={styles.totalNote}>Sous-total · Livraison calculée à l’étape suivante.</p>
               {checkoutButton}
               <p className={styles.secure}><ShieldCheck size={15} aria-hidden="true" /> Paiement sécurisé par Stripe</p>
@@ -138,14 +145,13 @@ export default function CartPageView({ isOpen, onClose, cartItems, onRemoveItem,
             </Reveal>
           </>
         ) : !loadError ? (
-          <section className={styles.empty}>
-            <span className={styles.emptyIcon}><ShoppingBag size={38} strokeWidth={1} aria-hidden="true" /></span>
-            <p className={styles.eyebrow}>Votre panier</p>
-            <h1 ref={headingRef} tabIndex={-1}>Une place pour<br />un coup de cœur.</h1>
-            <p>Votre panier est encore vide.<br />La prochaine belle pièce vous attend peut-être.</p>
-            <button type="button" className={styles.primary} onClick={onClose}>Continuer la visite <ArrowRight size={17} aria-hidden="true" /></button>
+          <section className={`${styles.empty} ${favorites?.count || favorites?.loading || favorites?.error ? styles.emptyWithFavorites : ''}`}>
+            <h1 ref={headingRef} tabIndex={-1}>Votre panier</h1>
+            <AnimatedAmount value={0} />
+            <p className={styles.totalNote}>Votre panier est vide.</p>
           </section>
         ) : null}
+        <CartFavorites favorites={favorites} cartItems={cartItems} onAdd={onAddFavorite} onNavigate={onClose} />
         <footer className={styles.footer}><span>Seconde Vie</span><span>Des meubles. Des histoires. La vôtre.</span></footer>
       </div>
     </CartSurface>

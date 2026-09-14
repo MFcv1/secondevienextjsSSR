@@ -76,6 +76,18 @@ sont regroupés dans le commit. Les modifications parallèles du panier sont
 conservées hors de ce commit. Aucun nouveau déploiement ni push pour cette
 clôture ; contrôles d'empreintes, de liens et de diff uniquement.
 
+## Écart de déploiement constaté à la clôture panier
+
+Le contrôle ultérieur du 14 septembre compare la source Hosting `011`, active
+à 100 %, avec `main`. Les cinq fichiers applicatifs du commit `61efd41`
+(`CategoryServerView.jsx`, `GalleryGridActionsIsland.jsx`,
+`GalleryProductCardServer.jsx`, `imageUtils.js`, `productImageLoader.js`)
+diffèrent : le cloud contient leur version antérieure au présent lot.
+Une livraison suivante a donc écrasé le lot images publié dans `002`.
+La preuve de publication et la recette ci-dessus restent historiques ; le lot
+est conservé sur `main`, mais sa restauration cloud reste ouverte. Aucune
+restauration ni nouvelle recette images effectuée pendant la clôture panier.
+
 ## Limites de la recette
 
 Le code ne prouve pas un temps clic-vers-affichage sur telephone. Le cache

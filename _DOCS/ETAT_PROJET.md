@@ -1,5 +1,40 @@
 # État du projet
 
+14 septembre — clôture panier/favoris : compteurs distincts, synchronisation
+du panier avant ouverture et montant vide à zéro. Recette sandbox confirmée
+fonctionnelle par l'utilisateur. Hosting `build-2026-09-14-011` relu à 100 %,
+trois routes HTTP 200, fichiers panier identiques à la source publiée ;
+18 tests Node ciblés, lint et diff-check réussis. Aucun navigateur relancé.
+[Bilan](commerce/PANIER_SELECTION_2026-09-14.md#clôture-et-contrôle-de-main).
+Écart ouvert hors panier : cinq fichiers images du commit `61efd41` sont plus
+récents sur `main` que dans cette source Hosting. Le lot images de `002` a été
+écrasé par une livraison ultérieure ; sa présence actuelle en sandbox ne doit
+plus être annoncée. [Constat](images/OUVERTURE_GALERIE_2026-09-14.md#écart-de-déploiement-constaté-à-la-clôture-panier).
+
+14 septembre — favoris visibles depuis le panier, invités et comptes : section
+« Vos coups de cœur », pièces vendues visibles sans achat, ajout explicite des
+pièces disponibles. Hosting `build-2026-09-14-009` à 100 %,
+`sv-mu1348pb-b18acbc61a2a`, HTTP 200 ; source combinée `008` préservée.
+19 tests de logique, lint ciblé et build Node 22 réussis. Aucun navigateur ni
+test navigateur pour ce lot, recette réservée à l'utilisateur. Aucun commit,
+push ou déploiement backend. [Preuves](commerce/PANIER_2026-09-14.md#favoris-visibles-depuis-le-panier).
+
+14 septembre — restauration panier après écrasement par les livraisons devis :
+Hosting `build-2026-09-14-007` à 100 %, `sv-mu12a96e-f9fd3d3770f7`. Source
+complète devis `006` + cinq fichiers panier de `004` ; build réussi, HTTP et
+CSS navigateur vérifiés (72 px, espacement normal, rouleaux 1,1 s). Coordination
+avec la tâche devis : sa suite reprend cette source combinée, sans perdre le
+lot panier non committé. [Preuves](commerce/PANIER_2026-09-14.md).
+
+14 septembre — [panier : continuité et montant](commerce/PANIER_2026-09-14.md) :
+favoris et panier distingués ; import invité partagé dès ouverture du panneau
+avec UID, écoute inter-onglets invitée, chiffres en rouleaux sans rognage et
+polices centrales réduites. 19 tests ciblés, quatre scénarios UI isolés, lint
+et build Node 22 réussis. Hosting `build-2026-09-14-004` à 100 %,
+`sv-mu11c3it-ca2ff0b1060e`, HTTP et panier connecté après reload vérifiés.
+Devis `003` et images `002` préservés ; aucun commit/push ni livraison backend.
+Recette invité/connexion complète et Safari non exécutées en hébergé.
+
 14 septembre — [ouverture des fiches au scroll](images/OUVERTURE_GALERIE_2026-09-14.md) :
 toutes les cartes visibles preparent leur route Next et leurs premieres images,
 file reordonnee sans abandon des demandes utiles, decodage a la pause et albums

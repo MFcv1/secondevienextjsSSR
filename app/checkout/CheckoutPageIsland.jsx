@@ -8,8 +8,8 @@ import { useAuth } from '../../src/kit/contexts/AuthContext';
 import { getDb, loadFirestoreModule } from '../../src/kit/config/firebaseLazy';
 import {
   clearCheckoutCartHandoff,
-  getCartDocumentId,
   GUEST_CART_CHANGED_EVENT,
+  GUEST_CART_STORAGE_KEY,
   readCheckoutCartHandoff,
   readGuestCart,
   writeGuestCart,
@@ -31,6 +31,7 @@ import {
 import { isPendingCheckout, prepareOwnedCheckoutResume } from '../../src/kit/commerce/pendingCheckout';
 import { adaptCommerceOrder } from '../../src/kit/commerce/orderAdapter';
 import { clearPurchasedRemoteCart } from '../../src/kit/commerce/purchasedCartCleanup';
+import { migrateGuestCartToUserCart } from '../../src/kit/commerce/cartMigration';
 import {
   persistGate8FixtureContext,
   readGate8FixtureCart,
@@ -41,44 +42,6 @@ import {
 const getCartTotal = (items) => (
   items.reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 1), 0)
 );
-
-const getUserCartPayload = (item = {}, serverTimestamp) => ({
-  originalId: item.originalId || item.productId || item.id,
-  collectionName: item.collectionName || 'furniture',
-  name: item.name || item.title || 'Piece Seconde Vie',
-  price: Number(item.price || item.currentPrice || item.startingPrice || 0),
-  stock: Number(item.stock || 0),
-  sold: Boolean(item.sold),
-  priceOnRequest: Boolean(item.priceOnRequest),
-  image: item.image || item.imageUrl || '',
-  material: item.material || 'Bois',
-  quantity: Number(item.quantity || 1),
-  cartLineId: item.cartLineId,
-  cartRevision: Number.isSafeInteger(item.cartRevision) ? item.cartRevision : 1,
-  addedAt: serverTimestamp(),
-});
-
-const migrateGuestCartToUserCart = async (db, firestore, user) => {
-  const guestItems = readGuestCart();
-  if (!user || guestItems.length === 0) return false;
-
-  for (const item of guestItems) {
-    const cartDocId = getCartDocumentId(item);
-    if (!cartDocId) continue;
-    const cartRef = firestore.doc(db, 'users', user.uid, 'cart', cartDocId);
-    await firestore.runTransaction(db, async (transaction) => {
-      const currentSnapshot = await transaction.get(cartRef);
-      // A repeated import or an account-side addition must never be replaced
-      // by an older guest snapshot (including after a lost acknowledgement).
-      if (currentSnapshot.exists()) return;
-      transaction.set(cartRef, {
-        ...getUserCartPayload(item, firestore.serverTimestamp),
-      }, { merge: true });
-    });
-    writeGuestCart(readGuestCart().filter((current) => !isPurchasedCartLineUnchanged(current, item)));
-  }
-  return true;
-};
 
 function CheckoutPageContent() {
   const router = useRouter();
@@ -188,7 +151,7 @@ function CheckoutPageContent() {
     Promise.all([getDb(), loadFirestoreModule()])
       .then(async ([db, firestore]) => {
         if (cancelled) return;
-        await migrateGuestCartToUserCart(db, firestore, user);
+        await migrateGuestCartToUserCart(db, firestore, user, () => !cancelled);
         if (cancelled) return;
         const { collection, onSnapshot, query } = firestore;
         unsubscribe = onSnapshot(
@@ -225,11 +188,16 @@ function CheckoutPageContent() {
     if (user) return undefined;
 
     const handleGuestCartChanged = (event) => {
+      if (event.type === 'storage' && event.key !== null && event.key !== GUEST_CART_STORAGE_KEY) return;
       setCartItems(Array.isArray(event.detail?.items) ? event.detail.items : readGuestCart());
     };
 
     window.addEventListener(GUEST_CART_CHANGED_EVENT, handleGuestCartChanged);
-    return () => window.removeEventListener(GUEST_CART_CHANGED_EVENT, handleGuestCartChanged);
+    window.addEventListener('storage', handleGuestCartChanged);
+    return () => {
+      window.removeEventListener(GUEST_CART_CHANGED_EVENT, handleGuestCartChanged);
+      window.removeEventListener('storage', handleGuestCartChanged);
+    };
   }, [user]);
 
   const total = useMemo(() => getCartTotal(cartItems), [cartItems]);

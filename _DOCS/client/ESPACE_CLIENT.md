@@ -325,6 +325,32 @@ second argument de `fetchPublicCatalogProduct` est reserve a l'injection d'un
 
 ## 6. Panier et handoff
 
+Le cœur ajoute aux favoris, indépendamment du panier, y compris pour une pièce
+vendue. L'ajout au panier est une action explicite et exige `isPurchasable`.
+Les favoris ne deviennent jamais automatiquement des lignes de commande.
+Depuis l'intégration du 14 septembre, le panier affiche aussi « Vos coups de
+cœur » : les douze premiers favoris sont enrichis depuis le catalogue public
+à l'ouverture (quatre lectures simultanées maximum), avec accès à la liste
+complète. Les pièces vendues restent visibles mais non achetables ; les pièces
+disponibles ont un ajout explicite au panier, confirmé après persistance.
+Cette section ne contribue ni au total, ni au compteur des lignes d'achat.
+Le cœur du header compte les identifiants uniques du même abonnement wishlist
+que la page et les cartes. Le badge panier compte uniquement les quantités du
+panier, même avant son ouverture ; aucun ajout n'est compté avant confirmation.
+Un panier sans ligne affiche zéro, même avec des favoris.
+Le changement de compte ou la fermeture ignore les réponses en cours.
+
+Continuité du 14 septembre 2026 : le panneau panier et le checkout partagent
+`src/kit/commerce/cartMigration.js`. Dès que le panneau connaît l'UID, il importe
+les lignes invitées sans attendre le checkout. Les imports sont sérialisés,
+préservent toute ligne distante existante et ne retirent localement que les
+révisions confirmées. Un échec conserve les lignes invitées ; un consommateur
+devenu obsolète cesse ses imports. Les deux vues invitées écoutent également
+les changements de leur clé `localStorage` provenant d'un autre onglet.
+Le total du panier utilise des rouleaux par chiffre, avec séparateurs fixes,
+sans espacement négatif dans les masques ; le mouvement réduit affiche
+directement le montant final. [Qualification et livraison](../commerce/PANIER_2026-09-14.md).
+
 Correctifs locaux du 7 septembre 2026, non déployés : les actions reçues pendant
 le chargement du panier sont conservées et rejouées une seule fois après
 installation de ses listeners. Une réponse d'écoute tardive de l'ancien compte
