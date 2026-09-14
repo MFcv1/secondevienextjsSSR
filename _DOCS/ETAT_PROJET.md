@@ -1,5 +1,17 @@
 # État du projet
 
+14 septembre — refonte locale de la [gestion des devis](admin/BACKOFFICE.md#51-demandes-de-devis) :
+aperçus privés de secours, corbeille restaurable, chiffrage par grille ou manuel,
+aperçu et envoi explicite, accord client et clôture. Actions d'enregistrement en
+tête, notes compactes et disposition ordinateur/mobile révisée. 33 tests locaux
+devis/cache sous Node 22 et quatre scénarios UI isolés réussis ; lint ciblé et
+diff vérifiés. Le test historique G6 du nombre total d'exports attend 163 au
+lieu des 189 actuels ; cette assertion reste en échec hors périmètre.
+Aucun build Next complet, émulateur Firebase, e-mail réel ou contrôle IAM cloud.
+Aucun commit, push ou déploiement ; pas de suppression physique de données.
+La livraison requiert le lecteur devis, la commande admin avec secrets e-mail
+et le frontend, puis qualification des photos et du transport sur sandbox.
+
 13 septembre — affinage tactile apres retour utilisateur: transition mobile
 100 ms, seuil de swipe raccourci, appuis galerie/zoom traites au relachement,
 suppression de la zone morte de 420 ms apres swipe. Commit `340918f`, Hosting

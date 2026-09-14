@@ -342,6 +342,37 @@ reelle reste distincte et exige un envoi sandbox explicitement autorise.
 
 ## 10. Accusé de réception de devis
 
+### Proposition après revue admin (implémentation locale du 14 septembre)
+
+L'action explicite `send` de `updateQuoteRequestAdminGen2` envoie la proposition
+sauvegardée au destinataire du dossier, après aperçu et confirmation dans
+`AdminQuotes`. `quoteProposalEmail` utilise le transport et le design existants.
+Les notes internes et les photos privées sont exclues de l'e-mail.
+
+Une transaction écrit le claim `proposalEmail.sending`, sa version et son
+snapshot avant l'appel fournisseur. Deux appels pour la même version ne
+renvoient pas le message. Une proposition déjà envoyée inchangée est refusée.
+Le succès fournisseur est enregistré durablement avant affichage du statut
+envoyé ; cela prouve l'acceptation par le fournisseur, pas la réception en boîte.
+Un échec de configuration avant appel devient `failed`. Toute erreur après
+invocation du transport est conservativement `delivery_unknown`. Un crash
+laissant `sending` au-delà de deux minutes apparaît comme résultat incertain
+à la prochaine lecture ; aucun renvoi automatique.
+
+La reprise est une opération admin explicite après vérification auprès du
+service mail : confirmer envoyé, ou confirmer non envoyé pour autoriser une
+nouvelle tentative. Une panne de persistance finale conserve le claim et ne
+permet pas de rejouer aveuglément. Pas de trigger, queue ni scan ajouté ;
+la détection dépend de la consultation/actualisation de la fiche, sans alerte
+proactive. Les tests locaux injectent concurrence, réponse perdue après claim,
+résultat SMTP ambigu et réponse perdue après succès durable. Ils ne prouvent
+ni IAM cloud, ni délivrabilité réelle.
+
+Le manifeste ciblé de `updateQuoteRequestAdminGen2` inclut désormais les mêmes
+secrets e-mail que le transport devis existant, `FIREBASE_CONFIG`, le choix du
+fournisseur et 60 secondes. Avant livraison, vérifier leurs versions et droits
+réels sur le sandbox ; aucune activation ni aucun e-mail réel dans ce chantier.
+
 Modele: `quote-request-received`.
 
 La finalisation durable d'une demande sous `/devis` declenche un message au

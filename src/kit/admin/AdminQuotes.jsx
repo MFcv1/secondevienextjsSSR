@@ -20,6 +20,8 @@ import {
   UserRound,
 } from 'lucide-react';
 import { getAdminCachedData } from './adminDataCache';
+import QuoteProposalEditor from './QuoteProposalEditor';
+import { displayQuoteStatus, quoteDraft } from './quotePresentation';
 import {
   ADMIN_QUOTES_CACHE_KEY,
   getQuoteRequestAdmin,
@@ -29,12 +31,10 @@ import {
 
 const STATUS_OPTIONS = [
   ['new', 'Nouveau'],
-  ['qualifying', 'À qualifier'],
-  ['waiting_customer', 'À recontacter'],
   ['in_review', 'En étude'],
-  ['proposal_ready', 'Proposition prête'],
+  ['proposal_sent', 'Proposition envoyée'],
+  ['accepted', 'Accord client'],
   ['closed', 'Terminé'],
-  ['declined', 'Non retenu'],
 ];
 
 const STATUS_META = {
@@ -45,6 +45,8 @@ const STATUS_META = {
   proposal_ready: { label: 'Proposition prête', className: 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-300/20 dark:bg-emerald-300/10 dark:text-emerald-200' },
   closed: { label: 'Terminé', className: 'border-stone-200 bg-stone-100 text-stone-700 dark:border-white/10 dark:bg-white/[0.06] dark:text-stone-300' },
   declined: { label: 'Non retenu', className: 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-300/20 dark:bg-rose-300/10 dark:text-rose-200' },
+  proposal_sent: { label: 'Proposition envoyée', className: 'border-sky-200 bg-sky-50 text-sky-800' },
+  accepted: { label: 'Accord client', className: 'border-emerald-200 bg-emerald-50 text-emerald-800' },
 };
 
 const euro = (cents) => new Intl.NumberFormat('fr-FR', {
@@ -75,7 +77,7 @@ const relativeDate = (value) => {
 };
 
 function StatusBadge({ status }) {
-  const meta = STATUS_META[status] || STATUS_META.new;
+  const meta = STATUS_META[displayQuoteStatus(status)] || STATUS_META.new;
   return (
     <span className={`inline-flex min-h-7 items-center rounded-full border px-2.5 text-[10px] font-bold ${meta.className}`}>
       {meta.label}
@@ -148,11 +150,17 @@ export default function AdminQuotes({ darkMode = false }) {
   const [detailRefreshKey, setDetailRefreshKey] = useState(0);
   const [draft, setDraft] = useState({ status: 'new', internalNotes: '' });
   const draftRef = useRef(null);
+  const draftBaseRef = useRef(null);
   draftRef.current = draft;
   const selectionRef = useRef(selectedId);
   selectionRef.current = selectedId;
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
+  const trashDialog = useRef(null);
+  const photoDialog = useRef(null);
+  const [openedPhoto, setOpenedPhoto] = useState(null);
+  const dirty = Boolean(detail && JSON.stringify(draft) !== JSON.stringify(quoteDraft(detail)));
+  const locked = saving || Boolean(detail?.deletedAt) || ['sending', 'delivery_unknown'].includes(detail?.proposalEmail?.status);
   const listSequenceRef = useRef(0);
   const initialLoadRef = useRef(false);
 
@@ -196,26 +204,25 @@ export default function AdminQuotes({ darkMode = false }) {
       return undefined;
     }
     let cancelled = false;
+    const receiveDraft = (quote) => {
+      const next = quoteDraft(quote);
+      if (draftRef.current?.quoteId !== selectedId || JSON.stringify(draftRef.current) === JSON.stringify(draftBaseRef.current)) {
+        draftRef.current = next;
+        setDraft(next);
+      }
+      draftBaseRef.current = next;
+    };
     const row = quotes.find((quote) => quote.quoteId === selectedId);
     if (row) {
       setDetail(row);
-      if (draftRef.current?.quoteId !== selectedId) {
-        const initial = { quoteId: selectedId, expectedVersion: row.version, status: row.status, internalNotes: row.internalNotes || '' };
-        draftRef.current = initial;
-        setDraft(initial);
-      }
+      receiveDraft(row);
     }
     setDetailStatus(row ? 'ready' : 'loading');
-    setSaveMessage('');
     if (row && !row.photoCount) return undefined;
-    getQuoteRequestAdmin(selectedId, row?.version, { force: detailRefreshKey > 0 }).then(({ quote }) => {
+    getQuoteRequestAdmin(selectedId, row?.version, { force: detailRefreshKey > 0, privatePreview: detailRefreshKey > 0 }).then(({ quote }) => {
       if (cancelled) return;
       setDetail(quote);
-      if (!draftRef.current || draftRef.current.quoteId !== selectedId) {
-        const initial = { quoteId: selectedId, expectedVersion: quote.version, status: quote.status || 'new', internalNotes: quote.internalNotes || '' };
-        draftRef.current = initial;
-        setDraft(initial);
-      }
+      receiveDraft(quote);
       setDetailStatus('ready');
     }).catch(() => {
       if (!cancelled) { setDetailStatus(row ? 'ready' : 'error'); setSaveMessage('Photos indisponibles. Actualisez pour réessayer.'); }
@@ -226,8 +233,10 @@ export default function AdminQuotes({ darkMode = false }) {
   const filteredQuotes = useMemo(() => {
     const term = query.trim().toLocaleLowerCase('fr');
     return quotes.filter((quote) => {
+      if (statusFilter === 'trash') return Boolean(quote.deletedAt) && (!term || [quote.requestNumber, quote.customer?.fullName, quote.customer?.email].join(' ').toLocaleLowerCase('fr').includes(term));
+      if (quote.deletedAt) return false;
       if (statusFilter === 'active' && ['closed', 'declined'].includes(quote.status)) return false;
-      if (statusFilter !== 'all' && statusFilter !== 'active' && quote.status !== statusFilter) return false;
+      if (statusFilter !== 'all' && statusFilter !== 'active' && displayQuoteStatus(quote.status) !== statusFilter) return false;
       if (!term) return true;
       const haystack = [
         quote.requestNumber,
@@ -244,32 +253,37 @@ export default function AdminQuotes({ darkMode = false }) {
   }, [query, quotes, statusFilter]);
 
   const metrics = useMemo(() => {
-    const active = quotes.filter((quote) => !['closed', 'declined'].includes(quote.status));
+    const active = quotes.filter((quote) => !quote.deletedAt && !['closed', 'declined'].includes(quote.status));
     return {
-      newCount: quotes.filter((quote) => quote.status === 'new').length,
+      newCount: active.filter((quote) => quote.status === 'new').length,
       activeCount: active.length,
-      readyCount: quotes.filter((quote) => quote.status === 'proposal_ready').length,
+      readyCount: active.filter((quote) => quote.status === 'proposal_sent').length,
       potential: active.reduce((sum, quote) => sum + Number(quote.project?.indicativeEstimate?.maxCents || 0), 0),
     };
   }, [quotes]);
 
   const openDetail = (quoteId) => {
+    if (saving) return;
+    if (dirty && !window.confirm('Quitter ce dossier et abandonner les modifications non enregistrées ?')) return;
+    setSaveMessage('');
     setSelectedId(quoteId);
     if (typeof window !== 'undefined' && window.innerWidth < 1280) {
-      window.requestAnimationFrame(() => document.getElementById('quote-admin-detail')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+      window.requestAnimationFrame(() => document.getElementById('quote-admin-detail')?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' }));
     }
   };
 
-  const save = async () => {
+  const save = async (action = 'save') => {
     if (!detail || saving) return;
     setSaving(true);
     setSaveMessage('');
     try {
       const result = await updateQuoteRequestAdmin({
         quoteId: detail.quoteId,
-        expectedVersion: draft.expectedVersion,
+        expectedVersion: action === 'save' ? draft.expectedVersion : detail.version,
         status: draft.status,
         internalNotes: draft.internalNotes,
+        proposal: draft.proposal,
+        action,
       });
       const updated = result.quote;
       setQuotes((current) => current.map((quote) => (
@@ -278,18 +292,28 @@ export default function AdminQuotes({ darkMode = false }) {
       if (selectionRef.current !== updated.quoteId) return;
       setDetail(updated);
       if (draftRef.current === draft) {
-        const nextDraft = { quoteId: updated.quoteId, expectedVersion: updated.version, status: updated.status, internalNotes: updated.internalNotes || '' };
+        const nextDraft = quoteDraft(updated);
         draftRef.current = nextDraft;
+        draftBaseRef.current = nextDraft;
         setDraft(nextDraft);
       }
-      setSaveMessage('Modifications enregistrées.');
+      setSaveMessage(action === 'send' ? (updated.proposalEmail?.status === 'sent' ? 'Proposition envoyée au client.' : 'Consultez le résultat de l’envoi dans le chiffrage.') : action === 'trash' ? 'Demande placée dans la corbeille. Vous pouvez la restaurer.' : 'Modifications enregistrées.');
     } catch (saveError) {
       if (selectionRef.current !== detail.quoteId) return;
       const conflict = String(saveError?.details?.reason || saveError?.code || '').includes('conflict')
         || String(saveError?.code || '').includes('aborted');
       setSaveMessage(conflict
         ? 'La fiche a changé ailleurs. Votre saisie est conservée ; comparez-la à la version actualisée avant de la reprendre.'
-        : 'Les modifications n’ont pas pu être enregistrées.');
+        : (saveError?.message || 'Les modifications n’ont pas pu être enregistrées.'));
+      if (conflict || action !== 'save') {
+        try {
+          const fresh = await getQuoteRequestAdmin(detail.quoteId, detail.version, { force: true });
+          if (selectionRef.current === detail.quoteId) {
+            setDetail(fresh.quote);
+            if (action !== 'save') setDraft(quoteDraft(fresh.quote));
+          }
+        } catch { /* Keep the draft; the user can explicitly refresh. */ }
+      }
     } finally {
       setSaving(false);
     }
@@ -322,17 +346,17 @@ export default function AdminQuotes({ darkMode = false }) {
         </div>
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <Metric darkMode={darkMode} icon={Clock3} label="Nouvelles" value={status === 'loading' || status === 'error' ? '—' : metrics.newCount} hint="parmi les demandes chargées" />
         <Metric darkMode={darkMode} icon={MessageSquareText} label="En cours" value={status === 'loading' || status === 'error' ? '—' : metrics.activeCount} hint="parmi les demandes chargées" />
-        <Metric darkMode={darkMode} icon={CheckCircle2} label="Prêtes" value={status === 'loading' || status === 'error' ? '—' : metrics.readyCount} hint="parmi les demandes chargées" />
+        <Metric darkMode={darkMode} icon={CheckCircle2} label="Envoyées" value={status === 'loading' || status === 'error' ? '—' : metrics.readyCount} hint="parmi les demandes actives chargées" />
         <Metric darkMode={darkMode} icon={Euro} label="Potentiel indicatif" value={status === 'loading' || status === 'error' ? '—' : euro(metrics.potential)} hint="estimations des demandes chargées" />
       </section>
 
       {error ? <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-300/20 dark:bg-red-300/10 dark:text-red-200">{error}</p> : null}
 
-      <section className="grid items-stretch gap-5 xl:grid-cols-[minmax(320px,420px)_minmax(0,1fr)]">
-        <div className={`h-full overflow-hidden rounded-2xl border ${surface}`}>
+      <section className="grid items-start gap-5 xl:grid-cols-[minmax(240px,300px)_minmax(0,1fr)]">
+        <div className={`overflow-hidden rounded-2xl border ${surface}`}>
           <div className={`space-y-3 border-b p-4 ${darkMode ? 'border-white/10' : 'border-stone-200'}`}>
             <label className="relative block">
               <Search className={`absolute left-3.5 top-1/2 -translate-y-1/2 ${muted}`} size={16} />
@@ -351,6 +375,7 @@ export default function AdminQuotes({ darkMode = false }) {
             >
               <option value="active">Demandes actives</option>
               <option value="all">Toutes les demandes</option>
+              <option value="trash">Corbeille</option>
               {STATUS_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </select>
             <p className={`text-[11px] ${muted}`}>{filteredQuotes.length} affichée{filteredQuotes.length > 1 ? 's' : ''}{hasMore ? ' · Liste partielle' : ''}</p>
@@ -358,7 +383,7 @@ export default function AdminQuotes({ darkMode = false }) {
             {supportsReference && query.trim() && <button type="button" onClick={() => load({ reference: query.trim(), force: true })}>Rechercher cette référence exacte dans tous les dossiers</button>}
           </div>
 
-          <div className="max-h-[720px] overflow-y-auto p-2">
+          <div className="max-h-[340px] overflow-y-auto p-2 xl:max-h-[65dvh]">
             {status === 'loading' && !quotes.length ? (
               <div className="space-y-2 p-2" aria-label="Chargement des demandes">
                 {[0, 1, 2].map((item) => <div key={item} className={`h-28 animate-pulse rounded-xl ${darkMode ? 'bg-white/[0.04]' : 'bg-stone-100'}`} />)}
@@ -369,6 +394,7 @@ export default function AdminQuotes({ darkMode = false }) {
                 <button
                   type="button"
                   key={quote.quoteId}
+                  disabled={saving}
                   onClick={() => openDetail(quote.quoteId)}
                   aria-pressed={selected}
                   className={`mb-1.5 w-full rounded-xl border p-3.5 text-left transition ${selected
@@ -408,8 +434,8 @@ export default function AdminQuotes({ darkMode = false }) {
               <button type="button" onClick={() => setDetailRefreshKey((value) => value + 1)} className="mt-4 min-h-11 rounded-xl border px-4 text-xs font-bold">Réessayer</button>
             </div>
           ) : detail ? (
-            <div className={`h-full overflow-hidden rounded-2xl border ${surface}`}>
-              <header className={`border-b p-5 sm:p-6 ${darkMode ? 'border-white/10' : 'border-stone-200'}`}>
+            <div className={`rounded-2xl border ${surface}`}>
+              <header className={`sticky top-0 z-10 rounded-t-2xl border-b p-4 ${darkMode ? 'border-white/10 bg-[#151515]' : 'border-stone-200 bg-white'}`}>
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <p className={`text-[10px] font-black uppercase tracking-[0.14em] ${muted}`}>{detail.requestNumber}</p>
@@ -418,10 +444,17 @@ export default function AdminQuotes({ darkMode = false }) {
                   </div>
                   <StatusBadge status={detail.status} />
                 </div>
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  <button type="button" onClick={() => void save()} disabled={locked || !dirty || draft.expectedVersion !== detail.version} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-stone-950 px-4 text-xs font-bold text-white disabled:opacity-40 dark:bg-white dark:text-stone-950"><Save size={15} />{saving ? 'Enregistrement…' : 'Enregistrer les modifications'}</button>
+                  {detail.deletedAt ? <button type="button" disabled={saving} className="min-h-11 rounded-xl border px-4 text-xs font-bold" onClick={() => void save('restore')}>Restaurer la demande</button> : <button type="button" disabled={locked} className="min-h-11 rounded-xl border px-4 text-xs font-bold text-red-700 dark:text-red-300" onClick={() => trashDialog.current.showModal()}>Supprimer</button>}
+                  {dirty && <span className={`text-xs ${muted}`}>Modifications non enregistrées</span>}
+                </div>
+                <p role="status" className="mt-2 text-xs leading-5">{saveMessage}</p>
+                {detail.deletedAt && <p className="mt-2 text-sm">Dans la corbeille. Le dossier et ses photos sont conservés jusqu’à restauration.</p>}
               </header>
 
-              <div className="grid gap-6 p-5 sm:p-6 2xl:grid-cols-[minmax(0,1fr)_310px]">
-                <div className="space-y-6">
+              <div className="grid gap-5 p-4 xl:grid-cols-[minmax(0,1fr)_250px]">
+                <div className="min-w-0 space-y-5">
                   <section>
                     <h3 className="text-[11px] font-black uppercase tracking-[0.14em]">Projet</h3>
                     <div className={`mt-3 rounded-xl border p-4 ${darkMode ? 'border-white/10 bg-white/[0.025]' : 'border-stone-200 bg-stone-50/60'}`}>
@@ -449,30 +482,31 @@ export default function AdminQuotes({ darkMode = false }) {
                   <section>
                     <div className="flex items-center justify-between gap-3">
                       <h3 className="text-[11px] font-black uppercase tracking-[0.14em]">Photos privées</h3>
-                      <span className={`text-[11px] ${muted}`}>{detail.photos?.length || 0} fichier{detail.photos?.length > 1 ? 's' : ''}</span>
+                      <span className={`text-[11px] ${muted}`}>{detail.photoCount || 0} fichier{detail.photoCount > 1 ? 's' : ''}</span>
                     </div>
                     {detail.photos?.length ? (
                       <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
                         {detail.photos.map((photo) => photo.url ? (
-                          <a key={photo.photoId} href={photo.url} target="_blank" rel="noreferrer" className={`group relative aspect-square overflow-hidden rounded-xl border ${darkMode ? 'border-white/10 bg-white/[0.03]' : 'border-stone-200 bg-stone-100'}`}>
-                            <Image src={photo.url} alt={`Photo du meuble — ${photo.originalName || 'vue client'}`} fill sizes="(max-width: 640px) 50vw, 220px" unoptimized className="object-cover transition duration-300 group-hover:scale-[1.02]" />
+                          <button type="button" key={photo.photoId} onClick={() => { setOpenedPhoto(photo); photoDialog.current.showModal(); }} className={`group relative aspect-square overflow-hidden rounded-xl border ${darkMode ? 'border-white/10 bg-white/[0.03]' : 'border-stone-200 bg-stone-100'}`}>
+                            <Image src={photo.url} alt={`Photo du meuble — ${photo.originalName || 'vue client'}`} fill sizes="(max-width: 640px) 50vw, 220px" unoptimized onError={() => setDetail(current => current?.quoteId === detail.quoteId ? { ...current, photos: current.photos.map(item => item.photoId === photo.photoId ? { ...item, url: null } : item) } : current)} className="object-cover transition duration-300 motion-reduce:transition-none group-hover:scale-[1.02]" />
                             <span className="absolute inset-x-2 bottom-2 rounded-lg bg-black/60 px-2 py-1 text-center text-[9px] font-bold text-white backdrop-blur-sm">Ouvrir</span>
-                          </a>
+                          </button>
                         ) : (
                           <div key={photo.photoId} className={`grid aspect-square place-items-center rounded-xl border border-dashed px-3 text-center text-[10px] ${darkMode ? 'border-white/10 text-stone-500' : 'border-stone-300 text-stone-500'}`}>
-                            Photo temporairement indisponible
+                            <button type="button" className="min-h-11" onClick={() => setDetailRefreshKey(key => key + 1)}>Photo indisponible · Réessayer</button>
                           </div>
                         ))}
                       </div>
                     ) : (
                       <div className={`mt-3 flex min-h-28 items-center justify-center gap-2 rounded-xl border border-dashed text-xs ${darkMode ? 'border-white/10 text-stone-500' : 'border-stone-300 text-stone-500'}`}>
-                        <ImageIcon size={17} /> Aucune photo transmise
+                        <ImageIcon size={17} /> {detail.photoCount ? 'Chargement des photos…' : 'Aucune photo transmise'}
                       </div>
                     )}
                   </section>
+                  <QuoteProposalEditor key={detail.quoteId} detail={detail} proposal={draft.proposal} onChange={proposal => setDraft(current => ({ ...current, proposal }))} onAction={save} dirty={dirty} saving={saving} field={field} />
                 </div>
 
-                <fieldset disabled={saving} className="min-w-0 space-y-5">
+                <fieldset disabled={locked} className="min-w-0 space-y-4">
                   <section>
                     <h3 className="text-[11px] font-black uppercase tracking-[0.14em]">Contact</h3>
                     <div className="mt-2">
@@ -498,13 +532,14 @@ export default function AdminQuotes({ darkMode = false }) {
                   <section>
                     <label className="block text-[11px] font-black uppercase tracking-[0.14em]" htmlFor="quote-status">Statut de suivi</label>
                     <select id="quote-status" value={draft.status} onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value }))} className={`mt-2 min-h-11 w-full rounded-xl border px-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-amber-500/30 ${field}`}>
-                      {STATUS_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                      {STATUS_OPTIONS.map(([value, label]) => <option key={value} value={value} disabled={value === 'proposal_sent' || (value === 'accepted' && detail.proposalEmail?.status !== 'sent')}>{label}</option>)}
                     </select>
+                    <p className={`mt-2 text-xs leading-5 ${muted}`}>L’envoi renseigne le statut automatiquement. Consignez « Accord client » après sa réponse, puis « Terminé » à la clôture du projet.</p>
                   </section>
 
                   <section>
                     <label className="block text-[11px] font-black uppercase tracking-[0.14em]" htmlFor="quote-notes">Notes internes</label>
-                    <textarea id="quote-notes" rows={7} maxLength={4000} value={draft.internalNotes} onChange={(event) => setDraft((current) => ({ ...current, internalNotes: event.target.value }))} placeholder="Points à vérifier, rappel prévu, proposition envisagée…" className={`mt-2 w-full resize-y rounded-xl border p-3 text-sm leading-6 outline-none focus:ring-2 focus:ring-amber-500/30 ${field}`} />
+                    <textarea id="quote-notes" rows={3} maxLength={4000} value={draft.internalNotes} onChange={(event) => setDraft((current) => ({ ...current, internalNotes: event.target.value }))} placeholder="Informations internes, jamais envoyées au client…" className={`mt-2 w-full resize-y rounded-xl border p-3 text-sm leading-6 outline-none focus:ring-2 focus:ring-amber-500/30 ${field}`} />
                     <div className="mt-2 flex items-center justify-between gap-3">
                       <span aria-live="polite" className={`text-[10px] ${saveMessage.includes('enregistrées') ? 'text-emerald-600 dark:text-emerald-300' : muted}`}>{saveMessage}</span>
                       <span className={`text-[10px] tabular-nums ${muted}`}>{draft.internalNotes.length}/4000</span>
@@ -512,10 +547,6 @@ export default function AdminQuotes({ darkMode = false }) {
                   </section>
 
                   {draft.expectedVersion !== detail.version && <div role="alert" className="space-y-2 text-sm"><p>Une autre version est disponible. Notes reçues : {detail.internalNotes || 'Aucune note'}</p><button type="button" onClick={() => setDraft((current) => ({ ...current, expectedVersion: detail.version }))}>Conserver ma saisie après comparaison avec cette version</button></div>}
-                  <button type="button" onClick={() => void save()} disabled={saving || draft.expectedVersion !== detail.version} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-stone-950 px-4 text-xs font-black text-white transition hover:bg-stone-800 disabled:cursor-wait disabled:opacity-60 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200">
-                    {saving ? <RefreshCw className="animate-spin" size={15} /> : <Save size={15} />}
-                    {saving ? 'Enregistrement…' : 'Enregistrer le suivi'}
-                  </button>
                 </fieldset>
               </div>
             </div>
@@ -530,6 +561,14 @@ export default function AdminQuotes({ darkMode = false }) {
           )}
         </div>
       </section>
+      <dialog ref={trashDialog} className="m-auto w-[min(440px,calc(100%-2rem))] rounded-2xl bg-white p-6 text-stone-900 backdrop:bg-black/50 dark:bg-stone-900 dark:text-white">
+        <h3 className="text-lg font-bold">Supprimer cette demande ?</h3><p className="my-4 text-sm leading-6">{detail?.requestNumber} sera déplacée dans la corbeille. Vous pourrez la restaurer avec ses photos et sa proposition. Les modifications non enregistrées seront abandonnées.</p>
+        <div className="flex flex-wrap justify-end gap-3"><button type="button" className="min-h-11 rounded-xl border px-4" onClick={() => trashDialog.current.close()}>Annuler</button><button type="button" disabled={saving} className="min-h-11 rounded-xl bg-red-700 px-4 text-white" onClick={() => { trashDialog.current.close(); void save('trash'); }}>Mettre à la corbeille</button></div>
+      </dialog>
+      <dialog ref={photoDialog} onClose={() => setOpenedPhoto(null)} className="m-auto max-h-[90dvh] w-[min(1000px,calc(100%-2rem))] overflow-auto rounded-2xl bg-white p-4 text-stone-900 backdrop:bg-black/70 dark:bg-stone-900 dark:text-white">
+        <button type="button" className="mb-3 min-h-11 rounded-xl border px-4" onClick={() => photoDialog.current.close()}>Fermer la photo</button>
+        {openedPhoto && <Image src={openedPhoto.url} alt={openedPhoto.originalName || 'Photo du meuble'} width={openedPhoto.width || 1200} height={openedPhoto.height || 1200} unoptimized className="h-auto max-h-[70dvh] w-full object-contain" />}
+      </dialog>
     </div>
   );
 }

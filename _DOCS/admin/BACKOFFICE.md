@@ -636,11 +636,39 @@ apres validation de l'acces admin fort. Les lectures et changements de statut
 passent par des callables qui exigent claim, registre actif et AAL2. Une
 version optimiste empeche d'ecraser une modification concurrente. Les photos
 restent sous `quote-requests/v1` avec lecture Storage directe interdite; la
-fiche admin recoit uniquement des URL signees de quinze minutes.
+fiche admin reçoit des URL signées de quinze minutes. Si la signature échoue,
+le callable admin fournit un aperçu WebP privé (1200 px, 400 Ko maximum par
+photo, dix photos maximum). Le chemin doit appartenir au dossier. Le bouton
+Réessayer force ce transport privé, également utile pour une URL expirée.
+Aucun jeton Storage public ni permission de lecture anonyme n'est ajouté.
 
-Le workflow actif est `Nouveau`, `A qualifier`, `A recontacter`, `En etude`,
-`Proposition prete`, `Termine` ou `Non retenu`. Les changements sont audites
-sans recopier les notes libres dans l'audit. La notification client est un
+Le workflow local révisé le 14 septembre est `Nouveau`, `En étude`,
+`Proposition envoyée`, `Accord client`, `Terminé`. Les anciens statuts de
+qualification sont affichés comme `En étude`, `Non retenu` comme `Terminé`,
+sans migration en masse. L'envoi détermine son statut ; l'accord est consigné
+par l'admin après une réponse du client, uniquement sur le chiffrage envoyé.
+La clôture ne crée ni commande, ni paiement, ni mouvement de stock.
+
+Le chiffrage reprend explicitement la grille enregistrée dans le projet ou
+utilise des prestations manuelles : 1 à 20 lignes, prix minimum/maximum en
+centimes entiers, total strictement positif plafonné à 100 000 €, validité de
+1 à 90 jours et message client borné à 4000 caractères. Le serveur recalcule
+les totaux. Minimum = maximum donne un prix fixe. Une sauvegarde précède
+l'aperçu et la confirmation d'envoi. La proposition envoyée reste consultable,
+distincte du brouillon modifiable. Les notes internes ne partent jamais au client.
+L'e-mail propose une réponse à l'atelier ; aucun PDF contractuel ou signature
+électronique n'est généré par ce parcours.
+
+`updateQuoteRequestAdmin` porte les actions `save`, `send`, `trash`, `restore`,
+`confirm_sent`, `confirm_not_sent`. Elles exigent admin fort et version courante.
+La corbeille masque le dossier des listes actives et des compteurs de cette
+page ; une restauration conserve toutes ses données. Il s'agit d'une suppression
+logique, sans purge automatique des photos ou suppression physique en masse.
+Un dossier encore en réception ou avec un envoi incertain ne peut être supprimé.
+
+Les changements sont audités sans recopier les notes internes libres dans
+l'audit. L'intention d'envoi conserve un snapshot du chiffrage et du destinataire
+dans `sys_audit_quotes`, avec la rétention existante de 366 jours. La notification client est un
 effet secondaire: son echec n'annule jamais la reception du dossier. Aucun
 e-mail n'est envoye a une adresse metier Seconde Vie tant que cette adresse
 n'existe pas.

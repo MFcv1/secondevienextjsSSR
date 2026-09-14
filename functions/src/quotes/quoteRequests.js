@@ -27,6 +27,8 @@ const {
     normalizeUploadToken,
 } = require('./quoteRequestDomain');
 const { quoteReceiptEmail } = require('./quoteEmailTemplates');
+const { normalizeProposal, proposalsEqual } = require('./quoteProposalDomain.cjs');
+const { createQuoteWorkflow } = require('./quoteWorkflow.cjs');
 
 const db = admin.firestore();
 const QUOTES_COLLECTION = 'quote_requests';
@@ -78,6 +80,14 @@ function serializeQuote(id, value, { includePhotos = false } = {}) {
         photoCount: Number(value.photoCount || photos.length || 0),
         photos: includePhotos ? photos : undefined,
         internalNotes: String(value.internalNotes || ''),
+        deletedAt: timestampIso(value.deletedAt),
+        proposal: value.proposal || null,
+        proposalEmail: value.proposalEmail ? {
+            status: value.proposalEmail.status === 'sending' && Date.now() - (value.proposalEmail.startedAt?.toMillis?.() || 0) >= EMAIL_CLAIM_LEASE_MS
+                ? 'delivery_unknown' : value.proposalEmail.status,
+            completedAt: timestampIso(value.proposalEmail.completedAt),
+            proposal: value.proposalEmail.proposal || null
+        } : null,
         confirmationEmail: {
             status: value.confirmationEmail?.status || 'pending',
             completedAt: timestampIso(value.confirmationEmail?.completedAt)
@@ -221,17 +231,35 @@ async function getQuoteRequestAdminHandler(data, context) {
     const photos = await Promise.all((value.photos || []).map(async (photo) => {
         let url = null;
         try {
+            if (!String(photo.storagePath || '').startsWith(`${QUOTE_STORAGE_ROOT}/${quoteId}/`) || photo.storagePath.includes('..')) throw new Error('INVALID_PHOTO_PATH');
+            if (data?.privatePreview === true) throw new Error('PRIVATE_PREVIEW_REQUESTED');
             [url] = await admin.storage().bucket().file(photo.storagePath).getSignedUrl({
                 version: 'v4',
                 action: 'read',
                 expires: photosExpireAt
             });
         } catch (error) {
-            console.warn('Quote photo signing failed', {
+            if (data?.privatePreview !== true) console.warn('Quote photo signing failed', {
                 quoteId,
                 photoId: photo.photoId,
                 code: String(error?.code || 'SIGN_FAILED').slice(0, 80)
             });
+            // Private bounded preview over the authenticated callable when the
+            // runtime cannot sign (IAM signBlob). Never publish a Storage token.
+            try {
+                if (!String(photo.storagePath || '').startsWith(`${QUOTE_STORAGE_ROOT}/${quoteId}/`) || photo.storagePath.includes('..')) throw new Error('INVALID_PHOTO_PATH');
+                const file = admin.storage().bucket().file(photo.storagePath);
+                const [metadata] = await file.getMetadata();
+                if (!Number.isFinite(Number(metadata.size)) || Number(metadata.size) <= 0 || Number(metadata.size) > MAX_PHOTO_BYTES) throw new Error('PHOTO_TOO_LARGE');
+                const [bytes] = await file.download();
+                const preview = await sharp(bytes, { limitInputPixels: 25_000_000 })
+                    .resize({ width: 1200, height: 1200, fit: 'inside', withoutEnlargement: true })
+                    .webp({ quality: 75 }).toBuffer();
+                if (preview.length > 400_000) throw new Error('PREVIEW_TOO_LARGE');
+                url = `data:image/webp;base64,${preview.toString('base64')}`;
+            } catch {
+                // The UI retains a per-photo retry; missing objects stay missing.
+            }
         }
         return {
             photoId: photo.photoId,
@@ -249,8 +277,21 @@ async function getQuoteRequestAdminHandler(data, context) {
 async function updateQuoteRequestAdminHandler(data, context) {
     await checkActiveStrongAdmin(context);
     const quoteId = normalizeFirestoreId(data?.quoteId, 'Demande');
+    if (data?.action && data.action !== 'save') {
+        if (!Number.isInteger(data.expectedVersion) || data.expectedVersion < 1) throw new functions.https.HttpsError('invalid-argument', 'Version invalide.');
+        await createQuoteWorkflow({ db, admin, HttpsError: functions.https.HttpsError,
+            runtime: () => createTransactionalEmailRuntime(),
+            auditExpiry: (millis) => timestampAfterDays(AUDIT_RETENTION_DAYS, millis)
+        })({ ...data, quoteId }, context);
+        return getQuoteRequestAdminHandler({ quoteId }, context);
+    }
     const status = normalizeQuoteStatus(data?.status);
     const internalNotes = normalizeInternalNotes(data?.internalNotes);
+    let proposal;
+    if (data?.proposal != null) {
+        try { proposal = normalizeProposal(data.proposal); }
+        catch (error) { throw new functions.https.HttpsError('invalid-argument', error.message); }
+    }
     const expectedVersion = Number(data?.expectedVersion);
     if (!Number.isInteger(expectedVersion) || expectedVersion < 1) {
         throw new functions.https.HttpsError('invalid-argument', 'Version de demande invalide.');
@@ -260,6 +301,12 @@ async function updateQuoteRequestAdminHandler(data, context) {
         const snapshot = await transaction.get(ref);
         if (!snapshot.exists) throw new functions.https.HttpsError('not-found', 'Demande introuvable.');
         const current = snapshot.data();
+        if (current.deletedAt || ['sending', 'delivery_unknown'].includes(current.proposalEmail?.status)) {
+            throw new functions.https.HttpsError('failed-precondition', 'Restaurez le dossier ou vérifiez son envoi avant de le modifier.');
+        }
+        if (status === 'proposal_sent' && current.proposalEmail?.status !== 'sent') throw new functions.https.HttpsError('failed-precondition', 'Envoyez la proposition avant de la marquer envoyée.');
+        if (status === 'accepted' && current.proposalEmail?.status !== 'sent') throw new functions.https.HttpsError('failed-precondition', 'Envoyez la proposition avant de consigner l’accord client.');
+        if (status === 'accepted' && !proposalsEqual(proposal || current.proposal, current.proposalEmail?.proposal)) throw new functions.https.HttpsError('failed-precondition', 'L’accord doit porter sur la proposition envoyée. Envoyez d’abord votre nouveau chiffrage.');
         const currentVersion = Number(current.version || 1);
         if (currentVersion !== expectedVersion) {
             throw new functions.https.HttpsError(
@@ -273,6 +320,7 @@ async function updateQuoteRequestAdminHandler(data, context) {
         transaction.update(ref, {
             status,
             internalNotes,
+            ...(proposal ? { proposal } : {}),
             version: currentVersion + 1,
             updatedAt: now,
             statusChangedAt: statusChanged ? now : (current.statusChangedAt || now),
@@ -386,7 +434,7 @@ const uploadQuoteRequestPhoto = regionalFunctions().runWith(PUBLIC_RUNTIME).http
 const finalizeQuoteRequest = regionalFunctions().runWith(PUBLIC_RUNTIME).https.onCall(finalizeQuoteRequestHandler);
 const listQuoteRequestsAdmin = regionalFunctions().runWith(ADMIN_RUNTIME).https.onCall(listQuoteRequestsAdminHandler);
 const getQuoteRequestAdmin = regionalFunctions().runWith(ADMIN_RUNTIME).https.onCall(getQuoteRequestAdminHandler);
-const updateQuoteRequestAdmin = regionalFunctions().runWith(ADMIN_RUNTIME).https.onCall(updateQuoteRequestAdminHandler);
+const updateQuoteRequestAdmin = regionalFunctions().runWith({ ...ADMIN_RUNTIME, timeoutSeconds: 60, secrets: EMAIL_SECRETS }).https.onCall(updateQuoteRequestAdminHandler);
 const onQuoteRequestSubmitted = regionalFunctions()
     .runWith({ secrets: EMAIL_SECRETS, timeoutSeconds: 60, memory: '512MB' })
     .firestore.document(`${QUOTES_COLLECTION}/{quoteId}`)
@@ -432,7 +480,7 @@ module.exports = {
     sendQuoteReceiptEmail,
     serializeQuote,
     updateQuoteRequestAdmin,
-    updateQuoteRequestAdminGen2: onCall({ ...QUOTE_GEN2_RUNTIME, timeoutSeconds: 30 }, async (request) => updateQuoteRequestAdminHandler(request.data, request)),
+    updateQuoteRequestAdminGen2: onCall({ ...QUOTE_GEN2_RUNTIME, secrets: EMAIL_SECRETS }, async (request) => updateQuoteRequestAdminHandler(request.data, request)),
     updateQuoteRequestAdminHandler,
     uploadQuoteRequestPhoto,
     uploadQuoteRequestPhotoGen2: onCall(QUOTE_GEN2_RUNTIME, async (request) => uploadQuoteRequestPhotoHandler(request.data, request)),

@@ -8,6 +8,8 @@ const QUOTE_STATUSES = Object.freeze([
     'waiting_customer',
     'in_review',
     'proposal_ready',
+    'proposal_sent',
+    'accepted',
     'closed',
     'declined'
 ]);

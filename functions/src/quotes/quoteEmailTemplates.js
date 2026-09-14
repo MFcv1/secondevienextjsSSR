@@ -13,6 +13,7 @@ function euroRange(estimate = {}) {
     const min = Number(estimate.minCents || 0) / 100;
     const max = Number(estimate.maxCents || 0) / 100;
     if (!min && !max) return 'À préciser';
+    if (min === max) return `${min.toLocaleString('fr-FR')} €`;
     return `${min.toLocaleString('fr-FR')} € – ${max.toLocaleString('fr-FR')} €`;
 }
 
@@ -79,7 +80,36 @@ function quoteReceiptEmail(quote, senderEmail) {
     };
 }
 
+function quoteProposalEmail(quote, senderEmail) {
+    const proposal = quote.proposal;
+    const lines = proposal.lines.map((line) => `${line.label} : ${euroRange(line)}`);
+    const text = [
+        `Bonjour ${quote.customer.firstName || ''},`, '',
+        `Voici notre proposition pour votre ${quote.project.furnitureLabel || 'meuble'} (${quote.requestNumber}).`,
+        ...lines, '', `Total proposé : ${euroRange(proposal)}`,
+        `Proposition valable ${proposal.validDays} jours à compter de cet envoi.`,
+        proposal.message, '',
+        'Répondez à cet e-mail pour confirmer votre accord ou poser vos questions. Les travaux et leur calendrier seront convenus avec l’atelier avant intervention.',
+        'Seconde Vie'
+    ].join('\n');
+    return {
+        from: `Seconde Vie <${senderEmail}>`, to: quote.customer.email, replyTo: senderEmail,
+        subject: `Votre proposition de restauration — ${quote.requestNumber}`,
+        text,
+        html: renderEmailShell({
+            preheader: `Votre proposition ${quote.requestNumber}`,
+            eyebrow: 'Votre projet', title: 'Notre proposition de restauration',
+            intro: `Bonjour ${quote.customer.firstName || ''}, voici le chiffrage étudié par l’atelier.`,
+            summaryHtml: renderSummaryGrid([{ label: 'Référence', value: quote.requestNumber }, { label: 'Total proposé', value: euroRange(proposal) }]),
+            contentHtml: `<div style="white-space:pre-wrap;line-height:1.7">${escapeHtml([...lines, '', proposal.message].join('\n'))}</div>`,
+            calloutHtml: renderCallout({ title: `Validité : ${proposal.validDays} jours`, body: 'Répondez à cet e-mail pour confirmer votre accord ou poser vos questions.', role: 'info', detail: 'Les travaux et leur calendrier seront convenus avec l’atelier avant intervention.' }),
+            footer: 'Seconde Vie · Proposition de restauration'
+        })
+    };
+}
+
 module.exports = {
     euroRange,
+    quoteProposalEmail,
     quoteReceiptEmail
 };

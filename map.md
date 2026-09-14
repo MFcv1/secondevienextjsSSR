@@ -46,7 +46,7 @@ commerce dans `src/kit/commerce/`.
 | Vente/retour | `AdminOrders`, `components/orders/`, `AdminReturns` → commandes/refund/return v2 → Stripe et mouvements idempotents séparés | [Admin](_DOCS/admin/BACKOFFICE.md) |
 | Lien de paiement | `AdminPaymentLinks` → `v2AdminPaymentLinks.js` → commande/hold/PI v2 → route privée `/payer/…` | [Commerce](_DOCS/commerce/COMMERCE_STRIPE.md) |
 | Facture manuelle | `AdminInvoices` → `functions/src/invoicing/` → brouillon/version → numéro/émission verrouillée → PDF privé/e-mail | [Admin](_DOCS/admin/BACKOFFICE.md) |
-| Devis | Formulaire en 7 étapes → `functions/src/quotes/` → demande/photos privées → `AdminQuotes` + accusé client ; pas d'IA active | [Devis](_DOCS/ai/ASSISTANT_DEVIS.md) |
+| Devis | Formulaire en 7 étapes → `functions/src/quotes/` → demande/photos privées → `AdminQuotes` / `QuoteProposalEditor` → `quoteWorkflow.cjs` (proposition, e-mail, corbeille) ; pas d'IA active | [Gestion des devis](_DOCS/admin/BACKOFFICE.md#51-demandes-de-devis) |
 | Newsletter/promo | Jeu → `functions/src/newsletter/` → code/abonné → `promotionMaterialization.js` / `v2PromotionCodes.js` → réservation/consommation au checkout | [Commerce](_DOCS/commerce/COMMERCE_STRIPE.md) |
 | Social | `MetaConnectionBadge` / `useMetaConnection` / `metaPublicationClient` → `functions/src/integrations/meta.js` → OAuth chiffré et saga par destination | [Meta](_DOCS/admin/INSTAGRAM_OAUTH_RUNBOOK.md) |
 | E-mail | `functions/src/email/`, templates devis/factures/newsletter → outbox/transport Gmail ou futur Resend | [E-mails](_DOCS/email/EMAILS_TRANSACTIONNELS.md) |

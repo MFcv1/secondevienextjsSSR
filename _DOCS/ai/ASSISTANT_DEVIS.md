@@ -112,6 +112,10 @@ closed
 
 Ils restent a confirmer avant implementation.
 
+Ce tableau concerne uniquement la future analyse IA. Pour la gestion humaine
+actuelle (chiffrage, envoi et corbeille), le contrat est celui du
+[back-office](../admin/BACKOFFICE.md#51-demandes-de-devis).
+
 ## 6. Sortie IA
 
 Utiliser un schema structure, par exemple:

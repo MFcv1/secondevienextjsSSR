@@ -467,7 +467,7 @@ const G6_GEN2_TARGETS = Object.freeze({
   finalizeQuoteRequestGen2: g6Callable({ name: 'finalizeQuoteRequestGen2', serviceAccount: 'quote-request-runtime', memory: '512Mi' }),
   getQuoteRequestAdminGen2: g6Callable({ name: 'getQuoteRequestAdminGen2', serviceAccount: 'quote-request-runtime', memory: '512Mi', timeout: '30s', environmentVariables: [G6_FIREBASE_CONFIG] }),
   listQuoteRequestsAdminGen2: g6Callable({ name: 'listQuoteRequestsAdminGen2', serviceAccount: 'quote-request-runtime', memory: '512Mi', timeout: '30s' }),
-  updateQuoteRequestAdminGen2: g6Callable({ name: 'updateQuoteRequestAdminGen2', serviceAccount: 'quote-request-runtime', memory: '512Mi', timeout: '30s' }),
+  updateQuoteRequestAdminGen2: g6Callable({ name: 'updateQuoteRequestAdminGen2', serviceAccount: 'quote-request-runtime', memory: '512Mi', secrets: G6_EMAIL_SECRETS, environmentVariables: [G6_FIREBASE_CONFIG], environmentVariableNames: ['TRANSACTIONAL_EMAIL_PROVIDER'] }),
   uploadQuoteRequestPhotoGen2: g6Callable({ name: 'uploadQuoteRequestPhotoGen2', serviceAccount: 'quote-request-runtime', memory: '512Mi', environmentVariables: [G6_FIREBASE_CONFIG] }),
   onQuoteRequestSubmittedGen2: Object.freeze({
     create: true,
