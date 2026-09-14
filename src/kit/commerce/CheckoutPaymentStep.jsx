@@ -54,7 +54,7 @@ const CheckoutPaymentStep = ({ total, orderId, onPaymentSuccess, onPaymentError,
     };
 
     return (
-        <div className="space-y-7 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <div className="min-w-0 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
             <div className={`flex items-center gap-4 border-y py-4 ${darkMode ? 'border-white/10' : 'border-stone-200'}`}>
                 <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${darkMode ? 'bg-white/5 text-stone-200' : 'bg-stone-200/70 text-stone-800'}`}>
                     <ShieldCheck size={18} strokeWidth={1.75} />
@@ -100,7 +100,7 @@ const CheckoutPaymentStep = ({ total, orderId, onPaymentSuccess, onPaymentError,
 
             {/* FORMULAIRE CARTE */}
             <form onSubmit={handleCardSubmit} className="space-y-6">
-                <div className={`rounded-2xl border p-4 md:p-5 ${darkMode ? 'border-white/10 bg-white/[0.025]' : 'border-stone-200 bg-white'}`}>
+                <div className={`min-w-0 rounded-2xl border p-3 sm:p-4 xl:p-5 ${darkMode ? 'border-white/10 bg-white/[0.025]' : 'border-stone-200 bg-white'}`}>
                     <PaymentElement
                         options={{
                             layout: {

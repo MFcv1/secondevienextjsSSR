@@ -49,6 +49,14 @@ Le retour au récapitulatif est bloqué pendant la soumission bancaire. La galer
 consomme `focusProduct` après révélation du meuble, conserve les autres paramètres
 et le scroll, retire le liseré après cinq secondes et nettoie le timer au démontage.
 
+Le checkout utilise une colonne sur mobile/tablette, puis deux colonnes
+rétractables dès 1024 px, avec un résumé de 360 px puis 420 px dès 1280 px.
+Les champs ont une largeur minimale nulle et une police de 16 px ; les actions
+peuvent revenir à la ligne et conservent une hauteur tactile de 48 px minimum.
+Sous 400 px, code e-mail, code avantage et adresse postale s'empilent.
+Les tarifs restent insécables et l'écran Stripe suit les mêmes contraintes
+de largeur, avec une marge basse tenant compte de la safe area.
+
 Le panier utilise une seule frontière asynchrone : `LazyCartPanelIsland` charge
 `CartPanelIsland`, qui embarque directement `CartPageView`. Le shell instantané
 et la vue complète partagent `CartSurface`, sans deuxième importation dynamique.

@@ -90,7 +90,7 @@ const PremiumActionBtn = ({ children, isLoading, disabled, onClick, darkMode }) 
             disabled={disabled || isLoading}
             whileTap={!disabled && !isLoading ? { scale: 0.985 } : {}}
             transition={{ layout: { type: 'spring', stiffness: 450, damping: 35 } }}
-            className={`relative mx-auto flex h-[64px] w-full items-center justify-center gap-3 overflow-hidden rounded-[1.25rem] px-4 py-0 text-sm font-black uppercase tracking-widest outline-none transition-colors duration-300
+            className={`relative mx-auto flex min-h-14 w-full min-w-0 items-center justify-center gap-2 overflow-hidden rounded-2xl px-4 py-4 text-xs leading-5 font-black uppercase tracking-wide outline-none transition-colors duration-300 sm:min-h-16 sm:text-sm
                 ${isLoading ? 'cursor-wait' : 'cursor-pointer'}
                 ${disabled
                     ? `${disabledBg} ${darkMode ? 'text-stone-600 border border-stone-800/50' : 'text-stone-400 border border-stone-200'} opacity-60`
@@ -99,7 +99,7 @@ const PremiumActionBtn = ({ children, isLoading, disabled, onClick, darkMode }) 
             `}
         >
             {isLoading ? <Loader2 size={18} className="relative animate-spin opacity-70" /> : null}
-            <span className="relative z-10 flex items-center justify-center gap-3 whitespace-nowrap">
+            <span className="relative z-10 min-w-0 text-center whitespace-normal">
                 {isLoading ? 'Préparation…' : children}
             </span>
             {isLoading ? (
@@ -1155,12 +1155,12 @@ const CheckoutView = ({
         );
     }
 
-    const inputClasses = `w-full p-3.5 md:p-4 rounded-xl ring-1 ring-inset outline-none focus:ring-2 font-bold text-base transition-all transform-gpu ${
+    const inputClasses = `w-full min-w-0 max-w-full min-h-12 px-3 py-3 sm:px-3.5 rounded-xl ring-1 ring-inset outline-none focus:ring-2 font-medium text-base transition-all transform-gpu ${
         darkMode 
             ? 'bg-stone-900 ring-stone-800 focus:ring-white text-white placeholder:text-stone-600 autofill-dark' 
             : 'bg-stone-50 ring-stone-200 focus:ring-stone-900 text-stone-900 placeholder:text-stone-400 autofill-light'
     }`;
-    const cardClasses = `space-y-4 rounded-2xl border p-5 md:p-6 ${darkMode ? 'border-stone-800/80 bg-stone-900/40' : 'border-stone-200/80 bg-white'}`;
+    const cardClasses = `min-w-0 space-y-4 rounded-2xl border p-4 sm:p-5 xl:p-6 ${darkMode ? 'border-stone-800/80 bg-stone-900/40' : 'border-stone-200/80 bg-white'}`;
 
     return (
         <>
@@ -1176,12 +1176,12 @@ const CheckoutView = ({
                         <ArrowLeft size={14} /> {createdOrderId ? 'Annuler et retourner à la galerie' : 'Continuer mes achats'}
                     </button>
                     {createdOrderId ? <p className="mb-4 text-sm"><a href="/mes-commandes">Consulter le dossier</a>{reservationExpiresAt ? ` · Réservation jusqu’à ${new Date(reservationExpiresAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}` : ''}</p> : null}
-                    <h2 className={`text-3xl md:text-5xl font-black tracking-tighter ${darkMode ? 'text-white' : 'text-stone-900'}`}>
+                    <h2 className={`text-[1.75rem] leading-tight sm:text-4xl xl:text-5xl font-black tracking-tighter ${darkMode ? 'text-white' : 'text-stone-900'}`}>
                         Finaliser la commande
                     </h2>
                 </div>
 
-                <div className="grid lg:grid-cols-[1fr_460px] gap-8 lg:gap-16 items-start">
+                <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)] lg:gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(0,420px)] xl:gap-12 items-start">
                     
                     {/* COLONNE GAUCHE : FORMULAIRES & PAIEMENT */}
                     <fieldset disabled={isCheckoutLocked} className="min-w-0 space-y-6 w-full">
@@ -1215,7 +1215,7 @@ const CheckoutView = ({
                                         </p>
                                     </div>
 
-                                    <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3">
+                                    <div className="grid min-w-0 grid-cols-1 gap-3">
                                         <button
                                             type="button"
                                             onClick={sendGuestCheckoutOtp}
@@ -1230,7 +1230,7 @@ const CheckoutView = ({
                                                 </span>
                                             ) : null}
                                         </button>
-                                        <div className="flex gap-2">
+                                        <div className="grid min-w-0 grid-cols-1 min-[400px]:grid-cols-[minmax(0,1fr)_auto] gap-2">
                                             <label htmlFor="checkout-otp-code" className="sr-only">Code email</label>
                                             <input
                                                 id="checkout-otp-code"
@@ -1295,7 +1295,7 @@ const CheckoutView = ({
                                     />
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-3 md:gap-4">
+                                <div className="grid grid-cols-1 min-[400px]:grid-cols-2 gap-3 md:gap-4">
                                     <div>
                                         <label htmlFor="checkout-zip" className="sr-only">Code Postal</label>
                                         <input
@@ -1346,16 +1346,16 @@ const CheckoutView = ({
                                     return (
                                     <label htmlFor={`checkout-delivery-${mode.id}`} key={mode.id} className={`flex items-start gap-4 p-4 rounded-xl border transition-colors focus-within:ring-2 focus-within:ring-stone-400 focus-within:ring-offset-2 ${unavailableReason ? (darkMode ? 'cursor-not-allowed border-stone-800 bg-stone-900 opacity-60' : 'cursor-not-allowed border-stone-200 bg-stone-100 opacity-60') : `cursor-pointer ${formData.deliveryMode === mode.id ? (darkMode ? 'border-white bg-white/5' : 'border-stone-900 bg-stone-50') : (darkMode ? 'border-stone-800 hover:bg-stone-800' : 'border-stone-200 hover:bg-stone-50')}`}`}>
                                         <span className="sr-only">{mode.label}</span>
-                                        <div className="pt-1 flex items-center">
+                                        <div className="pt-1 flex shrink-0 items-center">
                                             <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${formData.deliveryMode === mode.id ? 'border-current' : 'border-stone-300'}`}>
                                                 {formData.deliveryMode === mode.id && <div className="w-2 h-2 rounded-full bg-current" />}
                                             </div>
                                             <input id={`checkout-delivery-${mode.id}`} type="radio" className="sr-only" name="deliveryMode" value={mode.id} disabled={Boolean(unavailableReason)} aria-describedby={`checkout-delivery-help-${mode.id}`} checked={!unavailableReason && formData.deliveryMode === mode.id} onChange={handleChange} />
                                         </div>
-                                        <div className="flex-1">
-                                            <div className="flex justify-between">
-                                                <span className={`font-bold ${darkMode ? 'text-white' : 'text-stone-900'}`}>{mode.label}</span>
-                                                <span className={`font-black ${darkMode ? 'text-white' : 'text-stone-900'}`}>{mode.price === 0 ? 'Gratuit' : `${mode.price} €`}</span>
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex flex-wrap justify-between gap-x-3 gap-y-1 text-sm leading-5 sm:text-base sm:leading-6">
+                                                <span className={`min-w-0 flex-1 basis-36 break-words font-bold ${darkMode ? 'text-white' : 'text-stone-900'}`}>{mode.label}</span>
+                                                <span className={`shrink-0 whitespace-nowrap font-black ${darkMode ? 'text-white' : 'text-stone-900'}`}>{mode.price === 0 ? 'Gratuit' : `${mode.price} €`}</span>
                                             </div>
                                             <div id={`checkout-delivery-help-${mode.id}`} className="text-xs text-stone-500 font-medium mt-0.5">{unavailableReason || mode.sub}</div>
                                         </div>
@@ -1390,7 +1390,7 @@ const CheckoutView = ({
                                 <CreditCard size={14} /> Moyen de Paiement
                             </h3>
                             
-                            <div className={stripeEnabled ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-4' : 'flex flex-col'}>
+                            <div className={stripeEnabled ? 'grid min-w-0 grid-cols-1 gap-4' : 'flex min-w-0 flex-col'}>
                                 {/* PAIEMENT DIRECT */}
                                 {stripeEnabled && <button
                                     type="button"
@@ -1507,16 +1507,16 @@ const CheckoutView = ({
                     </fieldset>
 
                     {/* COLONNE DROITE : RÉSUMÉ STICKY */}
-                    <div className="relative w-full">
-                        <div className="sticky top-24 space-y-6">
-                            <div className={`relative overflow-hidden rounded-3xl border p-6 text-white md:p-8 ${darkMode ? 'border-stone-800 bg-stone-900' : 'border-stone-800 bg-[#20201e]'}`}>
+                    <div className="relative min-w-0 w-full">
+                        <div className="space-y-5 lg:sticky lg:top-6">
+                            <div className={`relative rounded-2xl border p-4 text-white sm:rounded-3xl sm:p-6 xl:p-7 ${darkMode ? 'border-stone-800 bg-stone-900' : 'border-stone-800 bg-[#20201e]'}`}>
                                 <div className="relative z-10">
                                     <h3 className="text-xl font-black mb-6 text-white">Résumé de la commande</h3>
                                     
                                     <div className="space-y-4 mb-4">
                                         {checkoutItems.map((item, index) => (
-                                            <div key={item.id || index} className="flex justify-between items-start text-sm">
-                                                <div className="flex flex-col max-w-[70%]">
+                                            <div key={item.id || index} className="flex justify-between gap-3 items-start text-sm">
+                                                <div className="min-w-0 flex flex-1 flex-col break-words">
                                                     <span className="text-stone-300 font-medium">{item.name}</span>
                                                     {(item.variant || item.woodType || item.size || Object.values(item.options || {}).join(', ')) && (
                                                         <span className="text-xs text-stone-500 mt-0.5">
@@ -1524,7 +1524,7 @@ const CheckoutView = ({
                                                         </span>
                                                     )}
                                                 </div>
-                                                <span className="font-bold text-white tracking-tight">{item.price} €</span>
+                                                <span className="shrink-0 whitespace-nowrap font-bold text-white tracking-tight">{item.price} €</span>
                                             </div>
                                         ))}
                                     </div>
@@ -1550,10 +1550,10 @@ const CheckoutView = ({
                                                 ) : <Check size={15} />}
                                             </div>
                                         ) : (
-                                            <div className="mt-3 flex gap-2">
+                                            <div className="mt-3 grid grid-cols-1 min-[400px]:grid-cols-[minmax(0,1fr)_auto] gap-2">
                                                 <input
                                                     aria-label="Code promotionnel"
-                                                    className="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/15 px-3 py-2.5 text-sm font-bold uppercase tracking-wide text-white outline-none transition placeholder:text-stone-600 focus:border-amber-400/60"
+                                                    className="w-full min-w-0 min-h-12 rounded-xl border border-white/10 bg-black/15 px-3 py-2.5 text-base font-bold uppercase tracking-wide text-white outline-none transition placeholder:text-stone-600 focus:border-amber-400/60"
                                                     disabled={isCheckoutLocked || promotionStatus === 'loading'}
                                                     onChange={(event) => {
                                                         setPromotionCode(event.target.value.toUpperCase());
@@ -1569,7 +1569,7 @@ const CheckoutView = ({
                                                     value={promotionCode}
                                                 />
                                                 <button
-                                                    className="inline-flex min-w-24 items-center justify-center rounded-xl bg-white px-3 text-xs font-black text-stone-950 transition hover:bg-stone-200 disabled:opacity-50"
+                                                    className="inline-flex min-h-12 items-center justify-center rounded-xl bg-white px-3 text-xs font-black text-stone-950 transition hover:bg-stone-200 disabled:opacity-50"
                                                     disabled={!promotionCode.trim() || isCheckoutLocked || promotionStatus === 'loading'}
                                                     onClick={() => void applyPromotionCode()}
                                                     type="button"
@@ -1588,9 +1588,9 @@ const CheckoutView = ({
                                         </div>
                                     ) : null}
                                     
-                                    <div className="border-t border-stone-800 pt-6 flex justify-between items-end">
+                                    <div className="border-t border-stone-800 pt-5 flex flex-wrap gap-x-4 gap-y-2 justify-between items-end">
                                         <span className="text-stone-400 text-[10px] font-black uppercase tracking-widest mb-[2px]">Total à payer</span>
-                                        <span className="text-4xl lg:text-5xl font-black tracking-tighter text-white">{formatCheckoutEuros(finalTotal)} €</span>
+                                        <span className="whitespace-nowrap text-3xl sm:text-4xl xl:text-5xl font-black tracking-tighter text-white">{formatCheckoutEuros(finalTotal)} €</span>
                                     </div>
                                 </div>
                             </div>

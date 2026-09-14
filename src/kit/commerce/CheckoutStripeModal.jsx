@@ -238,7 +238,7 @@ const CheckoutStripeModal = ({
             aria-labelledby="stripe-payment-title"
             aria-describedby="stripe-payment-description"
         >
-            <div className="grid min-h-[100dvh] w-full lg:grid-cols-[minmax(20rem,38vw)_minmax(0,1fr)] 2xl:grid-cols-[minmax(28rem,42vw)_minmax(0,1fr)]">
+            <div className="grid min-h-[100dvh] w-full min-w-0 grid-cols-1 lg:grid-cols-[minmax(0,38fr)_minmax(0,62fr)] 2xl:grid-cols-[minmax(0,42fr)_minmax(0,58fr)]">
                 <aside className="relative overflow-hidden bg-[#20201e] px-5 pb-7 pt-5 text-stone-100 sm:px-8 sm:pb-8 lg:sticky lg:top-0 lg:flex lg:h-[100dvh] lg:flex-col lg:px-[clamp(3rem,5vw,6.5rem)] lg:pb-12 lg:pt-10">
                     <div className="relative flex items-center justify-between gap-4">
                         <span className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-300">
@@ -263,7 +263,7 @@ const CheckoutStripeModal = ({
                         </p>
 
                         <div className="mt-8 border-y border-white/10 py-5 lg:mt-10 lg:py-6">
-                            <div className="flex items-end justify-between gap-4">
+                            <div className="flex flex-wrap items-end justify-between gap-4">
                                 <span className="pb-1 text-xs font-medium text-stone-400">Total à régler</span>
                                 <span className="text-3xl font-semibold tracking-[-0.04em] tabular-nums text-white sm:text-4xl">
                                     {finalTotal}&nbsp;€
@@ -294,7 +294,7 @@ const CheckoutStripeModal = ({
                     <div className="pointer-events-none absolute -bottom-10 -right-4 h-40 w-40 rounded-full border border-white/[0.08]" />
                 </aside>
 
-                <main className={`px-5 pb-12 pt-5 sm:px-8 lg:px-[clamp(3rem,6vw,8rem)] lg:pb-16 lg:pt-10 ${
+                <main className={`min-w-0 px-4 pb-[calc(3rem+env(safe-area-inset-bottom,0px))] pt-5 sm:px-8 lg:px-8 xl:px-[clamp(3rem,6vw,8rem)] lg:pb-16 lg:pt-10 ${
                     darkMode ? 'bg-stone-950' : 'bg-[#f7f4ef]'
                 }`}>
                     <div className="mx-auto w-full max-w-[720px]">
