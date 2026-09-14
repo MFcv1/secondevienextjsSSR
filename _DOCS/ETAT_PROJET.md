@@ -1,21 +1,15 @@
 # État du projet
 
-14 septembre — remise en stock rapide sandbox, **locale non déployée** : bouton
-par publication à stock zéro, vente V2 unitaire prouvée, réservations bloquantes
-même échues, transaction idempotente et crédit de test consommé par les retours
-ultérieurs pour éviter le double ajout. Anciennes fiches sans preuve, historique
-trop volumineux et remboursements/retours engagés refusés. 102 tests Node 22,
-lint sans erreur (avertissement `<img>` préexistant) et diff-check. Déploiement
-sandbox demandé : contrôle relu à révision 77 (`v2_all/v2`, offline off),
-Connect test confirmé ; builds Node 22 réussis, y compris la source isolée
-Hosting `011` + correctif, qui conserve les cinq fichiers galerie hébergés.
-Manifeste `deploy/sandbox-stock-20260914.json` validé pour les trois Functions,
-sources de rollback sauvegardées et hashées dans `logs/sandbox-stock-20260914`.
-Le wrapper exige des inputs Functions committés : commit local sans push
-explicitement autorisé par l'utilisateur, livraison en cours. Aucun navigateur, émulateur,
-changement cloud, commit ou push. La qualification des
-transactions hébergées et de la publication reste non exécutée.
-[Contrat et ordre de livraison](catalogue/ANNONCES_CATALOGUE.md#61-remise-en-stock-rapide-pour-les-tests-sandbox).
+14 septembre — remise en stock rapide **livrée en sandbox** : trois Functions
+actives, sources vérifiées, Hosting `build-2026-09-14-012` à 100 % ; accueil et
+admin servent `sv-mu16tkaq-6556d88cf290`. Bouton unitaire `0 -> 1` après vente
+V2 prouvée, réservations bloquantes et crédit anti-double ajout pour les retours.
+102 tests Node 22, builds local/cloud réussis, lint sans erreur (avertissement
+`<img>` préexistant), trois routes HTTP 200 et trois refus anonymes 401.
+Source Hosting `011` + correctif : les cinq fichiers galerie hébergés sont
+préservés. Commit local `de692d1`, sans push ; aucune mutation de stock ou de
+paiement effectuée pour la livraison. Recette admin/achat laissée à l'utilisateur.
+[Livraison, preuves et rollback](catalogue/REMISE_STOCK_SANDBOX_2026-09-14.md).
 
 14 septembre — clôture panier/favoris : compteurs distincts, synchronisation
 du panier avant ouverture et montant vide à zéro. Recette sandbox confirmée
