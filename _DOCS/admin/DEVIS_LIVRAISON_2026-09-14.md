@@ -123,3 +123,19 @@ omis ses corrections déjà publiées en 004. Elle reprend l'archive exacte 006
 pour réintégrer son lot panier dans le prochain rollout. Ne pas redéployer cet
 ancien worktree isolé sans conserver les changements Hosting ultérieurs.
 La publication combinée est suivie par la tâche panier, pas prouvée ici.
+
+## Barre mobile et statuts allégés
+
+Correctif `a257c00` : segment de 35 % défilant pendant la préparation et l'envoi,
+au lieu d'une barre pleine pulsante ; animation désactivée avec reduced-motion.
+Statuts affichés en texte coloré sans fond ni contour ; « Envoyé » remplace
+« Proposition envoyée ». Huit scénarios UI réussis, déplacement de la barre et
+réduction des mouvements vérifiés ; ESLint, diff-check et build Node 22 réussis.
+
+Publication repartie de la source complète combinée 007 fournie par la tâche
+panier, en remplaçant uniquement les deux composants devis. Les cinq fichiers
+panier sont conservés et comparés octet par octet au lot qualifié.
+Hosting `build-2026-09-14-008` publié, trafic 100 %, identifiant
+`sv-mu12j4x4-f48c9c121b49` sur `/admin` et `/devis` (HTTP 200).
+Retour arrière : version combinée `build-2026-09-14-007`. Aucune Function ni
+mutation de devis réel pour cette vérification.
