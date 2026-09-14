@@ -1,5 +1,25 @@
 # État du projet
 
+14 septembre — clôture Git commune checkout/stock : comparaison intégrale avec
+l'archive source de Hosting `017`, relue active à 100 % et vérifiée par SHA-256.
+Tous ses fichiers sont identiques au dossier local ; les dernières modifications
+checkout responsive et éligibilité de remise en stock sont regroupées en deux
+commits pour intégration sur `main` et publication GitHub demandées par
+l'utilisateur. Aucun nouveau déploiement nécessaire. Cette égalité porte sur
+la source Hosting ; les Functions déjà actives conservent leurs révisions
+décrites dans les preuves de livraison.
+
+14 septembre — remise en stock : flèches **grisées et désactivées avant clic**
+si retour/remboursement, réservation, vente non prouvée ou contrôle indisponible.
+Vérification admin read-only, dix produits par requête, mêmes critères métier
+que la mutation ; raisons au survol, reprise au retour sur l'onglet.
+Hosting `017` READY/SUCCEEDED à 100 %, `sv-mu1a3z5k-bfcf20d03dbc`, source exacte
+de `016` + sept fichiers : checkout responsive et synchronisation conservés.
+105 tests commerce et builds local/cloud réussis, lint sans erreur, trois
+routes HTTP 200 et refus anonyme API 401. Pas de navigateur/E2E ni mutation
+métier, commit ou push ; Functions non redéployées (règles inchangées, extraction
+locale partagée avec le lecteur Hosting). [Preuves et limites](catalogue/REMISE_STOCK_SANDBOX_2026-09-14.md#boutons-désactivés-avant-confirmation).
+
 14 septembre — fiabilisation de la synchronisation du stock public **livrée
 en sandbox**, Hosting `014` à 100 %, `sv-mu19757i-7489dca13999` : signal rejoué aux grilles tardives, reconnexions bornées,
 reprise `online`/focus/retour visible, annulation des réponses dépassées et

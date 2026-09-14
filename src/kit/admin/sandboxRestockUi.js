@@ -2,6 +2,16 @@ export function canRequestSandboxRestock(item, projectId) {
     return projectId === 'secondevienextjsssr' && item?.status === 'published' && item.stock === 0;
 }
 
+export const sandboxRestockKey = (item) => `${item.id}:${item.commerceVersion ?? 0}:${item.inventoryVersion ?? 0}`;
+
+export function sandboxRestockButtonState(check) {
+    if (!check) return { disabled: true, label: 'Vérification de la remise en stock…' };
+    if (check.eligible === true) return { disabled: false, label: 'Remettre en stock (test sandbox)' };
+    return { disabled: true, label: check.reason === 'CHECK_UNAVAILABLE'
+        ? 'Vérification indisponible. Revenez sur cet onglet pour réessayer.'
+        : sandboxRestockError({ details: { reason: check.reason } }) };
+}
+
 export function sandboxRestockError(error) {
     const reason = error?.details?.reason || '';
     const messages = {

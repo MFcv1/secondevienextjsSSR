@@ -3,6 +3,7 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 const { createSandboxInventoryRepository } = require('../../../functions/src/commerce/domain/sandboxInventoryRepository');
+const { inspectSandboxRestock } = require('../../../functions/src/commerce/domain/sandboxInventoryEligibility');
 const { createReturnRuntime } = require('../../../functions/src/commerce/domain/v2Runtime');
 const { reduceOrder } = require('../../../functions/src/commerce/domain/orderState');
 const { validateInventorySummary } = require('../../../functions/src/commerce/domain/inventoryInvariants');
@@ -76,6 +77,19 @@ function fixture() {
     return { db, records, reads, input, repository, failCommit: () => { failCommit = true; } };
 }
 
+const inspect = f => inspectSandboxRestock({ db: f.db, appId: 'secondevie', projectId: 'secondevienextjsssr',
+    ...f.input, expectedVersion: f.input.command.expectedVersion });
+
+test('eligibility proves a sale without writing stock, credits, movements or audit', async () => {
+    const f = fixture();
+    const before = structuredClone([...f.records]);
+    assert.deepEqual(await inspect(f), { eligible: true });
+    assert.deepEqual([...f.records], before);
+    f.records.set(`${orderPath}/returns/return-new`, { status: 'pending' });
+    await assert.rejects(inspect(f), { code: 'COMMERCE_SANDBOX_RESTOCK_RETURN_PENDING' });
+    await assert.rejects(f.repository.restore(f.input), { code: 'COMMERCE_SANDBOX_RESTOCK_RETURN_PENDING' });
+});
+
 test('sandbox restore proves a sale and atomically writes one stock, credit, movement, audit and result', async () => {
     const f = fixture();
     const originalOrder = structuredClone(f.records.get(orderPath));
@@ -144,7 +158,9 @@ for (const scenario of ['active hold', 'overdue hold', 'unknown sale', 'stale ve
         if (scenario === 'partial sale') { reservation.committedQty = 2; reservation.reservedQty = 2; }
         if (scenario === 'uncertain history') for (let i = 0; i < 51; i++) f.records.set(`inventory_reservations/history-${i}`, { ...reservation });
         const original = structuredClone([...f.records]);
-        await assert.rejects(f.repository.restore(f.input));
+        let inspectedReason;
+        await assert.rejects(inspect(f), error => { inspectedReason = error.code; return true; });
+        await assert.rejects(f.repository.restore(f.input), error => error.code === inspectedReason);
         assert.deepEqual([...f.records], original);
     });
 }
@@ -237,4 +253,51 @@ test('UI offers a sandbox reset at zero even without sold, and explains reservat
     assert.equal(canRequestSandboxRestock({ status: 'draft', stock: 0 }, 'secondevienextjsssr'), false);
     assert.equal(canRequestSandboxRestock({ status: 'published', stock: 0 }, 'production'), false);
     assert.match(sandboxRestockError({ details: { reason: 'COMMERCE_SANDBOX_RESTOCK_RESERVED' } }), /réservation/);
+});
+
+test('restock button stays disabled until eligibility is confirmed, and exposes the blocking reason', async () => {
+    const { sandboxRestockButtonState, sandboxRestockKey } = await import('../../../src/kit/admin/sandboxRestockUi.js');
+    assert.equal(sandboxRestockButtonState().disabled, true);
+    assert.equal(sandboxRestockButtonState({ eligible: true }).disabled, false);
+    for (const reason of ['COMMERCE_SANDBOX_RESTOCK_RETURN_PENDING', 'COMMERCE_SANDBOX_RESTOCK_RESERVED', 'CHECK_UNAVAILABLE']) {
+        assert.equal(sandboxRestockButtonState({ eligible: false, reason }).disabled, true);
+    }
+    assert.match(sandboxRestockButtonState({ eligible: false, reason: 'COMMERCE_SANDBOX_RESTOCK_RETURN_PENDING' }).label, /Retours/);
+    assert.notEqual(sandboxRestockKey({ id: 'one', inventoryVersion: 1 }), sandboxRestockKey({ id: 'one', inventoryVersion: 2 }));
+});
+
+test('eligibility API requires admin authorization, bounds the batch and ignores forged context', async () => {
+    const vm = require('node:vm');
+    const fs = require('node:fs');
+    const source = fs.readFileSync('app/api/admin/sandbox-restock-eligibility/route.js', 'utf8')
+        .replace(/^import .*;\n/gm, '').replace(/^export /gm, '');
+    let allowed = false;
+    let bodyReads = 0;
+    let body = {};
+    const calls = [];
+    const context = vm.createContext({
+        NextResponse: { json: (payload, options) => ({ payload, ...options }) },
+        authorizeAdminRequest: async () => allowed ? { ok: true, decoded: { uid: 'actual-admin' } }
+            : { ok: false, error: 'unauthorized', status: 401 },
+        readBoundedJsonBody: async () => { bodyReads++; return { body }; },
+        RequestBodyError: class extends Error {}, getAdminDb: () => 'real-db',
+        publicEnv: { appId: 'secondevie', projectId: 'secondevienextjsssr' },
+        eligibility: { inspectSandboxRestock: async input => { calls.push(input); return { eligible: true }; } },
+    });
+    vm.runInContext(source, context);
+    assert.equal((await context.POST({})).status, 401);
+    assert.equal(bodyReads, 0);
+    allowed = true;
+    body = { collectionName: 'furniture', products: Array(11).fill({ productId: 'one', expectedVersion: 0, expectedInventoryVersion: 0 }) };
+    assert.equal((await context.POST({})).status, 400);
+    assert.equal(calls.length, 0);
+    body.products = [{ productId: 'one', expectedVersion: 0, expectedInventoryVersion: 0,
+        actor: { uid: 'forged' }, db: 'forged-db', appId: 'other' }];
+    const result = await context.POST({});
+    assert.equal(result.status, 200);
+    assert.equal(result.headers['cache-control'], 'no-store, max-age=0');
+    assert.equal(calls[0].actor.uid, 'actual-admin');
+    assert.equal(calls[0].db, 'real-db');
+    assert.equal(calls[0].appId, 'secondevie');
+    assert.equal(result.payload.results[0].actor, undefined);
 });

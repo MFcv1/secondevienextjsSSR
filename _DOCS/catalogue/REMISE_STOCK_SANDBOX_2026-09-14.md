@@ -146,3 +146,51 @@ valide son essai multiappareil ; il ne constitue pas une borne maximale de
 latence ni une qualification exhaustive des pannes réseau. Clôture et commit
 local demandés, avec rappel du contrat dans `AGENTS.md` ; aucun nouveau
 déploiement ni push pour cette clôture.
+
+### Boutons désactivés avant confirmation
+
+Le contrôle préalable lit les mêmes critères de vente que la mutation via
+`sandboxInventoryEligibility.js` (extraction sans changement des critères).
+L'API admin `POST /api/admin/sandbox-restock-eligibility` exige App Check,
+claim admin, registre actif et AAL2 ; elle accepte au plus dix produits par
+requête, lit leurs historiques bornés en transactions read-only et ne renvoie
+que l'éligibilité, la raison et les versions demandées. Aucune nouvelle
+collection, aucun mouvement ni modification de commande.
+
+Les flèches sont grisées et désactivées tant que la vérification n'a pas abouti
+positivement. Le survol expose la raison : retour/remboursement, réservation,
+vente non prouvée ou vérification indisponible. La liste se revérifie après
+changement de version produit, retour visible, focus et reconnexion, sans
+polling. Les réponses devenues obsolètes sont ignorées. Un refus métier reçu
+à la confirmation désactive aussi la ligne et le bouton de la fenêtre.
+Cette lecture n'est pas une réservation : une situation peut changer ensuite,
+et le serveur garde son contrôle transactionnel au moment de la mutation.
+
+105 tests commerce réussis sous Node 22, dont contrôle préalable sans écriture,
+égalité des refus lecture/mutation sur seize situations, états du bouton,
+autorisation et bornage de l'API. Build local réussi, lint sans erreur (un
+avertissement image préexistant). Pas de navigateur/E2E ni de mutation réelle.
+La fonction de mutation déjà déployée conserve les mêmes règles ; seule la
+livraison Hosting est nécessaire. Preuves : `logs/restock-eligibility-20260914/`.
+
+Le premier lancement Hosting a reçu HTTP 409 : le correctif responsive du
+checkout était en cours de livraison. Après succès de `016`, une seconde
+source isolée reprend son archive exacte et ajoute uniquement les sept
+fichiers de ce correctif (dont trois nouveaux). Les changements checkout,
+images et synchronisation présents dans `016` sont donc conservés. Build
+local de cette combinaison réussi. Retour arrière : `build-2026-09-14-016`.
+
+Livré sur `build-2026-09-14-017` : READY, rollout SUCCEEDED, trafic à 100 %.
+Cloud Build `935b3b31-eac0-41ea-97c9-5402ca3497dd` réussi ; identifiant servi
+`sv-mu1a3z5k-bfcf20d03dbc`. `/`, `/admin` et `/checkout` répondent HTTP 200,
+le chunk admin servi contient le lecteur d'éligibilité et la nouvelle API
+refuse un POST anonyme avec 401. Pas de recette authentifiée/navigateur :
+l'essai des flèches reste à effectuer par l'utilisateur après rechargement.
+Contrôle commerce relu : révision 77, `v2_all/v2`, offline off.
+
+Archive :
+`gs://firebaseapphosting-sources-231220287936-europe-west4/secondevie-next-sandbox--48443-Z9UTisxT0DoE-.zip`.
+Comparaison intégrale dans `combined-source-proof.json` : sept fichiers changés,
+tous les autres identiques à `016`, aucun `.env` réel envoyé. `delivery.json`
+et les états build/rollout/traffic consignent les contrôles finaux dans le
+dossier de preuves ci-dessus. Aucun commit/push pour cette livraison.

@@ -15,7 +15,8 @@ import KIT_CONFIG from '../config/constants';
 import { createProductCommandId } from '../commerce/adminProductCommandClient';
 import { firebaseProjectId } from '../config/firebaseEnv';
 import OrderModalShell from './components/orders/OrderModalShell';
-import { canRequestSandboxRestock, sandboxRestockError } from './sandboxRestockUi';
+import { canRequestSandboxRestock, sandboxRestockError, sandboxRestockKey, sandboxRestockButtonState } from './sandboxRestockUi';
+import { checkSandboxRestockEligibility } from './sandboxRestockEligibilityClient';
 
 // Helper pour nettoyer le texte (accents, casse)
 const normalizeText = (text) => {
@@ -60,6 +61,46 @@ const AdminItemList = ({ collectionName, darkMode, highlightProductId, onEdit, o
     const [restockRequest, setRestockRequest] = useState(null);
     const [restockNotice, setRestockNotice] = useState(null);
     const restockPendingRef = useRef(false);
+    const [restockChecks, setRestockChecks] = useState({});
+    const restockTargets = JSON.stringify(items.filter(item => canRequestSandboxRestock(item, firebaseProjectId))
+        .map(item => ({ productId: item.id, expectedVersion: item.commerceVersion ?? 0,
+            expectedInventoryVersion: item.inventoryVersion ?? 0 })));
+
+    useEffect(() => {
+        let controller;
+        const refresh = async () => {
+            controller?.abort();
+            const current = new AbortController();
+            controller = current;
+            setRestockChecks({});
+            if (document.visibilityState !== 'visible') return;
+            const targets = JSON.parse(restockTargets);
+            for (let offset = 0; offset < targets.length; offset += 10) {
+                if (current.signal.aborted) return;
+                const batch = targets.slice(offset, offset + 10);
+                let results;
+                try {
+                    results = await checkSandboxRestockEligibility(batch, collectionName, current.signal);
+                } catch {
+                    results = batch.map(product => ({ ...product, eligible: false, reason: 'CHECK_UNAVAILABLE' }));
+                }
+                if (current.signal.aborted) return;
+                setRestockChecks(previous => ({ ...previous, ...Object.fromEntries(results.map(result => [
+                    `${result.productId}:${result.expectedVersion}:${result.expectedInventoryVersion}`, result,
+                ])) }));
+            }
+        };
+        void refresh();
+        window.addEventListener('focus', refresh);
+        window.addEventListener('online', refresh);
+        document.addEventListener('visibilitychange', refresh);
+        return () => {
+            controller?.abort();
+            window.removeEventListener('focus', refresh);
+            window.removeEventListener('online', refresh);
+            document.removeEventListener('visibilitychange', refresh);
+        };
+    }, [collectionName, restockTargets]);
     const highlightedRowRef = useRef(null);
     const highlightScrolledRef = useRef(false);
 
@@ -234,12 +275,13 @@ const AdminItemList = ({ collectionName, darkMode, highlightProductId, onEdit, o
     const actionClass = `grid h-8 w-8 place-items-center rounded-full ring-1 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95 ${darkMode ? 'bg-white/[0.04] text-stone-300 ring-white/10 hover:bg-white hover:text-stone-950' : 'bg-white text-stone-600 ring-black/[0.06] hover:bg-stone-950 hover:text-white'}`;
 
     const requestRestock = (item) => {
+        if (sandboxRestockButtonState(restockChecks[sandboxRestockKey(item)]).disabled) return;
         setRestockNotice(null);
         setRestockRequest({ item, commandId: createProductCommandId('sandbox-restock'), pending: false, error: null });
     };
 
     const confirmRestock = async () => {
-        if (!restockRequest || restockPendingRef.current) return;
+        if (!restockRequest || restockRequest.blocked || restockPendingRef.current) return;
         restockPendingRef.current = true;
         setRestockRequest(current => ({ ...current, pending: true, error: null }));
         try {
@@ -251,7 +293,11 @@ const AdminItemList = ({ collectionName, darkMode, highlightProductId, onEdit, o
             setRestockNotice(`« ${restockRequest.item.name} » : stock remis à 1. La mise à jour du catalogue public est en cours.`);
             setRestockRequest(null);
         } catch (error) {
-            setRestockRequest(current => ({ ...current, pending: false, error: sandboxRestockError(error) }));
+            const reason = error?.details?.reason || '';
+            const blocked = reason.startsWith('COMMERCE_SANDBOX_RESTOCK_');
+            if (blocked) setRestockChecks(current => ({ ...current,
+                [sandboxRestockKey(restockRequest.item)]: { eligible: false, reason } }));
+            setRestockRequest(current => ({ ...current, pending: false, blocked, error: sandboxRestockError(error) }));
         } finally {
             restockPendingRef.current = false;
         }
@@ -327,6 +373,7 @@ const AdminItemList = ({ collectionName, darkMode, highlightProductId, onEdit, o
                         ) : (
                             <div className={`divide-y ${darkMode ? 'divide-white/[0.07]' : 'divide-black/[0.055]'}`}>
                                 {displayedItems.map(item => {
+                                    const restockButton = sandboxRestockButtonState(restockChecks[sandboxRestockKey(item)]);
                                     const adminState = getProductAdminState(item);
                                     const status = adminState === 'sold' ? 'Vendu' : adminState === 'published' ? 'Public' : 'Brouillon';
                                     const imageSource = item.images?.[0] || item.imageUrl || '';
@@ -360,7 +407,11 @@ const AdminItemList = ({ collectionName, darkMode, highlightProductId, onEdit, o
                                                 <button type="button" onClick={() => onToggleStatus(item)} disabled={adminState === 'draft' && !imageSource} className={`${actionClass} disabled:cursor-not-allowed disabled:opacity-35`} title={adminState === 'draft' && !imageSource ? 'Ajoutez les photos avant de publier' : item.status === 'published' ? 'Masquer' : 'Publier'}>{item.status === 'published' ? <Eye size={14} strokeWidth={1.5} /> : <EyeOff size={14} strokeWidth={1.5} />}</button>
                                                 <button type="button" onClick={() => onEdit(item)} className={actionClass} title="Modifier"><Pencil size={14} strokeWidth={1.5} /></button>
                                                 {canRequestSandboxRestock(item, firebaseProjectId) ? (
-                                                    <button type="button" onClick={() => requestRestock(item)} className={actionClass} title="Remettre en stock (test sandbox)" aria-label={`Remettre ${item.name} en stock (test sandbox)`}><RotateCcw size={14} strokeWidth={1.5} /></button>
+                                                    <span title={restockButton.label}>
+                                                        <button type="button" disabled={restockButton.disabled} onClick={() => requestRestock(item)}
+                                                            className={restockButton.disabled ? 'grid h-8 w-8 cursor-not-allowed place-items-center rounded-full bg-stone-400/10 text-stone-400 opacity-40 ring-1 ring-stone-400/20' : actionClass}
+                                                            aria-label={`${item.name} : ${restockButton.label}`}><RotateCcw size={14} strokeWidth={1.5} /></button>
+                                                    </span>
                                                 ) : adminState !== 'draft' && Number(item.stock) > 0 ? (
                                                     <button type="button" onClick={() => onMarkAsSold(item)} className={actionClass} title="Marquer comme vendu"><CheckCircle size={14} strokeWidth={1.5} /></button>
                                                 ) : null}
@@ -429,7 +480,7 @@ const AdminItemList = ({ collectionName, darkMode, highlightProductId, onEdit, o
                         {restockRequest.error ? <p role="alert" className="mt-3 rounded-xl bg-red-500/10 p-3 text-sm text-red-600">{restockRequest.error}</p> : null}
                         <div className="mt-6 flex justify-end gap-3">
                             <button type="button" disabled={restockRequest.pending} onClick={() => setRestockRequest(null)} className="min-h-11 rounded-full px-5 text-sm font-bold ring-1 ring-stone-400">Annuler</button>
-                            <button type="button" disabled={restockRequest.pending} onClick={confirmRestock} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-stone-950 px-5 text-sm font-bold text-white disabled:opacity-60">
+                            <button type="button" disabled={restockRequest.pending || restockRequest.blocked} onClick={confirmRestock} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-stone-950 px-5 text-sm font-bold text-white disabled:opacity-60">
                                 {restockRequest.pending ? <Loader2 size={16} className="animate-spin motion-reduce:animate-none" /> : <RotateCcw size={16} />}
                                 {restockRequest.pending ? 'Vérification…' : 'Remettre à 1'}
                             </button>

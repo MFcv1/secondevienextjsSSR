@@ -25,6 +25,7 @@ Derniers audits et dossiers datés : [index des audits](_DOCS/audits/README.md).
 | `/api/public/[operation]` | `src/lib/server/publicOperations.js`, `shared/publicOperationTransport.mjs` → factories `functions/src/` | Registre fermé, App Check/Auth, POST privé ; groupes désactivés par défaut |
 | `/api/revalidate-catalog` | `app/api/revalidate-catalog/route.js` | HMAC machine ou admin fort, plan borné |
 | `/api/admin/catalog-publication-status` | `app/api/admin/catalog-publication-status/route.js` | Preuve de release, App Check + admin AAL2 |
+| `/api/admin/sandbox-restock-eligibility` | `app/api/admin/sandbox-restock-eligibility/route.js` | Éligibilité de remise en stock, lecture seule bornée, App Check + admin AAL2 |
 | `/api/admin/function-metrics` | `app/api/admin/function-metrics/route.js` | Monitoring/inventaire, App Check + admin AAL2, no-store |
 | `/sitemap.xml`, `/robots.txt` | `app/sitemap.js`, `app/robots.js` | Politique d'indexation |
 
