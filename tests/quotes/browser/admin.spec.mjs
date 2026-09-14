@@ -73,6 +73,9 @@ test('preview saves pricing automatically; sends only after confirmation; trash 
   expect(await page.evaluate(() => window.actions)).toEqual(['save']);
   await dialog.getByRole('button', { name: 'Envoyer au client' }).click();
   await expect(page.getByText('Proposition envoyée au client.', { exact: true }).first()).toBeVisible();
+  const sentBadge = page.locator('span').getByText('Envoyé', { exact: true }).first();
+  await expect(sentBadge).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  await expect(sentBadge).toHaveCSS('border-top-width', '0px');
   expect(await page.evaluate(() => window.actions)).toEqual(['save', 'send']);
   await page.getByRole('button', { name: 'Supprimer', exact: true }).click();
   await page.getByRole('button', { name: 'Mettre à la corbeille' }).click();
@@ -107,6 +110,21 @@ test('preparation and sending show immediate progress until each request resolve
   await page.getByRole('button', { name: 'Prévisualiser et envoyer' }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog).toContainText('Préparation de l’aperçu');
+  const segment = dialog.locator('.quote-progress-segment');
+  const positions = await segment.evaluate(element => {
+    const animation = element.getAnimations()[0];
+    animation.pause();
+    animation.currentTime = 200;
+    const first = getComputedStyle(element).transform;
+    animation.currentTime = 800;
+    const second = getComputedStyle(element).transform;
+    animation.play();
+    return [first, second];
+  });
+  expect(positions[0]).not.toBe(positions[1]);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(segment).toHaveCSS('animation-name', 'none');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
   await expect(dialog.getByRole('button', { name: 'Envoyer au client' })).toHaveCount(0);
   await page.keyboard.press('Escape');
   await expect(dialog).toBeVisible();

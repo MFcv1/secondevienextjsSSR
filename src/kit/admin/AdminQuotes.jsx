@@ -32,21 +32,21 @@ import {
 const STATUS_OPTIONS = [
   ['new', 'Nouveau'],
   ['in_review', 'En étude'],
-  ['proposal_sent', 'Proposition envoyée'],
+  ['proposal_sent', 'Envoyé'],
   ['accepted', 'Accord client'],
   ['closed', 'Terminé'],
 ];
 
 const STATUS_META = {
-  new: { label: 'Nouveau', className: 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-300/20 dark:bg-amber-300/10 dark:text-amber-200' },
-  qualifying: { label: 'À qualifier', className: 'border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-300/20 dark:bg-sky-300/10 dark:text-sky-200' },
-  waiting_customer: { label: 'À recontacter', className: 'border-violet-200 bg-violet-50 text-violet-800 dark:border-violet-300/20 dark:bg-violet-300/10 dark:text-violet-200' },
-  in_review: { label: 'En étude', className: 'border-orange-200 bg-orange-50 text-orange-800 dark:border-orange-300/20 dark:bg-orange-300/10 dark:text-orange-200' },
-  proposal_ready: { label: 'Proposition prête', className: 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-300/20 dark:bg-emerald-300/10 dark:text-emerald-200' },
-  closed: { label: 'Terminé', className: 'border-stone-200 bg-stone-100 text-stone-700 dark:border-white/10 dark:bg-white/[0.06] dark:text-stone-300' },
-  declined: { label: 'Non retenu', className: 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-300/20 dark:bg-rose-300/10 dark:text-rose-200' },
-  proposal_sent: { label: 'Proposition envoyée', className: 'border-sky-200 bg-sky-50 text-sky-800' },
-  accepted: { label: 'Accord client', className: 'border-emerald-200 bg-emerald-50 text-emerald-800' },
+  new: { label: 'Nouveau', className: 'text-amber-800 dark:text-amber-200' },
+  qualifying: { label: 'À qualifier', className: 'text-sky-800 dark:text-sky-200' },
+  waiting_customer: { label: 'À recontacter', className: 'text-violet-800 dark:text-violet-200' },
+  in_review: { label: 'En étude', className: 'text-orange-800 dark:text-orange-200' },
+  proposal_ready: { label: 'Proposition prête', className: 'text-emerald-800 dark:text-emerald-200' },
+  closed: { label: 'Terminé', className: 'text-stone-700 dark:text-stone-300' },
+  declined: { label: 'Non retenu', className: 'text-rose-800 dark:text-rose-200' },
+  proposal_sent: { label: 'Envoyé', className: 'text-sky-800 dark:text-sky-200' },
+  accepted: { label: 'Accord client', className: 'text-emerald-800 dark:text-emerald-200' },
 };
 
 const euro = (cents) => new Intl.NumberFormat('fr-FR', {
@@ -79,7 +79,7 @@ const relativeDate = (value) => {
 function StatusBadge({ status }) {
   const meta = STATUS_META[displayQuoteStatus(status)] || STATUS_META.new;
   return (
-    <span className={`inline-flex min-h-7 items-center rounded-full border px-2.5 text-[10px] font-bold ${meta.className}`}>
+    <span className={`inline-flex shrink-0 items-center whitespace-nowrap text-[10px] font-bold ${meta.className}`}>
       {meta.label}
     </span>
   );

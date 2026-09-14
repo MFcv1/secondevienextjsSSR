@@ -190,7 +190,17 @@ export default function QuoteProposalEditor({ detail, proposal, onChange, onActi
             <p className="mt-1 text-xs leading-5 text-stone-500">{pending === 'preview' ? 'Enregistrement de vos prestations et de votre message.' : 'Transmission de votre proposition. Patientez un instant.'}</p>
           </div>
         </div>
-        <div aria-hidden="true" className="mt-5 h-1.5 overflow-hidden rounded-full bg-indigo-50 dark:bg-white/10"><div className="h-full w-full animate-pulse rounded-full bg-gradient-to-r from-indigo-200 via-indigo-500 to-indigo-200 motion-reduce:animate-none" /></div>
+        <style>{`
+          @keyframes quote-progress-travel {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(286%); }
+          }
+          .quote-progress-segment { width: 35%; animation: quote-progress-travel 1.4s linear infinite; }
+          @media (prefers-reduced-motion: reduce) {
+            .quote-progress-segment { animation: none; transform: translateX(93%); }
+          }
+        `}</style>
+        <div aria-hidden="true" className="mt-5 h-1.5 overflow-hidden rounded-full bg-indigo-50 dark:bg-white/10"><div className="quote-progress-segment h-full rounded-full bg-gradient-to-r from-indigo-200 via-indigo-500 to-indigo-200" /></div>
       </div> : <>
       <h3 className="text-lg font-bold">{confirmation === 'send' ? 'Vérifier la proposition' : 'Confirmer le résultat vérifié'}</h3>
       {confirmation === 'send' ? <div className="my-4 space-y-3 text-sm leading-6"><p>À : {detail.customer?.email}</p><p>Objet : Votre proposition de restauration — {detail.requestNumber}</p><p>Bonjour {detail.customer?.firstName || ''}, voici le chiffrage étudié par l’atelier.</p>{value.lines.map((line, i) => <p key={i}>{line.label} : {euroRange(line)}</p>)}<strong>Total proposé : {euroRange(total)}</strong><p className="whitespace-pre-wrap">{value.message}</p><p>Validité : {value.validDays} jours à compter de l’envoi.</p><p>Répondez à cet e-mail pour confirmer votre accord ou poser vos questions. Les travaux et leur calendrier seront convenus avec l’atelier avant intervention.</p></div> : <p className="my-4 text-sm">{confirmation === 'confirm_sent' ? 'Vous confirmez avoir vérifié que ce message a été envoyé.' : 'Vous confirmez avoir vérifié que ce message n’a pas été envoyé. Une nouvelle tentative sera alors possible.'}</p>}
