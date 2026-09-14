@@ -88,6 +88,12 @@ pas un déploiement. Signaler et corriger les contradictions du périmètre trai
 - Pointeurs `current/previous/last-known-good` relus frais ; seules les
   releases immuables sont cachées. Publication CAS, plan d'impact et
   revalidation HMAC ; signal catalogue borné, sans polling permanent.
+- Synchronisation du stock public : conserver le rejeu du signal confirmé aux
+  grilles, les reprises bornées après erreur/reconnexion et la protection contre
+  les révisions anciennes. Une remise en stock doit actualiser les cartes et
+  badges sans rechargement manuel après publication du snapshot.
+  [Implémentation et recette sandbox du 14 septembre](
+  _DOCS/catalogue/REMISE_STOCK_SANDBOX_2026-09-14.md#fiabilisation-de-laffichage-public-après-recette).
 - Produit normalisé et `isPurchasable` uniques ; prix/stock revérifiés serveur.
 - Préserver `imageVariants`/`imageMetadata`, petites variantes sur cartes,
   `detailFast` au détail, grande image au zoom ; éviter CLS et flash.

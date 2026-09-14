@@ -64,6 +64,7 @@ export async function GET(request) {
     const payload = segmented ? {
       appId: publicEnv.appId,
       catalogVersion: result.snapshot.catalogVersion,
+      revision: result.snapshot.revision,
       aggregateSha256: result.snapshot.aggregateSha256,
       generatedAt: result.snapshot.generatedAt,
       partial: Boolean(parsedLimit.value || categories.length || cursor),
@@ -77,6 +78,7 @@ export async function GET(request) {
     } : {
       appId: publicEnv.appId,
       catalogVersion: result.snapshot.catalogVersion,
+      revision: result.snapshot.revision,
       aggregateSha256: result.snapshot.aggregateSha256,
       generatedAt: result.snapshot.generatedAt,
       collections: { furniture: result.products },

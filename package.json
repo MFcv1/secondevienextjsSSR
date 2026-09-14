@@ -133,7 +133,7 @@
     "test:meta": "node --test tests/meta-oauth-contract.test.cjs",
     "test:catalog": "pnpm run test:catalog:core && pnpm run test:catalog:resilience && pnpm run test:catalog:security",
     "test:catalog:core": "node --test tests/catalog/core.test.cjs tests/catalog/product-publication.test.cjs",
-    "test:catalog:resilience": "node --test tests/catalog/resilience.test.cjs",
+    "test:catalog:resilience": "node --test tests/catalog/resilience.test.cjs tests/catalog/live-sync.test.cjs",
     "test:catalog:security": "node --test tests/catalog/security.test.cjs && firebase emulators:exec --config firebase.json --project demo-secondevie-catalog --only firestore,storage \"node --test --test-concurrency=1 tests/catalog/emulator/firestore-rules.test.cjs tests/catalog/emulator/storage-rules.test.cjs tests/quote-requests-emulator.test.cjs\"",
     "test:functions:auth": "node tests/auth-claims.test.cjs",
     "test:auth-store": "node --test tests/auth-store-contract.test.cjs",

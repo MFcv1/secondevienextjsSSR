@@ -4,12 +4,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import GalleryProductCardServer from './GalleryProductCardServer';
 import { ProductGridMoreButtonIsland } from './GalleryFixedSectionsInteractions';
 import { isSoldOut } from '../commerce/purchasability';
+import { catalogVersionChannel, fetchCatalogWithRetry, isVersionAtLeast } from './catalogLiveSync';
 
 const PRODUCT_GRID_INITIAL_COUNT = 10;
-const RELEASE_CONFIRMATION_DELAYS_MS = [0, 300, 900, 1800];
-const releaseRequests = new Map();
-
-const wait = (duration) => new Promise((resolve) => window.setTimeout(resolve, duration));
 
 const getFocusedProductId = () => new URLSearchParams(window.location.search).get('focusProduct') || '';
 
@@ -50,39 +47,11 @@ const selectItems = (items, mode) => {
   });
 };
 
-const loadExactCatalogRelease = (aggregateSha256) => {
-  if (!aggregateSha256) return Promise.resolve(null);
-  if (releaseRequests.has(aggregateSha256)) return releaseRequests.get(aggregateSha256);
-  const request = (async () => {
-    for (const delayMs of RELEASE_CONFIRMATION_DELAYS_MS) {
-      if (delayMs) await wait(delayMs);
-      try {
-        const response = await fetch('/api/catalog?scope=cards&limit=48', {
-          cache: 'no-store',
-          headers: { accept: 'application/json' },
-        });
-        if (!response.ok) continue;
-        const payload = await response.json();
-        if (payload?.aggregateSha256 === aggregateSha256
-            && Array.isArray(payload?.collections?.furniture)) {
-          return payload;
-        }
-      } catch {
-        // La tentative bornee suivante couvre une instance API en retard.
-      }
-    }
-    return null;
-  })().finally(() => {
-    if (releaseRequests.get(aggregateSha256) === request) releaseRequests.delete(aggregateSha256);
-  });
-  releaseRequests.set(aggregateSha256, request);
-  return request;
-};
-
 export default function GalleryLiveProductGridIsland({
   sectionId,
   initialItems = [],
   initialCatalogVersion = '',
+  initialCatalogRevision = 0,
   mode = 'newest',
   badgeLabel = '',
   darkMode = false,
@@ -95,6 +64,13 @@ export default function GalleryLiveProductGridIsland({
   const [focusedProductId, setFocusedProductId] = useState('');
   const [focusedProduct, setFocusedProduct] = useState(null);
   const focusRevealedRef = useRef(false);
+  const appliedVersionRef = useRef({ aggregateSha256: initialCatalogVersion, revision: initialCatalogRevision });
+
+  useEffect(() => {
+    if (Number(initialCatalogRevision) < Number(appliedVersionRef.current.revision)) return;
+    appliedVersionRef.current = { aggregateSha256: initialCatalogVersion, revision: initialCatalogRevision };
+    setRelease({ aggregateSha256: initialCatalogVersion, items: initialItems });
+  }, [initialCatalogVersion, initialCatalogRevision, initialItems]);
   const releaseItems = useMemo(() => {
     if (!focusedProduct?.id || release.items.some((item) => item?.id === focusedProduct.id)) {
       return release.items;
@@ -161,23 +137,34 @@ export default function GalleryLiveProductGridIsland({
   }, [hideWhenEmpty, items.length, sectionId]);
 
   useEffect(() => {
-    let active = true;
-    const onCatalogVersionChanged = async (event) => {
-      const aggregateSha256 = String(event.detail?.aggregateSha256 || '');
-      if (!aggregateSha256 || aggregateSha256 === release.aggregateSha256) return;
-      const payload = await loadExactCatalogRelease(aggregateSha256);
-      if (!active || !payload) return;
+    let job;
+    const onCatalogVersionChanged = async (expected) => {
+      if (!expected?.aggregateSha256) return;
+      if (expected.aggregateSha256 === appliedVersionRef.current.aggregateSha256
+          || Number(expected.revision) < Number(appliedVersionRef.current.revision)) return;
+      job?.abort();
+      const controller = new AbortController();
+      job = controller;
+      const payload = await fetchCatalogWithRetry('/api/catalog?scope=cards&limit=48', {
+        signal: controller.signal,
+        accept: (value) => isVersionAtLeast(value, expected)
+          && Array.isArray(value?.collections?.furniture),
+      });
+      if (controller.signal.aborted || !payload) return;
+      if (Number(payload.revision) < Number(appliedVersionRef.current.revision)) return;
+      appliedVersionRef.current = { aggregateSha256: payload.aggregateSha256, revision: payload.revision };
       setRelease({
         aggregateSha256: payload.aggregateSha256,
         items: payload.collections.furniture,
       });
     };
-    window.addEventListener('sv:catalog-version-changed', onCatalogVersionChanged);
+    // Replay covers a signal arriving before this island hydrates.
+    const unsubscribe = catalogVersionChannel.subscribe(onCatalogVersionChanged);
     return () => {
-      active = false;
-      window.removeEventListener('sv:catalog-version-changed', onCatalogVersionChanged);
+      job?.abort();
+      unsubscribe();
     };
-  }, [release.aggregateSha256]);
+  }, [initialCatalogVersion, initialCatalogRevision]);
 
   return (
     <>

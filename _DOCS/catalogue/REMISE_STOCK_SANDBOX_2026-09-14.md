@@ -84,3 +84,65 @@ financier pour revenir en arrière. Aucun rollback n'a été exécuté.
 
 Preuves machine locales : `hosting-state.json`, `hosting-source-proof.json`,
 `auth-probes.json`, `rollback-digests.json` dans le même dossier de logs.
+
+## Fiabilisation de l'affichage public après recette
+
+La remise réelle testée par l'utilisateur a écrit le stock à 12:43:06 UTC ;
+le signal catalogue a été publié à 12:43:26 UTC. Ce délai de publication ne
+prouve pas la cause du rafraîchissement manuel sur son téléphone. La lecture
+du client a néanmoins identifié des pertes de signal possibles : erreur
+terminale d'écoute sans reconnexion, hydratation tardive d'une grille,
+props serveur ignorées et confirmation trop courte d'une release exacte.
+
+Le correctif ajoute un signal confirmé rejouable, des reprises bornées, des
+requêtes annulables et une comparaison des révisions, exposées aussi par
+l'API cartes. Retour visible, focus, `pageshow` et `online` relancent la
+convergence. Les grilles appliquent les nouvelles props sans régresser à une
+ancienne révision. Aucun changement de stock, réservation, vente ou retour
+n'est effectué par cette synchronisation.
+
+Livraison conjointe demandée avec le retrait « Ouverture… » de la tâche
+**Supprimer l’indicateur Ouverture**. Cette tâche n'avait pas créé de nouveau
+commit : son retrait était déjà livré sur Hosting `013`. La nouvelle source
+part de cette archive exacte et conserve ce retrait, sans restaurer les trois
+autres fichiers d'optimisation images encore différents de la branche locale.
+
+Validation : build local Node 22 réussi ; huit tests de synchronisation, et
+58 tests catalogue réussis sur la branche locale. Sur la source combinée,
+57 tests passent ; le contrôle statique images de la branche locale attend
+`syncImageLoadPlan`/le préchargement immédiat, absents des fichiers Hosting
+préservés. Ce contrôle échoue et a été exclu de la relance ciblée ; il n'est
+pas déclaré validé sur Hosting. Lint du correctif et diff-check réussis.
+Pas de navigateur/E2E ni de mutation métier. Le test multiappareil reste
+la recette utilisateur après rechargement initial pour recevoir le nouveau JS.
+
+Preuves de cette livraison : `logs/catalog-sync-20260914/`, source initiale
+`source-before.zip`, archive reçue `source-uploaded.zip`, comparaison
+`source-proof.json`, logs de build et de déploiement. Retour arrière Hosting :
+`build-2026-09-14-013` ; aucune Function à redéployer.
+
+Hosting `build-2026-09-14-014` est `READY`, rollout `SUCCEEDED`, trafic à 100 %.
+Cloud Build `22e194a6-4c46-462d-820f-a4f7c82fc0e5` réussi. Identifiant servi :
+`sv-mu19757i-7489dca13999`. Accueil, `/galerie`, `/categorie/buffets` et `/admin`
+répondent HTTP 200 ; aucun indicateur « Ouverture… » dans leurs scripts.
+Le signal de synchronisation est présent dans les trois surfaces publiques.
+Les API version et cartes exposent la même révision 356 et la même empreinte,
+avec 35 cartes. Contrôle commerce relu avant livraison : révision 77,
+`v2_all/v2`, offline `off`. Aucun commit, push ou déploiement Functions.
+
+Archive reçue :
+`gs://firebaseapphosting-sources-231220287936-europe-west4/secondevie-next-sandbox--42334-48OCr3Bt1mWR-.zip`.
+Neuf fichiers diffèrent de `013` (dont deux nouveaux) ; tous les autres sont
+identiques. Aucun fichier `.env` réel dans cette archive. Preuves finales :
+`delivery.json`, `traffic.json`, `builds-build-2026-09-14-014.json` et
+`rollouts-build-2026-09-14-014.json` dans le dossier de logs ci-dessus.
+
+### Recette utilisateur confirmée
+
+Le 14 septembre, après livraison de `014`, l'utilisateur confirme que le stock
+s'est actualisé automatiquement sur la galerie en environ 20 secondes. Le
+badge « Vendu » est devenu « Nouveau », sans rechargement manuel. Ce retour
+valide son essai multiappareil ; il ne constitue pas une borne maximale de
+latence ni une qualification exhaustive des pannes réseau. Clôture et commit
+local demandés, avec rappel du contrat dans `AGENTS.md` ; aucun nouveau
+déploiement ni push pour cette clôture.

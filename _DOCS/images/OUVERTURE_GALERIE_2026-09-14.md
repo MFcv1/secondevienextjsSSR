@@ -4,7 +4,9 @@ Demande : ouverture plus reguliere sur mobile, preparation au scroll de toutes
 les cartes visibles et retrait de « Ouverture… ». Implementation et mise a
 disposition sandbox autorisees ; recette manuelle reservee a l'utilisateur.
 
-Statut : **livré sur sandbox, retour utilisateur positif sur mobile et desktop**.
+Statut : **lot livré puis écrasé par une livraison ultérieure** ; retour
+utilisateur positif historique sur mobile et desktop. Voir l'écart de
+déploiement et le retrait ciblé ci-dessous.
 Consignes liées : [AGENTS.md](../../AGENTS.md) ; contrat courant :
 [Images et médias](IMAGES_MEDIA.md).
 
@@ -87,6 +89,31 @@ Une livraison suivante a donc écrasé le lot images publié dans `002`.
 La preuve de publication et la recette ci-dessus restent historiques ; le lot
 est conservé sur `main`, mais sa restauration cloud reste ouverte. Aucune
 restauration ni nouvelle recette images effectuée pendant la clôture panier.
+
+## Retrait ciblé du badge après régression Hosting
+
+Le 14 septembre, l'utilisateur signale de nouveau « Ouverture… ». Une lecture
+HTTP fraîche de `/` confirme `sv-mu16tkaq-6556d88cf290` (build `012`) et le
+libellé dans le JavaScript servi. Il s'agit bien de code encore livré, pas
+uniquement d'un cache de miniatures. Sur `main`, le composant est déjà absent.
+
+Correctif limité à l'archive source exacte de `012` : retrait des deux
+imports/rendus dans `GalleryProductCardServer.jsx` et `CategoryServerView.jsx`,
+suppression de `ProductNavigationFeedback.jsx` et de son CSS (voile, badge,
+spinner). Les trois autres fichiers d'optimisation du lot `61efd41` restent
+dans leur version Hosting actuelle ; ce retrait ne restaure pas tout le lot.
+
+Lint ciblé sous Node 22.23.2 réussi. Comparaison de l'archive envoyée à Firebase :
+exactement ces quatre fichiers diffèrent de `012`, tous les autres sont
+identiques. Contrôle commerce relu : révision 77, `v2_all/v2`, offline `off`.
+Preuves locales : `logs/remove-opening-20260914/` (patch, archives, contrôle
+commerce et comparaison des sources). Hosting `build-2026-09-14-013` livré :
+Cloud Build `SUCCESS`, rollout `SUCCEEDED`, trafic à 100 %. Identifiant servi :
+`sv-mu18rgqx-4908dff13a73`. `/`, `/galerie` et `/categorie/buffets` répondent
+HTTP 200 ; aucun libellé « Ouverture… » ni composant de feedback dans leurs
+scripts servis (15, 15 et 14 scripts contrôlés). Preuve : `delivery.json`.
+Retour arrière : build `012`.
+Aucun test navigateur/E2E, aucune mutation métier, aucun commit/push.
 
 ## Limites de la recette
 

@@ -84,6 +84,7 @@ const ProductGridSectionServer = ({
   hideWhenEmpty = false,
   mode = 'newest',
   catalogVersion = '',
+  catalogRevision = 0,
 } = {}) => {
   const selectedItems = mode === 'small-prices' ? getSmallPriceItems(items) : getNewestItems(items);
 
@@ -102,6 +103,7 @@ const ProductGridSectionServer = ({
         sectionId={id}
         initialItems={selectedItems}
         initialCatalogVersion={catalogVersion}
+        initialCatalogRevision={catalogRevision}
         mode={mode}
         badgeLabel={badgeLabel}
         darkMode={darkMode}
@@ -135,7 +137,7 @@ export const getSmallPriceItems = (items, limit = Number.POSITIVE_INFINITY) => (
     .slice(0, limit)
 );
 
-export const ProductArrivalsSectionServer = ({ items, darkMode = false, catalogVersion = '' } = {}) => (
+export const ProductArrivalsSectionServer = ({ items, darkMode = false, catalogVersion = '', catalogRevision = 0 } = {}) => (
   <ProductGridSectionServer
     id="gallery-pieces"
     className="scroll-mt-24 bg-[#FAFAF9] px-4 pb-[48px] pt-2 text-[#181716] transition-colors duration-700 dark:bg-[#080807] dark:text-[#f5efe6] md:px-12 md:py-[60px] lg:px-16"
@@ -144,10 +146,11 @@ export const ProductArrivalsSectionServer = ({ items, darkMode = false, catalogV
     badgeLabel="Nouveau"
     darkMode={darkMode}
     catalogVersion={catalogVersion}
+    catalogRevision={catalogRevision}
   />
 );
 
-export const ProductSmallPricesSectionServer = ({ items, darkMode = false, catalogVersion = '' } = {}) => (
+export const ProductSmallPricesSectionServer = ({ items, darkMode = false, catalogVersion = '', catalogRevision = 0 } = {}) => (
   <ProductGridSectionServer
     id="gallery-small-prices"
     className="bg-[#FAFAF9] px-4 pb-[48px] pt-[60px] text-[#181716] transition-colors duration-700 dark:bg-[#080807] dark:text-[#f5efe6] md:px-12 md:py-[60px] lg:px-16"
@@ -157,6 +160,7 @@ export const ProductSmallPricesSectionServer = ({ items, darkMode = false, catal
     darkMode={darkMode}
     hideWhenEmpty
     catalogVersion={catalogVersion}
+    catalogRevision={catalogRevision}
   />
 );
 

@@ -1,5 +1,21 @@
 # État du projet
 
+14 septembre — fiabilisation de la synchronisation du stock public **livrée
+en sandbox**, Hosting `014` à 100 %, `sv-mu19757i-7489dca13999` : signal rejoué aux grilles tardives, reconnexions bornées,
+reprise `online`/focus/retour visible, annulation des réponses dépassées et
+application des nouvelles props sans retour à une ancienne révision.
+58 tests catalogue Node 22 réussis sur la branche, dont huit de synchronisation ;
+57 réussis sur la source combinée (contrôle images local incompatible avec les
+fichiers Hosting préservés, exclu de la relance et non déclaré validé).
+Builds local/cloud réussis, lint sans erreur, diff-check réussi ; quatre routes
+HTTP 200 et API cartes/version cohérentes à la révision 356. Source exacte de
+`013` + correctif : suppression d'« Ouverture… » conservée et vérifiée dans
+les scripts servis. Aucun navigateur/E2E, mutation métier, commit ou push.
+Recette multiappareil confirmée par l'utilisateur : actualisation automatique
+en environ 20 secondes, stock restauré et badge « Vendu » devenu « Nouveau »,
+sans rechargement manuel. Ce délai observé n'est pas une garantie maximale.
+[Livraison et limites](catalogue/REMISE_STOCK_SANDBOX_2026-09-14.md#fiabilisation-de-laffichage-public-après-recette).
+
 14 septembre — remise en stock rapide **livrée en sandbox** : trois Functions
 actives, sources vérifiées, Hosting `build-2026-09-14-012` à 100 % ; accueil et
 admin servent `sv-mu16tkaq-6556d88cf290`. Bouton unitaire `0 -> 1` après vente
@@ -17,10 +33,16 @@ fonctionnelle par l'utilisateur. Hosting `build-2026-09-14-011` relu à 100 %,
 trois routes HTTP 200, fichiers panier identiques à la source publiée ;
 18 tests Node ciblés, lint et diff-check réussis. Aucun navigateur relancé.
 [Bilan](commerce/PANIER_SELECTION_2026-09-14.md#clôture-et-contrôle-de-main).
-Écart ouvert hors panier : cinq fichiers images du commit `61efd41` sont plus
-récents sur `main` que dans cette source Hosting. Le lot images de `002` a été
-écrasé par une livraison ultérieure ; sa présence actuelle en sandbox ne doit
-plus être annoncée. [Constat](images/OUVERTURE_GALERIE_2026-09-14.md#écart-de-déploiement-constaté-à-la-clôture-panier).
+Écart constaté hors panier : cinq fichiers images du commit `61efd41` étaient
+plus récents sur `main` que dans Hosting `011`/`012`. Le lot images de `002`
+avait été écrasé par une livraison ultérieure.
+Le badge « Ouverture… », son voile et son spinner sont désormais retirés de
+la galerie et des catégories sur Hosting `013`, trafic à 100 %, identifiant
+`sv-mu18rgqx-4908dff13a73`. Lint ciblé et contrôle HTTP/scripts réussis sur
+trois routes, sans navigateur/E2E. Livraison limitée à ce retrait depuis la
+source exacte de `012` ; les trois autres fichiers d'optimisation restent
+différents de `main`, sans restauration intégrale du lot.
+[Preuves](images/OUVERTURE_GALERIE_2026-09-14.md#retrait-ciblé-du-badge-après-régression-hosting).
 
 14 septembre — favoris visibles depuis le panier, invités et comptes : section
 « Vos coups de cœur », pièces vendues visibles sans achat, ajout explicite des

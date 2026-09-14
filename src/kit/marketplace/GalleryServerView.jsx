@@ -170,9 +170,9 @@ export default function GalleryServerView({
 
           <GallerySeoIntro darkMode={darkMode} />
           <ReassuranceSectionServer darkMode={darkMode} />
-          <ProductArrivalsSectionServer items={items} darkMode={darkMode} catalogVersion={catalogVersion} />
+          <ProductArrivalsSectionServer items={items} darkMode={darkMode} catalogVersion={catalogVersion} catalogRevision={catalogRevision} />
           <BeforeAfterSectionServer darkMode={darkMode} />
-          <ProductSmallPricesSectionServer items={items} darkMode={darkMode} catalogVersion={catalogVersion} />
+          <ProductSmallPricesSectionServer items={items} darkMode={darkMode} catalogVersion={catalogVersion} catalogRevision={catalogRevision} />
           {KIT_CONFIG.features.instagramCommunity ? (
             <InstagramSectionServer
               darkMode={darkMode}
