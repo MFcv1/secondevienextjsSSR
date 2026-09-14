@@ -9,6 +9,7 @@ const { regionalFunctions } = require('../../helpers/runtime');
 const {
     createProductCommandRepository
 } = require('./domain/productCommandRepository');
+const { createSandboxInventoryRepository } = require('./domain/sandboxInventoryRepository');
 
 const db = admin.firestore();
 
@@ -54,6 +55,10 @@ function commandRepository() {
 function mapDomainError(error) {
     if (error instanceof functions.https.HttpsError) return error;
     const code = String(error?.code || '');
+    if (code.startsWith('COMMERCE_SANDBOX_RESTOCK_')) {
+        return new functions.https.HttpsError('failed-precondition',
+            'La remise en stock sandbox a été refusée.', { reason: code });
+    }
     if (code.endsWith('_NOT_FOUND')) {
         return new functions.https.HttpsError('not-found', 'Produit introuvable.');
     }
@@ -167,13 +172,31 @@ const publishProductAdmin = callable(createHandler(
     (data) => ({ published: data.published })
 ));
 
-const adjustInventoryAdmin = callable(createHandler(
+const adjustInventoryHandler = createHandler(
     'adjust_inventory',
     (data) => ({
         delta: data.delta,
         expectedInventoryVersion: data.expectedInventoryVersion
     })
-));
+);
+
+const adjustInventoryAdmin = callable(async (data, context) => {
+    if (data?.mode !== 'sandbox_restore') return adjustInventoryHandler(data, context);
+    try {
+        await checkActiveStrongAdmin(context);
+        return await createSandboxInventoryRepository({
+            db, appId: logicalAppId(),
+            projectId: process.env.GCLOUD_PROJECT || process.env.GOOGLE_CLOUD_PROJECT,
+            clock: { now: () => new Date().toISOString() }
+        }).restore({
+            productId: data.productId, collectionName: data.collectionName || 'furniture',
+            command: normalizeCommand(data), expectedInventoryVersion: data.expectedInventoryVersion,
+            actor: { uid: context.auth.uid, role: 'admin', aal2: true }
+        });
+    } catch (error) {
+        throw mapDomainError(error);
+    }
+});
 
 const deleteProductAdmin = callable(createHandler(
     'delete_product',

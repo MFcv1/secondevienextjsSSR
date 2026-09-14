@@ -324,6 +324,57 @@ Toutes les surfaces doivent respecter cette regle:
 
 Le serveur reste autoritaire. Un bouton visible ne garantit jamais que le stock est encore disponible.
 
+### 6.1 Remise en stock rapide pour les tests sandbox
+
+L'action unitaire « Remettre en stock (test sandbox) » remplace l'action vendu
+sur une publication à stock exactement zéro. Elle passe par
+`adjustInventoryAdminGen2` avec `mode: sandbox_restore`, sans `delta` générique,
+et par `sandboxInventoryRepository.js`. Le serveur exige l'admin actif AAL2,
+App Check, le projet `secondevienextjsssr`, l'application `secondevie`, le
+contrôle commerce frais `v2_all/v2`, offline désactivé et un compte Connect
+explicitement `livemode: false` pour la vente concernée.
+
+La transaction lit au plus 51 réservations du produit et refuse au-delà de
+50, en présence d'une donnée incohérente ou de tout `heldQty > 0`, même après
+l'échéance : seule la reprise du paiement libère une réservation. Elle exige
+une unique réservation engagée d'une unité, non déjà créditée, portant la
+version actuelle du stock, puis sa commande V2 durablement payée et la ligne
+correspondante. Une vente sans ces preuves (notamment historique ou simplement
+marquée `sold`), un remboursement ou un dossier de retour déjà créé bloque la
+remise rapide. Le parcours Retours reste nécessaire dans ces derniers cas.
+
+Stock `0 -> 1`, versions, `sold: false`, résultat idempotent, audit produit et
+mouvement `sandbox_restock` sont enregistrés atomiquement. Le mouvement porte
+`availableDelta: 1` et l'identité de la commande de vente. La réservation
+conserve ses quantités métier ; un compteur `sandboxRestockCreditQty: 1`
+identifie l'unité déjà recréditée pour les essais, sans déclarer un retour ou
+modifier la commande, le paiement, le remboursement ou les faits financiers.
+Ce compteur est entier, positif ou nul, et ne dépasse pas `committedQty`.
+
+Lors d'une disposition physique ultérieure, `returnRepository.js` consomme ce
+crédit dans la même transaction que la disposition. Un restock ajoute seulement
+la quantité non déjà créditée ; un write-off consomme le crédit sans ajouter
+de stock. Le mouvement porte la quantité réellement ajoutée et, si nécessaire,
+`sandboxRestockCreditConsumed`. Cela protège aussi une nouvelle réservation de
+la même pièce contre le retour d'une ancienne vente test. Sans crédit, le
+parcours retour existant reste identique. La réception seule n'ajoute pas le
+stock : c'est la disposition de remise en stock qui le fait.
+
+Les collections, rules et index existants suffisent. Les requêtes sont bornées
+au clic, sans écoute ni maintenance supplémentaire ; le trigger catalogue,
+son CAS/revalidation et le journal des mouvements existants suivent les écritures.
+La confirmation UI prouve le stock enregistré et annonce séparément la mise à
+jour publique en cours. Un rejeu dans la modale conserve sa clé idempotente.
+
+**Ordre de livraison obligatoire :** déployer et vérifier les lecteurs du
+crédit (`restockReturnLinesAdminGen2`, `writeOffReturnLinesAdminGen2`) avant le
+producteur `adjustInventoryAdminGen2`, puis l'interface Hosting. En rollback,
+retirer d'abord l'accès au bouton/producteur, en conservant les lecteurs du
+crédit tant que des réservations le portent ; ne jamais effacer ces crédits
+ou redéployer un ancien lecteur qui les ignore. Aucun déploiement implicite.
+Validation locale : `pnpm run test:commerce:sandbox-stock` ; statut de livraison
+dans [l'état du projet](../ETAT_PROJET.md).
+
 ## 7. Recherche
 
 La recherche combine:

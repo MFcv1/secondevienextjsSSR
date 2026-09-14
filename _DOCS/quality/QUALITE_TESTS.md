@@ -15,6 +15,17 @@ La validation depend du risque et de la demande:
 
 Toujours annoncer ce qui a ete lance et ce qui ne l'a pas ete.
 
+### Remise en stock sandbox
+
+`pnpm run test:commerce:sandbox-stock` exerce sans réseau la preuve de vente,
+le refus des réservations (y compris échues), le contrôle sandbox, l'atomicité,
+les rejeux et la consommation du crédit par un retour ultérieur. La suite inclut
+les régressions commandes, retours, inventaire et consommateurs commerce.
+Le double Firestore sérialise les transactions et diffère les écritures au
+commit : il ne prouve ni la contention hébergée ni App Check/IAM réels. Le
+contrat et l'ordre de déploiement sont décrits dans le
+[chapitre catalogue](../catalogue/ANNONCES_CATALOGUE.md#61-remise-en-stock-rapide-pour-les-tests-sandbox).
+
 ### Runtime public partagé (préparation locale du 9 septembre)
 
 Gates dédiées sans accès réseau : `tests/public-operation-http.test.mjs`,

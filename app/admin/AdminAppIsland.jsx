@@ -33,6 +33,7 @@ import {
   adjustInventoryAdmin,
   deleteProductAdmin,
   publishProductAdmin,
+  restoreSandboxInventoryAdmin,
 } from '../../src/kit/commerce/adminProductCommandClient';
 import { useAuth } from '../../src/kit/contexts/AuthContext';
 import KIT_CONFIG from '../../src/kit/config/constants';
@@ -592,18 +593,11 @@ function AdminContent() {
     clearAdminPublicCatalogCache();
   };
 
-  const handleMarkAsAvailable = async (item, collectionName) => {
-    if (publicationMutationsBlocked) return;
-    if (!window.confirm(`Remettre "${item.name}" en vente ? (Stock a 1)`)) return;
-    const currentStock = Number(item.stock || 0);
-    if (!Number.isSafeInteger(currentStock) || currentStock >= 1) return;
-    await adjustInventoryAdmin(
-      item,
-      collectionName,
-      1,
-      'Remise en stock apres controle physique'
-    );
+  const handleMarkAsAvailable = async (item, collectionName, stableCommandId) => {
+    if (publicationMutationsBlocked) throw new Error('Actualisez l’administration avant de modifier le stock.');
+    const result = await restoreSandboxInventoryAdmin(item, collectionName, stableCommandId);
     clearAdminPublicCatalogCache();
+    return result;
   };
 
   // A forced token refresh emits a short claimsStatus="loading" transition.
@@ -856,7 +850,7 @@ function AdminContent() {
               onToggleStatus={(item) => handleToggleStatus(item, adminCollection)}
               onDelete={(item, stableCommandId) => handleDeleteItem(null, item, adminCollection, stableCommandId)}
               onMarkAsSold={(item) => handleMarkAsSold(item, adminCollection)}
-              onMarkAsAvailable={(item) => handleMarkAsAvailable(item, adminCollection)}
+              onMarkAsAvailable={(item, commandId) => handleMarkAsAvailable(item, adminCollection, commandId)}
               mutationsBlocked={publicationMutationsBlocked}
             />
           )}

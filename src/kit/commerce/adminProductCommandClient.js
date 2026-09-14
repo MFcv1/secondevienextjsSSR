@@ -154,3 +154,14 @@ export const adjustInventoryAdmin = (
     commandId: stableCommandId
   }
 );
+
+export const restoreSandboxInventoryAdmin = (item, collectionName, stableCommandId) => execute(
+  'adjustInventoryAdmin',
+  'sandbox-restock',
+  {
+    mode: 'sandbox_restore', collectionName, productId: item.id,
+    expectedVersion: Number(item.commerceVersion || 0),
+    expectedInventoryVersion: Number(item.inventoryVersion || 0),
+    commandId: stableCommandId
+  }
+);

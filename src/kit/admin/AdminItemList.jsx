@@ -13,6 +13,9 @@ import { db, appId } from '../config/firebase';
 import { Pencil, Eye, EyeOff, Archive, Search, Loader2, CheckCircle, RotateCcw } from 'lucide-react';
 import KIT_CONFIG from '../config/constants';
 import { createProductCommandId } from '../commerce/adminProductCommandClient';
+import { firebaseProjectId } from '../config/firebaseEnv';
+import OrderModalShell from './components/orders/OrderModalShell';
+import { canRequestSandboxRestock, sandboxRestockError } from './sandboxRestockUi';
 
 // Helper pour nettoyer le texte (accents, casse)
 const normalizeText = (text) => {
@@ -54,6 +57,9 @@ const AdminItemList = ({ collectionName, darkMode, highlightProductId, onEdit, o
     const [statsRefreshKey, setStatsRefreshKey] = useState(0);
     const [archiveRequest, setArchiveRequest] = useState(null);
     const [archiveNotice, setArchiveNotice] = useState(null);
+    const [restockRequest, setRestockRequest] = useState(null);
+    const [restockNotice, setRestockNotice] = useState(null);
+    const restockPendingRef = useRef(false);
     const highlightedRowRef = useRef(null);
     const highlightScrolledRef = useRef(false);
 
@@ -227,6 +233,30 @@ const AdminItemList = ({ collectionName, darkMode, highlightProductId, onEdit, o
 
     const actionClass = `grid h-8 w-8 place-items-center rounded-full ring-1 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95 ${darkMode ? 'bg-white/[0.04] text-stone-300 ring-white/10 hover:bg-white hover:text-stone-950' : 'bg-white text-stone-600 ring-black/[0.06] hover:bg-stone-950 hover:text-white'}`;
 
+    const requestRestock = (item) => {
+        setRestockNotice(null);
+        setRestockRequest({ item, commandId: createProductCommandId('sandbox-restock'), pending: false, error: null });
+    };
+
+    const confirmRestock = async () => {
+        if (!restockRequest || restockPendingRef.current) return;
+        restockPendingRef.current = true;
+        setRestockRequest(current => ({ ...current, pending: true, error: null }));
+        try {
+            const result = await onMarkAsAvailable(restockRequest.item, restockRequest.commandId);
+            if (result?.stock !== 1) throw new Error('STOCK_NOT_CONFIRMED');
+            // A search page is cached separately from the live first page.
+            setFullCache(null);
+            setStatsRefreshKey(current => current + 1);
+            setRestockNotice(`« ${restockRequest.item.name} » : stock remis à 1. La mise à jour du catalogue public est en cours.`);
+            setRestockRequest(null);
+        } catch (error) {
+            setRestockRequest(current => ({ ...current, pending: false, error: sandboxRestockError(error) }));
+        } finally {
+            restockPendingRef.current = false;
+        }
+    };
+
     const requestArchive = (item) => {
         setArchiveNotice(null);
         setArchiveRequest({
@@ -329,7 +359,11 @@ const AdminItemList = ({ collectionName, darkMode, highlightProductId, onEdit, o
                                             <div className="flex items-center justify-end gap-1.5">
                                                 <button type="button" onClick={() => onToggleStatus(item)} disabled={adminState === 'draft' && !imageSource} className={`${actionClass} disabled:cursor-not-allowed disabled:opacity-35`} title={adminState === 'draft' && !imageSource ? 'Ajoutez les photos avant de publier' : item.status === 'published' ? 'Masquer' : 'Publier'}>{item.status === 'published' ? <Eye size={14} strokeWidth={1.5} /> : <EyeOff size={14} strokeWidth={1.5} />}</button>
                                                 <button type="button" onClick={() => onEdit(item)} className={actionClass} title="Modifier"><Pencil size={14} strokeWidth={1.5} /></button>
-                                                {adminState !== 'draft' && <button type="button" onClick={() => adminState === 'sold' ? onMarkAsAvailable(item) : onMarkAsSold(item)} className={actionClass} title={adminState === 'sold' ? 'Remettre en vente' : 'Marquer comme vendu'}>{adminState === 'sold' ? <RotateCcw size={14} strokeWidth={1.5} /> : <CheckCircle size={14} strokeWidth={1.5} />}</button>}
+                                                {canRequestSandboxRestock(item, firebaseProjectId) ? (
+                                                    <button type="button" onClick={() => requestRestock(item)} className={actionClass} title="Remettre en stock (test sandbox)" aria-label={`Remettre ${item.name} en stock (test sandbox)`}><RotateCcw size={14} strokeWidth={1.5} /></button>
+                                                ) : adminState !== 'draft' && Number(item.stock) > 0 ? (
+                                                    <button type="button" onClick={() => onMarkAsSold(item)} className={actionClass} title="Marquer comme vendu"><CheckCircle size={14} strokeWidth={1.5} /></button>
+                                                ) : null}
                                                 <button type="button" onClick={() => requestArchive(item)} className={`${actionClass} text-red-500 hover:!bg-red-500 hover:!text-white`} title="Archiver"><Archive size={14} strokeWidth={1.5} /></button>
                                             </div>
                                         </article>
@@ -378,6 +412,31 @@ const AdminItemList = ({ collectionName, darkMode, highlightProductId, onEdit, o
                     </div>
                 </div>
             </aside>
+            {restockNotice ? (
+                <div className="fixed bottom-5 right-5 z-[110] max-w-sm rounded-[18px] bg-emerald-700 px-4 py-3 text-sm font-semibold text-white shadow-2xl" role="status">
+                    {restockNotice}
+                    <button type="button" onClick={() => setRestockNotice(null)} className="ml-3 underline">Fermer</button>
+                </div>
+            ) : null}
+            {restockRequest ? (
+                <OrderModalShell darkMode={darkMode} labelledBy="restock-product-title" describedBy="restock-product-description" locked={restockRequest.pending} onClose={() => setRestockRequest(null)}>
+                    <div className="p-6">
+                        <p className="text-xs font-bold uppercase tracking-wide text-stone-500">Test sandbox</p>
+                        <h2 id="restock-product-title" className="mt-3 text-xl font-extrabold">Remettre ce meuble en stock ?</h2>
+                        <p id="restock-product-description" className="mt-3 text-sm leading-6">
+                            Le stock de « {restockRequest.item.name} » passera de 0 à 1 pour un nouvel achat test. Le serveur vérifiera la vente et l’absence de réservation. Les commandes sont conservées ; un retour ultérieur n’ajoutera pas cette unité une seconde fois.
+                        </p>
+                        {restockRequest.error ? <p role="alert" className="mt-3 rounded-xl bg-red-500/10 p-3 text-sm text-red-600">{restockRequest.error}</p> : null}
+                        <div className="mt-6 flex justify-end gap-3">
+                            <button type="button" disabled={restockRequest.pending} onClick={() => setRestockRequest(null)} className="min-h-11 rounded-full px-5 text-sm font-bold ring-1 ring-stone-400">Annuler</button>
+                            <button type="button" disabled={restockRequest.pending} onClick={confirmRestock} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-stone-950 px-5 text-sm font-bold text-white disabled:opacity-60">
+                                {restockRequest.pending ? <Loader2 size={16} className="animate-spin motion-reduce:animate-none" /> : <RotateCcw size={16} />}
+                                {restockRequest.pending ? 'Vérification…' : 'Remettre à 1'}
+                            </button>
+                        </div>
+                    </div>
+                </OrderModalShell>
+            ) : null}
             {archiveNotice ? (
                 <div className="fixed bottom-5 right-5 z-[240] max-w-sm rounded-[18px] bg-emerald-700 px-4 py-3 text-sm font-semibold text-white shadow-2xl" role="status">
                     {archiveNotice}

@@ -57,6 +57,12 @@ function validateInventorySummary(summary) {
         throw inventoryError('COMMERCE_INVENTORY_INVALID_STATUS', 'status');
     }
     for (const field of QUANTITY_FIELDS) assertQuantity(summary[field], field);
+    if (summary.sandboxRestockCreditQty !== undefined) {
+        assertQuantity(summary.sandboxRestockCreditQty, 'sandboxRestockCreditQty');
+        if (summary.sandboxRestockCreditQty > summary.committedQty) {
+            throw inventoryError('COMMERCE_INVENTORY_SANDBOX_CREDIT_INVALID');
+        }
+    }
 
     const accounted = summary.heldQty +
         summary.committedQty +

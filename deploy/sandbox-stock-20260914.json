@@ -1,0 +1,36 @@
+{
+  "metadata": {
+    "project": "secondevienextjsssr",
+    "codebase": "main",
+    "baselineCommit": "d479b29d78bdbf3f495e32c1a7a2e66fe3cb1108",
+    "authorization": "Déploiement sandbox et commit local sans push explicitement autorisés par l'utilisateur le 14 septembre 2026."
+  },
+  "deploymentPolicy": {
+    "allowedTargets": ["restockReturnLinesAdminGen2", "writeOffReturnLinesAdminGen2", "adjustInventoryAdminGen2"],
+    "maxBatchSize": 1,
+    "order": ["restockReturnLinesAdminGen2", "writeOffReturnLinesAdminGen2", "adjustInventoryAdminGen2"],
+    "hostingBackend": "secondevie-next-sandbox",
+    "hostingRollbackBuild": "build-2026-09-14-011",
+    "rollbackConstraint": "Après la première remise sandbox, conserver les lecteurs des crédits lors d'un rollback du producteur ou de l'interface."
+  },
+  "functions": [
+    {
+      "name": "restockReturnLinesAdminGen2",
+      "cloud": { "present": true, "generation": 2, "revision": "restockreturnlinesadmingen2-00003-cek" },
+      "decision": { "classification": "KEEP_GEN2", "deploymentMaxBatchSize": 1 },
+      "rollbackSource": { "uri": "gs://gcf-v2-sources-231220287936-europe-west1/restockReturnLinesAdminGen2/function-source.zip", "generation": "1789061208709496" }
+    },
+    {
+      "name": "writeOffReturnLinesAdminGen2",
+      "cloud": { "present": true, "generation": 2, "revision": "writeoffreturnlinesadmingen2-00003-haf" },
+      "decision": { "classification": "KEEP_GEN2", "deploymentMaxBatchSize": 1 },
+      "rollbackSource": { "uri": "gs://gcf-v2-sources-231220287936-europe-west1/writeOffReturnLinesAdminGen2/function-source.zip", "generation": "1789061210271103" }
+    },
+    {
+      "name": "adjustInventoryAdminGen2",
+      "cloud": { "present": true, "generation": 2, "revision": "adjustinventoryadmingen2-00001-jay" },
+      "decision": { "classification": "KEEP_GEN2", "deploymentMaxBatchSize": 1 },
+      "rollbackSource": { "uri": "gs://gcf-v2-sources-231220287936-europe-west1/adjustInventoryAdminGen2/function-source.zip", "generation": "1787169554256113" }
+    }
+  ]
+}

@@ -387,6 +387,12 @@ aucun catalogue n'est conservé dans `sessionStorage` ou dans un cache module pe
 
 `AdminPublicationWorkspace` separe Publication en deux vues grand ecran plein
 viewport: `Creer` regroupe le formulaire aere et son resume vivant;
+Pour les essais sandbox, une publication à stock zéro propose « Remettre en
+stock (test sandbox) », avec confirmation, attente et motif de refus visible.
+Le serveur vérifie une vente unitaire V2 et bloque toute réservation en cours ;
+la remise `0 -> 1` conserve les commandes et évite un second ajout lors d'un
+retour ultérieur. [Contrat et limites](../catalogue/ANNONCES_CATALOGUE.md#61-remise-en-stock-rapide-pour-les-tests-sandbox).
+
 `Publications` affiche une table avec recherche, categories, actions et
 synthese des statuts. La liste charge au plus 50 documents par lot; un filtre
 de categorie interroge directement cette categorie au lieu de filtrer la seule

@@ -272,9 +272,13 @@ function createReturnRepository({ db, refs, clock }) {
                     }
                     const product = productSnap.data();
                     const reservation = { ...reservationSnap.data() };
+                    validateInventorySummary(reservation);
                     if (reservation.committedQty < entry.group.quantity) {
                         throw repositoryError('COMMERCE_RETURN_DISPOSITION_EXCEEDED');
                     }
+                    const sandboxCredit = Math.min(reservation.sandboxRestockCreditQty ?? 0, entry.group.quantity);
+                    const availableDelta = event.type === 'restock' ? entry.group.quantity - sandboxCredit : 0;
+                    if (sandboxCredit > 0) reservation.sandboxRestockCreditQty -= sandboxCredit;
                     reservation.committedQty -= entry.group.quantity;
                     if (event.type === 'restock') {
                         reservation.restockedQty += entry.group.quantity;
@@ -285,12 +289,12 @@ function createReturnRepository({ db, refs, clock }) {
                     reservation.updatedAt = clock.now();
                     const inventoryVersion = product.inventoryVersion ?? 0;
                     reservation.inventoryVersion = inventoryVersion +
-                        (event.type === 'restock' ? 1 : 0);
+                        (availableDelta > 0 ? 1 : 0);
                     reservation.status = deriveInventoryStatus(reservation);
                     validateInventorySummary(reservation);
-                    if (event.type === 'restock') {
+                    if (availableDelta > 0) {
                         extraWrites.push(() => transaction.update(entry.productRef, {
-                            stock: product.stock + entry.group.quantity,
+                            stock: product.stock + availableDelta,
                             inventoryVersion: inventoryVersion + 1
                         }));
                     }
@@ -303,7 +307,8 @@ function createReturnRepository({ db, refs, clock }) {
                         inventoryKey: entry.group.inventoryKey,
                         type: event.type === 'restock' ? 'return_restock' : 'return_write_off',
                         quantity: entry.group.quantity,
-                        availableDelta: event.type === 'restock' ? entry.group.quantity : 0,
+                        availableDelta,
+                        ...(sandboxCredit > 0 ? { sandboxRestockCreditConsumed: sandboxCredit } : {}),
                         commandId,
                         actor: actor.uid,
                         reason,
