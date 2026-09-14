@@ -264,6 +264,35 @@ export const buildVisitorDayGroups = (sessions = [], options = {}) => {
         .sort((a, b) => b.timestamp - a.timestamp);
 };
 
+// Une étiquette par groupe de barres consécutives de même nom (les 4 tranches
+// d'un jour en vue 7j), positions en unités de créneau. grouped signale qu'au
+// moins un groupe réunit plusieurs barres : la date se cale alors sur le début
+// du jour et boundaries donne les séparations entre jours. Au plus maxLabels
+// étiquettes ; la dernière reste visible sans chevaucher la précédente.
+export const buildChartAxisLabels = (data, maxLabels) => {
+    const groups = [];
+    let unit = 0;
+    data.forEach((point) => {
+        const span = point.span || 1;
+        const previous = groups[groups.length - 1];
+        if (previous && previous.name === point.name) {
+            previous.units += span;
+            previous.bars += 1;
+        } else groups.push({ name: point.name, start: unit, units: span, bars: 1 });
+        unit += span;
+    });
+    const interval = Math.max(1, Math.ceil(groups.length / maxLabels));
+    const lastIndex = groups.length - 1;
+    return {
+        grouped: groups.some(group => group.bars > 1),
+        boundaries: groups.slice(1).map(group => group.start),
+        labels: groups
+            .filter((_, index) => index === lastIndex
+                || (index % interval === 0 && lastIndex - index >= interval * 0.65))
+            .map(({ name, start, units }) => ({ name, start, center: start + units / 2 })),
+    };
+};
+
 const formatSlotLabel = (time, filterId) => {
     const d = new Date(time);
     if (filterId === '1h') {

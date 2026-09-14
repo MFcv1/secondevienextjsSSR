@@ -201,7 +201,7 @@ function detailedTimeline(data, period, days, months, now, legacyTimeline) {
             const known = timestamp >= doc.detailCoverageStartMs && timestamp <= now;
             const value = known ? 0 : null;
             return { timestamp, name: `${day.slice(8)}/${day.slice(5, 7)}`,
-                tooltipLabel: `${day.slice(8)}/${day.slice(5, 7)}/${day.slice(0, 4)}${weekly ? ` · ${String(hour).padStart(2, '0')} h – ${hour + 6} h` : ` · du ${day.slice(8)} au ${day.endsWith('21') ? new Date(Date.UTC(Number(day.slice(0, 4)), Number(day.slice(5, 7)), 0)).getUTCDate() : Number(day.slice(8)) + 9}`}`,
+                tooltipLabel: `${day.slice(8)}/${day.slice(5, 7)}/${day.slice(0, 4)}${weekly ? ` · ${String(hour).padStart(2, '0')} h – ${String((hour + 6) % 24).padStart(2, '0')} h` : ` · du ${day.slice(8)} au ${day.endsWith('21') ? new Date(Date.UTC(Number(day.slice(0, 4)), Number(day.slice(5, 7)), 0)).getUTCDate() : Number(day.slice(8)) + 9}`}`,
                 sessions: bucket?.sessions ?? value, visites: bucket ? estimate(registers(bucket.uniqueHll)) : value, ips: 0 };
         });
     });

@@ -13,7 +13,7 @@ import { CATEGORY_RAIL_IMAGE_SOURCES } from '../config/constants';
 import { getProductImageItems } from '../../utils/imageUtils';
 import { getProductUrl } from '../../utils/slug';
 import { getMillis } from '../../utils/time';
-import { ANALYTICS_TIME_FILTERS, MAX_ANALYTICS_SESSIONS, buildVisitorDayGroups, buildAnalyticsStats } from './analyticsReliability';
+import { ANALYTICS_TIME_FILTERS, MAX_ANALYTICS_SESSIONS, buildVisitorDayGroups, buildAnalyticsStats, buildChartAxisLabels } from './analyticsReliability';
 
 let cachedAnalyticsSessions = null;
 let cachedAnalyticsSessionsLoadedAt = null;
@@ -110,11 +110,8 @@ const TrafficChart = ({ data, darkMode, valueLabel = 'visite', animationKey = 0 
     const barX = i => barMetrics.offsets[i] * barMetrics.slotW + barMetrics.gap / 2;
     const barWidth = i => ((data[i]?.span || 1) - 1) * barMetrics.slotW + barMetrics.barW;
 
-    // Labels X — espacement intelligent selon la taille
-    const xLabelInterval = useMemo(() => {
-        const maxLabels = isMobile ? 5 : 10;
-        return Math.max(1, Math.ceil(barMetrics.total / maxLabels));
-    }, [barMetrics.total, isMobile]);
+    // Labels X — une date par jour en vue 7j, espacement selon la taille
+    const xLabels = useMemo(() => buildChartAxisLabels(data, isMobile ? 5 : 10), [data, isMobile]);
 
     // ── Handlers d'interaction (Scrubbing global) ──
     const handlePointerAction = useCallback((e) => {
@@ -276,20 +273,30 @@ const TrafficChart = ({ data, darkMode, valueLabel = 'visite', animationKey = 0 
                         );
                     })}
 
-                    {/* Labels X */}
-                    {data.map((d, i) => {
-                        const offset = barMetrics.offsets[i];
-                        const span = d.span || 1;
-                        const isLast = i === data.length - 1;
-                        if (!isLast && Math.ceil(offset / xLabelInterval) * xLabelInterval >= offset + span) return null;
-                        if (!isLast && barMetrics.offsets[data.length - 1] - offset < xLabelInterval * 0.65) return null;
-                        const x = (offset + span / 2) * barMetrics.slotW;
+                    {/* Séparations entre jours : les créneaux vides restent lisibles */}
+                    {xLabels.grouped && xLabels.boundaries.map(unit => (
+                        <line key={`day-${unit}`} x1={unit * barMetrics.slotW} y1={0}
+                            x2={unit * barMetrics.slotW} y2={chartH}
+                            stroke={darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'}
+                        />
+                    ))}
+
+                    {/* Labels X — en vue groupée, la date commence avec la 1re tranche (00 h) */}
+                    {xLabels.labels.map(({ name, start, center }) => {
+                        const x = (xLabels.grouped ? start : center) * barMetrics.slotW;
                         return (
-                            <text key={`x-${i}`} x={x} y={chartH + (isMobile ? 16 : 22)}
-                                textAnchor="middle" fontSize={isMobile ? 8 : 10}
-                                fill={darkMode ? '#57534e' : '#a8a29e'}
-                                fontWeight={500}
-                            >{d.name}</text>
+                            <g key={`x-${start}`}>
+                                {xLabels.grouped && (
+                                    <line x1={x} y1={chartH} x2={x} y2={chartH + 5}
+                                        stroke={darkMode ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.15)'}
+                                    />
+                                )}
+                                <text x={xLabels.grouped ? x + (isMobile ? 2 : 4) : x} y={chartH + (isMobile ? 16 : 22)}
+                                    textAnchor={xLabels.grouped ? 'start' : 'middle'} fontSize={isMobile ? 8 : 10}
+                                    fill={darkMode ? '#57534e' : '#a8a29e'}
+                                    fontWeight={500}
+                                >{name}</text>
+                            </g>
                         );
                     })}
 

@@ -10,7 +10,11 @@ une absence reste inconnue, sans zéro ni infobulle inventés.
 Les bâtons sont centrés dans leur créneau et plafonnés à 42 px.
 La séparation vaut 8 % du créneau, plafonnée à 2 px ; le plafond de largeur
 peut augmenter cet espace sur un graphique très large.
-Survol et dates suivent le centre des créneaux ; la dernière date est affichée.
+Le survol suit le centre des créneaux. Les barres consécutives de même date forment
+un groupe (les 4 tranches d’un jour en 7 jours) : une seule date, jamais répétée,
+qui commence avec la tranche 00 h – 06 h, marquée d’un repère sur l’axe ; un trait
+léger sépare les jours. Sans groupe, la date est centrée sous sa barre ; la
+dernière date est affichée. Les tranches s’écrivent 00 h – 06 h … 18 h – 00 h.
 Les KPI conservent leur déduplication sur la période. Les détails sont produits
 par le projecteur existant, sans requête ni écoute supplémentaire. Les tranches
 suivent Europe/Paris, y compris les changements d’heure ; le futur reste vide.

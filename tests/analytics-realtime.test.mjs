@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { createAnalyticsChannel, validateAnalyticsSnapshot, realtimeOverview } from '../src/kit/admin/adminAnalyticsRealtimeStore.js';
+import { buildChartAxisLabels } from '../src/kit/admin/analyticsReliability.js';
 import { prepareSeedReport } from '../scripts/prepare-analytics-realtime-seed.mjs';
 import { prepareInventory, parisMidnight } from '../scripts/inventory-analytics-realtime-sandbox.mjs';
 import { buildGcloudGen2DeployArgs } from '../scripts/deploy-functions-targeted.mjs';
@@ -123,7 +124,7 @@ test('six-hour slots preserve actual peaks, deduplicate visitors and keep future
     assert.deepEqual(result.chartData.filter(point => point.sessions > 0).map(point => [point.sessions, point.visites]), [[2, 1], [1, 1]]);
     assert.equal(result.kpis.uniqueVisitors, 1);
     assert.equal(result.chartData.at(-1).visites, null);
-    assert.match(result.chartData.find(point => point.sessions === 2).tooltipLabel, /00 h – 6 h/);
+    assert.match(result.chartData.find(point => point.sessions === 2).tooltipLabel, /00 h – 06 h/);
 });
 test('Paris six-hour slots follow DST and month thirds handle February and year boundaries', () => {
     for (const [date, expectedHours] of [['2026-03-29T20:00:00Z', 5], ['2026-10-25T20:00:00Z', 7]]) {
@@ -187,10 +188,30 @@ test('a few new visits do not hide older traffic; full detail automatically rest
     assert.equal(mixed.chartData.reduce((sum, point) => sum + (point.sessions || 0), 0), 2);
     assert.ok(mixed.chartData.every((point, index, points) => index === 0 || point.timestamp > points[index - 1].timestamp));
     assert.match(mixed.chartDescription, /Détail indisponible pour 1 jour :/);
+    // The muted day still starts its own group: dates stay on day starts.
+    const mixedAxis = buildChartAxisLabels(mixed.chartData, 10);
+    assert.equal(mixedAxis.grouped, true);
+    assert.deepEqual(mixedAxis.labels.map(label => label.start), [0, 4, 8, 12, 16, 20, 24]);
+    assert.deepEqual(mixedAxis.boundaries, [4, 8, 12, 16, 20, 24]);
     base.recent.buckets[key] = historical;
     const restored = realtimeOverview(base, '7j', now);
     assert.equal(restored.chartGranularity, 'quarterday');
     assert.equal(restored.chartData.length, 28);
+    // One date per day, never repeated, starting with the day's 00 h slot.
+    const axis = buildChartAxisLabels(restored.chartData, 10);
+    assert.equal(axis.grouped, true);
+    assert.equal(new Set(axis.labels.map(label => label.name)).size, 7);
+    assert.deepEqual(axis.labels.map(label => label.start), [0, 4, 8, 12, 16, 20, 24]);
+    assert.ok(axis.labels.every(label => restored.chartData[label.start].tooltipLabel.includes('00 h – 06 h')));
+    assert.deepEqual(buildChartAxisLabels(restored.chartData, 5).labels.map(label => label.start), [0, 8, 16, 24]);
+    assert.ok(restored.chartData.every(point => !point.tooltipLabel.includes('24 h')));
+    assert.equal(restored.chartData.filter(point => point.tooltipLabel.includes('18 h – 00 h')).length, 7);
+    // Distinct names are not grouped and keep the previous centred spacing.
+    const hourly = Array.from({ length: 24 }, (_, hour) => ({ name: `${hour}h` }));
+    const hourlyAxis = buildChartAxisLabels(hourly, 10);
+    assert.equal(hourlyAxis.grouped, false);
+    assert.deepEqual(hourlyAxis.labels.map(label => label.name), ['0h', '3h', '6h', '9h', '12h', '15h', '18h', '21h', '23h']);
+    assert.equal(hourlyAxis.labels[0].center, 0.5);
     assert.equal(restored.kpis.uniqueVisitors, 1);
     assert.equal(restored.chartData.reduce((sum, point) => sum + (point.visites || 0), 0), 2);
 });
