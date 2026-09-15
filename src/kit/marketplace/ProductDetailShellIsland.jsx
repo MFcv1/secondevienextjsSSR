@@ -1107,16 +1107,16 @@ export default function ProductDetailShellIsland({
               willChange: 'transform',
               transform: isMobilePanelOpen ? 'translate3d(0, -4rem, 0)' : 'translate3d(0, 0, 0)',
             }}
-            onPointerDown={onPointerDown}
-            onPointerMove={onImagePointerMove}
-            onPointerUp={onPointerUp}
-            onPointerCancel={onImagePointerCancel}
           >
             <div
               className="relative flex h-full w-full cursor-zoom-in items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-stone-700/70"
               role="button"
               tabIndex={0}
               aria-label={`Agrandir l'image de ${title}`}
+              onPointerDown={onPointerDown}
+              onPointerMove={onImagePointerMove}
+              onPointerUp={onPointerUp}
+              onPointerCancel={onImagePointerCancel}
               onClick={openProductLightbox}
               onKeyDown={handleProductZoomKeyDown}
             >

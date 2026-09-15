@@ -4670,7 +4670,7 @@ html.dark .before-after-premium-atmosphere,
   --ba-logo-light: #ddd0b8;
   --ba-logo-mid: #c5b391;
   --ba-logo-edge: #a59172;
-  opacity: 0.88;
+  opacity: 0.17;
   transform: translateY(clamp(-5px, -0.3vw, -2px));
 }
 
@@ -4700,9 +4700,9 @@ html.dark .before-after-premium-atmosphere,
   }
 
   .before-after-premium-heading > .before-after-premium-brand-watermark {
-    right: -7%;
+    /* Centre visuellement la silhouette entre le titre et le lisere interieur. */
+    right: -10%;
     width: min(53%, 202px);
-    opacity: 0.17;
   }
 }
 
