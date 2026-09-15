@@ -1,5 +1,13 @@
 # État du projet
 
+16 septembre — IPWhois : commit `e8930d0`, **Hosting seul livré** en sandbox,
+`build-2026-09-15-003` READY/SUCCEEDED à 100 %,
+`sv-mu38d4y3-4ff40d0155ff`. Consentement renouvelé et affichage préparés.
+Les deux Functions analytics restent à déployer sur accord séparé : les villes
+ne sont pas encore activées. Builds local/cloud, 34 tests et contrôles HTTP/RSC
+réussis ; aucun push, navigateur/E2E ou mutation métier.
+[Détails et rollback](data/DONNEES_ANALYTICS.md#localisation-ipwhois--intégration-locale-du-2026-09-15).
+
 14 septembre — ajout au panier sans ouverture imposée **livré en staging** :
 cartes, fiches et wishlist ajoutent le meuble et actualisent le compteur ;
 seules les actions explicites ouvrent le panier. Persistance invité/connecté,

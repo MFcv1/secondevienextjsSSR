@@ -29,14 +29,27 @@ La politique publique évoque des serveurs dans plusieurs pays et ne fournit
 pas de durée précise de conservation des IP interrogées : ne pas présenter
 le fournisseur comme sans logs ni comme un traitement exclusivement européen.
 
-Non déployé. 30 tests ciblés passent sous Node 22.23.2 :
+Livraison Hosting seule le 16 septembre (heure Paris), commit `e8930d0` :
+`build-2026-09-15-003` READY/SUCCEEDED, révision Cloud Run du même nom à 100 %,
+deploymentId `sv-mu38d4y3-4ff40d0155ff`. Builds local/cloud réussis ; 34 tests
+ciblés avec le contrat deployment-cache, lint backend sans avertissement.
+Contrôles HTTP 200 sur accueil/admin/catalogue ; réponses RSC produit/galerie
+avec le même deploymentId, ISR 300 et admin no-store. Aucun navigateur/E2E.
+Retour arrière disponible : `build-2026-09-15-002`.
+Les deux Functions ne sont **pas déployées** : init reste
+`initlivesessiongen2-00006-dod`, projecteur
+`aggregateanalyticssessiongen2-00015-kej` (relues actives avant livraison).
+Le Hosting seul n'active donc pas la localisation ; accord pour leur déploiement
+ciblé demandé séparément et encore absent à la clôture. Aucun push Git.
+
+Validation initiale : 30 tests ciblés passent sous Node 22.23.2 :
 `tests/analytics-geo.test.cjs`, `tests/analytics-live-sessions.test.mjs`,
 `tests/cookie-consent.test.mjs` et `tests/functions-gen2-g4.test.mjs`, sans réseau.
 Une sonde distincte vers IPWhois avec l'IP publique du DNS Google a retourné
 pays/région/ville en français ; aucune IP de visiteur n'a été utilisée.
 Lint client sans erreur (deux avertissements préexistants dans AdminAnalytics),
 syntaxe backend et `git diff --check` validés. Aucun build ni navigateur lancé.
-La livraison devra inclure client/consentement, `initLiveSessionGen2` et le
+La livraison restante doit inclure `initLiveSessionGen2` et le
 projecteur `aggregateAnalyticsSessionGen2`. La recette hébergée devra confirmer
 que `rawRequest.ip` représente le visiteur à travers l'hébergement et vérifier
 l'affichage sur des connexions connues. La précision et les coûts ne sont pas
