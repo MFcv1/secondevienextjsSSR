@@ -68,7 +68,7 @@ export default function CookieConsentIsland() {
             <h2 id="cookie-title" ref={title} tabIndex={-1}>{details ? 'Personnaliser les cookies' : 'Vos préférences cookies'}</h2>
             <p className={styles.intro}>{details
               ? 'Vous choisissez ce que vous autorisez.'
-              : 'Avec votre accord, nous mesurons les visites et activons Google Maps. Vous pouvez refuser et profiter du site.'}</p>
+              : 'Avec votre accord, nous mesurons les visites, estimons votre ville via IPWhois.io et activons Google Maps. Vous pouvez refuser et profiter du site.'}</p>
             {details ? <div id="cookie-details" className={styles.details}>
               <section className={styles.category} aria-labelledby="cookie-essential-title">
                 <div className={styles.categoryHeading}><h3 id="cookie-essential-title">Essentiels</h3><span className={styles.badge}>Toujours actifs</span></div>
@@ -79,7 +79,7 @@ export default function CookieConsentIsland() {
                   <h3 id="cookie-analytics-title"><label htmlFor="cookie-analytics">Audience et performance</label></h3>
                   <input id="cookie-analytics" className={styles.switch} type="checkbox" role="switch" aria-describedby="cookie-analytics-description" checked={analytics} onChange={(event) => setAnalytics(event.target.checked)} />
                 </div>
-                <p id="cookie-analytics-description">Comprendre les visites et améliorer le site.</p>
+                <p id="cookie-analytics-description">Comprendre les visites et améliorer le site. Votre adresse IP est transmise à IPWhois.io pour estimer votre ville, région et pays. Nous conservons uniquement cette localisation approximative dans les statistiques, sans votre IP. <a href="https://ipwhois.io/privacy" target="_blank" rel="noopener noreferrer">Confidentialité IPWhois.io</a>.</p>
                 <details className={styles.disclosure}>
                   <summary>Données utilisées</summary>
                   <p>Seconde Vie utilise Firebase (Google) : pages et produits consultés, interactions, durée des visites et performances techniques.</p>

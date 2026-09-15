@@ -334,7 +334,7 @@ const AnalyticsProvider = ({ view, selectedItemId, selectedItemName, selectedIte
             }
 
             try {
-                const initRes = await httpsCallable(functions, getFunctionTarget('initLiveSession'))({ ...userInfo, syncProtocolVersion: 1 });
+                const initRes = await httpsCallable(functions, getFunctionTarget('initLiveSession'))({ ...userInfo, syncProtocolVersion: 1, geoConsentVersion: 1 });
                 if (initRes.data.success && isMounted && hasConsent('analytics')) {
                     sessionIdRef.current = initRes.data.sessionId;
                     syncTokenRef.current = initRes.data.syncToken || null;

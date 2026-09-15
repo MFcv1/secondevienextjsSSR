@@ -10,6 +10,8 @@ const { functions, regionalFunctions } = require('../../helpers/runtime');
 const { onCall, onRequest } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
 const crypto = require('crypto');
+const { createGeoLookup, unknownGeo } = require('./geo');
+const lookupGeo = createGeoLookup();
 const { planSessionMessage, legacySessionProtocolAllowed } = require('./sessionSequence');
 const { trackingPatch } = require('../maintenance/groupedInactivity.cjs');
 const { getSiteUrl } = require('../../helpers/config');
@@ -257,6 +259,8 @@ const initLiveSessionHandler = async (data = {}, context) => {
     if (resumedSession) return resumedSession;
 
     const syncToken = createSyncToken();
+    const geo = context.auth.token.admin === true || data.geoConsentVersion !== 1
+        ? unknownGeo() : await lookupGeo(context.rawRequest);
 
     const sessionType = authProvider === 'anonymous' ? 'anonymous' : 'client';
 
@@ -279,8 +283,8 @@ const initLiveSessionHandler = async (data = {}, context) => {
         device: sanitizeString(device, 40) || 'Unknown',
         browser: sanitizeString(browser, 40) || 'Unknown',
         os: sanitizeString(os, 40) || 'Unknown',
-        // Visitor IPs are not disclosed to an uncontracted third-party geo API.
-        geo: { country: 'Unknown', city: 'Unknown', region: 'Unknown' },
+        // Only approximate geography is retained; the IP is used transiently by IPWhois.
+        geo,
         journey: [],
         journeyCount: 0,
         pageCounts: {},

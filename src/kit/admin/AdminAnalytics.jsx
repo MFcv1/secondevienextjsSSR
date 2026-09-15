@@ -1186,7 +1186,7 @@ const AdminAnalytics = ({ darkMode = false, items = [], onLoadCatalog }) => {
                     </div>
                 </div>
                 <p className="mt-4 text-[10px] font-bold text-stone-500 leading-relaxed">
-                    Statistiques calculées depuis les résumés serveur permanents. Aucun e-mail ni aucune IP brute n’est utilisé.
+                    Statistiques calculées depuis les résumés serveur permanents. Aucun e-mail ni aucune IP brute n’est conservé dans les analytics. Localisation estimée par IPWhois.io.
                 </p>
             </div>
 

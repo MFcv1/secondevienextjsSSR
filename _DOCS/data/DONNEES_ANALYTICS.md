@@ -1,5 +1,48 @@
 # Donnees, Firestore et analytics
 
+## Localisation IPWhois — intégration locale du 2026-09-15
+
+À la demande du propriétaire, `functions/src/analytics/geo.js` utilise l'API
+gratuite `https://ipwho.is` : pays, région et ville estimés en français.
+Un seul appel à la création d'une session, après consentement analytics v2
+et annonce `geoConsentVersion:1` par le collecteur ; aucune recherche lors
+des reprises, syncs ou heartbeats. Les clients anciens et les claims admin
+ne déclenchent pas cet appel. Le renouvellement du consentement informe de
+la transmission de l'IP au fournisseur. Aucune IP brute ni réponse fournisseur
+complète n'est stockée dans les analytics ou les logs applicatifs.
+
+Le backend utilise exclusivement `rawRequest.ip`, normalisé et filtré, sans
+IP fournie dans le payload ni en-tête CDN arbitraire. HTTPS, redirections
+refusées, délai de 1,2 s incluant lecture JSON ; échec = `Unknown`, sans bloquer
+la création de session. Pause locale de 60 s après erreur, ou `Retry-After`
+après 429 (24 h par défaut). Cette pause est propre à chaque instance et ne
+constitue pas un quota distribué. Aucun polling, cache d'IP ni collection ajoutée.
+`liveSessions.js` transmet uniquement `geo.country/region/city`, bornés à
+100 caractères chacun. L'interface utilise région/pays quand la ville manque.
+Rétention identique aux sessions ; aucune reconstruction des anciennes visites.
+
+Offre vérifiée le 15 septembre : 1 000 appels/jour par IP appelante, usage
+commercial et HTTPS autorisés, sans garantie de disponibilité.
+[Documentation](https://ipwhois.io/documentation),
+[conditions](https://ipwhois.io/terms), [confidentialité](https://ipwhois.io/privacy).
+La politique publique évoque des serveurs dans plusieurs pays et ne fournit
+pas de durée précise de conservation des IP interrogées : ne pas présenter
+le fournisseur comme sans logs ni comme un traitement exclusivement européen.
+
+Non déployé. 30 tests ciblés passent sous Node 22.23.2 :
+`tests/analytics-geo.test.cjs`, `tests/analytics-live-sessions.test.mjs`,
+`tests/cookie-consent.test.mjs` et `tests/functions-gen2-g4.test.mjs`, sans réseau.
+Une sonde distincte vers IPWhois avec l'IP publique du DNS Google a retourné
+pays/région/ville en français ; aucune IP de visiteur n'a été utilisée.
+Lint client sans erreur (deux avertissements préexistants dans AdminAnalytics),
+syntaxe backend et `git diff --check` validés. Aucun build ni navigateur lancé.
+La livraison devra inclure client/consentement, `initLiveSessionGen2` et le
+projecteur `aggregateAnalyticsSessionGen2`. La recette hébergée devra confirmer
+que `rawRequest.ip` représente le visiteur à travers l'hébergement et vérifier
+l'affichage sur des connexions connues. La précision et les coûts ne sont pas
+prouvés par les doubles de test. Retour arrière : retirer l'appel géographique ;
+les champs optionnels restent compatibles avec les anciens lecteurs.
+
 ## Inactivité regroupée — contrat du 2026-09-10
 
 [Plan et contrat](PLAN_INACTIVITE_ANALYTICS_GROUPES.md),
@@ -402,15 +445,16 @@ Contrat du moteur:
   origine exacte, JSON borne et jeton de synchronisation opaque;
 - `initLiveSession` ignore tout type fourni par le navigateur et derive le type
   uniquement depuis Auth;
-- aucune IP n'est envoyee a un service de geolocalisation tiers; `geo` reste
-  `Unknown` tant qu'un fournisseur HTTPS contractualise n'est pas valide;
+- localisation IPWhois autorisée par le propriétaire le 15 septembre : IP
+  transmise temporairement en HTTPS après consentement, seuls pays/région/ville
+  conservés (contrat et état local en tête de chapitre) ;
 - les logs de conversion ne contiennent ni e-mail ni IP bruts.
 
 Exclusion admin:
 
 - le collecteur ne cree pas de session lorsque les claims admin sont actifs;
 - le collecteur admin n'est plus monte et `trackAdminIP` est un no-op de compatibilite;
-- `initLiveSession` ne lit ni ne stocke l'IP;
+- `initLiveSession` peut lire l'IP pour IPWhois après consentement, sans la stocker ;
 - `updateUserSessions` cible uniquement la session prouvee par `sessionId` et `syncToken`;
 - `updateUserSessions` determine ce statut depuis `sys_admin_access` sans relire le profil `users/{uid}`, dont le resultat etait auparavant toujours ecrase par le registre;
 - les sessions `type == admin` sont exclues de tous les calculs du panneau Data;
@@ -615,7 +659,8 @@ par tombstone. Les collections synthetiques ont ete nettoyees.
 Les audits securite conservent l'UID brut parce qu'il est la cle
 d'imputabilite, mais e-mail, IP et user-agent y sont hashes. Les sessions
 analytics gardent les donnees minimales necessaires au moteur pendant leur
-fenetre; aucune geolocalisation tierce n'est appelee.
+fenetre ; l'intégration locale IPWhois du 15 septembre ajoute la localisation
+approximative après consentement, sans conserver l'IP.
 
 Sont explicitement exclus de la purge technique generique:
 

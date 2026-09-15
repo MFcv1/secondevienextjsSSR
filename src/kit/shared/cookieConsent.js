@@ -1,5 +1,5 @@
 export const CONSENT_KEY = 'secondevie:cookie-consent:v1';
-export const CONSENT_VERSION = 1;
+export const CONSENT_VERSION = 2;
 export const OPEN_COOKIE_PREFERENCES = 'secondevie:open-cookie-preferences';
 const listeners = new Set();
 let memoryValue = '';

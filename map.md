@@ -61,7 +61,8 @@ l'ID opaque reste technique.
 
 - **Collecte** : `AnalyticsCollectorIsland` / `AnalyticsProvider` →
   `functions/src/analytics/sessions.js` → `analytics_sessions`.
-  Claims admin exclus ; IP brute non collectée ; parcours borné.
+  Claims admin exclus ; IP brute non stockée ; `geo.js` → IPWhois après
+  consentement pour ville/région/pays estimés ; parcours borné.
 - **Cookies** : `app/CookieConsentIsland.jsx` → `src/kit/shared/cookieConsent.js` ;
   contrôle audience/performance et carte Google Maps, choix révocable six mois.
 - **Historique/KPI** : `rollups.js` / `realtime.js` → faits/ledgers/buckets →

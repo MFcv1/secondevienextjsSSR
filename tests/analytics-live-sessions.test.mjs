@@ -23,6 +23,12 @@ test('live projection is allowlisted, bounded and contains no raw identity or to
     assert.equal(realFormat.detail.journey[2].page, 'affiliate_shop_grid');
     assert.equal(realFormat.detail.journey[2].itemId, undefined);
     assert.ok(!JSON.stringify(realFormat).includes('prive'));
+    const located = projectData('located', { startedAt: 1000, geo: {
+        city: 'Caen', region: 'Normandie', country: 'France', ip: 'private', latitude: 49
+    } });
+    assert.deepEqual(located.summary.geo, { city: 'Caen', region: 'Normandie', country: 'France' });
+    assert.ok(!JSON.stringify(located).includes('private'));
+    assert.equal(projectData('invalid', { startedAt: 1000, geo: { city: '<script>', country: 'x'.repeat(101) } }).summary.geo.city, 'Unknown');
 });
 test('presence allows 60 second heartbeat and rejects old, closed and invalid sessions', () => {
     assert.equal(isSessionOnline({ lastActivityAt: 100000, sessionActive: true }, 161000), true);

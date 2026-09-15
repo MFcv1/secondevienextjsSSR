@@ -159,9 +159,8 @@ export const maskAnalyticsIp = (ip) => {
 
 const getSessionLocationLabel = (session) => {
     const city = normalizeAnalyticsValue(session?.geo?.city);
-    if (!city) return 'Localisation inconnue';
-
     const region = normalizeAnalyticsValue(session?.geo?.region);
+    if (!city) return region || normalizeAnalyticsValue(session?.geo?.country) || 'Localisation inconnue';
     return region ? `${city}, ${region}` : city;
 };
 

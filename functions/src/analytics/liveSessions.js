@@ -2,6 +2,7 @@
 const admin = require('firebase-admin');
 const { isDeepStrictEqual } = require('node:util');
 const { hashOpaque } = require('../../helpers/observability');
+const { sanitizeGeo } = require('./geo');
 const PAGES = new Set(['home', 'gallery', 'category', 'detail', 'search', 'about', 'quote', 'wishlist', 'cart', 'checkout', 'orders', 'my-orders', 'login', 'shop', 'shop-detail', 'comptoir', 'delivery', 'unknown',
     'affiliate_shop_grid', 'affiliate_shop_detail', 'affiliate_shop_tutorial', 'affiliate_gallery_detail']);
 const millis = value => typeof value?.toMillis === 'function' ? value.toMillis() : typeof value === 'number' && Number.isFinite(value) ? value : 0;
@@ -27,6 +28,7 @@ function projectData(id, source) {
         schemaVersion: 1, id, visitorKey: hashOpaque(source.userId || id),
         identitySource: source.userId ? 'auth_uid' : 'session',
         type: choice(source.type, ['anonymous', 'visitor', 'client'], 'anonymous'),
+        geo: sanitizeGeo(source.geo),
         startedAt, lastActivityAt, sessionActive: source.sessionActive === true,
         duration: integer(source.duration), journeyCount: Math.max(journey.length, integer(source.journeyCount, 100000)),
         device: choice(source.device, ['Desktop', 'Mobile', 'Tablet'], 'Unknown'),

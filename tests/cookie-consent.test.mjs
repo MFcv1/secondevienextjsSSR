@@ -5,9 +5,10 @@ import { CONSENT_KEY, parseConsent, saveConsent, hasConsent, getConsentSnapshot,
 
 test('invalid, future, expired and incompatible choices default to refusal', () => {
   const now = Date.now();
-  const record = { version: 1, savedAt: now - 1000, expiresAt: now + 1000, analytics: true, external: false };
+  const record = { version: 2, savedAt: now - 1000, expiresAt: now + 1000, analytics: true, external: false };
+  assert.equal(parseConsent(JSON.stringify({ ...record, version: 1 }), now), null);
   assert.equal(parseConsent(JSON.stringify(record), now).analytics, true);
-  for (const raw of ['', 'null', '{', JSON.stringify({ ...record, version: 2 }), JSON.stringify({ ...record, analytics: 'true' }), JSON.stringify({ ...record, savedAt: now + 1 }), JSON.stringify({ ...record, expiresAt: now }), JSON.stringify({ ...record, expiresAt: now + 366 * 86400000 })]) {
+  for (const raw of ['', 'null', '{', JSON.stringify({ ...record, version: 3 }), JSON.stringify({ ...record, analytics: 'true' }), JSON.stringify({ ...record, savedAt: now + 1 }), JSON.stringify({ ...record, expiresAt: now }), JSON.stringify({ ...record, expiresAt: now + 366 * 86400000 })]) {
     assert.equal(parseConsent(raw, now), null, raw);
   }
 });
