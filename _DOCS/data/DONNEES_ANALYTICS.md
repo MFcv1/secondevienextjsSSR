@@ -36,11 +36,16 @@ ciblés avec le contrat deployment-cache, lint backend sans avertissement.
 Contrôles HTTP 200 sur accueil/admin/catalogue ; réponses RSC produit/galerie
 avec le même deploymentId, ISR 300 et admin no-store. Aucun navigateur/E2E.
 Retour arrière disponible : `build-2026-09-15-002`.
-Les deux Functions ne sont **pas déployées** : init reste
-`initlivesessiongen2-00006-dod`, projecteur
-`aggregateanalyticssessiongen2-00015-kej` (relues actives avant livraison).
-Le Hosting seul n'active donc pas la localisation ; accord pour leur déploiement
-ciblé demandé séparément et encore absent à la clôture. Aucun push Git.
+Complément livré le 16 septembre après autorisation explicite : les deux
+Functions sont ACTIVE à 100 %, `initlivesessiongen2-00007-hek` et
+`aggregateanalyticssessiongen2-00016-vux`. Mise à jour de source uniquement,
+permissions/configuration et filtre Firestore conservés (ordre des filtres
+normalisé pour la comparaison). Archives déployées relues : `geo.js`,
+`sessions.js`, `liveSessions.js` identiques au commit. 30 tests ciblés repassés.
+Rollbacks source sauvegardés et vérifiés : init `00006-dod`, projecteur
+`00015-kej`. Aucun push Git. La localisation est désormais activable sur une
+nouvelle session avec consentement ; la ville réelle du visiteur reste à
+qualifier, les sessions déjà ouvertes ne sont pas recalculées.
 
 Validation initiale : 30 tests ciblés passent sous Node 22.23.2 :
 `tests/analytics-geo.test.cjs`, `tests/analytics-live-sessions.test.mjs`,
@@ -49,8 +54,7 @@ Une sonde distincte vers IPWhois avec l'IP publique du DNS Google a retourné
 pays/région/ville en français ; aucune IP de visiteur n'a été utilisée.
 Lint client sans erreur (deux avertissements préexistants dans AdminAnalytics),
 syntaxe backend et `git diff --check` validés. Aucun build ni navigateur lancé.
-La livraison restante doit inclure `initLiveSessionGen2` et le
-projecteur `aggregateAnalyticsSessionGen2`. La recette hébergée devra confirmer
+Hosting et Functions sont livrés. La recette hébergée devra confirmer
 que `rawRequest.ip` représente le visiteur à travers l'hébergement et vérifier
 l'affichage sur des connexions connues. La précision et les coûts ne sont pas
 prouvés par les doubles de test. Retour arrière : retirer l'appel géographique ;
