@@ -1,5 +1,5 @@
 runConfig:
-  minInstances: 1
+  minInstances: 0
   maxInstances: 3
   concurrency: 16
   cpu: 1

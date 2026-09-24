@@ -118,12 +118,12 @@ navigateur
 App Hosting (`apphosting.yaml`):
 
 - `minInstances: 0`;
-- `maxInstances: 10`;
-- `concurrency: 80`;
+- `maxInstances: 3`;
+- `concurrency: 16`;
 - `cpu: 1`;
 - `memoryMiB: 512`.
 
-`minInstances: 0` accepte les cold starts pour limiter le cout preproduction. Une instance chaude payante ne doit etre decidee qu'avec trafic et mesure production.
+`minInstances: 0` accepte les cold starts pour limiter le cout preproduction. Le retour a zero sur le sandbox a ete applique le 25 septembre 2026 apres verification qu'aucune autre instance minimale n'etait reservee. Une instance chaude payante ne doit etre decidee qu'avec trafic et mesure production.
 
 ## 4. Codebases Functions
 
