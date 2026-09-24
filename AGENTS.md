@@ -10,7 +10,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # Seconde Vie — consignes de travail
 
-Révision documentaire : 2026-09-04. Propriétaire : équipe Seconde Vie.
+Révision documentaire : 2026-09-25. Propriétaire : équipe Seconde Vie.
 Ce fichier contient les règles transverses, pas le journal des chantiers.
 
 ## Comprendre juste assez avant d'agir
@@ -58,6 +58,10 @@ pas un déploiement. Signaler et corriger les contradictions du périmètre trai
 - Firebase : `secondevienextjsssr` ; App Hosting : `secondevie-next-sandbox`,
   région `europe-west4` ; Functions principalement `europe-west1`.
 - Sandbox : https://secondevie-next-sandbox--secondevienextjsssr.europe-west4.hosted.app
+- App Hosting sandbox : `minInstances: 0` dans `apphosting.yaml` ; laisser le
+  service s'arrêter à l'inactivité. Ce réglage a été rétabli le 2026-09-25
+  pour éviter le coût d'une instance maintenue active à faible trafic.
+  [Configuration et exploitation](_DOCS/infra/INFRASTRUCTURE.md).
 - Commerce sandbox ouvert durablement en `v2_all/v2` par décision du
   2026-08-25 ; Stripe **test**, offline **off**. Relire le contrôle réel avant
   une mutation. Ne pas rétablir les anciennes fenêtres fermées de juillet.
